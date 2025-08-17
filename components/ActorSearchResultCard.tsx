@@ -7,7 +7,7 @@ import { useToast } from './ui/use-toast';
 import { BadgeCheck } from 'lucide-react';
 
 interface ActorSearchResultCardProps {
-  actor: AppBskyActorDefs.ProfileView;
+  actor: AppBskyActorDefs.ProfileView | AppBskyActorDefs.ProfileViewDetailed;
 }
 
 const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) => {

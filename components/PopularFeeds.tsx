@@ -61,11 +61,12 @@ const useFeedPinning = () => {
                 if (existingItem) existingItem.pinned = true; // Pin existing
                 else newPref.items.push({ type: 'feed', value: feedUri, pinned: true }); // Add and pin
             }
-        } else if (AppBskyActorDefs.isSavedFeedsPref(savedFeedsPref)) { // Handle migration from v1
+        } else { // Handle migration from v1
+            const v1Pref = savedFeedsPref as AppBskyActorDefs.SavedFeedsPref;
             newPref = {
                 $type: 'app.bsky.actor.defs#savedFeedsPrefV2',
                 items: [
-                    ...(savedFeedsPref.saved || []).map((uri: string) => ({ type: 'feed', value: uri, pinned: (savedFeedsPref.pinned || []).includes(uri) })),
+                    ...(v1Pref.saved || []).map((uri: string) => ({ type: 'feed', value: uri, pinned: (v1Pref.pinned || []).includes(uri) })),
                 ]
             };
             const existingItem = newPref.items.find((item) => item.value === feedUri);

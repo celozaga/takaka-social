@@ -35,7 +35,7 @@ const ActorSkeletonCard: React.FC = () => (
 const SuggestedFollows: React.FC = () => {
     const { agent, session } = useAtp();
     const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
-    const [profiles, setProfiles] = useState<AppBskyActorDefs.ProfileView[]>([]);
+    const [profiles, setProfiles] = useState<(AppBskyActorDefs.ProfileView | AppBskyActorDefs.ProfileViewDetailed)[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchSuggestions = useCallback(async (category_id: string) => {
@@ -56,7 +56,7 @@ const SuggestedFollows: React.FC = () => {
                     // Fetch a random subset to keep it fresh and performant
                     const randomHandles = handles.sort(() => 0.5 - Math.random()).slice(0, 25);
                     const { data: profileData } = await agent.getProfiles({ actors: randomHandles });
-                    setProfiles(profileData.profiles as AppBskyActorDefs.ProfileView[]);
+                    setProfiles(profileData.profiles);
                 }
             }
         } catch (error) {
