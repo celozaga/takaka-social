@@ -14,6 +14,12 @@ interface UIContextType {
   composerReplyTo?: ReplyToProps;
   openComposer: (replyTo?: ReplyToProps) => void;
   closeComposer: () => void;
+  isFeedModalOpen: boolean;
+  feedModalUri?: string;
+  openFeedModal: (uri: string) => void;
+  closeFeedModal: () => void;
+  isCustomFeedHeaderVisible: boolean;
+  setCustomFeedHeaderVisible: (visible: boolean) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -22,6 +28,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [composerReplyTo, setComposerReplyTo] = useState<ReplyToProps | undefined>(undefined);
+  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
+  const [feedModalUri, setFeedModalUri] = useState<string | undefined>(undefined);
+  const [isCustomFeedHeaderVisible, setCustomFeedHeaderVisible] = useState(false);
 
   const openLoginModal = useCallback(() => {
     setIsLoginModalOpen(true);
@@ -41,8 +50,23 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setComposerReplyTo(undefined);
   }, []);
 
+  const openFeedModal = useCallback((uri: string) => {
+    setFeedModalUri(uri);
+    setIsFeedModalOpen(true);
+  }, []);
+
+  const closeFeedModal = useCallback(() => {
+    setIsFeedModalOpen(false);
+    setFeedModalUri(undefined);
+  }, []);
+
   return (
-    <UIContext.Provider value={{ isLoginModalOpen, openLoginModal, closeLoginModal, isComposerOpen, openComposer, closeComposer, composerReplyTo }}>
+    <UIContext.Provider value={{ 
+        isLoginModalOpen, openLoginModal, closeLoginModal, 
+        isComposerOpen, openComposer, closeComposer, composerReplyTo,
+        isFeedModalOpen, feedModalUri, openFeedModal, closeFeedModal,
+        isCustomFeedHeaderVisible, setCustomFeedHeaderVisible
+    }}>
       {children}
     </UIContext.Provider>
   );

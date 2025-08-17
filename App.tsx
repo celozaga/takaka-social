@@ -14,6 +14,7 @@ import Composer from './components/Composer';
 import NotificationsScreen from './components/NotificationsScreen';
 import LoginPrompt from './components/LoginPrompt';
 import FeedsScreen from './components/FeedsScreen';
+import FeedHeaderModal from './components/FeedHeaderModal';
 
 const App: React.FC = () => {
   return (
@@ -30,7 +31,7 @@ const App: React.FC = () => {
 
 const Main: React.FC = () => {
   const { session, isLoadingSession } = useAtp();
-  const { isLoginModalOpen, closeLoginModal, isComposerOpen, closeComposer, composerReplyTo } = useUI();
+  const { isLoginModalOpen, closeLoginModal, isComposerOpen, closeComposer, composerReplyTo, isCustomFeedHeaderVisible, isFeedModalOpen, closeFeedModal } = useUI();
   const [route, setRoute] = useState(window.location.hash);
 
   useEffect(() => {
@@ -47,11 +48,12 @@ const Main: React.FC = () => {
       if (event.key === 'Escape') {
         closeComposer();
         closeLoginModal();
+        closeFeedModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal]);
+  }, [closeComposer, closeLoginModal, closeFeedModal]);
 
   if (isLoadingSession) {
     // Show a minimal loading state while session is being restored
@@ -59,6 +61,7 @@ const Main: React.FC = () => {
   }
   
   const isPostScreen = route.startsWith('#/post/');
+  const isNavbarHidden = isPostScreen || isCustomFeedHeaderVisible;
 
   const renderContent = () => {
     const pathWithQuery = route.replace(/^#\//, '');
@@ -93,13 +96,13 @@ const Main: React.FC = () => {
   
   const mainContentClasses = isPostScreen
     ? 'w-full max-w-3xl transition-all duration-300 pb-8'
-    : `w-full max-w-3xl px-4 pt-20 transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+    : `w-full max-w-3xl px-4 ${isNavbarHidden ? 'pt-4' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
 
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
       <BottomNavbar isHidden={isPostScreen} />
-      {!isPostScreen && <Navbar />}
+      {!isNavbarHidden && <Navbar />}
       <div className="md:pl-20 w-full flex justify-center">
         <main className={mainContentClasses}>
           {renderContent()}
@@ -124,6 +127,14 @@ const Main: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeLoginModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <LoginScreen onSuccess={closeLoginModal} />
+          </div>
+        </div>
+      )}
+      
+      {isFeedModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeFeedModal}>
+          <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <FeedHeaderModal />
           </div>
         </div>
       )}
