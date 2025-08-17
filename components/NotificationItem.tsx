@@ -25,7 +25,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   const AuthorLink = () => (
     <a href={profileLink} className="font-bold hover:underline inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
       <span>{author.displayName || `@${author.handle}`}</span>
-      {author.associated?.labeler && (
+      {author.labels?.some(l => l.val === 'blue-check') && (
         <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
       )}
     </a>

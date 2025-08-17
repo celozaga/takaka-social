@@ -194,7 +194,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                     <img src={postAuthor.avatar} alt={postAuthor.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
                     <div className="font-bold truncate leading-tight flex items-center gap-1.5">
                         <span className="truncate">{postAuthor.displayName}</span>
-                        {postAuthor.associated?.labeler && (
+                        {postAuthor.labels?.some(l => l.val === 'blue-check') && (
                             <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
                         )}
                     </div>
