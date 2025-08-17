@@ -1,15 +1,12 @@
+
 import React from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { Home, Search, UserCircle, Edit3, LogOut, Bell, LogIn } from 'lucide-react';
 
-interface BottomNavbarProps {
-  onComposeClick: () => void;
-}
-
-const BottomNavbar: React.FC<BottomNavbarProps> = ({ onComposeClick }) => {
+const BottomNavbar: React.FC = () => {
   const { session, logout, unreadCount } = useAtp();
-  const { openLoginModal } = useUI();
+  const { openLoginModal, openComposer } = useUI();
   const [currentHash, setCurrentHash] = React.useState(window.location.hash || '#/');
 
   React.useEffect(() => {
@@ -21,7 +18,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ onComposeClick }) => {
   const loggedInNavItems = [
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
-    { isAction: true, action: onComposeClick, label: 'Compose', icon: Edit3, activeCondition: false },
+    { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
     { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
     { href: `#/profile/${session?.handle}`, label: 'Me', icon: UserCircle, activeCondition: currentHash.startsWith(`#/profile/${session?.handle}`) },
   ];

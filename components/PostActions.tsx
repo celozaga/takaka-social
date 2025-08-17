@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { Heart, Repeat, MessageCircle } from 'lucide-react';
@@ -6,7 +7,18 @@ import { useUI } from '../context/UIContext';
 import { useToast } from './ui/use-toast';
 
 interface PostActionsProps {
-  post: AppBskyFeedDefs.PostView;
+  post: {
+      uri: string;
+      cid: string;
+      author: { did: string; };
+      likeCount?: number;
+      repostCount?: number;
+      replyCount?: number;
+      viewer?: {
+          like?: string;
+          repost?: string;
+      }
+  };
 }
 
 const PostActions: React.FC<PostActionsProps> = ({ post }) => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AtpProvider, useAtp } from './context/AtpContext';
 import { UIProvider, useUI } from './context/UIContext';
@@ -28,9 +29,8 @@ const App: React.FC = () => {
 
 const Main: React.FC = () => {
   const { session, isLoadingSession } = useAtp();
-  const { isLoginModalOpen, closeLoginModal } = useUI();
+  const { isLoginModalOpen, closeLoginModal, isComposerOpen, closeComposer, composerReplyTo } = useUI();
   const [route, setRoute] = useState(window.location.hash);
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -44,13 +44,13 @@ const Main: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsComposerOpen(false);
+        closeComposer();
         closeLoginModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeLoginModal]);
+  }, [closeComposer, closeLoginModal]);
 
   if (isLoadingSession) {
     // Show a minimal loading state while session is being restored
@@ -82,7 +82,7 @@ const Main: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      <BottomNavbar onComposeClick={() => setIsComposerOpen(true)} />
+      <BottomNavbar />
       <Navbar />
       <main className={`container mx-auto px-4 pt-20 transition-all duration-300 md:ml-20 md:max-w-5xl lg:max-w-6xl ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`}>
         {renderContent()}
@@ -94,8 +94,9 @@ const Main: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300">
           <div className="relative w-full max-w-xl">
              <Composer 
-                onPostSuccess={() => setIsComposerOpen(false)}
-                onClose={() => setIsComposerOpen(false)}
+                onPostSuccess={closeComposer}
+                onClose={closeComposer}
+                replyTo={composerReplyTo}
              />
           </div>
         </div>

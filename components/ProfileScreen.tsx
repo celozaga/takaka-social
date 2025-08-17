@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from './ui/use-toast';
@@ -109,9 +110,12 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         const oldViewerState = viewerState;
         setViewerState(prev => prev ? { ...prev, blocking: 'temp-uri', following: undefined } : undefined); // Block also unfollows
         try {
-            const { uri } = await agent.app.bsky.graph.block.create(session.did, {
-                subject: profile.did,
-                createdAt: new Date().toISOString(),
+            const { uri } = await agent.app.bsky.graph.block.create({
+                repo: session.did,
+                record: {
+                    subject: profile.did,
+                    createdAt: new Date().toISOString(),
+                }
             });
             setViewerState(prev => prev ? { ...prev, blocking: uri } : undefined);
             toast({ title: "User Blocked" });
