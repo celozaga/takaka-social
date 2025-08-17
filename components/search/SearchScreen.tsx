@@ -213,7 +213,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         <div className="columns-2 gap-4">
           {postResults.map(post => (
             <div key={post.cid} className="break-inside-avoid mb-4">
-              <PostCard post={post} />
+              <PostCard feedViewPost={{ post }} />
             </div>
           ))}
         </div>

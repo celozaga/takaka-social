@@ -3,17 +3,18 @@ import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { usePostActions } from '../../hooks/usePostActions';
-import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck } from 'lucide-react';
+import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat, MessageCircle } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 
 type PostCardProps = {
-    post: AppBskyFeedDefs.PostView;
+    feedViewPost: AppBskyFeedDefs.FeedViewPost;
     isClickable?: boolean;
     showAllMedia?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMedia = false }) => {
+const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
+    const { post, reason, reply } = feedViewPost;
     const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
     const author = post.author as AppBskyActorDefs.ProfileViewBasic;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
@@ -139,6 +140,31 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
         return null;
     };
 
+    const renderContext = () => {
+        if (reason && AppBskyFeedDefs.isReasonRepost(reason)) {
+            return (
+                <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
+                    <Repeat size={14} />
+                    <span className="truncate">
+                        Reposted by <a href={`#/profile/${reason.by.handle}`} className="hover:underline" onClick={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</a>
+                    </span>
+                </div>
+            );
+        }
+    
+        if (reply && AppBskyFeedDefs.isPostView(reply.parent)) {
+            return (
+                <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
+                    <MessageCircle size={14} />
+                    <span className="truncate">
+                        Reply to <a href={`#/profile/${reply.parent.author.handle}`} className="hover:underline" onClick={e => e.stopPropagation()}>{reply.parent.author.displayName || `@${reply.parent.author.handle}`}</a>
+                    </span>
+                </div>
+            );
+        }
+        return null;
+    };
+
     const mediaElement = renderMedia();
     if (!mediaElement) return null;
 
@@ -151,6 +177,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
                 {mediaElement}
             </Wrapper>
             <div className="p-3">
+                {renderContext()}
                 {postText && (
                      <Wrapper {...wrapperProps} className="block mb-2">
                         <p className="text-sm text-on-surface line-clamp-3 break-words">

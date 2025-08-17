@@ -442,22 +442,18 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </div>
             )
         }
+        
+        const feedViewPosts = feed.filter(item => AppBskyFeedDefs.isFeedViewPost(item)) as AppBskyFeedDefs.FeedViewPost[];
 
         return (
             <div className="columns-2 gap-4">
-                {(feed as AppBskyFeedDefs.FeedViewPost[]).map(({ post, reason }) => {
+                {feedViewPosts.map((feedViewPost) => {
+                    const { post, reason } = feedViewPost;
                     const uniqueKey = `${post.cid}-${AppBskyFeedDefs.isReasonRepost(reason) ? reason.by.did : ''}`;
-                    // Don't render if it's a media post (PostCard returns null)
                     if (activeTab === 'posts' && !post.embed) return null;
                     return (
                         <div key={uniqueKey} className="break-inside-avoid mb-4">
-                            {activeTab === 'reposts' && AppBskyFeedDefs.isReasonRepost(reason) && (
-                                <div className="flex items-center gap-2 text-on-surface-variant text-xs px-2 pb-1.5">
-                                    <Repeat size={14} />
-                                    <span className="font-semibold">Reposted</span>
-                                </div>
-                            )}
-                            <PostCard post={post} />
+                            <PostCard feedViewPost={feedViewPost} />
                         </div>
                     );
                 })}

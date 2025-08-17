@@ -175,9 +175,9 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   return (
     <div>
       <div className="columns-2 gap-4">
-        {feed.map(({ post }) => (
-          <div key={post.cid} className="break-inside-avoid mb-4">
-            <PostCard post={post} />
+        {feed.map((feedViewPost) => (
+          <div key={`${feedViewPost.post.cid}-${feedViewPost.reason?.$type === 'app.bsky.feed.defs#reasonRepost' ? feedViewPost.reason.by.did : ''}`} className="break-inside-avoid mb-4">
+            <PostCard feedViewPost={feedViewPost} />
           </div>
         ))}
       </div>
