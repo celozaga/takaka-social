@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../context/AtpContext';
-import PostActions from './PostActions';
-import { Images, ExternalLink, PlayCircle } from 'lucide-react';
+import { usePostActions } from '../hooks/usePostActions';
+import { Images, ExternalLink, PlayCircle, Heart } from 'lucide-react';
 import RichTextRenderer from './RichTextRenderer';
 
 type PostCardProps = {
@@ -13,6 +14,7 @@ type PostCardProps = {
 
 const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
+    const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
     const author = post.author as AppBskyActorDefs.ProfileViewBasic;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
     const postText = record?.text || '';
@@ -157,7 +159,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
                     </Wrapper>
                 )}
                  <div className="flex items-center justify-between gap-2 text-sm mt-2">
-                   <a href={profileLink} className="flex items-center gap-2 truncate hover:opacity-80 transition-opacity">
+                   <a href={profileLink} className="flex items-center gap-2 truncate hover:opacity-80 transition-opacity min-w-0">
                      <img 
                         src={author.avatar || `https://picsum.photos/seed/${author.did}/24`} 
                         alt={`${author.displayName}'s avatar`} 
@@ -165,7 +167,15 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
                      />
                      <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || author.handle}</span>
                    </a>
-                   <PostActions post={post} />
+                   <button 
+                        onClick={handleLike} 
+                        disabled={isLiking}
+                        className={`flex items-center gap-1.5 transition-colors ${likeUri ? 'text-pink-500' : 'text-on-surface-variant hover:text-pink-500'}`}
+                        aria-label="Like"
+                    >
+                        <Heart size={16} fill={likeUri ? 'currentColor' : 'none'} />
+                        <span className="font-semibold text-xs">{likeCount}</span>
+                    </button>
                 </div>
             </div>
         </article>
