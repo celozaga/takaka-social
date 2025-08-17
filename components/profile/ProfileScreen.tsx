@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -213,11 +214,28 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     newItems = response.data.feed;
                     nextCursor = response.data.cursor;
                     break;
-                case 'feeds':
-                    response = await agent.app.bsky.feed.getActorFeeds({ actor, cursor: currentCursor, limit: 50 });
-                    newItems = response.data.feeds;
-                    nextCursor = response.data.cursor;
+                case 'feeds': {
+                    const listRecordsResponse = await agent.api.com.atproto.repo.listRecords({
+                        repo: actor,
+                        collection: 'app.bsky.feed.generator',
+                        limit: 50,
+                        cursor: currentCursor,
+                    });
+
+                    const feedUris = listRecordsResponse.data.records.map(r => r.uri);
+                    
+                    if (feedUris.length > 0) {
+                        const getFeedsResponse = await agent.app.bsky.feed.getFeedGenerators({
+                            feeds: feedUris,
+                        });
+                        newItems = getFeedsResponse.data.feeds;
+                    } else {
+                        newItems = [];
+                    }
+                    
+                    nextCursor = listRecordsResponse.data.cursor;
                     break;
+                }
             }
 
             setFeed(prev => currentCursor ? [...prev, ...newItems] : newItems);
