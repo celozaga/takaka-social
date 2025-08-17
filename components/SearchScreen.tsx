@@ -1,12 +1,15 @@
 
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from './PostCard';
 import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock } from 'lucide-react';
 import PostCardSkeleton from './PostCardSkeleton';
 import ActorSearchResultCard from './ActorSearchResultCard';
+import PopularFeeds from './PopularFeeds';
+import SuggestedFollows from './SuggestedFollows';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people';
@@ -33,16 +36,15 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [hasMore, setHasMore] = useState(true);
-    const [hasSearched, setHasSearched] = useState(false);
     
     const loaderRef = useRef<HTMLDivElement>(null);
-
+    
+    const showDiscoveryContent = !initialQuery.trim();
     const isPostSearch = activeFilter !== 'people';
 
     const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
             setResults([]);
-            setHasSearched(false);
             return;
         }
 
@@ -54,7 +56,6 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         } else {
             setIsLoadingMore(true);
         }
-        setHasSearched(true);
         
         try {
             if (searchFilter === 'people') {
@@ -67,12 +68,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 let nextCursor: string | undefined = currentCursor;
                 let attempts = 0;
 
-                // For media searches, we might need to fetch multiple pages to get enough results
                 while (attempts < 5) {
                     attempts++;
                     const response = await agent.app.bsky.feed.searchPosts({ 
                         q: searchQuery, 
-                        limit: 50, // Fetch more for media filters to get a good amount
+                        limit: 50,
                         cursor: nextCursor,
                         sort: searchFilter === 'latest' ? 'latest' : 'top',
                     });
@@ -92,13 +92,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             return false;
                         });
                         
-                        // If we found enough media posts or there's no more to fetch, break
                         if (mediaPosts.length >= 10 || !nextCursor) {
                             allFetchedPosts = mediaPosts;
                             break;
                         }
                     } else {
-                        // For 'top' and 'latest', one page is enough per call
                         break;
                     }
                 }
@@ -116,17 +114,23 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     }, [agent]);
     
     useEffect(() => {
-        fetchResults(initialQuery, activeFilter);
-    }, [initialQuery, activeFilter, fetchResults]);
+        if (!showDiscoveryContent) {
+            fetchResults(initialQuery, activeFilter);
+        }
+    }, [initialQuery, activeFilter, fetchResults, showDiscoveryContent]);
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${activeFilter}`;
+        if (query.trim()) {
+            window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${activeFilter}`;
+        }
     };
     
     const handleFilterChange = (filter: FilterType) => {
         setActiveFilter(filter);
-        window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${filter}`;
+        if (query.trim()) {
+            window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${filter}`;
+        }
     };
     
      // Effect for IntersectionObserver
@@ -134,7 +138,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         const observer = new IntersectionObserver(
           (entries) => {
             if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore && isPostSearch) {
-              fetchResults(query, activeFilter, cursor);
+              fetchResults(initialQuery, activeFilter, cursor);
             }
           },
           { rootMargin: '400px' }
@@ -144,7 +148,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [hasMore, isLoading, isLoadingMore, fetchResults, query, activeFilter, cursor, isPostSearch]);
+    }, [hasMore, isLoading, isLoadingMore, fetchResults, initialQuery, activeFilter, cursor, isPostSearch]);
 
     const renderResults = () => {
       if (!isPostSearch) {
@@ -178,58 +182,67 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         type="search"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={`Search...`}
+                        placeholder={`Search posts, users, and feeds`}
                         className="w-full pl-12 pr-4 py-3 bg-surface-3 border-b-2 border-surface-3 rounded-t-lg focus:ring-0 focus:border-primary focus:bg-surface-3 outline-none transition duration-200"
                     />
                 </div>
             </form>
 
-            <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2 mb-4 border-b border-surface-3">
-                 {filters.map(filter => (
-                    <button 
-                        key={filter.id}
-                        onClick={() => handleFilterChange(filter.id)}
-                        className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
-                            ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
-                        `}
-                    >
-                        <filter.icon size={16} />
-                        {filter.label}
-                    </button>
-                ))}
-            </div>
-
-            {isLoading && (
-                <div className="columns-2 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className="break-inside-avoid mb-4">
-                            <PostCardSkeleton />
-                        </div>
-                    ))}
+            {showDiscoveryContent ? (
+                 <div className="space-y-8">
+                    <SuggestedFollows />
+                    <PopularFeeds />
                 </div>
-            )}
-            {!isLoading && results.length > 0 && renderResults()}
-            
-            {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && isPostSearch && (
-                <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
-            )}
-            
-            {!isLoading && results.length === 0 && hasSearched && (
-                 <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{query}".</div>
-            )}
-            
-            <div ref={loaderRef} className="h-10">
-                {isLoadingMore && isPostSearch && (
-                  <div className="columns-2 gap-4 mt-4">
-                    <div className="break-inside-avoid mb-4">
-                        <PostCardSkeleton />
+            ) : (
+                <>
+                    <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2 mb-4 border-b border-surface-3">
+                        {filters.map(filter => (
+                            <button 
+                                key={filter.id}
+                                onClick={() => handleFilterChange(filter.id)}
+                                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
+                                    ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
+                                `}
+                            >
+                                <filter.icon size={16} />
+                                {filter.label}
+                            </button>
+                        ))}
                     </div>
-                     <div className="break-inside-avoid mb-4">
-                        <PostCardSkeleton />
+
+                    {isLoading && (
+                        <div className="columns-2 gap-4">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="break-inside-avoid mb-4">
+                                    <PostCardSkeleton />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {!isLoading && results.length > 0 && renderResults()}
+                    
+                    {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && isPostSearch && (
+                        <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+                    )}
+                    
+                    {!isLoading && results.length === 0 && (
+                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{initialQuery}".</div>
+                    )}
+                    
+                    <div ref={loaderRef} className="h-10">
+                        {isLoadingMore && isPostSearch && (
+                        <div className="columns-2 gap-4 mt-4">
+                            <div className="break-inside-avoid mb-4">
+                                <PostCardSkeleton />
+                            </div>
+                            <div className="break-inside-avoid mb-4">
+                                <PostCardSkeleton />
+                            </div>
+                        </div>
+                        )}
                     </div>
-                  </div>
-                )}
-            </div>
+                </>
+            )}
         </div>
     );
 };
