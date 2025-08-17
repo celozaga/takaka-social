@@ -9,6 +9,7 @@ type SavedFeedsPref = AppBskyActorDefs.SavedFeedsPref;
 type SavedFeed = AppBskyActorDefs.SavedFeed;
 
 const V2_TYPE = 'app.bsky.actor.defs#savedFeedsPrefV2';
+const V1_TYPE = 'app.bsky.actor.defs#savedFeedsPref';
 
 export const useSavedFeeds = () => {
     const { agent, session } = useAtp();
@@ -29,7 +30,7 @@ export const useSavedFeeds = () => {
         setIsLoading(true);
         try {
             const { data } = await agent.app.bsky.actor.getPreferences();
-            const feedsPref = data.preferences.find(p => p.$type === V2_TYPE || p.$type === 'app.bsky.actor.defs#savedFeedsPref');
+            const feedsPref = data.preferences.find(p => p.$type === V2_TYPE || p.$type === V1_TYPE);
 
             let v2Pref: SavedFeedsPrefV2;
 
@@ -37,14 +38,20 @@ export const useSavedFeeds = () => {
                 v2Pref = { $type: V2_TYPE, items: [] };
             } else if (AppBskyActorDefs.isSavedFeedsPref(feedsPref)) { // V1 pref, needs migration
                 const v1 = feedsPref as SavedFeedsPref;
-                const allV1Uris = [...new Set([...(v1.pinned || []), ...(v1.saved || [])])];
+                
+                // Robustly handle potentially malformed v1 preferences
+                const pinnedUrisV1 = Array.isArray(v1.pinned) ? v1.pinned.filter(u => typeof u === 'string') : [];
+                const savedUrisV1 = Array.isArray(v1.saved) ? v1.saved.filter(u => typeof u === 'string') : [];
+                
+                const allV1Uris = [...new Set([...pinnedUrisV1, ...savedUrisV1])];
+                
                 v2Pref = {
                     $type: V2_TYPE,
                     items: allV1Uris.map(uri => ({
                         id: crypto.randomUUID(),
                         type: 'feed',
                         value: uri,
-                        pinned: (v1.pinned || []).includes(uri),
+                        pinned: pinnedUrisV1.includes(uri),
                     }))
                 };
             } else {
@@ -75,8 +82,17 @@ export const useSavedFeeds = () => {
 
     const savePreferences = useCallback(async (newPreferences: SavedFeedsPrefV2) => {
         try {
-            // Ensure $type is present to satisfy the method's expected type
-            await agent.app.bsky.actor.putPreferences({ preferences: [{ ...newPreferences, $type: V2_TYPE }] });
+            const { data: currentData } = await agent.app.bsky.actor.getPreferences();
+
+            // Filter out old feed preferences (v1 or v2) to avoid duplication
+            const otherPreferences = currentData.preferences.filter(
+                p => p.$type !== V2_TYPE && p.$type !== V1_TYPE
+            );
+            
+            // Construct the new list of all preferences
+            const finalPreferences = [...otherPreferences, { ...newPreferences, $type: V2_TYPE }];
+
+            await agent.app.bsky.actor.putPreferences({ preferences: finalPreferences });
             setPreferences(newPreferences);
         } catch (error) {
             console.error("Failed to save preferences:", error);
