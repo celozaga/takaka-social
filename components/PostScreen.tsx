@@ -5,7 +5,6 @@ import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
-import PostActions from './PostActions';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from './ui/use-toast';
 import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
