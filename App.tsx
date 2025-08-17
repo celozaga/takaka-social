@@ -13,6 +13,7 @@ import BottomNavbar from './components/BottomNavbar';
 import Composer from './components/Composer';
 import NotificationsScreen from './components/NotificationsScreen';
 import LoginPrompt from './components/LoginPrompt';
+import FeedsScreen from './components/FeedsScreen';
 
 const App: React.FC = () => {
   return (
@@ -83,6 +84,8 @@ const Main: React.FC = () => {
           return null;
         }
         return <NotificationsScreen />;
+      case 'feeds':
+        return <FeedsScreen />;
       default:
         return <HomeScreen />;
     }

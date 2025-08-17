@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
-import { Home, Search, UserCircle, Edit3, LogOut, Bell, LogIn } from 'lucide-react';
+import { Home, Search, UserCircle, Edit3, LogOut, Bell, LogIn, List } from 'lucide-react';
 
 interface BottomNavbarProps {
   isHidden?: boolean;
@@ -22,6 +22,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const loggedInNavItems = [
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
+    { href: '#/feeds', label: 'Feeds', icon: List, activeCondition: currentHash.startsWith('#/feeds') },
     { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
     { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
     { href: `#/profile/${session?.handle}`, label: 'Me', icon: UserCircle, activeCondition: currentHash.startsWith(`#/profile/${session?.handle}`) },
@@ -30,6 +31,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const guestNavItems = [
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
+    { href: '#/feeds', label: 'Feeds', icon: List, activeCondition: currentHash.startsWith('#/feeds') },
     { isAction: true, action: openLoginModal, label: 'Sign In', icon: LogIn, activeCondition: false },
   ];
 
@@ -74,7 +76,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
       {/* Desktop Navigation Rail */}
       <nav className="hidden md:flex fixed top-0 left-0 h-full w-20 bg-surface-2 border-r border-surface-3 flex-col items-center justify-between py-6 z-50">
         <div className="flex flex-col items-center gap-4 w-full">
-            {navItems.filter(item => item.label !== 'Me' && item.label !== 'Logout').map(item => renderNavItem(item))}
+            {loggedInNavItems.filter(item => item.label !== 'Me' && item.label !== 'Logout').map(item => renderNavItem(item))}
         </div>
         {session && (
           <div className="flex flex-col items-center gap-4 w-full">
@@ -85,6 +87,11 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
                   </div>
                   <span className="text-xs font-medium text-on-surface-variant">Logout</span>
               </button>
+          </div>
+        )}
+        {!session && (
+          <div className="flex flex-col items-center gap-4 w-full">
+             {guestNavItems.filter(item => item.isAction).map(item => renderNavItem(item))}
           </div>
         )}
       </nav>

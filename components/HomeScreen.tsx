@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
@@ -32,13 +33,13 @@ const HomeScreen: React.FC = () => {
         let feedUris: string[] = [];
         if (savedFeedsPref) {
             if (AppBskyActorDefs.isSavedFeedsPrefV2(savedFeedsPref)) {
+                // Only show pinned feeds on the home screen selector
                 feedUris = savedFeedsPref.items
-                    .filter(item => item.type === 'feed')
+                    .filter(item => item.type === 'feed' && item.pinned)
                     .map(item => item.value);
             } else if (AppBskyActorDefs.isSavedFeedsPref(savedFeedsPref)) {
-                const allUris = [...(savedFeedsPref.pinned || []), ...(savedFeedsPref.saved || [])];
-                const uniqueUris = [...new Set(allUris)];
-                feedUris = uniqueUris.filter(uri => uri.includes('app.bsky.feed.generator'));
+                // V1 prefs only had pinned feeds
+                feedUris = savedFeedsPref.pinned || [];
             }
         }
         
