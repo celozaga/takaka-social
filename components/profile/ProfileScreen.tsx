@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -215,17 +214,15 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     nextCursor = response.data.cursor;
                     break;
                 case 'feeds':
-                    if (currentCursor) { setHasMore(false); return; }
-                    response = await agent.app.bsky.feed.getActorFeeds({ actor, limit: 50 });
+                    response = await agent.app.bsky.feed.getActorFeeds({ actor, cursor: currentCursor, limit: 50 });
                     newItems = response.data.feeds;
-                    nextCursor = undefined;
+                    nextCursor = response.data.cursor;
                     break;
             }
 
             setFeed(prev => currentCursor ? [...prev, ...newItems] : newItems);
             setCursor(nextCursor);
             setHasMore(!!nextCursor && newItems.length > 0);
-             if (tab === 'feeds') setHasMore(false);
 
         } catch (err) {
             console.error(`Failed to fetch ${tab}:`, err);
