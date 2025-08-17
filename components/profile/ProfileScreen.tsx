@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -172,100 +171,69 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     };
     
     const fetchFeedData = useCallback(async (tab: ProfileTab, currentCursor?: string) => {
-        // Initial load
-        if (!currentCursor) {
+        const isInitial = !currentCursor;
+        if (isInitial) {
             setIsLoadingFeed(true);
             setFeed([]);
-            setCursor(undefined);
             setHasMore(true);
+        } else if (isLoadingMore || !hasMore) {
+            return;
+        } else {
+            setIsLoadingMore(true);
+        }
 
-            try {
-                let initialItems: any[] = [];
-                let nextCursor: string | undefined;
-
-                if (tab === 'posts' || tab === 'reposts') {
-                    // For filtered feeds, we might need to fetch a few pages to get enough content to show initially
+        try {
+            let newItems: (AppBskyFeedDefs.FeedViewPost | AppBskyFeedDefs.GeneratorView)[] = [];
+            let nextCursor: string | undefined;
+            
+            if (tab === 'posts' || tab === 'reposts') {
+                // For posts and reposts, we need to fetch the author feed and then filter
+                const res = await agent.getAuthorFeed({ actor, cursor: currentCursor, limit: 30 });
+                nextCursor = res.data.cursor;
+                newItems = res.data.feed.filter(item => {
+                    if (tab === 'posts') return !item.reason && !!item.post.embed; // Original posts with media
+                    return AppBskyFeedDefs.isReasonRepost(item.reason); // Reposts
+                });
+                
+                // If this is the initial load for a filtered view and we got nothing, try fetching more pages
+                if (isInitial && newItems.length === 0 && nextCursor) {
                     let attempts = 0;
-                    const MIN_ITEMS = 15;
-                    let tempCursor: string | undefined;
-                    
-                    while (initialItems.length < MIN_ITEMS && attempts < 5) {
+                    let tempCursor = nextCursor;
+                    while (newItems.length < 5 && attempts < 4 && tempCursor) {
                         attempts++;
-                        const res = await agent.getAuthorFeed({ actor, cursor: tempCursor, limit: 50 });
-                        
-                        if (!res.data.feed.length) {
-                            tempCursor = undefined;
-                            break;
-                        }
-
-                        const filtered = res.data.feed.filter(item => {
-                            if (tab === 'posts') return !item.reason && !!item.post.embed;
-                            return AppBskyFeedDefs.isReasonRepost(item.reason);
+                        const nextRes = await agent.getAuthorFeed({ actor, cursor: tempCursor, limit: 30 });
+                        const filtered = nextRes.data.feed.filter(item => {
+                             if (tab === 'posts') return !item.reason && !!item.post.embed;
+                             return AppBskyFeedDefs.isReasonRepost(item.reason);
                         });
-                        
-                        initialItems.push(...filtered);
-                        tempCursor = res.data.cursor;
-                        if (!tempCursor) break;
+                        newItems.push(...filtered);
+                        tempCursor = nextRes.data.cursor;
                     }
                     nextCursor = tempCursor;
-
-                } else if (tab === 'likes') {
-                    const res = await agent.app.bsky.feed.getActorLikes({ actor, limit: 30 });
-                    initialItems = res.data.feed;
-                    nextCursor = res.data.cursor;
-                } else { // 'feeds'
-                    const res = await agent.app.bsky.feed.getActorFeeds({ actor, limit: 30 });
-                    initialItems = res.data.feeds;
-                    nextCursor = res.data.cursor;
                 }
-                
-                setFeed(initialItems);
-                setCursor(nextCursor);
-                setHasMore(!!nextCursor);
 
-            } catch (err) {
-                console.error(`Failed to fetch initial ${tab}:`, err);
-                setError(`Could not load ${tab}.`);
-            } finally {
-                setIsLoadingFeed(false);
+            } else if (tab === 'likes') {
+                const res = await agent.app.bsky.feed.getActorLikes({ actor, cursor: currentCursor, limit: 30 });
+                newItems = res.data.feed;
+                nextCursor = res.data.cursor;
+            } else { // 'feeds'
+                const res = await agent.app.bsky.feed.getActorFeeds({ actor, cursor: currentCursor, limit: 30 });
+                newItems = res.data.feeds;
+                nextCursor = res.data.cursor;
             }
-
-        } else { // Load More
-            if (isLoadingMore || !hasMore) return;
-            setIsLoadingMore(true);
             
-            try {
-                let newItems: any[] = [];
-                let nextCursor: string | undefined;
-                
-                 if (tab === 'posts' || tab === 'reposts') {
-                    const res = await agent.getAuthorFeed({ actor, cursor: currentCursor, limit: 30 });
-                    nextCursor = res.data.cursor;
-                    newItems = res.data.feed.filter(item => {
-                        if (tab === 'posts') return !item.reason && !!item.post.embed;
-                        return AppBskyFeedDefs.isReasonRepost(item.reason);
-                    });
-                 } else if (tab === 'likes') {
-                    const res = await agent.app.bsky.feed.getActorLikes({ actor, cursor: currentCursor, limit: 30 });
-                    newItems = res.data.feed;
-                    nextCursor = res.data.cursor;
-                 } else { // 'feeds'
-                    const res = await agent.app.bsky.feed.getActorFeeds({ actor, cursor: currentCursor, limit: 30 });
-                    newItems = res.data.feeds;
-                    nextCursor = res.data.cursor;
-                 }
-                
-                 setFeed(prev => [...prev, ...newItems]);
-                 setCursor(nextCursor);
-                 setHasMore(!!nextCursor);
-
-            } catch (err) {
-                 console.error(`Failed to load more ${tab}:`, err);
-            } finally {
-                setIsLoadingMore(false);
-            }
+            setFeed(prev => isInitial ? newItems : [...prev, ...newItems]);
+            setCursor(nextCursor);
+            setHasMore(!!nextCursor);
+        } catch (err) {
+            console.error(`Failed to fetch ${tab}:`, err);
+            setError(`Could not load ${tab}.`);
+        } finally {
+            setIsLoadingFeed(false);
+            setIsLoadingMore(false);
         }
-    }, [agent, actor, hasMore, isLoadingMore]);
+    }, [agent, actor, isLoadingMore, hasMore]);
+
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -292,10 +260,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         if (profile && !profile.viewer?.blocking && !profile.viewer?.blockedBy) {
             fetchFeedData(activeTab);
         } else if(profile) {
-            // If user is blocked, don't attempt to fetch feed
             setIsLoadingFeed(false);
         }
-    }, [profile, activeTab, fetchFeedData]);
+    }, [profile, activeTab]);
     
     useEffect(() => {
         if (profile?.description) {
@@ -328,7 +295,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
-            if (entries[0].isIntersecting && hasMore && !isLoadingFeed && !isLoadingMore) {
+            if (entries[0].isIntersecting) {
               loadMore();
             }
           },
@@ -339,7 +306,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [hasMore, isLoadingFeed, isLoadingMore, loadMore]);
+    }, [loadMore]);
     
     const handleTabChange = (tab: ProfileTab) => {
         if (tab !== activeTab) {
@@ -483,7 +450,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             );
         }
 
-        // List view for Reposts and Likes
         return (
             <div className="flow-root">
                 <ul className="-my-px">
