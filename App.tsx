@@ -81,17 +81,18 @@ const Main: React.FC = () => {
         return <HomeScreen />;
     }
   };
+  
+  const mainContentClasses = isPostScreen
+    ? 'w-full max-w-3xl transition-all duration-300 pb-8'
+    : `w-full max-w-3xl px-4 pt-20 transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
       <BottomNavbar isHidden={isPostScreen} />
-      <Navbar />
+      {!isPostScreen && <Navbar />}
       <div className="md:pl-20 w-full flex justify-center">
-        <main className={`w-full max-w-3xl px-4 pt-20 transition-all duration-300 ${
-          isPostScreen 
-            ? 'pb-8' 
-            : (session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8')
-        }`}>
+        <main className={mainContentClasses}>
           {renderContent()}
         </main>
       </div>
