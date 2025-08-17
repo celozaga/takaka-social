@@ -68,7 +68,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
             } else if (searchFilter === 'feeds') {
-                const response = await (agent.app.bsky.feed as any).searchFeedGenerators({ q: searchQuery, limit: 25, cursor: currentCursor });
+                const response = await agent.app.bsky.feed.searchFeedGenerators({ q: searchQuery, limit: 25, cursor: currentCursor });
                 setResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
