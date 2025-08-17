@@ -1,38 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri } from '@atproto/api';
+import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, LayoutGrid, Repeat, Heart, List } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import ProfileHeader from './ProfileHeader';
-import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
-import { useSavedFeeds } from '../../hooks/useSavedFeeds';
-import FullPostCard from '../post/FullPostCard';
-
-type ProfileTab = 'posts' | 'reposts' | 'likes' | 'feeds';
-
-const TABS: { id: ProfileTab; icon: React.FC<any>, label: string }[] = [
-    { id: 'posts', icon: LayoutGrid, label: 'Posts' },
-    { id: 'reposts', icon: Repeat, label: 'Reposts' },
-    { id: 'likes', icon: Heart, label: 'Likes' },
-    { id: 'feeds', icon: List, label: 'Feeds' },
-];
-
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { setCustomFeedHeaderVisible, openComposer } = useUI();
-    const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
-    const [feed, setFeed] = useState<(AppBskyFeedDefs.FeedViewPost | AppBskyFeedDefs.GeneratorView)[]>([]);
+    const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isLoadingFeed, setIsLoadingFeed] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -40,7 +25,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
-    const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
 
     const loaderRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -170,99 +154,75 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     };
     
-    const fetchFeedData = useCallback(async (tab: ProfileTab, currentCursor?: string) => {
-        const isInitial = !currentCursor;
-        if (isInitial) {
-            setIsLoadingFeed(true);
+    const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
+        return posts.filter(item => {
+            // Only show original posts with media
+            if (item.reason) return false;
+
+            const embed = item.post.embed;
+            if (!embed) return false;
+            
+            if (AppBskyEmbedImages.isView(embed)) return true;
+            if (AppBskyEmbedVideo.isView(embed)) return true;
+
+            if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                const media = embed.media;
+                if (AppBskyEmbedImages.isView(media)) return true;
+                if (AppBskyEmbedVideo.isView(media)) return true;
+            }
+            return false;
+        });
+    };
+
+    const fetchProfileAndFeed = useCallback(async (currentCursor?: string) => {
+        if (!currentCursor) {
+            setIsLoading(true);
             setFeed([]);
             setHasMore(true);
-        } else if (isLoadingMore || !hasMore) {
-            return;
         } else {
             setIsLoadingMore(true);
         }
+        setError(null);
 
         try {
-            let newItems: (AppBskyFeedDefs.FeedViewPost | AppBskyFeedDefs.GeneratorView)[] = [];
-            let nextCursor: string | undefined;
-            
-            if (tab === 'posts' || tab === 'reposts') {
-                // For posts and reposts, we need to fetch the author feed and then filter
-                const res = await agent.getAuthorFeed({ actor, cursor: currentCursor, limit: 30 });
-                nextCursor = res.data.cursor;
-                newItems = res.data.feed.filter(item => {
-                    if (tab === 'posts') return !item.reason && !!item.post.embed; // Original posts with media
-                    return AppBskyFeedDefs.isReasonRepost(item.reason); // Reposts
-                });
-                
-                // If this is the initial load for a filtered view and we got nothing, try fetching more pages
-                if (isInitial && newItems.length === 0 && nextCursor) {
-                    let attempts = 0;
-                    let tempCursor = nextCursor;
-                    while (newItems.length < 5 && attempts < 4 && tempCursor) {
-                        attempts++;
-                        const nextRes = await agent.getAuthorFeed({ actor, cursor: tempCursor, limit: 30 });
-                        const filtered = nextRes.data.feed.filter(item => {
-                             if (tab === 'posts') return !item.reason && !!item.post.embed;
-                             return AppBskyFeedDefs.isReasonRepost(item.reason);
-                        });
-                        newItems.push(...filtered);
-                        tempCursor = nextRes.data.cursor;
-                    }
-                    nextCursor = tempCursor;
+            if (!currentCursor) {
+                 const profileRes = await agent.getProfile({ actor });
+                 setProfile(profileRes.data);
+                 setViewerState(profileRes.data.viewer);
+                 if (profileRes.data.viewer?.blocking || profileRes.data.viewer?.blockedBy) {
+                    setHasMore(false);
+                    setIsLoading(false);
+                    return;
                 }
-
-            } else if (tab === 'likes') {
-                const res = await agent.app.bsky.feed.getActorLikes({ actor, cursor: currentCursor, limit: 30 });
-                newItems = res.data.feed;
-                nextCursor = res.data.cursor;
-            } else { // 'feeds'
-                const res = await agent.app.bsky.feed.getActorFeeds({ actor, cursor: currentCursor, limit: 30 });
-                newItems = res.data.feeds;
-                nextCursor = res.data.cursor;
             }
+
+            const feedRes = await agent.getAuthorFeed({ actor, cursor: currentCursor, limit: 30 });
             
-            setFeed(prev => isInitial ? newItems : [...prev, ...newItems]);
-            setCursor(nextCursor);
-            setHasMore(!!nextCursor);
-        } catch (err) {
-            console.error(`Failed to fetch ${tab}:`, err);
-            setError(`Could not load ${tab}.`);
+            const mediaPosts = filterMediaPosts(feedRes.data.feed);
+            
+            setFeed(prev => [...prev, ...mediaPosts]);
+            
+            if (feedRes.data.cursor && feedRes.data.feed.length > 0) {
+                setCursor(feedRes.data.cursor);
+            } else {
+                setHasMore(false);
+            }
+        } catch (err: any) {
+             console.error("Failed to fetch profile data:", err);
+            if (err.error === 'BlockedByActor') {
+                setError("You are blocked by this user.");
+            } else {
+                setError(err.message || "Could not load profile.");
+            }
         } finally {
-            setIsLoadingFeed(false);
+            setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent, actor, isLoadingMore, hasMore]);
-
-
-    useEffect(() => {
-        const fetchProfile = async () => {
-            setIsLoading(true);
-            try {
-                const profileRes = await agent.getProfile({ actor });
-                setProfile(profileRes.data);
-                setViewerState(profileRes.data.viewer);
-            } catch (err: any) {
-                console.error("Failed to fetch profile data:", err);
-                if (err.error === 'BlockedByActor') {
-                    setError("You are blocked by this user.");
-                } else {
-                    setError(err.message || "Could not load profile.");
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchProfile();
     }, [agent, actor]);
 
     useEffect(() => {
-        if (profile && !profile.viewer?.blocking && !profile.viewer?.blockedBy) {
-            fetchFeedData(activeTab);
-        } else if(profile) {
-            setIsLoadingFeed(false);
-        }
-    }, [profile, activeTab]);
+        fetchProfileAndFeed();
+    }, [fetchProfileAndFeed]);
     
     useEffect(() => {
         if (profile?.description) {
@@ -277,10 +237,10 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [profile?.description, agent]);
 
-
-    const loadMore = useCallback(() => {
-        fetchFeedData(activeTab, cursor);
-    }, [activeTab, cursor, fetchFeedData]);
+    const loadMorePosts = useCallback(() => {
+        if (isLoadingMore || !cursor || !hasMore) return;
+        fetchProfileAndFeed(cursor);
+    }, [isLoadingMore, cursor, hasMore, fetchProfileAndFeed]);
     
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -296,7 +256,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         const observer = new IntersectionObserver(
           (entries) => {
             if (entries[0].isIntersecting) {
-              loadMore();
+              loadMorePosts();
             }
           },
           { rootMargin: '400px' }
@@ -306,25 +266,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [loadMore]);
-    
-    const handleTabChange = (tab: ProfileTab) => {
-        if (tab !== activeTab) {
-            setActiveTab(tab);
-        }
-    };
-    
-    const handlePinToggle = (feedGenerator: AppBskyFeedDefs.GeneratorView) => {
-        const isPinned = pinnedUris.has(feedGenerator.uri);
-        if (isPinned) {
-            togglePin(feedGenerator.uri);
-        } else {
-            addFeed(feedGenerator, true);
-        }
-    };
+    }, [loadMorePosts]);
 
-
-    if (isLoading) {
+    if (isLoading && !profile) {
         return (
             <div>
                 <div className="sticky top-0 -mx-4 -mt-4 px-4 bg-surface-1 z-30 h-16 animate-pulse"></div>
@@ -396,77 +340,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         </div>
     );
     
-    const renderFeedContent = () => {
-        if (isLoadingFeed) {
-             const skeleton = activeTab === 'posts' 
-                ? (
-                    <div className="columns-2 gap-4 mt-4">
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-24 animate-pulse"></div>)}
-                    </div>
-                );
-            return skeleton;
-        }
-        
-        if (feed.length === 0) {
-            return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No content found in this tab.</div>;
-        }
-
-        if (activeTab === 'feeds') {
-            return (
-                <div className="space-y-3">
-                    {(feed as AppBskyFeedDefs.GeneratorView[]).map(f => (
-                        <FeedSearchResultCard
-                            key={f.uri}
-                            feed={f}
-                            isPinned={pinnedUris.has(f.uri)}
-                            onTogglePin={() => handlePinToggle(f)}
-                        />
-                    ))}
-                </div>
-            )
-        }
-        
-        const feedViewPosts = feed.filter(item => AppBskyFeedDefs.isFeedViewPost(item)) as AppBskyFeedDefs.FeedViewPost[];
-
-        if (activeTab === 'posts') {
-            return (
-                <div className="columns-2 gap-4">
-                    {feedViewPosts.map((feedViewPost) => {
-                        const { post, reason } = feedViewPost;
-                        const uniqueKey = `${post.cid}-${AppBskyFeedDefs.isReasonRepost(reason) ? reason.by.did : ''}`;
-                        return (
-                            <div key={uniqueKey} className="break-inside-avoid mb-4">
-                                <PostCard feedViewPost={feedViewPost} />
-                            </div>
-                        );
-                    })}
-                </div>
-            );
-        }
-
-        return (
-            <div className="flow-root">
-                <ul className="-my-px">
-                {feedViewPosts.map((feedViewPost) => {
-                    const { post, reason } = feedViewPost;
-                    const uniqueKey = `${post.cid}-${AppBskyFeedDefs.isReasonRepost(reason) ? reason.by.did : ''}`;
-                    return <FullPostCard key={uniqueKey} feedViewPost={feedViewPost} />;
-                })}
-                </ul>
-            </div>
-        );
-    }
-    
     return (
         <div>
             <ProfileHeader handle={profile.handle} />
-
             <div className="p-4 bg-surface-2 rounded-xl mt-4">
                 <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
@@ -504,19 +380,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     </div>
                 )}
             </div>
-            
-            <div className="flex justify-around items-center mt-4">
-                {TABS.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => handleTabChange(tab.id)}
-                        className={`py-3 flex-1 flex justify-center items-center transition-colors border-b-2 ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
-                        aria-label={tab.label}
-                    >
-                        <tab.icon size={24} />
-                    </button>
-                ))}
-            </div>
 
             <div className="mt-4">
                 {viewerState?.blocking ? (
@@ -529,11 +392,34 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     </div>
                 ) : (
                     <>
-                        {renderFeedContent()}
+                         {isLoading && feed.length === 0 ? (
+                            <div className="columns-2 gap-4">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="break-inside-avoid mb-4">
+                                        <PostCardSkeleton />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : feed.length === 0 && !isLoadingMore ? (
+                             <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
+                        ) : (
+                            <div className="columns-2 gap-4">
+                                {feed.map((feedViewPost) => {
+                                    const { post, reason } = feedViewPost;
+                                    const uniqueKey = `${post.cid}-${AppBskyFeedDefs.isReasonRepost(reason) ? reason.by.did : ''}`;
+                                    return (
+                                        <div key={uniqueKey} className="break-inside-avoid mb-4">
+                                            <PostCard feedViewPost={feedViewPost} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                         <div ref={loaderRef} className="h-10">
                             {isLoadingMore && (
-                                <div className="space-y-4">
-                                     <div className="bg-surface-2 rounded-xl h-24 animate-pulse"></div>
+                                <div className="columns-2 gap-4 mt-4">
+                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
                                 </div>
                             )}
                         </div>
