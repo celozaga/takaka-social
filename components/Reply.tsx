@@ -1,12 +1,9 @@
 
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
-import { useUI } from '../context/UIContext';
-import { usePostActions } from '../hooks/usePostActions';
-import { Heart, Repeat } from 'lucide-react';
 import RichTextRenderer from './RichTextRenderer';
+import PostActions from './PostActions';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -16,13 +13,10 @@ interface ReplyProps {
 const REPLIES_PER_PAGE = 10;
 
 const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
-  const { openComposer } = useUI();
   const { post, replies } = reply;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
   
-  const { likeUri, handleLike, repostUri, handleRepost } = usePostActions(post);
-
   const allSubReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
   const hasSubReplies = allSubReplies.length > 0;
 
@@ -101,24 +95,13 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
                 <RichTextRenderer record={record} />
             </div>
         </a>
-        <div className="mt-2 flex items-center gap-4 text-on-surface-variant text-sm">
-           <button onClick={handleRepost} className={`flex items-center gap-1 transition-colors ${repostUri ? 'text-primary' : 'hover:text-primary'}`}>
-             <Repeat size={16} />
-           </button>
-           <button onClick={handleLike} className={`flex items-center gap-1 transition-colors ${likeUri ? 'text-pink-500' : 'hover:text-pink-500'}`}>
-             <Heart size={16} fill={likeUri ? 'currentColor' : 'none'} />
-           </button>
-           <button 
-                onClick={() => openComposer({ uri: post.uri, cid: post.cid })}
-                className="font-semibold hover:underline"
-            >
-                Reply
-            </button>
+        <div className="mt-2">
+            <PostActions post={post} />
         </div>
 
         {hasSubReplies && !isExpanded && (
             <button onClick={() => setIsExpanded(true)} className="text-sm font-semibold text-on-surface-variant hover:underline mt-2">
-                View {allSubReplies.length} replies
+                View {allSubReplies.length} {allSubReplies.length === 1 ? 'reply' : 'replies'}
             </button>
         )}
         
