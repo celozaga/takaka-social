@@ -91,7 +91,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
     return (
         <li className="py-2">
-            <a href={postLink} className="block p-4 bg-surface-2 hover:bg-surface-3 rounded-xl transition-colors">
+            <a href={postLink} className="block p-4 bg-surface-3 hover:bg-surface-3/80 rounded-xl transition-colors">
                 {renderContext()}
                 <div className="flex items-start gap-3">
                     <a href={`#/profile/${author.handle}`} className="flex-shrink-0" onClick={e => e.stopPropagation()}>
