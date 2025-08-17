@@ -5,10 +5,8 @@ import { useUI } from '../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
 import PostActions from './PostActions';
-import { ArrowLeft, MoreHorizontal, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Repeat, Heart, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
-import PostScreenActionBar from './PostScreenActionBar';
-import { usePostActions } from '../hooks/usePostActions';
 
 interface PostScreenProps {
   did: string;
@@ -122,36 +120,49 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
 
   return (
     <div>
-      <header className="fixed top-0 left-0 right-0 md:left-20 bg-surface-1/95 backdrop-blur-md z-40">
-        <div className="container mx-auto max-w-3xl px-4 h-16 flex items-center justify-between gap-4">
+      <header className="sticky top-16 md:top-0 bg-surface-1/95 backdrop-blur-md z-40 border-b border-surface-3 -mt-20 pt-20">
+        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
             <a href="#" onClick={() => window.history.back()} className="flex items-center gap-2 text-on-surface p-2 -ml-2 rounded-full hover:bg-surface-3">
                 <ArrowLeft size={20} />
             </a>
             <a href={`#/profile/${author.handle}`} className="flex items-center gap-3 truncate">
-                <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
-                <p className="font-bold truncate">{author.displayName}</p>
+                <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
+                <div>
+                  <p className="font-bold truncate leading-tight">{author.displayName}</p>
+                  <p className="text-on-surface-variant text-sm leading-tight">@{author.handle}</p>
+                </div>
             </a>
-            <div className="w-8"></div>
         </div>
       </header>
       
-      <div className="pt-16">
-        <div className="p-4">
+      <div>
+        <div className="p-4 border-b border-surface-3">
+             {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap text-lg">{record.text}</p>}
              {renderMedia(mainPost)}
-             {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap">{record.text}</p>}
              <p className="text-sm text-on-surface-variant my-3">{format(new Date(record.createdAt), "h:mm a · MMM d, yyyy")}</p>
         </div>
         
-        <div className="px-4 py-2 border-y border-surface-3 hidden md:block">
-            <PostActions post={mainPost} />
+        <div className="px-4 py-3 border-b border-surface-3 flex items-center gap-6">
+            <div className="flex items-center gap-2 text-on-surface-variant">
+                <MessageSquare size={18} />
+                <strong className="text-on-surface">{mainPost.replyCount || 0}</strong>
+            </div>
+            <div className="flex items-center gap-2 text-on-surface-variant">
+                <Repeat size={18} />
+                <strong className="text-on-surface">{mainPost.repostCount || 0}</strong>
+            </div>
+            <div className="flex items-center gap-2 text-on-surface-variant">
+                <Heart size={18} />
+                <strong className="text-on-surface">{mainPost.likeCount || 0}</strong>
+            </div>
         </div>
         
         {session && currentUserProfile && (
-            <div className="px-4 py-3 border-b border-surface-3 hidden md:flex items-center gap-3">
+            <div className="px-4 py-3 border-b border-surface-3 flex items-center gap-3">
                 <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" />
                 <button
                 onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })}
-                className="flex-1 bg-surface-2 text-on-surface-variant text-left text-sm px-4 py-2.5 rounded-full hover:bg-surface-3 transition-colors"
+                className="flex-1 bg-surface-2 text-on-surface-variant text-left px-4 py-2.5 rounded-full hover:bg-surface-3 transition-colors"
                 >
                 Write your reply...
                 </button>
@@ -159,13 +170,11 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         )}
         
         {allReplies.length > 0 && (
-            <div className="mt-4 px-4 space-y-4">
+            <div>
               <Reply reply={thread} isRoot={true} />
             </div>
         )}
       </div>
-      
-      <PostScreenActionBar post={mainPost} />
     </div>
   );
 };

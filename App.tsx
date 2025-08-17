@@ -86,13 +86,15 @@ const Main: React.FC = () => {
     <div className="min-h-screen bg-surface-1 text-on-surface">
       <BottomNavbar isHidden={isPostScreen} />
       <Navbar />
-      <main className={`container mx-auto px-4 pt-20 transition-all duration-300 md:ml-20 md:max-w-4xl lg:max-w-5xl ${
-        isPostScreen 
-          ? 'pb-8' 
-          : (session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8')
-      }`}>
-        {renderContent()}
-      </main>
+      <div className="md:pl-20 w-full flex justify-center">
+        <main className={`w-full max-w-3xl px-4 pt-20 transition-all duration-300 ${
+          isPostScreen 
+            ? 'pb-8' 
+            : (session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8')
+        }`}>
+          {renderContent()}
+        </main>
+      </div>
       
       {!session && !isPostScreen && <LoginPrompt />}
 

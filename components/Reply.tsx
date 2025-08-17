@@ -2,8 +2,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
-import PostActions from './PostActions';
 import { useUI } from '../context/UIContext';
+import { usePostActions } from '../hooks/usePostActions';
+import { Heart, Repeat } from 'lucide-react';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -17,6 +18,8 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const { post, replies } = reply;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
+  
+  const { likeUri, handleLike, repostUri, handleRepost } = usePostActions(post);
 
   const allSubReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
   const hasSubReplies = allSubReplies.length > 0;
@@ -68,39 +71,42 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   if (isRoot) {
     // Special case for the root of the thread to just render the replies
     return (
-      <div className="space-y-4">
+      <div className="divide-y divide-surface-3">
         {allSubReplies.map(r => <Reply key={r.post.cid} reply={r} />)}
       </div>
     )
   }
 
   return (
-    <div className="relative flex gap-3">
+    <div className="relative flex gap-3 p-4">
       <div className="flex flex-col items-center flex-shrink-0">
         <a href={`#/profile/${author.handle}`} className="block">
-          <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
+          <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
         </a>
         {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow bg-outline/20 mt-2"></div>}
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between">
-            <div>
-                <a href={`#/profile/${author.handle}`} className="font-bold hover:underline leading-tight text-sm">
-                    {author.displayName || `@${author.handle}`}
-                </a>
-                <span className="text-on-surface-variant text-sm ml-2">{timeAgo}</span>
-            </div>
+        <div className="flex items-center gap-2">
+            <a href={`#/profile/${author.handle}`} className="font-bold hover:underline leading-tight text-sm">
+                {author.displayName || `@${author.handle}`}
+            </a>
+            <span className="text-on-surface-variant text-sm">{timeAgo}</span>
         </div>
         
         <a href={`#/post/${post.author.did}/${post.uri.split('/').pop()}`} className="block">
             <p className="text-on-surface whitespace-pre-wrap mt-0.5 text-sm break-words">{record.text}</p>
         </a>
-        <div className="mt-2 flex items-center justify-between">
-            <PostActions post={post} />
-            <button 
+        <div className="mt-2 flex items-center gap-4 text-on-surface-variant text-sm">
+           <button onClick={handleRepost} className={`flex items-center gap-1 transition-colors ${repostUri ? 'text-primary' : 'hover:text-primary'}`}>
+             <Repeat size={16} />
+           </button>
+           <button onClick={handleLike} className={`flex items-center gap-1 transition-colors ${likeUri ? 'text-pink-500' : 'hover:text-pink-500'}`}>
+             <Heart size={16} fill={likeUri ? 'currentColor' : 'none'} />
+           </button>
+           <button 
                 onClick={() => openComposer({ uri: post.uri, cid: post.cid })}
-                className="text-xs font-semibold text-on-surface-variant hover:underline"
+                className="font-semibold hover:underline"
             >
                 Reply
             </button>
