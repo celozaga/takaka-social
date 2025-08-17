@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { RichText, AppBskyActorDefs, AtUri } from '@atproto/api';
-import { ImageUp, Send, X, Video, Film } from 'lucide-react';
+import { ImageUp, Send, X, Video, Globe } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 
 interface ComposerProps {
@@ -22,6 +22,19 @@ interface MediaFile {
 
 const MAX_CHARS = 300;
 const MAX_IMAGES = 4;
+const MAX_LANGS = 3;
+
+// A list of common languages for the selector
+const LANGUAGES = [
+    { code: 'en', name: 'English' }, { code: 'es', name: 'Español' }, { code: 'pt', name: 'Português' },
+    { code: 'fr', name: 'Français' }, { code: 'de', name: 'Deutsch' }, { code: 'it', name: 'Italiano' },
+    { code: 'ja', name: '日本語' }, { code: 'ko', name: '한국어' }, { code: 'zh', name: '中文' },
+    { code: 'ru', name: 'Русский' }, { code: 'ar', name: 'العربية' }, { code: 'hi', name: 'हिन्दी' },
+    { code: 'nl', name: 'Nederlands' }, { code: 'sv', name: 'Svenska' }, { code: 'fi', name: 'Suomi' },
+    { code: 'da', name: 'Dansk' }, { code: 'no', name: 'Norsk' }, { code: 'pl', name: 'Polski' },
+    { code: 'tr', name: 'Türkçe' }, { code: 'uk', name: 'Українська' },
+];
+
 
 // Helper to generate a video thumbnail
 const generateVideoThumbnail = (videoFile: File): Promise<Blob> => {
@@ -59,6 +72,11 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
   const [isPosting, setIsPosting] = useState(false);
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [langSearchTerm, setLangSearchTerm] = useState('');
+  const langMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (session?.did) {
@@ -135,8 +153,11 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
         createdAt: new Date().toISOString(),
       };
       
+      if (selectedLangs.length > 0) {
+        postRecord.langs = selectedLangs;
+      }
+      
       if (replyTo) {
-          const parentUri = new AtUri(replyTo.uri);
           postRecord.reply = {
               root: replyTo,
               parent: replyTo
@@ -178,6 +199,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
       toast({ title: replyTo ? "Reply sent!" : "Post published successfully!" });
       setText('');
       setMediaFiles([]);
+      setSelectedLangs([]);
       onPostSuccess();
     } catch (error) {
       console.error('Failed to post:', error);
@@ -187,6 +209,29 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
     }
   };
 
+  const handleLangSelect = (code: string) => {
+    setSelectedLangs(prev => {
+        if (prev.includes(code)) {
+            return prev.filter(lang => lang !== code);
+        }
+        if (prev.length < MAX_LANGS) {
+            return [...prev, code];
+        }
+        return prev;
+    });
+  }
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+            setIsLangMenuOpen(false);
+        }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredLangs = LANGUAGES.filter(lang => lang.name.toLowerCase().includes(langSearchTerm.toLowerCase()));
   const remainingChars = MAX_CHARS - text.length;
   const hasVideoOrGif = mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif');
 
@@ -243,6 +288,46 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
             >
                 <Video className="w-6 h-6"/>
             </button>
+            <div className="relative" ref={langMenuRef}>
+                 <button 
+                    onClick={() => setIsLangMenuOpen(prev => !prev)} 
+                    className="text-primary hover:text-primary/90 transition-colors p-2 rounded-full hover:bg-primary/20"
+                    aria-label="Select languages"
+                >
+                    <Globe className="w-6 h-6"/>
+                </button>
+                {isLangMenuOpen && (
+                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface-3 rounded-lg shadow-lg z-20 border border-outline">
+                         <input
+                            type="text"
+                            placeholder="Search languages..."
+                            value={langSearchTerm}
+                            onChange={(e) => setLangSearchTerm(e.target.value)}
+                            className="w-full px-3 py-2 bg-surface-2 border-b border-outline outline-none rounded-t-lg"
+                        />
+                        <ul className="max-h-60 overflow-y-auto">
+                            {filteredLangs.map(lang => (
+                                <li key={lang.code}>
+                                    <button
+                                        onClick={() => handleLangSelect(lang.code)}
+                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-2 ${selectedLangs.includes(lang.code) ? 'bg-primary-container text-on-primary-container' : 'text-on-surface'}`}
+                                        disabled={!selectedLangs.includes(lang.code) && selectedLangs.length >= MAX_LANGS}
+                                    >
+                                        {lang.name}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+            <div className="flex items-center gap-1">
+                {selectedLangs.map(lang => (
+                    <span key={lang} className="text-xs font-semibold bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full">
+                        {lang.toUpperCase()}
+                    </span>
+                ))}
+            </div>
             <input 
                 type="file" 
                 ref={fileInputRef} 
