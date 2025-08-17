@@ -183,6 +183,7 @@ export const useSavedFeeds = () => {
 
     return {
         isLoading,
+        preferences,
         allUris,
         pinnedUris,
         feedViews,
@@ -191,5 +192,6 @@ export const useSavedFeeds = () => {
         removeFeed,
         addFeed,
         reorder,
+        savePreferences,
     };
 };
