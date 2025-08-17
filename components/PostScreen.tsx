@@ -6,7 +6,7 @@ import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBsk
 import Reply from './Reply';
 import PostActions from './PostActions';
 import PostStats from './PostStats';
-import { ArrowLeft, MoreHorizontal, ExternalLink, PlayCircle } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface PostScreenProps {
@@ -163,24 +163,32 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             <a href="#" onClick={() => window.history.back()} className="flex items-center gap-2 text-on-surface p-2 -ml-2 rounded-full hover:bg-surface-3">
                 <ArrowLeft size={20} />
             </a>
-            <a href={`#/profile/${author.handle}`} className="flex items-center gap-2 truncate">
-                <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
-                <span className="font-bold text-sm truncate">{author.displayName || author.handle}</span>
-            </a>
-            <div className="flex items-center gap-2">
-                 <button className="p-2 rounded-full hover:bg-surface-3"><MoreHorizontal size={20}/></button>
-            </div>
+            <span className="font-bold text-lg">Post</span>
+            <div className="w-8"></div>
         </div>
       </header>
       
       <div className="pt-16">
         <div className="p-4">
-             {renderMedia(mainPost)}
+             <div className="flex items-center justify-between gap-4 mb-3">
+                 <a href={`#/profile/${author.handle}`} className="flex items-center gap-3">
+                    <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
+                    <div>
+                        <p className="font-bold">{author.displayName}</p>
+                        <p className="text-sm text-on-surface-variant">@{author.handle}</p>
+                    </div>
+                </a>
+                <button className="p-2 rounded-full hover:bg-surface-3"><MoreHorizontal size={20}/></button>
+            </div>
              {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap">{record.text}</p>}
+             {renderMedia(mainPost)}
              <p className="text-sm text-on-surface-variant my-3">{format(new Date(record.createdAt), "h:mm a · MMM d, yyyy")}</p>
-             <div className="border-t border-surface-3 pt-3">
-                <PostStats post={mainPost} />
-             </div>
+             
+             {(mainPost.likeCount > 0 || mainPost.repostCount > 0) && (
+                <div className="border-t border-surface-3 pt-3">
+                    <PostStats post={mainPost} />
+                </div>
+             )}
         </div>
         
         <div className="px-4 py-2 border-y border-surface-3">
@@ -190,7 +198,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         {session && currentUserProfile && (
              <div className="flex items-center gap-3 p-4 border-b border-surface-3">
                 <img src={currentUserProfile.avatar} alt="My avatar" className="w-8 h-8 rounded-full bg-surface-3"/>
-                <button onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })} className="text-on-surface-variant text-left flex-1">
+                <button onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })} className="text-on-surface-variant text-left flex-1 hover:text-on-surface">
                     Write your reply...
                 </button>
              </div>

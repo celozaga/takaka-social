@@ -86,7 +86,7 @@ const Main: React.FC = () => {
     <div className="min-h-screen bg-surface-1 text-on-surface">
       <BottomNavbar isHidden={isPostScreen} />
       <Navbar />
-      <main className={`container mx-auto px-4 pt-20 transition-all duration-300 md:ml-20 md:max-w-5xl lg:max-w-6xl ${
+      <main className={`container mx-auto px-4 pt-20 transition-all duration-300 md:ml-20 md:max-w-4xl lg:max-w-5xl ${
         isPostScreen 
           ? 'pb-8' 
           : (session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8')

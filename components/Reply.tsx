@@ -3,7 +3,6 @@ import React from 'react';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import PostActions from './PostActions';
-import { useUI } from '../context/UIContext';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -13,7 +12,6 @@ const Reply: React.FC<ReplyProps> = ({ reply }) => {
   const { post, replies } = reply;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
-  const { openComposer } = useUI();
 
   const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
   const nestedReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
