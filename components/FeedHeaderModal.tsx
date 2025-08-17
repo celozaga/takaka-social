@@ -62,7 +62,7 @@ const FeedHeaderModal: React.FC = () => {
                         <p className="mt-3 text-on-surface text-base">{feedView.description}</p>
                     )}
                 </div>
-                <div className="p-4 grid grid-cols-2 gap-2 border-t border-surface-3">
+                <div className="p-4 grid grid-cols-2 gap-2">
                     <ActionButton
                         icon={Heart}
                         text={likeUri ? "Unlike" : "Like"}
@@ -88,7 +88,7 @@ const FeedHeaderModal: React.FC = () => {
     }
 
     return (
-        <div className="bg-surface-2 rounded-xl border border-surface-3 shadow-2xl">
+        <div className="bg-surface-2 rounded-xl">
             {renderContent()}
         </div>
     );

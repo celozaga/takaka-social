@@ -30,7 +30,7 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
   };
 
   return (
-    <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2 border-b border-surface-3">
+    <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
       <button 
         onClick={handleFollowingClick}
         className={`${baseClasses} ${selectedFeed === 'following' ? activeClasses : inactiveClasses}`}

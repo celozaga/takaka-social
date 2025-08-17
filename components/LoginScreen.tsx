@@ -29,7 +29,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="w-full max-w-md bg-surface-2 rounded-2xl shadow-2xl p-8 border border-surface-3">
+    <div className="w-full max-w-md bg-surface-2 rounded-2xl p-8">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-primary">Sign In to Takaka</h1>
         <p className="text-on-surface-variant mt-2">to interact and post</p>
@@ -42,7 +42,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             placeholder="your-handle.bsky.social"
-            className="w-full pl-12 pr-4 py-3 bg-surface-3 border-b-2 border-surface-3 rounded-t-lg focus:ring-0 focus:border-primary focus:bg-surface-3 outline-none transition duration-200"
+            className="w-full pl-12 pr-4 py-3 bg-surface-3 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
             required
           />
         </div>
@@ -53,7 +53,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
             value={appPassword}
             onChange={(e) => setAppPassword(e.target.value)}
             placeholder="App Password"
-            className="w-full pl-12 pr-4 py-3 bg-surface-3 border-b-2 border-surface-3 rounded-t-lg focus:ring-0 focus:border-primary focus:bg-surface-3 outline-none transition duration-200"
+            className="w-full pl-12 pr-4 py-3 bg-surface-3 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
             required
           />
         </div>

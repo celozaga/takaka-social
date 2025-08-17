@@ -74,7 +74,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   };
 
   return (
-    <a href={profileLink} className="block p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors border border-surface-3">
+    <a href={profileLink} className="block p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
       <div className="flex items-start gap-4">
         <img src={actor.avatar} alt={actor.displayName || actor.handle} className="w-12 h-12 rounded-full bg-surface-3 flex-shrink-0" loading="lazy" />
         <div className="flex-1 min-w-0">

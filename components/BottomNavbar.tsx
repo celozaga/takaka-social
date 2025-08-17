@@ -69,12 +69,12 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   return (
     <>
       {/* Mobile Bottom Bar */}
-      <nav className={`${isHidden ? 'hidden' : 'grid'} md:hidden fixed bottom-0 left-0 right-0 bg-surface-2/95 backdrop-blur-sm border-t border-surface-3 h-20 grid-cols-${navItems.length} items-center justify-around z-50`}>
+      <nav className={`${isHidden ? 'hidden' : 'grid'} md:hidden fixed bottom-0 left-0 right-0 bg-surface-2 h-20 grid-cols-${navItems.length} items-center justify-around z-50`}>
         {navItems.map(item => renderNavItem(item))}
       </nav>
 
       {/* Desktop Navigation Rail */}
-      <nav className="hidden md:flex fixed top-0 left-0 h-full w-20 bg-surface-2 border-r border-surface-3 flex-col items-center justify-between py-6 z-50">
+      <nav className="hidden md:flex fixed top-0 left-0 h-full w-20 bg-surface-2 flex-col items-center justify-between py-6 z-50">
         <div className="flex flex-col items-center gap-4 w-full">
             {loggedInNavItems.filter(item => item.label !== 'Me' && item.label !== 'Logout').map(item => renderNavItem(item))}
         </div>

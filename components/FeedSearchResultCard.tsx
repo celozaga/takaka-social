@@ -20,7 +20,7 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
     };
 
     return (
-        <a href={feedLink} className="block p-3 bg-surface-2 rounded-xl border border-surface-3 hover:bg-surface-3 transition-colors">
+        <a href={feedLink} className="block p-3 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
             <div className="flex items-start gap-3">
                 <FeedAvatar src={feed.avatar} alt={feed.displayName} className="w-12 h-12 rounded-lg flex-shrink-0" />
                 <div className="flex-1 min-w-0">

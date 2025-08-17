@@ -236,7 +236,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
   const hasVideoOrGif = mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif');
 
   return (
-    <div className="relative bg-surface-2 p-4 rounded-xl border border-surface-3">
+    <div className="relative bg-surface-2 p-4 rounded-xl">
       {onClose && (
         <button onClick={onClose} className="absolute top-3 right-3 text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-3 transition-colors z-10" aria-label="Close composer">
             <X className="w-5 h-5" />
@@ -270,7 +270,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
           )}
         </div>
       </div>
-      <div className="flex justify-between items-center mt-4 pt-4 border-t border-surface-3">
+      <div className="flex justify-between items-center mt-4 pt-4">
         <div className="flex items-center gap-2">
             <button 
                 onClick={() => fileInputRef.current?.click()} 
@@ -297,7 +297,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
                     <Globe className="w-6 h-6"/>
                 </button>
                 {isLangMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface-3 rounded-lg shadow-lg z-20 border border-outline">
+                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface-3 rounded-lg z-20">
                          <input
                             type="text"
                             placeholder="Search languages..."

@@ -60,7 +60,7 @@ const ToastComponent: React.FC<ToastComponentProps> = ({ id, title, description,
 
   return (
     <div
-      className={`relative w-full p-4 pr-10 rounded-lg shadow-lg flex items-start gap-3 transition-all duration-300 animate-in slide-in-from-bottom-5 ${bgColor}`}
+      className={`relative w-full p-4 pr-10 rounded-lg flex items-start gap-3 transition-all duration-300 animate-in slide-in-from-bottom-5 ${bgColor}`}
     >
         <Icon className={`w-6 h-6 flex-shrink-0 mt-0.5 ${iconColor}`} />
         <div className="flex-grow">

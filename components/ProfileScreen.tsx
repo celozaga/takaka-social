@@ -318,7 +318,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 <MoreHorizontal size={20} />
             </button>
             {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-surface-3 rounded-lg shadow-lg z-10 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-48 bg-surface-3 rounded-lg z-10 overflow-hidden">
                     <ul>
                         <li>
                             <button onClick={viewerState?.muted ? handleUnmute : handleMute} className="w-full text-left px-4 py-2 hover:bg-surface-2 flex items-center gap-3">
@@ -348,7 +348,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </div>
             </div>
             
-            <div className="pt-20 px-4 pb-4">
+            <div className="pt-20 px-4 pb-8">
                  {session && !isMe && viewerState && (
                     <div className="flex items-center gap-2 mb-4">
                         <FollowButton />
@@ -377,8 +377,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     </div>
                 )}
             </div>
-
-            <div className="my-4 border-b border-surface-3"></div>
 
             {viewerState?.blocking ? (
                 <div className="text-center p-8 bg-surface-2 rounded-xl">

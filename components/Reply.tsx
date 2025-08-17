@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
@@ -69,7 +70,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   if (isRoot) {
     // Special case for the root of the thread to just render the replies
     return (
-      <div className="divide-y divide-surface-3">
+      <div>
         {allSubReplies.map(r => <Reply key={r.post.cid} reply={r} />)}
       </div>
     )
@@ -81,7 +82,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         <a href={`#/profile/${author.handle}`} className="block">
           <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
         </a>
-        {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow bg-outline/20 mt-2"></div>}
+        {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow mt-2"></div>}
       </div>
 
       <div className="flex-1 min-w-0">

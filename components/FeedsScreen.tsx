@@ -20,7 +20,7 @@ const EditableFeedItem: React.FC<{
     onRemove: () => void;
 }> = ({ feed, isPinned, isFirst, isLast, disabled, onMoveUp, onMoveDown, onTogglePin, onRemove }) => {
     return (
-        <div className={`flex items-center gap-3 p-2 bg-surface-2 rounded-xl border border-surface-3 transition-opacity ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`flex items-center gap-3 p-2 bg-surface-2 rounded-xl transition-opacity ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
             <FeedAvatar src={feed.avatar} alt={feed.displayName} className="w-10 h-10 rounded-lg flex-shrink-0" />
             <div className="flex-1 min-w-0">
                 <a href={`#/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`} className="font-bold truncate hover:underline">{feed.displayName}</a>
@@ -147,7 +147,7 @@ const FeedsScreen: React.FC = () => {
                                     />
                                 })}
                             </div>
-                        ) : <p className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg border border-surface-3">Pin a saved feed below to add it here.</p>}
+                        ) : <p className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">Pin a saved feed below to add it here.</p>}
                     </section>
                     
                      <section>
@@ -169,7 +169,7 @@ const FeedsScreen: React.FC = () => {
                                 })}
                             </div>
                         ) : (
-                            <div className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg border border-surface-3">
+                            <div className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">
                                 <p>You have no other saved feeds.</p>
                                 <a href="#/search?filter=feeds" className="font-semibold text-primary hover:underline mt-1 inline-block">Find New Feeds</a>
                             </div>

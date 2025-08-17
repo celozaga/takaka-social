@@ -184,7 +184,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
 
   return (
     <div>
-      <header className="bg-surface-1 z-40 border-b border-surface-3">
+      <header className="bg-surface-1 z-40">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
                 <a href="#" onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
@@ -222,7 +222,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         
         <div className="hidden md:block px-4">
             {session && currentUserProfile && (
-                <div className="py-3 border-y border-surface-3 flex items-center gap-3">
+                <div className="py-3 flex items-center gap-3">
                     <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
                     <button
                         onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })}
@@ -235,7 +235,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         </div>
         
         {allReplies.length > 0 && (
-            <div className="border-t border-surface-3">
+            <div className="mt-2">
               <Reply reply={thread} isRoot={true} />
             </div>
         )}

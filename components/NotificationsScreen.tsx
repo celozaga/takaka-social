@@ -112,7 +112,7 @@ const NotificationsScreen: React.FC = () => {
 
     return (
       <div className="flow-root">
-        <ul className="-my-4 divide-y divide-surface-3">
+        <ul className="-my-2">
           {notifications.map((notification) => (
             <NotificationItem key={notification.uri} notification={notification} />
           ))}
