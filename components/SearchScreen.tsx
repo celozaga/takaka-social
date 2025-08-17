@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
@@ -156,11 +157,22 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         );
       }
       
+      const postResults = results as AppBskyFeedDefs.PostView[];
+      const column1Posts = postResults.filter((_, index) => index % 2 === 0);
+      const column2Posts = postResults.filter((_, index) => index % 2 === 1);
+
       return (
-        <div className="grid grid-cols-2 gap-4">
-          {(results as AppBskyFeedDefs.PostView[]).map(post => (
-              <PostCard key={post.cid} post={post} />
-          ))}
+        <div className="flex gap-4">
+            <div className="w-1/2 space-y-4">
+                {column1Posts.map(post => (
+                    <PostCard key={post.cid} post={post} />
+                ))}
+            </div>
+            <div className="w-1/2 space-y-4">
+                {column2Posts.map(post => (
+                    <PostCard key={post.cid} post={post} />
+                ))}
+            </div>
         </div>
       );
     }
@@ -196,8 +208,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             </div>
 
             {isLoading && (
-                <div className="grid grid-cols-2 gap-4">
-                     {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
+                <div className="flex gap-4">
+                    <div className="w-1/2 space-y-4">
+                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col1-${i}`} />)}
+                    </div>
+                     <div className="w-1/2 space-y-4">
+                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col2-${i}`} />)}
+                    </div>
                 </div>
             )}
             {!isLoading && results.length > 0 && renderResults()}
@@ -212,9 +229,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             
             <div ref={loaderRef} className="h-10">
                 {isLoadingMore && isPostSearch && (
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <PostCardSkeleton />
-                    <PostCardSkeleton />
+                  <div className="flex gap-4 mt-4">
+                    <div className="w-1/2 space-y-4">
+                        <PostCardSkeleton />
+                    </div>
+                     <div className="w-1/2 space-y-4">
+                        <PostCardSkeleton />
+                    </div>
                   </div>
                 )}
             </div>

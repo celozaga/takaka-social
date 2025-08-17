@@ -269,8 +269,13 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
     if (isLoading) {
         return (
-             <div className="grid grid-cols-2 gap-4">
-                {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
+             <div className="flex gap-4">
+                <div className="w-1/2 space-y-4">
+                  {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col1-${i}`} />)}
+                </div>
+                 <div className="w-1/2 space-y-4">
+                  {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col2-${i}`} />)}
+                </div>
             </div>
         );
     }
@@ -322,6 +327,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             )}
         </div>
     );
+    
+    const column1Posts = feed.filter((_, index) => index % 2 === 0);
+    const column2Posts = feed.filter((_, index) => index % 2 === 1);
 
     return (
         <div>
@@ -378,17 +386,28 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-4">
-                        {feed.map(({ post }) => (
-                            <PostCard key={post.cid} post={post} />
-                        ))}
+                    <div className="flex gap-4">
+                        <div className="w-1/2 space-y-4">
+                            {column1Posts.map(({ post }) => (
+                                <PostCard key={post.cid} post={post} />
+                            ))}
+                        </div>
+                        <div className="w-1/2 space-y-4">
+                            {column2Posts.map(({ post }) => (
+                                <PostCard key={post.cid} post={post} />
+                            ))}
+                        </div>
                     </div>
 
                     <div ref={loaderRef} className="h-10">
                         {isLoadingMore && (
-                          <div className="grid grid-cols-2 gap-4 mt-4">
-                            <PostCardSkeleton />
-                            <PostCardSkeleton />
+                          <div className="flex gap-4 mt-4">
+                            <div className="w-1/2 space-y-4">
+                               <PostCardSkeleton />
+                            </div>
+                            <div className="w-1/2 space-y-4">
+                               <PostCardSkeleton />
+                            </div>
                           </div>
                         )}
                     </div>
