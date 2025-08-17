@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri } from '@atproto/api';
+import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri, AppBskyFeedGetActorLikes, ComAtprotoRepoListRecords } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, LayoutGrid, Repeat, Heart, List } from 'lucide-react';
@@ -182,22 +182,42 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
 
         try {
-            let response;
+            let response: any;
             let newItems: (AppBskyFeedDefs.FeedViewPost | AppBskyFeedDefs.GeneratorView)[] = [];
             let nextCursor: string | undefined;
 
             switch (tab) {
                 case 'posts':
-                    response = await agent.getAuthorFeed({ actor, cursor: currentCursor, limit: 30 });
-                    // The 'posts' tab should only contain original posts with media.
-                    newItems = response.data.feed.filter(item => !item.reason && item.post.embed);
-                    nextCursor = response.data.cursor;
+                case 'reposts': {
+                    let accumulatedPosts: AppBskyFeedDefs.FeedViewPost[] = currentCursor ? (feed as AppBskyFeedDefs.FeedViewPost[]) : [];
+                    nextCursor = currentCursor;
+                    let attempts = 0;
+                    const MIN_ITEMS = 15;
+
+                    // Keep fetching pages until we have enough items that match the filter or we run out of pages.
+                    while (attempts < 5 && accumulatedPosts.length < (currentCursor ? accumulatedPosts.length + MIN_ITEMS : MIN_ITEMS)) {
+                        attempts++;
+                        const authorFeedResponse = await agent.getAuthorFeed({ actor, cursor: nextCursor, limit: 50 });
+                        
+                        if (!authorFeedResponse.data.feed.length) {
+                            nextCursor = undefined;
+                            break;
+                        }
+
+                        const filteredPosts = authorFeedResponse.data.feed.filter(item => {
+                            if (tab === 'posts') return !item.reason && item.post.embed;
+                            if (tab === 'reposts') return AppBskyFeedDefs.isReasonRepost(item.reason);
+                            return false;
+                        });
+                        
+                        accumulatedPosts = [...accumulatedPosts, ...filteredPosts];
+                        nextCursor = authorFeedResponse.data.cursor;
+
+                        if (!nextCursor) break;
+                    }
+                    newItems = accumulatedPosts;
                     break;
-                case 'reposts':
-                    response = await agent.getAuthorFeed({ actor, cursor: currentCursor, limit: 30 });
-                    newItems = response.data.feed.filter(item => AppBskyFeedDefs.isReasonRepost(item.reason));
-                    nextCursor = response.data.cursor;
-                    break;
+                }
                 case 'likes':
                     response = await agent.app.bsky.feed.getActorLikes({ actor, cursor: currentCursor, limit: 30 });
                     newItems = response.data.feed;
@@ -214,9 +234,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     const feedUris = listRecordsResponse.data.records.map(r => r.uri);
                     
                     if (feedUris.length > 0) {
-                        const getFeedsResponse = await agent.app.bsky.feed.getFeedGenerators({
-                            feeds: feedUris,
-                        });
+                        const getFeedsResponse = await agent.app.bsky.feed.getFeedGenerators({ feeds: feedUris });
                         newItems = getFeedsResponse.data.feeds;
                     } else {
                         newItems = [];
@@ -226,8 +244,14 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     break;
                 }
             }
+            
+            // For posts and reposts, `newItems` is the full list. For others, it's just the new page.
+            if (tab === 'posts' || tab === 'reposts') {
+                 setFeed(newItems);
+            } else {
+                 setFeed(prev => currentCursor ? [...prev, ...newItems] : newItems);
+            }
 
-            setFeed(prev => currentCursor ? [...prev, ...newItems] : newItems);
             setCursor(nextCursor);
             setHasMore(!!nextCursor && newItems.length > 0);
 
@@ -238,7 +262,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             setIsLoadingFeed(false);
             setIsLoadingMore(false);
         }
-    }, [agent, actor]);
+    }, [agent, actor, feed]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -265,7 +289,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         if (profile && !profile.viewer?.blocking && !profile.viewer?.blockedBy) {
             fetchFeedData(activeTab);
         }
-    }, [profile, activeTab, fetchFeedData]);
+    }, [profile, activeTab]);
     
     useEffect(() => {
         if (profile?.description) {
