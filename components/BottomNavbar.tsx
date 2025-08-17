@@ -4,7 +4,11 @@ import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { Home, Search, UserCircle, Edit3, LogOut, Bell, LogIn } from 'lucide-react';
 
-const BottomNavbar: React.FC = () => {
+interface BottomNavbarProps {
+  isHidden?: boolean;
+}
+
+const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const { session, logout, unreadCount } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const [currentHash, setCurrentHash] = React.useState(window.location.hash || '#/');
@@ -63,7 +67,7 @@ const BottomNavbar: React.FC = () => {
   return (
     <>
       {/* Mobile Bottom Bar */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-surface-2/95 backdrop-blur-sm border-t border-surface-3 h-20 grid grid-cols-${navItems.length} items-center justify-around z-50`}>
+      <nav className={`${isHidden ? 'hidden' : 'grid'} md:hidden fixed bottom-0 left-0 right-0 bg-surface-2/95 backdrop-blur-sm border-t border-surface-3 h-20 grid-cols-${navItems.length} items-center justify-around z-50`}>
         {navItems.map(item => renderNavItem(item))}
       </nav>
 

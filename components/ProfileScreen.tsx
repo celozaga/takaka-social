@@ -29,13 +29,19 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     // Handlers for social actions
     const handleFollow = async () => {
-        if (!profile || isActionLoading) return;
+        if (!profile || isActionLoading || !session) return;
         setIsActionLoading(true);
         const oldViewerState = viewerState;
         setViewerState(prev => prev ? { ...prev, following: 'temp-uri' } : undefined);
         setProfile(p => p ? { ...p, followersCount: p.followersCount + 1 } : null);
         try {
-            const { uri } = await agent.follow(profile.did);
+            const { uri } = await agent.app.bsky.graph.follow.create({
+                repo: session.did,
+                record: {
+                    subject: profile.did,
+                    createdAt: new Date().toISOString(),
+                }
+            });
             setViewerState(prev => prev ? { ...prev, following: uri } : undefined);
         } catch (e) {
             console.error("Failed to follow:", e);

@@ -56,6 +56,8 @@ const Main: React.FC = () => {
     // Show a minimal loading state while session is being restored
     return <div className="min-h-screen bg-surface-1" />;
   }
+  
+  const isPostScreen = route.startsWith('#/post/');
 
   const renderContent = () => {
     const parts = route.replace(/^#\//, '').split('/');
@@ -82,13 +84,17 @@ const Main: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      <BottomNavbar />
+      <BottomNavbar isHidden={isPostScreen} />
       <Navbar />
-      <main className={`container mx-auto px-4 pt-20 transition-all duration-300 md:ml-20 md:max-w-5xl lg:max-w-6xl ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`}>
+      <main className={`container mx-auto px-4 pt-20 transition-all duration-300 md:ml-20 md:max-w-5xl lg:max-w-6xl ${
+        isPostScreen 
+          ? 'pb-8' 
+          : (session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8')
+      }`}>
         {renderContent()}
       </main>
       
-      {!session && <LoginPrompt />}
+      {!session && !isPostScreen && <LoginPrompt />}
 
       {isComposerOpen && session && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300">

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { Heart, Repeat, MessageCircle } from 'lucide-react';
@@ -23,7 +24,7 @@ interface PostActionsProps {
 
 const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   const { agent, session } = useAtp();
-  const { openLoginModal } = useUI();
+  const { openLoginModal, openComposer } = useUI();
   const { toast } = useToast();
 
   const [likeUri, setLikeUri] = useState(post.viewer?.like);
@@ -33,9 +34,6 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   const [repostUri, setRepostUri] = useState(post.viewer?.repost);
   const [repostCount, setRepostCount] = useState(post.repostCount || 0);
   const [isReposting, setIsReposting] = useState(false);
-
-  const rkey = post.uri.split('/').pop() as string;
-  const postLink = `#/post/${post.author.did}/${rkey}`;
   
   const ensureSession = (action: string) => {
     if (!session) {
@@ -44,6 +42,13 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
     }
     return true;
   }
+
+  const handleReplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!ensureSession('reply')) return;
+    openComposer({ uri: post.uri, cid: post.cid });
+  };
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -105,10 +110,10 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
 
   return (
     <div className="flex items-center gap-3 text-on-surface-variant">
-      <a href={postLink} className="flex items-center gap-1 hover:text-primary transition-colors">
+      <button onClick={handleReplyClick} className="flex items-center gap-1 hover:text-primary transition-colors">
         <MessageCircle size={16} />
         <span className="text-xs font-semibold">{post.replyCount || 0}</span>
-      </a>
+      </button>
       <button 
         onClick={handleRepost} 
         disabled={isReposting}
