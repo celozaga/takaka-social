@@ -1,13 +1,14 @@
 
 
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from './ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
 import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft } from 'lucide-react';
 import RichTextRenderer from './RichTextRenderer';
 import { useUI } from '../context/UIContext';
 
@@ -339,6 +340,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         <div>
             <div className="h-48 bg-surface-3 rounded-t-lg -mx-4 -mt-4 relative">
                 {profile.banner && <img src={profile.banner} alt="Banner" className="w-full h-full object-cover rounded-t-lg" loading="lazy"/>}
+                <button onClick={() => window.history.back()} className="absolute top-4 left-4 p-2 rounded-full bg-black/50 hover:bg-black/75 text-white transition-colors z-10" aria-label="Go back">
+                    <ArrowLeft size={20} />
+                </button>
                 <div className="absolute -bottom-16 left-8">
                     <img src={profile.avatar} alt="Avatar" className="w-32 h-32 rounded-full border-4 border-surface-1 bg-surface-3" loading="lazy"/>
                 </div>
