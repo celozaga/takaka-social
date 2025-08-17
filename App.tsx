@@ -60,8 +60,11 @@ const Main: React.FC = () => {
   const isPostScreen = route.startsWith('#/post/');
 
   const renderContent = () => {
-    const parts = route.replace(/^#\//, '').split('/');
-    
+    const pathWithQuery = route.replace(/^#\//, '');
+    const pathName = pathWithQuery.split('?')[0];
+    const query = pathWithQuery.split('?')[1] || '';
+    const parts = pathName.split('/');
+
     switch (parts[0]) {
       case 'profile':
         return <ProfileScreen actor={parts[1]} key={parts[1]} />;
@@ -70,7 +73,9 @@ const Main: React.FC = () => {
         const rkey = parts[2];
         return <PostScreen did={did} rkey={rkey} key={`${did}-${rkey}`} />;
       case 'search':
-        return <SearchScreen />;
+        const params = new URLSearchParams(query);
+        const q = params.get('q') || '';
+        return <SearchScreen initialQuery={q} />;
       case 'notifications':
         if (!session) {
           window.location.hash = '#/';

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -7,9 +8,13 @@ import PostCardSkeleton from './PostCardSkeleton';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView;
 
-const SearchScreen: React.FC = () => {
+interface SearchScreenProps {
+  initialQuery?: string;
+}
+
+const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '' }) => {
     const { agent } = useAtp();
-    const [query, setQuery] = useState('');
+    const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchType, setSearchType] = useState<'posts' | 'actors'>('posts');
@@ -53,28 +58,18 @@ const SearchScreen: React.FC = () => {
     }, [agent, searchType]);
 
     useEffect(() => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#/search')) {
-             const params = new URLSearchParams(hash.split('?')[1] || '');
-             const q = params.get('q');
-             if (q) {
-                 setQuery(q);
-                 handleSearch(q);
-             }
-        }
-    }, [handleSearch]);
+        setQuery(initialQuery);
+        handleSearch(initialQuery);
+    }, [initialQuery, handleSearch]);
     
     useEffect(() => {
-      // Re-run search if type changes and there is a query
-      if (query) {
-        handleSearch(query);
-      }
+      // Re-run search if search type changes
+      handleSearch(query);
     }, [searchType]);
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         window.location.hash = `#/search?q=${encodeURIComponent(query)}`;
-        handleSearch(query);
     };
     
     const renderResults = () => {
