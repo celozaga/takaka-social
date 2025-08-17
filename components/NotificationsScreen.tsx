@@ -2,9 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
+import { useUI } from '../context/UIContext';
+import NotificationsHeader from './NotificationsHeader';
 
 const NotificationsScreen: React.FC = () => {
   const { agent, resetUnreadCount } = useAtp();
+  const { setCustomFeedHeaderVisible } = useUI();
   const [notifications, setNotifications] = useState<AppBskyNotificationListNotifications.Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,6 +16,11 @@ const NotificationsScreen: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
 
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCustomFeedHeaderVisible(true);
+    return () => setCustomFeedHeaderVisible(false);
+  }, [setCustomFeedHeaderVisible]);
 
   useEffect(() => {
     const fetchInitialNotifications = async () => {
@@ -115,14 +123,16 @@ const NotificationsScreen: React.FC = () => {
   
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Notifications</h1>
-      {renderContent()}
-      <div ref={loaderRef} className="h-10">
-        {isLoadingMore && <div className="bg-surface-2 p-4 rounded-xl animate-pulse h-20 mt-4"></div>}
+      <NotificationsHeader />
+      <div className="mt-6">
+        {renderContent()}
+        <div ref={loaderRef} className="h-10">
+            {isLoadingMore && <div className="bg-surface-2 p-4 rounded-xl animate-pulse h-20 mt-4"></div>}
+        </div>
+        {!hasMore && notifications.length > 0 && (
+            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+        )}
       </div>
-      {!hasMore && notifications.length > 0 && (
-        <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
-      )}
     </div>
   );
 };

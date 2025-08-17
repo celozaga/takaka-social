@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
@@ -11,6 +12,8 @@ import PopularFeeds from './PopularFeeds';
 import SuggestedFollows from './SuggestedFollows';
 import { useSavedFeeds } from '../hooks/useSavedFeeds';
 import FeedSearchResultCard from './FeedSearchResultCard';
+import { useUI } from '../context/UIContext';
+import SearchHeader from './SearchHeader';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -31,6 +34,7 @@ const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
+    const { setCustomFeedHeaderVisible } = useUI();
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +44,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setCustomFeedHeaderVisible(true);
+        return () => setCustomFeedHeaderVisible(false);
+    }, [setCustomFeedHeaderVisible]);
 
     // Derive activeFilter directly from props, making the URL the single source of truth.
     const activeFilter = (initialFilter as FilterType) || 'top';
@@ -149,7 +158,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         }
     };
     
-    const handlePinToggle = (feed: AppBskyFeedDefs.GeneratorView) => {
+    const handlePinToggle = (feed:AppBskyFeedDefs.GeneratorView) => {
         const isPinned = pinnedUris.has(feed.uri);
         if (isPinned) {
             togglePin(feed.uri);
@@ -215,84 +224,87 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     
     return (
         <div>
-            <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
-                <div className="relative flex-grow">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                    <input
-                        type="search"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={`Search posts, users, and feeds`}
-                        className="w-full pl-12 pr-4 py-3 bg-surface-3 border-b-2 border-surface-3 rounded-t-lg focus:ring-0 focus:border-primary focus:bg-surface-3 outline-none transition duration-200"
-                    />
-                </div>
-            </form>
-
-            {showDiscoveryContent ? (
-                 <div className="space-y-8">
-                    <SuggestedFollows />
-                    <PopularFeeds />
-                </div>
-            ) : (
-                <>
-                    <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2 mb-4 border-b border-surface-3">
-                        {filters.map(filter => (
-                            <button 
-                                key={filter.id}
-                                onClick={() => handleFilterChange(filter.id)}
-                                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
-                                    ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
-                                `}
-                            >
-                                <filter.icon size={16} />
-                                {filter.label}
-                            </button>
-                        ))}
+            <SearchHeader />
+            <div className="mt-4">
+                <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
+                    <div className="relative flex-grow">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={`Search posts, users, and feeds`}
+                            className="w-full pl-12 pr-4 py-3 bg-surface-3 border-b-2 border-surface-3 rounded-t-lg focus:ring-0 focus:border-primary focus:bg-surface-3 outline-none transition duration-200"
+                        />
                     </div>
+                </form>
 
-                    {isLoading && (
-                        isListView ? (
-                            <div className="space-y-3">
-                                {[...Array(5)].map((_, i) => (
-                                     <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="columns-2 gap-4">
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="break-inside-avoid mb-4">
-                                        <PostCardSkeleton />
-                                    </div>
-                                ))}
-                            </div>
-                        )
-                    )}
-                    {!isLoading && results.length > 0 && renderResults()}
-                    
-                    {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && (
-                        <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
-                    )}
-                    
-                    {!isLoading && results.length === 0 && (
-                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{initialQuery}".</div>
-                    )}
-                    
-                    <div ref={loaderRef} className="h-10">
-                        {isLoadingMore && supportsInfiniteScroll && (
+                {showDiscoveryContent ? (
+                     <div className="space-y-8">
+                        <SuggestedFollows />
+                        <PopularFeeds />
+                    </div>
+                ) : (
+                    <>
+                        <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2 mb-4 border-b border-surface-3">
+                            {filters.map(filter => (
+                                <button 
+                                    key={filter.id}
+                                    onClick={() => handleFilterChange(filter.id)}
+                                    className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
+                                        ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
+                                    `}
+                                >
+                                    <filter.icon size={16} />
+                                    {filter.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {isLoading && (
                             isListView ? (
-                               <div className="space-y-3 mt-4">
-                                   <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                               </div>
+                                <div className="space-y-3">
+                                    {[...Array(5)].map((_, i) => (
+                                         <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                                    ))}
+                                </div>
                             ) : (
-                                <div className="columns-2 gap-4 mt-4">
-                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
-                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                <div className="columns-2 gap-4">
+                                    {[...Array(6)].map((_, i) => (
+                                        <div key={i} className="break-inside-avoid mb-4">
+                                            <PostCardSkeleton />
+                                        </div>
+                                    ))}
                                 </div>
                             )
                         )}
-                    </div>
-                </>
-            )}
+                        {!isLoading && results.length > 0 && renderResults()}
+                        
+                        {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && (
+                            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+                        )}
+                        
+                        {!isLoading && results.length === 0 && (
+                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{initialQuery}".</div>
+                        )}
+                        
+                        <div ref={loaderRef} className="h-10">
+                            {isLoadingMore && supportsInfiniteScroll && (
+                                isListView ? (
+                                   <div className="space-y-3 mt-4">
+                                       <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                                   </div>
+                                ) : (
+                                    <div className="columns-2 gap-4 mt-4">
+                                        <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                        <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 };

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from './ui/use-toast';
@@ -8,10 +9,12 @@ import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck } from 'lucide-react';
 import RichTextRenderer from './RichTextRenderer';
+import { useUI } from '../context/UIContext';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
+    const { setCustomFeedHeaderVisible } = useUI();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
@@ -30,6 +33,11 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     
     const isMe = session?.did === profile?.did;
+
+    useEffect(() => {
+        setCustomFeedHeaderVisible(true);
+        return () => setCustomFeedHeaderVisible(false);
+    }, [setCustomFeedHeaderVisible]);
     
     // Handlers for social actions
     const handleFollow = async () => {
