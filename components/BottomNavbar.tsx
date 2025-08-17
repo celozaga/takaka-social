@@ -22,7 +22,6 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const loggedInNavItems = [
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
-    { href: '#/feeds', label: 'Feeds', icon: List, activeCondition: currentHash.startsWith('#/feeds') },
     { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
     { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
     { href: '#/more', label: 'More', icon: LayoutGrid, activeCondition: currentHash.startsWith('#/more') },
@@ -31,7 +30,6 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const guestNavItems = [
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
-    { href: '#/feeds', label: 'Feeds', icon: List, activeCondition: currentHash.startsWith('#/feeds') },
     { isAction: true, action: openLoginModal, label: 'Sign In', icon: LogIn, activeCondition: false },
   ];
 
