@@ -217,12 +217,8 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         </div>
         
         <div className="hidden md:block px-4">
-            <div className="py-3 border-y border-surface-3">
-                <PostActions post={mainPost} />
-            </div>
-
             {session && currentUserProfile && (
-                <div className="py-3 border-b border-surface-3 flex items-center gap-3">
+                <div className="py-3 border-y border-surface-3 flex items-center gap-3">
                     <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" />
                     <button
                         onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })}
