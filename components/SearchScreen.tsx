@@ -3,14 +3,16 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from './PostCard';
-import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock } from 'lucide-react';
+import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
 import PostCardSkeleton from './PostCardSkeleton';
 import ActorSearchResultCard from './ActorSearchResultCard';
 import PopularFeeds from './PopularFeeds';
 import SuggestedFollows from './SuggestedFollows';
+import { useSavedFeeds } from '../hooks/useSavedFeeds';
+import FeedSearchResultCard from './FeedSearchResultCard';
 
-type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView;
-type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people';
+type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
+type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
 
 interface SearchScreenProps {
   initialQuery?: string;
@@ -23,6 +25,7 @@ const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
     { id: 'images', label: 'Images', icon: ImageIcon },
     { id: 'videos', label: 'Videos', icon: Video },
     { id: 'people', label: 'People', icon: UserCircle },
+    { id: 'feeds', label: 'Feeds', icon: List },
 ];
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
@@ -34,11 +37,14 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [hasMore, setHasMore] = useState(true);
+    const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
     
     const showDiscoveryContent = !initialQuery.trim();
-    const isPostSearch = activeFilter !== 'people';
+    const supportsInfiniteScroll = activeFilter !== 'people';
+    const isListView = activeFilter === 'people' || activeFilter === 'feeds';
+
 
     const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
@@ -59,6 +65,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             if (searchFilter === 'people') {
                 const response = await agent.app.bsky.actor.searchActors({ term: searchQuery, limit: 30, cursor: currentCursor });
                 setResults(prev => currentCursor ? [...prev, ...response.data.actors] : response.data.actors);
+                setCursor(response.data.cursor);
+                setHasMore(!!response.data.cursor);
+            } else if (searchFilter === 'feeds') {
+                const response = await (agent.app.bsky.feed as any).searchFeedGenerators({ q: searchQuery, limit: 25, cursor: currentCursor });
+                setResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
             } else { // All other filters are post searches
@@ -131,11 +142,20 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         }
     };
     
+    const handlePinToggle = (feed: AppBskyFeedDefs.GeneratorView) => {
+        const isPinned = pinnedUris.has(feed.uri);
+        if (isPinned) {
+            togglePin(feed.uri);
+        } else {
+            addFeed(feed, true);
+        }
+    }
+    
      // Effect for IntersectionObserver
     useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
-            if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore && isPostSearch) {
+            if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore && supportsInfiniteScroll) {
               fetchResults(initialQuery, activeFilter, cursor);
             }
           },
@@ -146,14 +166,29 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [hasMore, isLoading, isLoadingMore, fetchResults, initialQuery, activeFilter, cursor, isPostSearch]);
+    }, [hasMore, isLoading, isLoadingMore, fetchResults, initialQuery, activeFilter, cursor, supportsInfiniteScroll]);
 
     const renderResults = () => {
-      if (!isPostSearch) {
+      if (activeFilter === 'people') {
         return (
           <div className="space-y-3">
             {(results as AppBskyActorDefs.ProfileView[]).map(actor => (
                 <ActorSearchResultCard key={actor.did} actor={actor} />
+            ))}
+          </div>
+        );
+      }
+
+      if (activeFilter === 'feeds') {
+        return (
+          <div className="space-y-3">
+            {(results as AppBskyFeedDefs.GeneratorView[]).map(feed => (
+                <FeedSearchResultCard
+                    key={feed.uri} 
+                    feed={feed}
+                    isPinned={pinnedUris.has(feed.uri)}
+                    onTogglePin={() => handlePinToggle(feed)}
+                />
             ))}
           </div>
         );
@@ -209,17 +244,25 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                     </div>
 
                     {isLoading && (
-                        <div className="columns-2 gap-4">
-                            {[...Array(6)].map((_, i) => (
-                                <div key={i} className="break-inside-avoid mb-4">
-                                    <PostCardSkeleton />
-                                </div>
-                            ))}
-                        </div>
+                        isListView ? (
+                            <div className="space-y-3">
+                                {[...Array(5)].map((_, i) => (
+                                     <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="columns-2 gap-4">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="break-inside-avoid mb-4">
+                                        <PostCardSkeleton />
+                                    </div>
+                                ))}
+                            </div>
+                        )
                     )}
                     {!isLoading && results.length > 0 && renderResults()}
                     
-                    {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && isPostSearch && (
+                    {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && (
                         <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
                     )}
                     
@@ -228,15 +271,17 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                     )}
                     
                     <div ref={loaderRef} className="h-10">
-                        {isLoadingMore && isPostSearch && (
-                        <div className="columns-2 gap-4 mt-4">
-                            <div className="break-inside-avoid mb-4">
-                                <PostCardSkeleton />
-                            </div>
-                            <div className="break-inside-avoid mb-4">
-                                <PostCardSkeleton />
-                            </div>
-                        </div>
+                        {isLoadingMore && supportsInfiniteScroll && (
+                            isListView ? (
+                               <div className="space-y-3 mt-4">
+                                   <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                               </div>
+                            ) : (
+                                <div className="columns-2 gap-4 mt-4">
+                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                </div>
+                            )
                         )}
                     </div>
                 </>
