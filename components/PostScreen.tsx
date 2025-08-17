@@ -5,7 +5,9 @@ import { useUI } from '../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
 import PostActions from './PostActions';
-import { ArrowLeft, MessageSquare, Repeat, Heart, ExternalLink } from 'lucide-react';
+import PostScreenActionBar from './PostScreenActionBar';
+import { useToast } from './ui/use-toast';
+import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface PostScreenProps {
@@ -16,10 +18,13 @@ interface PostScreenProps {
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { agent, session } = useAtp();
   const { openComposer } = useUI();
+  const { toast } = useToast();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewBasic | null>(null);
  
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
@@ -31,6 +36,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
         if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
           setThread(data.thread);
+          setPostAuthor(data.thread.post.author);
         } else {
           throw new Error("Post not found or is not a valid thread root.");
         }
@@ -53,6 +59,45 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       setCurrentUserProfile(null);
     }
   }, [agent, session?.did]);
+
+  const handleFollow = async () => {
+      if (!postAuthor || isActionLoading || !session) return;
+      setIsActionLoading(true);
+      const oldAuthor = postAuthor;
+      setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: 'temp-uri' } } : null);
+      try {
+          const { uri } = await agent.follow(postAuthor.did);
+          setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: uri } } : null);
+      } catch (e) {
+          console.error("Failed to follow:", e);
+          toast({ title: "Error", description: "Could not follow user.", variant: "destructive" });
+          setPostAuthor(oldAuthor);
+      } finally {
+          setIsActionLoading(false);
+      }
+  };
+
+  const handleUnfollow = async () => {
+      if (!postAuthor || !postAuthor.viewer?.following || isActionLoading) return;
+      setIsActionLoading(true);
+      const oldAuthor = postAuthor;
+      setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: undefined } } : null);
+      try {
+          await agent.deleteFollow(postAuthor.viewer.following);
+      } catch (e) {
+          console.error("Failed to unfollow:", e);
+          toast({ title: "Error", description: "Could not unfollow user.", variant: "destructive" });
+          setPostAuthor(oldAuthor);
+      } finally {
+          setIsActionLoading(false);
+      }
+  };
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/#/post/${did}/${rkey}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link Copied!", description: "Post URL has been copied to your clipboard." });
+  };
 
 
   const renderMedia = (post: AppBskyFeedDefs.PostView) => {
@@ -109,72 +154,88 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
     );
   }
 
-  if (error || !thread) {
+  if (error || !thread || !postAuthor) {
     return <div className="text-center text-error p-8 bg-surface-2 rounded-xl pt-20">{error || "Post not found."}</div>;
   }
 
   const mainPost = thread.post;
   const record = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
-  const author = mainPost.author;
   const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
+  const isMe = session?.did === postAuthor.did;
+
+  const FollowButton = () => {
+    if (!session || isMe) return null;
+    return (
+        <button
+            onClick={postAuthor.viewer?.following ? handleUnfollow : handleFollow}
+            disabled={isActionLoading}
+            className={`font-semibold text-sm py-1.5 px-4 rounded-full transition-colors duration-200
+                ${postAuthor.viewer?.following 
+                    ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' 
+                    : 'bg-primary text-on-primary hover:bg-primary/90'
+                }
+                disabled:opacity-50`}
+        >
+            {postAuthor.viewer?.following ? 'Following' : 'Follow'}
+        </button>
+    );
+  };
 
   return (
     <div>
-      <header className="sticky top-16 md:top-0 bg-surface-1/95 backdrop-blur-md z-40 border-b border-surface-3 -mt-20 pt-20">
-        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
-            <a href="#" onClick={() => window.history.back()} className="flex items-center gap-2 text-on-surface p-2 -ml-2 rounded-full hover:bg-surface-3">
-                <ArrowLeft size={20} />
-            </a>
-            <a href={`#/profile/${author.handle}`} className="flex items-center gap-3 truncate">
-                <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
-                <div>
-                  <p className="font-bold truncate leading-tight">{author.displayName}</p>
-                  <p className="text-on-surface-variant text-sm leading-tight">@{author.handle}</p>
-                </div>
-            </a>
+      <header className="bg-surface-1 z-40 border-b border-surface-3">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+                <a href="#" onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
+                    <ArrowLeft size={20} />
+                </a>
+                <a href={`#/profile/${postAuthor.handle}`} className="flex items-center gap-3 truncate">
+                    <img src={postAuthor.avatar} alt={postAuthor.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
+                    <p className="font-bold truncate leading-tight">{postAuthor.displayName}</p>
+                </a>
+            </div>
+            <div className="flex items-center gap-2">
+                <FollowButton />
+                <button onClick={handleShare} className="p-2 rounded-full hover:bg-surface-3">
+                    <Share2 size={20} />
+                </button>
+            </div>
         </div>
       </header>
       
       <div>
-        <div className="p-4 border-b border-surface-3">
-             {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap text-lg">{record.text}</p>}
+        <div className="p-4">
              {renderMedia(mainPost)}
+             {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap">{record.text}</p>}
              <p className="text-sm text-on-surface-variant my-3">{format(new Date(record.createdAt), "h:mm a · MMM d, yyyy")}</p>
         </div>
         
-        <div className="px-4 py-3 border-b border-surface-3 flex items-center gap-6">
-            <div className="flex items-center gap-2 text-on-surface-variant">
-                <MessageSquare size={18} />
-                <strong className="text-on-surface">{mainPost.replyCount || 0}</strong>
+        <div className="hidden md:block px-4">
+            <div className="py-3 border-y border-surface-3">
+                <PostActions post={mainPost} />
             </div>
-            <div className="flex items-center gap-2 text-on-surface-variant">
-                <Repeat size={18} />
-                <strong className="text-on-surface">{mainPost.repostCount || 0}</strong>
-            </div>
-            <div className="flex items-center gap-2 text-on-surface-variant">
-                <Heart size={18} />
-                <strong className="text-on-surface">{mainPost.likeCount || 0}</strong>
-            </div>
+
+            {session && currentUserProfile && (
+                <div className="py-3 border-b border-surface-3 flex items-center gap-3">
+                    <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" />
+                    <button
+                        onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })}
+                        className="flex-1 bg-surface-2 text-on-surface-variant text-left px-4 py-2.5 rounded-full hover:bg-surface-3 transition-colors"
+                    >
+                        Write your reply...
+                    </button>
+                </div>
+            )}
         </div>
         
-        {session && currentUserProfile && (
-            <div className="px-4 py-3 border-b border-surface-3 flex items-center gap-3">
-                <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" />
-                <button
-                onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })}
-                className="flex-1 bg-surface-2 text-on-surface-variant text-left px-4 py-2.5 rounded-full hover:bg-surface-3 transition-colors"
-                >
-                Write your reply...
-                </button>
-            </div>
-        )}
-        
         {allReplies.length > 0 && (
-            <div>
+            <div className="border-t border-surface-3">
               <Reply reply={thread} isRoot={true} />
             </div>
         )}
       </div>
+
+      <PostScreenActionBar post={mainPost} />
     </div>
   );
 };
