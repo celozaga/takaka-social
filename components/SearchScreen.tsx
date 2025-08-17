@@ -1,115 +1,177 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from './PostCard';
-import { Search, UserCircle, Image as ImageIcon } from 'lucide-react';
+import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock } from 'lucide-react';
 import PostCardSkeleton from './PostCardSkeleton';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView;
+type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people';
 
 interface SearchScreenProps {
   initialQuery?: string;
+  initialFilter?: string;
 }
 
-const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '' }) => {
+const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
+    { id: 'top', label: 'Top', icon: TrendingUp },
+    { id: 'latest', label: 'Latest', icon: Clock },
+    { id: 'images', label: 'Images', icon: ImageIcon },
+    { id: 'videos', label: 'Videos', icon: Video },
+    { id: 'people', label: 'People', icon: UserCircle },
+];
+
+const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
     const [query, setQuery] = useState(initialQuery);
+    const [activeFilter, setActiveFilter] = useState<FilterType>(initialFilter as FilterType || 'top');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [searchType, setSearchType] = useState<'posts' | 'actors'>('posts');
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [hasMore, setHasMore] = useState(true);
     const [hasSearched, setHasSearched] = useState(false);
+    
+    const loaderRef = useRef<HTMLDivElement>(null);
 
-    const handleSearch = useCallback(async (searchQuery: string) => {
+    const isPostSearch = activeFilter !== 'people';
+
+    const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
             setResults([]);
             setHasSearched(false);
             return;
         }
-        setIsLoading(true);
-        setHasSearched(true);
-        setResults([]);
 
+        if (!currentCursor) {
+            setIsLoading(true);
+            setResults([]);
+            setCursor(undefined);
+            setHasMore(true);
+        } else {
+            setIsLoadingMore(true);
+        }
+        setHasSearched(true);
+        
         try {
-            if (searchType === 'posts') {
-                const response = await agent.app.bsky.feed.searchPosts({ q: searchQuery, limit: 40 });
-                const mediaPosts = response.data.posts.filter(post => {
-                    const embed = post.embed;
-                    if (!embed) return false;
-                    if (AppBskyEmbedImages.isView(embed)) return true;
-                    if (embed.$type === 'app.bsky.embed.video#view') return true;
-                    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                        const media = embed.media;
-                        if (AppBskyEmbedImages.isView(media)) return true;
-                        if (media?.$type === 'app.bsky.embed.video#view') return true;
+            if (searchFilter === 'people') {
+                const response = await agent.app.bsky.actor.searchActors({ term: searchQuery, limit: 30, cursor: currentCursor });
+                setResults(prev => currentCursor ? [...prev, ...response.data.actors] : response.data.actors);
+                setCursor(response.data.cursor);
+                setHasMore(!!response.data.cursor);
+            } else { // All other filters are post searches
+                let allFetchedPosts: AppBskyFeedDefs.PostView[] = [];
+                let nextCursor: string | undefined = currentCursor;
+                let attempts = 0;
+
+                // For media searches, we might need to fetch multiple pages to get enough results
+                while (attempts < 5) {
+                    attempts++;
+                    const response = await agent.app.bsky.feed.searchPosts({ 
+                        q: searchQuery, 
+                        limit: 50, // Fetch more for media filters to get a good amount
+                        cursor: nextCursor,
+                        sort: searchFilter === 'latest' ? 'latest' : 'top',
+                    });
+                    
+                    allFetchedPosts = [...allFetchedPosts, ...response.data.posts];
+                    nextCursor = response.data.cursor;
+
+                    if (searchFilter === 'images' || searchFilter === 'videos') {
+                        const mediaPosts = allFetchedPosts.filter(post => {
+                            const embed = post.embed;
+                            if (!embed) return false;
+                            const targetType = searchFilter === 'images' ? 'app.bsky.embed.images#view' : 'app.bsky.embed.video#view';
+                            if (embed.$type === targetType) return true;
+                            if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                                if (embed.media?.$type === targetType) return true;
+                            }
+                            return false;
+                        });
+                        
+                        // If we found enough media posts or there's no more to fetch, break
+                        if (mediaPosts.length >= 10 || !nextCursor) {
+                            allFetchedPosts = mediaPosts;
+                            break;
+                        }
+                    } else {
+                        // For 'top' and 'latest', one page is enough per call
+                        break;
                     }
-                    return false;
-                });
-                setResults(mediaPosts);
-            } else {
-                const response = await agent.app.bsky.actor.searchActors({ term: searchQuery, limit: 40 });
-                setResults(response.data.actors);
+                }
+                
+                setResults(prev => currentCursor ? [...prev, ...allFetchedPosts] : allFetchedPosts);
+                setCursor(nextCursor);
+                setHasMore(!!nextCursor && allFetchedPosts.length > 0);
             }
         } catch (error) {
             console.error("Search failed:", error);
         } finally {
             setIsLoading(false);
+            setIsLoadingMore(false);
         }
-    }, [agent, searchType]);
-
-    useEffect(() => {
-        setQuery(initialQuery);
-        handleSearch(initialQuery);
-    }, [initialQuery, handleSearch]);
+    }, [agent]);
     
     useEffect(() => {
-      // Re-run search if search type changes
-      handleSearch(query);
-    }, [searchType]);
+        fetchResults(initialQuery, activeFilter);
+    }, [initialQuery, activeFilter, fetchResults]);
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        window.location.hash = `#/search?q=${encodeURIComponent(query)}`;
+        window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${activeFilter}`;
     };
     
+    const handleFilterChange = (filter: FilterType) => {
+        setActiveFilter(filter);
+        window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${filter}`;
+    };
+    
+     // Effect for IntersectionObserver
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore && isPostSearch) {
+              fetchResults(query, activeFilter, cursor);
+            }
+          },
+          { rootMargin: '400px' }
+        );
+        const currentLoader = loaderRef.current;
+        if (currentLoader) observer.observe(currentLoader);
+        return () => {
+          if (currentLoader) observer.unobserve(currentLoader);
+        };
+    }, [hasMore, isLoading, isLoadingMore, fetchResults, query, activeFilter, cursor, isPostSearch]);
+
     const renderResults = () => {
-      if (searchType === 'actors') {
+      if (!isPostSearch) {
         return (
           <div className="space-y-3">
-            {results.map(item => {
-              const actor = item as AppBskyActorDefs.ProfileView;
-              return (
+            {(results as AppBskyActorDefs.ProfileView[]).map(actor => (
                 <a href={`#/profile/${actor.handle}`} key={actor.did} className="flex items-center gap-4 p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
                   <img src={actor.avatar} alt={actor.displayName} className="w-12 h-12 rounded-full bg-surface-3" />
                   <div>
-                    <p className="font-bold">{actor.displayName}</p>
+                    <p className="font-bold">{actor.displayName || actor.handle}</p>
                     <p className="text-on-surface-variant">@{actor.handle}</p>
                   </div>
                 </a>
-              );
-            })}
+            ))}
           </div>
         );
       }
       
       return (
         <div className="columns-2 gap-4 space-y-4">
-          {results.map(item => {
-            const post = item as AppBskyFeedDefs.PostView;
-            return (
+          {(results as AppBskyFeedDefs.PostView[]).map(post => (
               <div key={post.cid} className="break-inside-avoid">
                 <PostCard post={post} />
               </div>
-            );
-          })}
+          ))}
         </div>
       );
     }
     
-    const segmentBtnClasses = "px-4 py-2 text-sm font-semibold transition-colors flex-1 flex items-center justify-center gap-2";
-    const activeSegmentClasses = "bg-primary-container text-on-primary-container";
-    const inactiveSegmentClasses = "text-on-surface-variant";
-
     return (
         <div>
             <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
@@ -119,32 +181,50 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '' }) => {
                         type="search"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={`Search ${searchType}...`}
+                        placeholder={`Search...`}
                         className="w-full pl-12 pr-4 py-3 bg-surface-3 border-b-2 border-surface-3 rounded-t-lg focus:ring-0 focus:border-primary focus:bg-surface-3 outline-none transition duration-200"
                     />
                 </div>
             </form>
-            <div className="flex items-center p-1 gap-1 mb-6 bg-surface-2 rounded-full border border-outline">
-                <button onClick={() => setSearchType('posts')} className={`${segmentBtnClasses} rounded-full ${searchType === 'posts' ? activeSegmentClasses : inactiveSegmentClasses}`}>
-                    <ImageIcon className="w-4 h-4" />
-                    Posts
-                </button>
-                 <button onClick={() => setSearchType('actors')} className={`${segmentBtnClasses} rounded-full ${searchType === 'actors' ? activeSegmentClasses : inactiveSegmentClasses}`}>
-                    <UserCircle className="w-4 h-4" />
-                    People
-                </button>
+
+            <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2 mb-4 border-b border-surface-3">
+                 {filters.map(filter => (
+                    <button 
+                        key={filter.id}
+                        onClick={() => handleFilterChange(filter.id)}
+                        className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
+                            ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
+                        `}
+                    >
+                        <filter.icon size={16} />
+                        {filter.label}
+                    </button>
+                ))}
             </div>
+
             {isLoading && (
                 <div className="columns-2 gap-4 space-y-4">
                      {[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid"><PostCardSkeleton /></div>)}
                 </div>
             )}
-            {!isLoading && results.length > 0 && (
-                renderResults()
+            {!isLoading && results.length > 0 && renderResults()}
+            
+            {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && isPostSearch && (
+                <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
             )}
+            
             {!isLoading && results.length === 0 && hasSearched && (
                  <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{query}".</div>
             )}
+            
+            <div ref={loaderRef} className="h-10">
+                {isLoadingMore && isPostSearch && (
+                  <div className="columns-2 gap-4 space-y-4 mt-4">
+                    <div className="break-inside-avoid"><PostCardSkeleton /></div>
+                    <div className="break-inside-avoid"><PostCardSkeleton /></div>
+                  </div>
+                )}
+            </div>
         </div>
     );
 };

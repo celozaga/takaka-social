@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RichText } from '@atproto/api';
 
@@ -45,7 +46,7 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
       segments.push(
         <a
           key={segments.length}
-          href={`#/search?q=${encodeURIComponent(segment.tag!.tag)}`}
+          href={`#/search?q=${encodeURIComponent(segment.tag!.tag)}&filter=top`}
           className="text-primary hover:underline"
           onClick={(e) => e.stopPropagation()}
         >

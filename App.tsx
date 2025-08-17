@@ -75,7 +75,8 @@ const Main: React.FC = () => {
       case 'search':
         const params = new URLSearchParams(query);
         const q = params.get('q') || '';
-        return <SearchScreen initialQuery={q} />;
+        const filter = params.get('filter') || 'top';
+        return <SearchScreen initialQuery={q} initialFilter={filter} key={`${q}-${filter}`} />;
       case 'notifications':
         if (!session) {
           window.location.hash = '#/';
