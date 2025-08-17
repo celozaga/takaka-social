@@ -82,7 +82,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
             <div className="min-w-0">
               <div className="font-bold truncate flex items-center gap-1">
                   <span className="truncate">{actor.displayName || actor.handle}</span>
-                  {actor.labels?.some(label => label.val === 'blue-check') && (
+                  {actor.associated?.labeler && (
                     <BadgeCheck size={16} className="text-primary flex-shrink-0" fill="currentColor" />
                   )}
               </div>

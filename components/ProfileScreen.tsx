@@ -341,7 +341,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 )}
                 <h2 className="text-3xl font-bold flex items-center gap-2">
                     <span>{profile.displayName}</span>
-                    {profile.labels?.some(label => label.val === 'blue-check') && (
+                    {profile.associated?.labeler && (
                         <BadgeCheck className="w-6 h-6 text-primary" fill="currentColor" />
                     )}
                 </h2>
