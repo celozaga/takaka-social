@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
+import FeedAvatar from './FeedAvatar';
 
 interface FeedSearchResultCardProps {
   feed: AppBskyFeedDefs.GeneratorView;
@@ -22,7 +22,7 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
     return (
         <a href={feedLink} className="block p-3 bg-surface-2 rounded-xl border border-surface-3 hover:bg-surface-3 transition-colors">
             <div className="flex items-start gap-3">
-                <img src={feed.avatar} alt={feed.displayName} className="w-12 h-12 rounded-lg bg-surface-3 flex-shrink-0" loading="lazy" />
+                <FeedAvatar src={feed.avatar} alt={feed.displayName} className="w-12 h-12 rounded-lg flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                         <div className="min-w-0">

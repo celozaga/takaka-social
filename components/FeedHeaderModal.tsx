@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { useUI } from '../context/UIContext';
 import { useFeedActions } from '../hooks/useFeedActions';
 import { Heart, Pin, Share2, AlertCircle, X } from 'lucide-react';
+import FeedAvatar from './FeedAvatar';
 
 const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();
@@ -52,7 +52,7 @@ const FeedHeaderModal: React.FC = () => {
                      <button onClick={handleShare} className="absolute top-3 left-3 text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-3 transition-colors z-10" aria-label="Share">
                         <Share2 className="w-5 h-5" />
                     </button>
-                    <img src={feedView.avatar} alt={feedView.displayName} className="w-20 h-20 rounded-lg bg-surface-3 mb-3" />
+                    <FeedAvatar src={feedView.avatar} alt={feedView.displayName} className="w-20 h-20 rounded-lg mb-3" />
                     <h2 className="text-2xl font-bold">{feedView.displayName}</h2>
                     <p className="text-sm text-on-surface-variant">By @{feedView.creator.handle}</p>
                     <p className="text-sm text-on-surface-variant mt-2">

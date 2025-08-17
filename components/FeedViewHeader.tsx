@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { useUI } from '../context/UIContext';
 import { useFeedActions } from '../hooks/useFeedActions';
 import { ArrowLeft, MoreHorizontal, Heart } from 'lucide-react';
+import FeedAvatar from './FeedAvatar';
 
 interface FeedViewHeaderProps {
     feedUri: string;
@@ -45,7 +45,7 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({ feedUri, onBack }) => {
                     <ArrowLeft size={20} />
                 </button>
                 <div className="flex items-center gap-2 font-bold truncate">
-                    <img src={feedView.avatar} alt="" className="w-7 h-7 rounded-md bg-surface-3" />
+                    <FeedAvatar src={feedView.avatar} alt="" className="w-7 h-7 rounded-md" />
                     <span className="truncate">{feedView.displayName}</span>
                 </div>
                 <div className="flex items-center gap-1">

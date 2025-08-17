@@ -6,6 +6,7 @@ import { Pin, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import PopularFeeds from './PopularFeeds';
 import { useUI } from '../context/UIContext';
 import FeedsHeader from './FeedsHeader';
+import FeedAvatar from './FeedAvatar';
 
 const EditableFeedItem: React.FC<{
     feed: AppBskyFeedDefs.GeneratorView;
@@ -20,7 +21,7 @@ const EditableFeedItem: React.FC<{
 }> = ({ feed, isPinned, isFirst, isLast, disabled, onMoveUp, onMoveDown, onTogglePin, onRemove }) => {
     return (
         <div className={`flex items-center gap-3 p-2 bg-surface-2 rounded-xl border border-surface-3 transition-opacity ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-            <img src={feed.avatar} alt={feed.displayName} className="w-10 h-10 rounded-lg bg-surface-3 flex-shrink-0" loading="lazy" />
+            <FeedAvatar src={feed.avatar} alt={feed.displayName} className="w-10 h-10 rounded-lg flex-shrink-0" />
             <div className="flex-1 min-w-0">
                 <a href={`#/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`} className="font-bold truncate hover:underline">{feed.displayName}</a>
                 <p className="text-sm text-on-surface-variant">by @{feed.creator.handle}</p>
