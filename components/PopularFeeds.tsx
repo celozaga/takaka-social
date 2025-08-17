@@ -68,7 +68,7 @@ const useFeedPinning = () => {
                     ...(savedFeedsPref.saved || []).map((uri: string) => ({ type: 'feed', value: uri, pinned: (savedFeedsPref.pinned || []).includes(uri) })),
                 ]
             };
-            const existingItem = newPref.items.find((item: any) => item.value === feedUri);
+            const existingItem = newPref.items.find((item) => item.value === feedUri);
              if (isPinned) {
                 if (existingItem) existingItem.pinned = false;
             } else {
