@@ -1,8 +1,10 @@
 
+
 import React from 'react';
 import { AppBskyNotificationListNotifications, AppBskyFeedPost, AtUri } from '@atproto/api';
 import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import RichTextRenderer from './RichTextRenderer';
 
 interface NotificationItemProps {
   notification: AppBskyNotificationListNotifications.Notification;
@@ -32,7 +34,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       title = <p><AuthorLink /> liked your post</p>;
       link = postLink;
       if (AppBskyFeedPost.isRecord(record) && record.text) {
-        content = <p className="text-sm text-on-surface-variant line-clamp-2 mt-1">{(record as AppBskyFeedPost.Record).text}</p>;
+        content = <div className="text-sm text-on-surface-variant line-clamp-2 mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
       }
       break;
 
@@ -41,7 +43,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       title = <p><AuthorLink /> reposted your post</p>;
       link = postLink;
       if (AppBskyFeedPost.isRecord(record) && record.text) {
-        content = <p className="text-sm text-on-surface-variant line-clamp-2 mt-1">{(record as AppBskyFeedPost.Record).text}</p>;
+        content = <div className="text-sm text-on-surface-variant line-clamp-2 mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
       }
       break;
 
@@ -56,7 +58,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       title = <p><AuthorLink /> replied to your post</p>;
       link = postLink;
       if (AppBskyFeedPost.isRecord(record) && record.text) {
-        content = <p className="text-on-surface whitespace-pre-wrap mt-1">{(record as AppBskyFeedPost.Record).text}</p>;
+        content = <div className="text-on-surface whitespace-pre-wrap mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
       }
       break;
       
@@ -65,7 +67,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
         title = <p><AuthorLink /> mentioned you in a post</p>;
         link = postLink;
         if (AppBskyFeedPost.isRecord(record) && record.text) {
-          content = <p className="text-on-surface whitespace-pre-wrap mt-1">{(record as AppBskyFeedPost.Record).text}</p>;
+          content = <div className="text-on-surface whitespace-pre-wrap mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
         }
         break;
 

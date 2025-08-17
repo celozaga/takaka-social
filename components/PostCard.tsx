@@ -3,24 +3,13 @@ import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBsky
 import { useAtp } from '../context/AtpContext';
 import PostActions from './PostActions';
 import { Images, ExternalLink, PlayCircle } from 'lucide-react';
+import RichTextRenderer from './RichTextRenderer';
 
 type PostCardProps = {
     post: AppBskyFeedDefs.PostView;
     isClickable?: boolean;
     showAllMedia?: boolean;
 }
-
-const RichTextViewer: React.FC<{ record: { text: string; facets?: RichText['facets'] } }> = ({ record }) => {
-    if (!record.facets) return <>{record.text}</>;
-
-    const rt = new RichText({ text: record.text, facets: record.facets });
-    const segments: string[] = [];
-    for (const segment of rt.segments()) {
-        segments.push(segment.text);
-    }
-
-    return <>{segments.join('')}</>;
-};
 
 const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
@@ -162,8 +151,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
             <div className="p-3">
                 {postText && (
                      <Wrapper {...wrapperProps} className="block mb-2">
-                        <p className="text-sm text-on-surface line-clamp-3">
-                            <RichTextViewer record={record} />
+                        <p className="text-sm text-on-surface line-clamp-3 break-words">
+                            <RichTextRenderer record={record} />
                         </p>
                     </Wrapper>
                 )}

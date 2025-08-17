@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from './ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri } from '@atproto/api';
+import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
 import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff } from 'lucide-react';
+import RichTextRenderer from './RichTextRenderer';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -22,6 +23,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [hasMore, setHasMore] = useState(true);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
+
 
     const loaderRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -200,6 +203,20 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
         fetchProfileAndFeed();
     }, [agent, actor]);
+    
+    useEffect(() => {
+        if (profile?.description) {
+            const processDescription = async () => {
+                const rt = new RichText({ text: profile.description! });
+                await rt.detectFacets(agent);
+                setDescriptionWithFacets({ text: rt.text, facets: rt.facets });
+            };
+            processDescription();
+        } else {
+            setDescriptionWithFacets(null);
+        }
+    }, [profile?.description, agent]);
+
 
     const loadMorePosts = useCallback(async () => {
         if (isLoadingMore || !cursor || !hasMore) return;
@@ -329,7 +346,15 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     <span><strong className="text-on-surface">{profile.followsCount}</strong> Following</span>
                     <span><strong className="text-on-surface">{profile.postsCount}</strong> Posts</span>
                 </div>
-                {profile.description && <p className="mt-4 text-on-surface whitespace-pre-wrap">{profile.description}</p>}
+                {profile.description && (
+                    <div className="mt-4 text-on-surface whitespace-pre-wrap">
+                        {descriptionWithFacets ? (
+                            <RichTextRenderer record={descriptionWithFacets} />
+                        ) : (
+                            <>{profile.description}</>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="my-4 border-b border-surface-3"></div>

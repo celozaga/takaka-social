@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import PostCard from './PostCard';
@@ -13,46 +13,36 @@ const SearchScreen: React.FC = () => {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchType, setSearchType] = useState<'posts' | 'actors'>('posts');
+    const [hasSearched, setHasSearched] = useState(false);
 
-    const handleSearch = useCallback(async () => {
-        if (!query.trim()) {
+    const handleSearch = useCallback(async (searchQuery: string) => {
+        if (!searchQuery.trim()) {
             setResults([]);
+            setHasSearched(false);
             return;
         }
         setIsLoading(true);
+        setHasSearched(true);
         setResults([]);
 
         try {
             if (searchType === 'posts') {
-                const response = await agent.app.bsky.feed.searchPosts({ q: query, limit: 40 });
+                const response = await agent.app.bsky.feed.searchPosts({ q: searchQuery, limit: 40 });
                 const mediaPosts = response.data.posts.filter(post => {
                     const embed = post.embed;
-                    if (!embed) {
-                      return false;
-                    }
-              
-                    if (AppBskyEmbedImages.isView(embed)) {
-                      return true;
-                    }
-              
-                    if (embed.$type === 'app.bsky.embed.video#view') {
-                      return true;
-                    }
-              
+                    if (!embed) return false;
+                    if (AppBskyEmbedImages.isView(embed)) return true;
+                    if (embed.$type === 'app.bsky.embed.video#view') return true;
                     if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                      const media = embed.media;
-                      if (AppBskyEmbedImages.isView(media)) {
-                        return true;
-                      }
-                      if (media?.$type === 'app.bsky.embed.video#view') {
-                        return true;
-                      }
+                        const media = embed.media;
+                        if (AppBskyEmbedImages.isView(media)) return true;
+                        if (media?.$type === 'app.bsky.embed.video#view') return true;
                     }
                     return false;
                 });
                 setResults(mediaPosts);
             } else {
-                const response = await agent.app.bsky.actor.searchActors({ term: query, limit: 40 });
+                const response = await agent.app.bsky.actor.searchActors({ term: searchQuery, limit: 40 });
                 setResults(response.data.actors);
             }
         } catch (error) {
@@ -60,11 +50,31 @@ const SearchScreen: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [agent, query, searchType]);
+    }, [agent, searchType]);
+
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#/search')) {
+             const params = new URLSearchParams(hash.split('?')[1] || '');
+             const q = params.get('q');
+             if (q) {
+                 setQuery(q);
+                 handleSearch(q);
+             }
+        }
+    }, [handleSearch]);
+    
+    useEffect(() => {
+      // Re-run search if type changes and there is a query
+      if (query) {
+        handleSearch(query);
+      }
+    }, [searchType]);
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        handleSearch();
+        window.location.hash = `#/search?q=${encodeURIComponent(query)}`;
+        handleSearch(query);
     };
     
     const renderResults = () => {
@@ -137,7 +147,7 @@ const SearchScreen: React.FC = () => {
             {!isLoading && results.length > 0 && (
                 renderResults()
             )}
-            {!isLoading && results.length === 0 && query && (
+            {!isLoading && results.length === 0 && hasSearched && (
                  <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{query}".</div>
             )}
         </div>

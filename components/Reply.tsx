@@ -1,10 +1,12 @@
 
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import { useUI } from '../context/UIContext';
 import { usePostActions } from '../hooks/usePostActions';
 import { Heart, Repeat } from 'lucide-react';
+import RichTextRenderer from './RichTextRenderer';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -95,7 +97,9 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         </div>
         
         <a href={`#/post/${post.author.did}/${post.uri.split('/').pop()}`} className="block">
-            <p className="text-on-surface whitespace-pre-wrap mt-0.5 text-sm break-words">{record.text}</p>
+            <div className="text-on-surface whitespace-pre-wrap mt-0.5 text-sm break-words">
+                <RichTextRenderer record={record} />
+            </div>
         </a>
         <div className="mt-2 flex items-center gap-4 text-on-surface-variant text-sm">
            <button onClick={handleRepost} className={`flex items-center gap-1 transition-colors ${repostUri ? 'text-primary' : 'hover:text-primary'}`}>

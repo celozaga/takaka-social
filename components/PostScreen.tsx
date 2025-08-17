@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
@@ -9,6 +10,7 @@ import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from './ui/use-toast';
 import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
+import RichTextRenderer from './RichTextRenderer';
 
 interface PostScreenProps {
   did: string;
@@ -206,7 +208,11 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       <div>
         <div className="p-4">
              {renderMedia(mainPost)}
-             {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap">{record.text}</p>}
+             {record.text && (
+                <div className="my-3 text-on-surface whitespace-pre-wrap break-words">
+                    <RichTextRenderer record={record} />
+                </div>
+             )}
              <p className="text-sm text-on-surface-variant my-3">{format(new Date(record.createdAt), "h:mm a · MMM d, yyyy")}</p>
         </div>
         
