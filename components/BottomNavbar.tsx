@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
-import { Home, Search, UserCircle, Edit3, LogOut, Bell, LogIn, List } from 'lucide-react';
+import { Home, Search, Edit3, LogOut, Bell, LogIn, List, LayoutGrid } from 'lucide-react';
 
 interface BottomNavbarProps {
   isHidden?: boolean;
@@ -25,7 +25,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
     { href: '#/feeds', label: 'Feeds', icon: List, activeCondition: currentHash.startsWith('#/feeds') },
     { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
     { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
-    { href: `#/profile/${session?.handle}`, label: 'Me', icon: UserCircle, activeCondition: currentHash.startsWith(`#/profile/${session?.handle}`) },
+    { href: '#/more', label: 'More', icon: LayoutGrid, activeCondition: currentHash.startsWith('#/more') },
   ];
 
   const guestNavItems = [
@@ -76,11 +76,11 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
       {/* Desktop Navigation Rail */}
       <nav className="hidden md:flex fixed top-0 left-0 h-full w-20 bg-surface-2 flex-col items-center justify-between py-6 z-50">
         <div className="flex flex-col items-center gap-4 w-full">
-            {loggedInNavItems.filter(item => item.label !== 'Me' && item.label !== 'Logout').map(item => renderNavItem(item))}
+            {loggedInNavItems.filter(item => item.label !== 'More' && item.label !== 'Logout').map(item => renderNavItem(item))}
         </div>
         {session && (
           <div className="flex flex-col items-center gap-4 w-full">
-              {renderNavItem(loggedInNavItems.find(i => i.label === 'Me')!)}
+              {renderNavItem(loggedInNavItems.find(i => i.label === 'More')!)}
               <button onClick={logout} title="Logout" className="flex flex-col items-center justify-center gap-1 w-full group transition-colors">
                   <div className="w-16 h-8 flex items-center justify-center rounded-full transition-colors group-hover:bg-surface-3">
                       <LogOut size={22} className="text-on-surface-variant group-hover:text-on-surface"/>

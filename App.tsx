@@ -18,6 +18,7 @@ import FeedHeaderModal from './components/FeedHeaderModal';
 import FeedViewScreen from './components/FeedViewScreen';
 import SettingsScreen from './components/SettingsScreen';
 import NotificationSettingsScreen from './components/NotificationSettingsScreen';
+import MoreScreen from './components/MoreScreen';
 
 const App: React.FC = () => {
   return (
@@ -106,6 +107,12 @@ const Main: React.FC = () => {
           return <NotificationSettingsScreen />;
         }
         return <SettingsScreen />;
+      case 'more':
+         if (!session) {
+          window.location.hash = '#/';
+          return null;
+        }
+        return <MoreScreen />;
       default:
         return <HomeScreen />;
     }
