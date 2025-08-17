@@ -1,0 +1,186 @@
+import React from 'react';
+import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
+import { useAtp } from '../context/AtpContext';
+import PostActions from './PostActions';
+import { Images, ExternalLink, PlayCircle } from 'lucide-react';
+
+type PostCardProps = {
+    post: AppBskyFeedDefs.PostView;
+    isClickable?: boolean;
+    showAllMedia?: boolean;
+}
+
+const RichTextViewer: React.FC<{ record: { text: string; facets?: RichText['facets'] } }> = ({ record }) => {
+    if (!record.facets) return <>{record.text}</>;
+
+    const rt = new RichText({ text: record.text, facets: record.facets });
+    const segments: string[] = [];
+    for (const segment of rt.segments()) {
+        segments.push(segment.text);
+    }
+
+    return <>{segments.join('')}</>;
+};
+
+const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMedia = false }) => {
+    const { agent } = useAtp();
+    const author = post.author as AppBskyActorDefs.ProfileViewBasic;
+    const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
+    const postText = record?.text || '';
+    const rkey = post.uri.split('/').pop() as string;
+    const postLink = `#/post/${author.did}/${rkey}`;
+    const profileLink = `#/profile/${author.handle}`;
+
+    const renderMedia = () => {
+        if (!post.embed) return null;
+
+        const processImageEmbed = (embed: AppBskyEmbedImages.View) => {
+            if (showAllMedia && embed.images.length > 0) {
+                const gridCols = embed.images.length >= 2 ? 'grid-cols-2' : 'grid-cols-1';
+                return (
+                    <div className={`grid ${gridCols} gap-1.5`}>
+                        {embed.images.map((image, index) => (
+                            <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 rounded-md overflow-hidden">
+                                <img
+                                    src={image.thumb}
+                                    alt={image.alt || `Post image ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                />
+                                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <ExternalLink className="text-white w-6 h-6" />
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                );
+            }
+            
+            const firstImage = embed.images[0];
+            if (!firstImage) return null;
+            
+            return (
+                <div className="relative">
+                    <img 
+                        src={firstImage.thumb} 
+                        alt={firstImage.alt || 'Post image'} 
+                        className="w-full h-auto object-cover" 
+                        loading="lazy"
+                    />
+                    {embed.images.length > 1 && (
+                         <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold py-1 px-1.5 rounded-full flex items-center gap-1 backdrop-blur-sm border border-white/20">
+                            <Images size={14} />
+                            <span>{embed.images.length}</span>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        const processVideoEmbed = (embedView: AppBskyEmbedVideo.View) => {
+            const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
+            const videoCid = embedView.cid;
+            const posterUrl = embedView.thumbnail;
+            
+            if (!authorDid || !videoCid || !agent.service) {
+                return <div className="w-full aspect-video bg-surface-3 flex items-center justify-center text-on-surface-variant">Video data unavailable</div>;
+            }
+            
+            const serviceUrl = agent.service.toString();
+            const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+
+            if (showAllMedia) {
+                 const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
+                 return (
+                     <video
+                        src={videoUrl}
+                        poster={posterUrl}
+                        controls
+                        muted
+                        autoPlay
+                        loop
+                        className="w-full h-auto bg-black rounded-lg"
+                     />
+                 )
+            }
+
+            // Timeline view: Show thumbnail with play icon
+            if (!posterUrl) {
+                 return (
+                    <div className="relative w-full aspect-video bg-black flex items-center justify-center text-on-surface-variant">
+                        <PlayCircle size={32} className="text-white/50" />
+                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                           <PlayCircle size={14}/>
+                        </div>
+                    </div>
+                 );
+            }
+            
+            return (
+                <div className="relative">
+                    <img src={posterUrl} className="w-full h-auto object-cover bg-black" />
+                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                        <PlayCircle size={14}/>
+                    </div>
+                </div>
+            );
+        }
+
+        const embed = post.embed;
+
+        if (AppBskyEmbedImages.isView(embed)) {
+            return processImageEmbed(embed);
+        }
+
+        if (AppBskyEmbedVideo.isView(embed)) {
+            return processVideoEmbed(embed);
+        }
+
+        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+            const media = embed.media;
+            if (AppBskyEmbedImages.isView(media)) {
+                return processImageEmbed(media);
+            }
+            if (AppBskyEmbedVideo.isView(media)) {
+                return processVideoEmbed(media);
+            }
+        }
+        return null;
+    };
+
+    const mediaElement = renderMedia();
+    if (!mediaElement) return null;
+
+    const Wrapper = isClickable ? 'a' : 'div';
+    const wrapperProps = isClickable ? { href: postLink } : {};
+
+    return (
+         <article className="bg-surface-2 rounded-xl overflow-hidden flex flex-col">
+            <Wrapper {...wrapperProps} className="w-full block">
+                {mediaElement}
+            </Wrapper>
+            <div className="p-3">
+                {postText && (
+                     <Wrapper {...wrapperProps} className="block mb-2">
+                        <p className="text-sm text-on-surface line-clamp-3">
+                            <RichTextViewer record={record} />
+                        </p>
+                    </Wrapper>
+                )}
+                 <div className="flex items-center justify-between gap-2 text-sm mt-2">
+                   <a href={profileLink} className="flex items-center gap-2 truncate hover:opacity-80 transition-opacity">
+                     <img 
+                        src={author.avatar || `https://picsum.photos/seed/${author.did}/24`} 
+                        alt={`${author.displayName}'s avatar`} 
+                        className="w-7 h-7 rounded-full bg-surface-3 flex-shrink-0" 
+                     />
+                     <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || author.handle}</span>
+                   </a>
+                   <PostActions post={post} />
+                </div>
+            </div>
+        </article>
+    );
+};
+
+export default PostCard;
