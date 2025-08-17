@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
+import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, LayoutGrid, Repeat, Heart, List } from 'lucide-react';
@@ -11,6 +11,7 @@ import { useUI } from '../../context/UIContext';
 import ProfileHeader from './ProfileHeader';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
+import FullPostCard from '../post/FullPostCard';
 
 type ProfileTab = 'posts' | 'reposts' | 'likes' | 'feeds';
 
@@ -170,19 +171,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     };
     
-    const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
-        return posts.filter(item => {
-            const embed = item.post.embed;
-            if (!embed) return false;
-            if (AppBskyEmbedImages.isView(embed) || embed.$type === 'app.bsky.embed.video#view') return true;
-            if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                const media = embed.media;
-                if (AppBskyEmbedImages.isView(media) || media?.$type === 'app.bsky.embed.video#view') return true;
-            }
-            return false;
-        });
-    };
-
     const fetchFeedData = useCallback(async (tab: ProfileTab, currentCursor?: string) => {
         if (!currentCursor) {
             setIsLoadingFeed(true);
@@ -201,7 +189,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             switch (tab) {
                 case 'posts':
                     response = await agent.getAuthorFeed({ actor, cursor: currentCursor, limit: 30 });
-                    newItems = filterMediaPosts(response.data.feed);
+                    // The 'posts' tab should only contain original posts with media.
+                    newItems = response.data.feed.filter(item => !item.reason && item.post.embed);
                     nextCursor = response.data.cursor;
                     break;
                 case 'reposts':
@@ -413,15 +402,19 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     const renderFeedContent = () => {
         if (isLoadingFeed) {
-            return (
-                 <div className="columns-2 gap-4 mt-4">
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className="break-inside-avoid mb-4">
-                            <PostCardSkeleton />
-                        </div>
-                    ))}
-                </div>
-            )
+             const skeleton = activeTab === 'posts' 
+                ? (
+                    <div className="columns-2 gap-4 mt-4">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-24 animate-pulse"></div>)}
+                    </div>
+                );
+            return skeleton;
         }
         
         if (feed.length === 0) {
@@ -445,18 +438,32 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         
         const feedViewPosts = feed.filter(item => AppBskyFeedDefs.isFeedViewPost(item)) as AppBskyFeedDefs.FeedViewPost[];
 
+        if (activeTab === 'posts') {
+            return (
+                <div className="columns-2 gap-4">
+                    {feedViewPosts.map((feedViewPost) => {
+                        const { post, reason } = feedViewPost;
+                        const uniqueKey = `${post.cid}-${AppBskyFeedDefs.isReasonRepost(reason) ? reason.by.did : ''}`;
+                        return (
+                            <div key={uniqueKey} className="break-inside-avoid mb-4">
+                                <PostCard feedViewPost={feedViewPost} />
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        // List view for Reposts and Likes
         return (
-            <div className="columns-2 gap-4">
+            <div className="flow-root">
+                <ul className="-my-px">
                 {feedViewPosts.map((feedViewPost) => {
                     const { post, reason } = feedViewPost;
                     const uniqueKey = `${post.cid}-${AppBskyFeedDefs.isReasonRepost(reason) ? reason.by.did : ''}`;
-                    if (activeTab === 'posts' && !post.embed) return null;
-                    return (
-                        <div key={uniqueKey} className="break-inside-avoid mb-4">
-                            <PostCard feedViewPost={feedViewPost} />
-                        </div>
-                    );
+                    return <FullPostCard key={uniqueKey} feedViewPost={feedViewPost} />;
                 })}
+                </ul>
             </div>
         );
     }
@@ -530,9 +537,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         {renderFeedContent()}
                         <div ref={loaderRef} className="h-10">
                             {isLoadingMore && (
-                                <div className="columns-2 gap-4 mt-4">
-                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
-                                    <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                <div className="space-y-4">
+                                     <div className="bg-surface-2 rounded-xl h-24 animate-pulse"></div>
                                 </div>
                             )}
                         </div>
