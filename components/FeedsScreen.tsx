@@ -9,20 +9,23 @@ const FeedsScreen: React.FC = () => {
     const { session } = useAtp();
     const { isLoading, pinnedUris, allUris, feedViews, togglePin, removeFeed, reorder } = useSavedFeeds();
 
-    const { pinnedFeeds, savedFeeds } = allUris.reduce<{
-        pinnedFeeds: AppBskyFeedDefs.GeneratorView[],
-        savedFeeds: AppBskyFeedDefs.GeneratorView[]
-    }>((acc, uri) => {
-        const feed = feedViews.get(uri);
-        if (feed) {
-            if (pinnedUris.has(uri)) {
-                acc.pinnedFeeds.push(feed);
-            } else {
-                acc.savedFeeds.push(feed);
+    const { pinnedFeeds, savedFeeds } = allUris.reduce(
+        (acc, uri) => {
+            const feed = feedViews.get(uri);
+            if (feed) {
+                if (pinnedUris.has(uri)) {
+                    acc.pinnedFeeds.push(feed);
+                } else {
+                    acc.savedFeeds.push(feed);
+                }
             }
+            return acc;
+        },
+        {
+            pinnedFeeds: [] as AppBskyFeedDefs.GeneratorView[],
+            savedFeeds: [] as AppBskyFeedDefs.GeneratorView[],
         }
-        return acc;
-    }, { pinnedFeeds: [], savedFeeds: [] });
+    );
 
 
     const handleMove = (index: number, direction: 'up' | 'down') => {
