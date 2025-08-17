@@ -8,8 +8,11 @@ import FeedSearchResultCard from './FeedSearchResultCard';
 
 
 // --- Main PopularFeeds Component ---
+interface PopularFeedsProps {
+  showHeader?: boolean;
+}
 
-const PopularFeeds: React.FC = () => {
+const PopularFeeds: React.FC<PopularFeedsProps> = ({ showHeader = true }) => {
     const { agent } = useAtp();
     const [feeds, setFeeds] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -42,12 +45,14 @@ const PopularFeeds: React.FC = () => {
     
     return (
         <div>
-            <div className="flex items-center justify-between mb-3 px-1">
-                <h2 className="text-xl font-bold">Discover Feeds</h2>
-                 <a href="#/feeds" className="p-1 hover:bg-surface-3 rounded-full">
-                    <Search className="w-5 h-5 text-on-surface-variant" />
-                </a>
-            </div>
+            {showHeader && (
+                <div className="flex items-center justify-between mb-3 px-1">
+                    <h2 className="text-xl font-bold">Popular Feeds</h2>
+                    <a href="#/feeds" className="p-1 hover:bg-surface-3 rounded-full">
+                        <Search className="w-5 h-5 text-on-surface-variant" />
+                    </a>
+                </div>
+            )}
              {isLoading ? (
                 <div className="space-y-3">
                     {[...Array(3)].map((_, i) => (
