@@ -6,13 +6,19 @@ interface ReplyToProps {
   cid: string;
 }
 
+interface ComposerOptions {
+  replyTo?: ReplyToProps;
+  initialText?: string;
+}
+
 interface UIContextType {
   isLoginModalOpen: boolean;
   openLoginModal: () => void;
   closeLoginModal: () => void;
   isComposerOpen: boolean;
   composerReplyTo?: ReplyToProps;
-  openComposer: (replyTo?: ReplyToProps) => void;
+  composerInitialText?: string;
+  openComposer: (options?: ComposerOptions) => void;
   closeComposer: () => void;
   isFeedModalOpen: boolean;
   feedModalUri?: string;
@@ -28,6 +34,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [composerReplyTo, setComposerReplyTo] = useState<ReplyToProps | undefined>(undefined);
+  const [composerInitialText, setComposerInitialText] = useState<string | undefined>(undefined);
   const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
   const [feedModalUri, setFeedModalUri] = useState<string | undefined>(undefined);
   const [isCustomFeedHeaderVisible, setCustomFeedHeaderVisible] = useState(false);
@@ -40,14 +47,16 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setIsLoginModalOpen(false);
   }, []);
 
-  const openComposer = useCallback((replyTo?: ReplyToProps) => {
-    setComposerReplyTo(replyTo);
+  const openComposer = useCallback((options?: ComposerOptions) => {
+    setComposerReplyTo(options?.replyTo);
+    setComposerInitialText(options?.initialText);
     setIsComposerOpen(true);
   }, []);
 
   const closeComposer = useCallback(() => {
     setIsComposerOpen(false);
     setComposerReplyTo(undefined);
+    setComposerInitialText(undefined);
   }, []);
 
   const openFeedModal = useCallback((uri: string) => {
@@ -63,7 +72,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <UIContext.Provider value={{ 
         isLoginModalOpen, openLoginModal, closeLoginModal, 
-        isComposerOpen, openComposer, closeComposer, composerReplyTo,
+        isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
         isFeedModalOpen, feedModalUri, openFeedModal, closeFeedModal,
         isCustomFeedHeaderVisible, setCustomFeedHeaderVisible
     }}>

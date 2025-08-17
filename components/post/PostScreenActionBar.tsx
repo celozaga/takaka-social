@@ -39,7 +39,7 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
     return (
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-2 h-20 px-4 flex items-center gap-4 z-30">
             <button
-                onClick={() => openComposer({ uri: post.uri, cid: post.cid })}
+                onClick={() => openComposer({ replyTo: { uri: post.uri, cid: post.cid } })}
                 className="flex-1 bg-surface-3 text-on-surface-variant text-left text-sm px-4 py-2.5 rounded-full hover:bg-surface-3/80"
             >
                 Comment...

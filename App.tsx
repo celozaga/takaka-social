@@ -19,6 +19,7 @@ import FeedViewScreen from './components/feeds/FeedViewScreen';
 import SettingsScreen from './components/settings/SettingsScreen';
 import NotificationSettingsScreen from './components/settings/NotificationSettingsScreen';
 import MoreScreen from './components/more/MoreScreen';
+import FollowsScreen from './components/profile/FollowsScreen';
 
 const App: React.FC = () => {
   return (
@@ -35,7 +36,7 @@ const App: React.FC = () => {
 
 const Main: React.FC = () => {
   const { session, isLoadingSession } = useAtp();
-  const { isLoginModalOpen, closeLoginModal, isComposerOpen, closeComposer, composerReplyTo, isCustomFeedHeaderVisible, isFeedModalOpen, closeFeedModal } = useUI();
+  const { isLoginModalOpen, closeLoginModal, isComposerOpen, closeComposer, composerReplyTo, composerInitialText, isCustomFeedHeaderVisible, isFeedModalOpen, closeFeedModal } = useUI();
   const [route, setRoute] = useState(window.location.hash);
 
   useEffect(() => {
@@ -79,6 +80,12 @@ const Main: React.FC = () => {
           const handle = parts[1];
           const rkey = parts[3];
           return <FeedViewScreen handle={handle} rkey={rkey} key={`${handle}-${rkey}`} />;
+        }
+        if (parts[2] === 'followers') {
+            return <FollowsScreen actor={parts[1]} type="followers" key={`${parts[1]}-followers`} />;
+        }
+        if (parts[2] === 'following') {
+            return <FollowsScreen actor={parts[1]} type="following" key={`${parts[1]}-following`} />;
         }
         return <ProfileScreen actor={parts[1]} key={parts[1]} />;
       case 'post':
@@ -142,6 +149,7 @@ const Main: React.FC = () => {
                 onPostSuccess={closeComposer}
                 onClose={closeComposer}
                 replyTo={composerReplyTo}
+                initialText={composerInitialText}
              />
           </div>
         </div>

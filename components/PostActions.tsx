@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Heart, Repeat, MessageCircle } from 'lucide-react';
 import { useAtp } from '../context/AtpContext';
@@ -40,7 +41,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
     e.stopPropagation();
     e.preventDefault();
     if (!ensureSession()) return;
-    openComposer({ uri: post.uri, cid: post.cid });
+    openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
   };
 
   return (

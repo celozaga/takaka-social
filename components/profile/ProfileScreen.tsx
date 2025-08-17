@@ -5,14 +5,15 @@ import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
+import ProfileHeader from './ProfileHeader';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
-    const { setCustomFeedHeaderVisible } = useUI();
+    const { setCustomFeedHeaderVisible, openComposer } = useUI();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
@@ -25,7 +26,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
-
 
     const loaderRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -275,12 +275,20 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
     if (isLoading) {
         return (
-             <div className="columns-2 gap-4">
-                {[...Array(6)].map((_, i) => (
-                    <div key={i} className="break-inside-avoid mb-4">
-                        <PostCardSkeleton />
-                    </div>
-                ))}
+            <div>
+                <div className="sticky top-0 -mx-4 -mt-4 px-4 bg-surface-1 z-30 h-16 animate-pulse"></div>
+                <div className="p-4 bg-surface-2 rounded-xl mt-4 animate-pulse">
+                    <div className="h-20"></div>
+                    <div className="h-4 w-3/4 mt-4 rounded bg-surface-3"></div>
+                    <div className="h-4 w-1/2 mt-2 rounded bg-surface-3"></div>
+                </div>
+                 <div className="columns-2 gap-4 mt-4">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="break-inside-avoid mb-4">
+                            <PostCardSkeleton />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -288,22 +296,33 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     if (error || !profile) {
         return <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error || "Profile not found."}</div>;
     }
-
+    
     const FollowButton = () => (
         <button
             onClick={viewerState?.following ? handleUnfollow : handleFollow}
             disabled={isActionLoading}
-            className={`font-bold py-2 px-6 rounded-full transition duration-200 flex items-center gap-2 flex-grow justify-center
+            className={`font-bold py-2.5 px-6 rounded-lg transition duration-200 flex items-center gap-2 flex-grow justify-center
                 ${viewerState?.following 
                     ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' 
                     : 'bg-primary text-on-primary hover:bg-primary/90'
                 }
                 disabled:opacity-50`}
         >
-            {viewerState?.following ? <UserCheck size={18} /> : <UserPlus size={18} />}
             <span>{viewerState?.following ? 'Following' : 'Follow'}</span>
         </button>
     );
+
+    const MentionButton = () => {
+        if (!session || isMe) return null;
+        return (
+            <button
+                onClick={() => openComposer({ initialText: `@${profile.handle} ` })}
+                className="font-bold py-2.5 px-6 rounded-lg transition duration-200 flex items-center gap-2 flex-grow justify-center bg-surface-3 text-on-surface hover:bg-surface-3/80"
+            >
+                <span>Mention</span>
+            </button>
+        );
+    };
 
     const ActionsMenu = () => (
         <div className="relative" ref={menuRef}>
@@ -335,86 +354,88 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     return (
         <div>
-            <div className="h-48 bg-surface-3 rounded-t-lg -mx-4 -mt-4 relative">
-                {profile.banner && <img src={profile.banner} alt="Banner" className="w-full h-full object-cover rounded-t-lg" loading="lazy"/>}
-                <button onClick={() => window.history.back()} className="absolute top-4 left-4 p-2 rounded-full bg-black/50 hover:bg-black/75 text-white transition-colors z-10" aria-label="Go back">
-                    <ArrowLeft size={20} />
-                </button>
-                <div className="absolute -bottom-16 left-8">
-                    <img src={profile.avatar} alt="Avatar" className="w-32 h-32 rounded-full border-4 border-surface-1 bg-surface-3" loading="lazy"/>
+            <ProfileHeader handle={profile.handle} />
+
+            <div className="p-4 bg-surface-2 rounded-xl mt-4">
+                <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                        <h2 className="text-2xl font-bold break-words flex items-center gap-2">
+                            <span>{profile.displayName}</span>
+                             {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                                <BadgeCheck className="w-6 h-6 text-primary flex-shrink-0" fill="currentColor" />
+                            )}
+                        </h2>
+                        <p className="text-on-surface-variant">@{profile.handle}</p>
+                    </div>
+                    <img src={profile.avatar} alt="Avatar" className="w-20 h-20 rounded-full bg-surface-3" loading="lazy"/>
                 </div>
-            </div>
-            
-            <div className="pt-20 px-4 pb-8">
-                 {session && !isMe && viewerState && (
-                    <div className="flex items-center gap-2 mb-4">
+
+                {profile.description && (
+                    <div className="mt-3 text-on-surface whitespace-pre-wrap break-words">
+                        {descriptionWithFacets ? <RichTextRenderer record={descriptionWithFacets} /> : <>{profile.description}</>}
+                    </div>
+                )}
+                
+                <div className="flex items-center gap-4 text-sm text-on-surface-variant mt-3">
+                    <a href={`#/profile/${profile.handle}/followers`} className="hover:underline">
+                        <strong className="text-on-surface">{profile.followersCount}</strong> followers
+                    </a>
+                    <a href={`#/profile/${profile.handle}/following`} className="hover:underline">
+                        <strong className="text-on-surface">{profile.followsCount}</strong> following
+                    </a>
+                </div>
+                
+                {session && !isMe && viewerState && (
+                    <div className="flex items-center gap-2 mt-4">
                         <FollowButton />
+                        <MentionButton />
                         <ActionsMenu />
                     </div>
                 )}
-                <h2 className="text-3xl font-bold flex items-center gap-2">
-                    <span>{profile.displayName}</span>
-                    {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                        <BadgeCheck className="w-6 h-6 text-primary" fill="currentColor" />
-                    )}
-                </h2>
-                <p className="text-on-surface-variant">@{profile.handle}</p>
-                <div className="flex items-center gap-4 text-on-surface-variant text-sm mt-2">
-                    <span><strong className="text-on-surface">{profile.followersCount}</strong> Followers</span>
-                    <span><strong className="text-on-surface">{profile.followsCount}</strong> Following</span>
-                    <span><strong className="text-on-surface">{profile.postsCount}</strong> Posts</span>
-                </div>
-                {profile.description && (
-                    <div className="mt-4 text-on-surface whitespace-pre-wrap">
-                        {descriptionWithFacets ? (
-                            <RichTextRenderer record={descriptionWithFacets} />
-                        ) : (
-                            <>{profile.description}</>
-                        )}
-                    </div>
-                )}
             </div>
 
-            {viewerState?.blocking ? (
-                <div className="text-center p-8 bg-surface-2 rounded-xl">
-                    <p className="font-bold text-lg">You have blocked @{profile.handle}</p>
-                    <p className="text-on-surface-variant text-sm mb-4">You won't see their posts or be able to follow them.</p>
-                    <button onClick={handleUnblock} disabled={isActionLoading} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 disabled:opacity-50">
-                        Unblock
-                    </button>
-                </div>
-            ) : (
-                <>
-                    {feed.length === 0 && !isLoadingMore && (
-                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
-                    )}
-                    
-                    <div className="columns-2 gap-4">
-                        {feed.map(({ post }) => (
-                            <div key={post.cid} className="break-inside-avoid mb-4">
-                                <PostCard post={post} />
-                            </div>
-                        ))}
+            <div className="mt-4">
+                {viewerState?.blocking ? (
+                    <div className="text-center p-8 bg-surface-2 rounded-xl">
+                        <p className="font-bold text-lg">You have blocked @{profile.handle}</p>
+                        <p className="text-on-surface-variant text-sm mb-4">You won't see their posts or be able to follow them.</p>
+                        <button onClick={handleUnblock} disabled={isActionLoading} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 disabled:opacity-50">
+                            Unblock
+                        </button>
                     </div>
-
-                    <div ref={loaderRef} className="h-10">
-                        {isLoadingMore && (
-                          <div className="columns-2 gap-4 mt-4">
-                            <div className="break-inside-avoid mb-4">
-                               <PostCardSkeleton />
-                            </div>
-                            <div className="break-inside-avoid mb-4">
-                               <PostCardSkeleton />
-                            </div>
-                          </div>
+                ) : (
+                    <>
+                        {feed.length === 0 && !isLoadingMore && (
+                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
                         )}
-                    </div>
+                        
+                        <div className="columns-2 gap-4">
+                            {feed.map(({ post }) => (
+                                <div key={post.cid} className="break-inside-avoid mb-4">
+                                    <PostCard post={post} />
+                                </div>
+                            ))}
+                        </div>
 
-                    {!hasMore && feed.length > 0 && (
-                        <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
-                    )}
-                </>
-            )}
+                        <div ref={loaderRef} className="h-10">
+                            {isLoadingMore && (
+                            <div className="columns-2 gap-4 mt-4">
+                                <div className="break-inside-avoid mb-4">
+                                <PostCardSkeleton />
+                                </div>
+                                <div className="break-inside-avoid mb-4">
+                                <PostCardSkeleton />
+                                </div>
+                            </div>
+                            )}
+                        </div>
+
+                        {!hasMore && feed.length > 0 && (
+                            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 };

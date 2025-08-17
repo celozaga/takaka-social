@@ -12,6 +12,7 @@ interface ComposerProps {
     uri: string;
     cid: string;
   };
+  initialText?: string;
 }
 
 interface MediaFile {
@@ -64,10 +65,10 @@ const generateVideoThumbnail = (videoFile: File): Promise<Blob> => {
     });
 };
 
-const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) => {
+const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, initialText }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialText || '');
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
@@ -251,6 +252,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo }) 
             placeholder={replyTo ? "Write your reply..." : "What's happening?"}
             className="w-full bg-transparent text-lg resize-none outline-none placeholder-on-surface-variant"
             rows={replyTo ? 2 : 3}
+            autoFocus
           />
           {mediaFiles.length > 0 && (
             <div className={`mt-2 grid gap-2 ${mediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>

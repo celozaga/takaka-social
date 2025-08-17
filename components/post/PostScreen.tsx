@@ -224,7 +224,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                 <div className="py-3 flex items-center gap-3">
                     <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
                     <button
-                        onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })}
+                        onClick={() => openComposer({ replyTo: { uri: mainPost.uri, cid: mainPost.cid } })}
                         className="flex-1 bg-surface-2 text-on-surface-variant text-left px-4 py-2.5 rounded-full hover:bg-surface-3 transition-colors"
                     >
                         Write your reply...
