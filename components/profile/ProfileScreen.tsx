@@ -4,7 +4,6 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
-import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, Grid, Heart } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -129,12 +128,40 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         } else {
             setIsLikesLoadingMore(true);
         }
-        
+    
         try {
-            const res = await agent.api.app.bsky.feed.getActorLikes({ actor, cursor, limit: 30 });
-            setLikesFeed(prev => cursor ? [...prev, ...res.data.feed] : res.data.feed);
-            setLikesCursor(res.data.cursor);
-            setHasMoreLikes(!!res.data.cursor && res.data.feed.length > 0);
+            let newMediaLikes: AppBskyFeedDefs.FeedViewPost[] = [];
+            let nextCursor: string | undefined = cursor;
+            let attempts = 0;
+    
+            // Keep fetching until we find at least one media post, or run out of pages/attempts.
+            while (newMediaLikes.length === 0 && nextCursor !== undefined && attempts < 5) {
+                attempts++;
+                const res = await agent.api.app.bsky.feed.getActorLikes({ actor, cursor: nextCursor, limit: 50 });
+    
+                if (res.data.feed.length === 0) {
+                    nextCursor = undefined;
+                    break;
+                }
+    
+                newMediaLikes = res.data.feed.filter(item => {
+                    const embed = item.post.embed;
+                    if (!embed) return false;
+                    if (AppBskyEmbedImages.isView(embed) || AppBskyEmbedVideo.isView(embed)) return true;
+                    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                        const media = embed.media;
+                        if (AppBskyEmbedImages.isView(media) || AppBskyEmbedVideo.isView(media)) return true;
+                    }
+                    return false;
+                });
+                
+                nextCursor = res.data.cursor;
+            }
+            
+            setLikesFeed(prev => cursor ? [...prev, ...newMediaLikes] : newMediaLikes);
+            setLikesCursor(nextCursor);
+            setHasMoreLikes(!!nextCursor);
+    
         } catch (err) {
             console.error("Failed to fetch likes:", err);
         } finally {
@@ -242,14 +269,16 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 );
             
             case 'likes':
-                if (isLikesLoading) return <div className="mt-4 space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-24 animate-pulse"></div>)}</div>;
-                if (likesFeed.length === 0) return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">This user hasn't liked any posts yet.</div>;
+                if (isLikesLoading) return <div className="columns-2 gap-4 mt-4">{[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>)}</div>;
+                if (likesFeed.length === 0) return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">This user hasn't liked any media posts yet.</div>;
                 return (
-                    <ul className="-my-2">
+                    <div className="columns-2 gap-4">
                         {likesFeed.map((feedViewPost) => (
-                            <FullPostCard key={feedViewPost.post.cid} feedViewPost={feedViewPost} />
+                            <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
+                                <PostCard feedViewPost={feedViewPost} />
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 );
         }
     };
