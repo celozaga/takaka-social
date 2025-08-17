@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useSavedFeeds } from '../hooks/useSavedFeeds';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
-import { Pin, PinOff, Trash2, Search } from 'lucide-react';
+import { Pin, PinOff, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import PopularFeeds from './PopularFeeds';
 
 const FeedItem: React.FC<{
@@ -11,7 +11,11 @@ const FeedItem: React.FC<{
     isPinned: boolean;
     onTogglePin: () => void;
     onRemove?: () => void;
-}> = ({ feed, isPinned, onTogglePin, onRemove }) => {
+    onMoveUp?: () => void;
+    onMoveDown?: () => void;
+    isFirst?: boolean;
+    isLast?: boolean;
+}> = ({ feed, isPinned, onTogglePin, onRemove, onMoveUp, onMoveDown, isFirst, isLast }) => {
     const feedLink = `#/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
 
     return (
@@ -23,7 +27,17 @@ const FeedItem: React.FC<{
                     <p className="text-sm text-on-surface-variant">by @{feed.creator.handle}</p>
                 </a>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+                {isPinned && onMoveUp && onMoveDown && (
+                    <>
+                        <button onClick={onMoveUp} disabled={isFirst} className="p-2 rounded-full hover:bg-surface-3 disabled:opacity-50" title="Move up">
+                            <ArrowUp size={18} />
+                        </button>
+                        <button onClick={onMoveDown} disabled={isLast} className="p-2 rounded-full hover:bg-surface-3 disabled:opacity-50" title="Move down">
+                            <ArrowDown size={18} />
+                        </button>
+                    </>
+                )}
                 <button onClick={onTogglePin} className="p-2 rounded-full hover:bg-surface-3" title={isPinned ? 'Unpin' : 'Pin'}>
                     {isPinned ? <PinOff size={18} className="text-primary" /> : <Pin size={18} />}
                 </button>
@@ -49,8 +63,6 @@ const FeedsScreen: React.FC = () => {
         reorder 
     } = useSavedFeeds();
     
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-
     const pinnedFeedItems = React.useMemo(() => 
         [...pinnedUris]
             .map(uri => feedViews.get(uri))
@@ -71,29 +83,6 @@ const FeedsScreen: React.FC = () => {
             .filter((feed): feed is AppBskyFeedDefs.GeneratorView => !!feed),
         [allUris, pinnedUris, feedViews]
     );
-
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
-        setDraggedIndex(index);
-        e.dataTransfer.effectAllowed = 'move';
-        const img = new Image();
-        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        e.dataTransfer.setDragImage(img, 0, 0);
-    };
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
-        e.preventDefault();
-        if (draggedIndex === null || draggedIndex === dropIndex) return;
-        reorder(draggedIndex, dropIndex);
-        setDraggedIndex(null);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedIndex(null);
-    };
 
     if (!session) {
         return (
@@ -137,21 +126,15 @@ const FeedsScreen: React.FC = () => {
                     {orderedPinnedFeeds.length > 0 ? (
                         <div className="space-y-2">
                             {orderedPinnedFeeds.map((feed, index) => (
-                                <div
-                                    key={feed.uri}
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, index)}
-                                    onDragOver={handleDragOver}
-                                    onDrop={(e) => handleDrop(e, index)}
-                                    onDragEnd={handleDragEnd}
-                                    style={{ cursor: 'grab' }}
-                                    className={`transition-opacity ${draggedIndex === index ? 'opacity-50' : 'opacity-100'}`}
-                                >
+                                <div key={feed.uri}>
                                     <FeedItem
                                         feed={feed}
                                         isPinned={true}
                                         onTogglePin={() => togglePin(feed.uri)}
-                                        onRemove={() => removeFeed(feed.uri)}
+                                        onMoveUp={() => reorder(index, index - 1)}
+                                        onMoveDown={() => reorder(index, index + 1)}
+                                        isFirst={index === 0}
+                                        isLast={index === orderedPinnedFeeds.length - 1}
                                     />
                                 </div>
                             ))}
