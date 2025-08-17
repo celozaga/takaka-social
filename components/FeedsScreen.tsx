@@ -1,170 +1,190 @@
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSavedFeeds } from '../hooks/useSavedFeeds';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
-import { Search } from 'lucide-react';
+import { Pin, PinOff, Trash2, Search } from 'lucide-react';
 import PopularFeeds from './PopularFeeds';
-import FeedSearchResultCard from './FeedSearchResultCard';
+
+const FeedItem: React.FC<{
+    feed: AppBskyFeedDefs.GeneratorView;
+    isPinned: boolean;
+    onTogglePin: () => void;
+    onRemove?: () => void;
+}> = ({ feed, isPinned, onTogglePin, onRemove }) => {
+    const feedLink = `#/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
+
+    return (
+        <div className="flex items-center gap-3 p-3 bg-surface-2 rounded-xl border border-surface-3">
+            <img src={feed.avatar} alt={feed.displayName} className="w-12 h-12 rounded-lg bg-surface-3 flex-shrink-0" loading="lazy" />
+            <div className="flex-1 min-w-0">
+                <a href={feedLink} className="block hover:opacity-80">
+                    <h3 className="font-bold truncate">{feed.displayName}</h3>
+                    <p className="text-sm text-on-surface-variant">by @{feed.creator.handle}</p>
+                </a>
+            </div>
+            <div className="flex items-center gap-2">
+                <button onClick={onTogglePin} className="p-2 rounded-full hover:bg-surface-3" title={isPinned ? 'Unpin' : 'Pin'}>
+                    {isPinned ? <PinOff size={18} className="text-primary" /> : <Pin size={18} />}
+                </button>
+                {onRemove && (
+                    <button onClick={onRemove} className="p-2 rounded-full hover:bg-error/20 text-on-surface-variant hover:text-error" title="Remove">
+                        <Trash2 size={18} />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const FeedsScreen: React.FC = () => {
-    const { session, agent } = useAtp();
-    const { isLoading: isLoadingSavedFeeds, pinnedUris, allUris, feedViews, addFeed, togglePin } = useSavedFeeds();
-
-    // State for search
-    const [query, setQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [cursor, setCursor] = useState<string | undefined>(undefined);
-    const [hasMore, setHasMore] = useState(true);
-    const loaderRef = useRef<HTMLDivElement>(null);
-
-    const fetchSearchResults = useCallback(async (searchQuery: string, currentCursor?: string) => {
-        if (!searchQuery.trim()) {
-            setSearchResults([]);
-            return;
-        }
-
-        const isInitialSearch = !currentCursor;
-        if (isInitialSearch) {
-            setIsSearching(true);
-            setSearchResults([]);
-            setCursor(undefined);
-            setHasMore(true);
-        } else {
-            setIsLoadingMore(true);
-        }
-
-        try {
-            const response = await (agent.api.app.bsky.unspecced as any).getPopularFeedGenerators({
-                query: searchQuery,
-                limit: 25,
-                cursor: currentCursor
-            });
-            setSearchResults(prev => isInitialSearch ? response.data.feeds : [...prev, ...response.data.feeds]);
-            setCursor(response.data.cursor);
-            setHasMore(!!response.data.cursor);
-        } catch (error) {
-            console.error("Feed search failed:", error);
-        } finally {
-            if (isInitialSearch) setIsSearching(false);
-            else setIsLoadingMore(false);
-        }
-    }, [agent]);
+    const { session } = useAtp();
+    const { 
+        isLoading: isLoadingSavedFeeds, 
+        pinnedUris, 
+        allUris, 
+        feedViews, 
+        togglePin, 
+        removeFeed, 
+        reorder 
+    } = useSavedFeeds();
     
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            if (entries[0].isIntersecting && hasMore && !isSearching && !isLoadingMore && query.trim()) {
-              fetchSearchResults(query, cursor);
-            }
-          },
-          { rootMargin: '400px' }
-        );
-        const currentLoader = loaderRef.current;
-        if (currentLoader) observer.observe(currentLoader);
-        return () => {
-          if (currentLoader) observer.unobserve(currentLoader);
-        };
-    }, [hasMore, isSearching, isLoadingMore, fetchSearchResults, query, cursor]);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+    const pinnedFeedItems = React.useMemo(() => 
+        [...pinnedUris]
+            .map(uri => feedViews.get(uri))
+            .filter((feed): feed is AppBskyFeedDefs.GeneratorView => !!feed),
+        [pinnedUris, feedViews]
+    );
+    
+    // Sort pinned feeds based on the order in the preferences
+    const orderedPinnedFeeds = React.useMemo(() => {
+        const uris = [...pinnedUris];
+        return pinnedFeedItems.sort((a, b) => uris.indexOf(a.uri) - uris.indexOf(b.uri));
+    }, [pinnedFeedItems, pinnedUris]);
 
 
-    const handleFormSubmit = (e: React.FormEvent) => {
+    const savedFeedItems = React.useMemo(() =>
+        allUris.filter(uri => !pinnedUris.has(uri))
+            .map(uri => feedViews.get(uri))
+            .filter((feed): feed is AppBskyFeedDefs.GeneratorView => !!feed),
+        [allUris, pinnedUris, feedViews]
+    );
+
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        const img = new Image();
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        e.dataTransfer.setDragImage(img, 0, 0);
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
-        fetchSearchResults(query);
     };
 
-    const handlePinToggle = (feed: AppBskyFeedDefs.GeneratorView) => {
-        const isPinned = pinnedUris.has(feed.uri);
-        if (isPinned) {
-            togglePin(feed.uri);
-        } else {
-            addFeed(feed, true);
-        }
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
+        e.preventDefault();
+        if (draggedIndex === null || draggedIndex === dropIndex) return;
+        reorder(draggedIndex, dropIndex);
+        setDraggedIndex(null);
     };
-    
-    const savedFeedUris = allUris.filter(uri => !pinnedUris.has(uri));
-    const pinnedFeedItems = [...pinnedUris].map(uri => feedViews.get(uri)).filter(Boolean) as AppBskyFeedDefs.GeneratorView[];
-    const savedFeedItems = savedFeedUris.map(uri => feedViews.get(uri)).filter(Boolean) as AppBskyFeedDefs.GeneratorView[];
 
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+    };
 
     if (!session) {
         return (
             <div>
-                <h1 className="text-2xl font-bold mb-6">Discover Feeds</h1>
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-bold">Discover Feeds</h1>
+                    <a href="#/search" className="p-2 -mr-2 rounded-full hover:bg-surface-3" aria-label="Search feeds">
+                        <Search size={20} />
+                    </a>
+                </div>
                 <PopularFeeds showHeader={false} />
             </div>
         );
     }
     
-    const showDiscovery = !query.trim();
+    if (isLoadingSavedFeeds) {
+        return (
+            <div>
+                <h1 className="text-2xl font-bold mb-4">My Feeds</h1>
+                <div className="space-y-4">
+                    <div className="bg-surface-2 rounded-xl h-20 animate-pulse"></div>
+                    <div className="bg-surface-2 rounded-xl h-20 animate-pulse"></div>
+                    <div className="bg-surface-2 rounded-xl h-20 animate-pulse"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-4">Feeds</h1>
-            <form onSubmit={handleFormSubmit} className="flex gap-2 mb-6">
-                 <div className="relative flex-grow">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                    <input
-                        type="search"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search for new feeds"
-                        className="w-full pl-12 pr-4 py-3 bg-surface-3 border-b-2 border-surface-3 rounded-t-lg focus:ring-0 focus:border-primary focus:bg-surface-3 outline-none transition duration-200"
-                    />
-                </div>
-            </form>
+            <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-bold">My Feeds</h1>
+                 <a href="#/search?filter=feeds" className="font-semibold text-sm py-2 px-4 rounded-full transition-colors bg-surface-3 text-on-surface hover:bg-surface-3/80">
+                    Find More
+                </a>
+            </div>
 
-            {showDiscovery ? (
-                 <div className="space-y-8">
-                    <PopularFeeds showHeader={false} />
-                    
-                    {isLoadingSavedFeeds ? (
-                         <div className="bg-surface-2 rounded-xl h-24 animate-pulse"></div>
-                    ) : (
-                        (pinnedFeedItems.length > 0 || savedFeedItems.length > 0) && (
-                            <div>
-                                <h2 className="text-lg font-bold mb-2">My Feeds</h2>
-                                <div className="space-y-3">
-                                    {pinnedFeedItems.map(feed => (
-                                        <FeedSearchResultCard key={feed.uri} feed={feed} isPinned={true} onTogglePin={() => togglePin(feed.uri)} />
-                                    ))}
-                                    {savedFeedItems.map(feed => (
-                                        <FeedSearchResultCard key={feed.uri} feed={feed} isPinned={false} onTogglePin={() => togglePin(feed.uri)} />
-                                    ))}
+            <div className="space-y-6">
+                <section>
+                    <h2 className="text-lg font-bold mb-3 text-on-surface-variant">Pinned Feeds</h2>
+                    {orderedPinnedFeeds.length > 0 ? (
+                        <div className="space-y-2">
+                            {orderedPinnedFeeds.map((feed, index) => (
+                                <div
+                                    key={feed.uri}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, index)}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, index)}
+                                    onDragEnd={handleDragEnd}
+                                    style={{ cursor: 'grab' }}
+                                    className={`transition-opacity ${draggedIndex === index ? 'opacity-50' : 'opacity-100'}`}
+                                >
+                                    <FeedItem
+                                        feed={feed}
+                                        isPinned={true}
+                                        onTogglePin={() => togglePin(feed.uri)}
+                                        onRemove={() => removeFeed(feed.uri)}
+                                    />
                                 </div>
-                            </div>
-                        )
-                    )}
-                 </div>
-            ) : (
-                // Search Results View
-                <div>
-                     {isSearching ? (
-                        <div className="space-y-3">
-                           {[...Array(5)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>)}
+                            ))}
                         </div>
-                     ) : searchResults.length > 0 ? (
-                         <div className="space-y-3">
-                            {searchResults.map(feed => (
-                                <FeedSearchResultCard
-                                    key={feed.uri} 
+                    ) : (
+                        <div className="text-center text-on-surface-variant p-6 bg-surface-2 rounded-xl border border-surface-3">
+                            <p>You haven't pinned any feeds yet.</p>
+                            <p className="text-sm">Find feeds to pin and they'll appear on your home screen.</p>
+                        </div>
+                    )}
+                </section>
+                
+                <section>
+                     <h2 className="text-lg font-bold mb-3 text-on-surface-variant">Other Saved Feeds</h2>
+                    {savedFeedItems.length > 0 ? (
+                         <div className="space-y-2">
+                            {savedFeedItems.map(feed => (
+                                <FeedItem
+                                    key={feed.uri}
                                     feed={feed}
-                                    isPinned={pinnedUris.has(feed.uri)}
-                                    onTogglePin={() => handlePinToggle(feed)}
+                                    isPinned={false}
+                                    onTogglePin={() => togglePin(feed.uri)}
+                                    onRemove={() => removeFeed(feed.uri)}
                                 />
                             ))}
                         </div>
-                     ) : (
-                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No feeds found for "{query}".</div>
-                     )}
-
-                    <div ref={loaderRef} className="h-10">
-                        {isLoadingMore && <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse mt-3"></div>}
-                    </div>
-                </div>
-            )}
+                    ) : (
+                        <div className="text-center text-on-surface-variant p-6 bg-surface-2 rounded-xl border border-surface-3">
+                            <p>Your other saved feeds will appear here.</p>
+                        </div>
+                    )}
+                </section>
+            </div>
         </div>
     );
 };
