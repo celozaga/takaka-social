@@ -24,33 +24,42 @@ const HomeScreen: React.FC = () => {
     const fetchFeeds = async () => {
       setIsLoadingFeeds(true);
       try {
-        const prefs = await agent.app.bsky.actor.getPreferences();
-        const savedFeedsPref = prefs.data.preferences.find(
+        // Fetch preferences and the discover feed generator in parallel for speed
+        const prefsPromise = agent.app.bsky.actor.getPreferences();
+        const discoverFeedPromise = agent.app.bsky.feed.getFeedGenerator({ feed: DISCOVER_FEED_URI });
+
+        const [prefsResult, discoverFeedResult] = await Promise.all([prefsPromise, discoverFeedPromise]);
+        
+        const discoverFeedView = discoverFeedResult.data.view;
+
+        const savedFeedsPref = prefsResult.data.preferences.find(
           (pref) =>
             pref.$type === 'app.bsky.actor.defs#savedFeedsPrefV2' || pref.$type === 'app.bsky.actor.defs#savedFeedsPref'
         );
         
-        let feedUris: string[] = [];
+        let pinnedFeedUris: string[] = [];
         if (savedFeedsPref) {
             if (AppBskyActorDefs.isSavedFeedsPrefV2(savedFeedsPref)) {
-                // Only show pinned feeds on the home screen selector
-                feedUris = savedFeedsPref.items
+                pinnedFeedUris = savedFeedsPref.items
                     .filter(item => item.type === 'feed' && item.pinned)
                     .map(item => item.value);
             } else if (AppBskyActorDefs.isSavedFeedsPref(savedFeedsPref)) {
-                // V1 prefs only had pinned feeds
-                feedUris = savedFeedsPref.pinned || [];
+                pinnedFeedUris = savedFeedsPref.pinned || [];
             }
         }
         
-        if (feedUris.length > 0) {
+        const otherPinnedUris = pinnedFeedUris.filter(uri => uri !== DISCOVER_FEED_URI);
+        let finalFeeds: AppBskyFeedDefs.GeneratorView[] = [discoverFeedView];
+
+        if (otherPinnedUris.length > 0) {
             const { data } = await agent.app.bsky.feed.getFeedGenerators({
-            feeds: feedUris,
+                feeds: otherPinnedUris,
             });
-            setFeeds(data.feeds);
-        } else {
-            setFeeds([]);
+            // Combine feeds, with Discover always first, followed by other pinned feeds
+            finalFeeds = [discoverFeedView, ...data.feeds];
         }
+        
+        setFeeds(finalFeeds);
 
       } catch (error) {
         console.error("Failed to fetch feeds:", error);
