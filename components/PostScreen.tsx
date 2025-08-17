@@ -17,9 +17,11 @@ interface PostScreenProps {
 
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { agent, session } = useAtp();
+  const { openComposer } = useUI();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
  
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
@@ -43,6 +45,16 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
     };
     fetchThread();
   }, [agent, postUri]);
+
+  useEffect(() => {
+    if (session?.did) {
+      agent.getProfile({ actor: session.did }).then(({ data }) => {
+        setCurrentUserProfile(data);
+      });
+    } else {
+      setCurrentUserProfile(null);
+    }
+  }, [agent, session?.did]);
 
 
   const renderMedia = (post: AppBskyFeedDefs.PostView) => {
@@ -133,6 +145,18 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         <div className="px-4 py-2 border-y border-surface-3 hidden md:block">
             <PostActions post={mainPost} />
         </div>
+        
+        {session && currentUserProfile && (
+            <div className="px-4 py-3 border-b border-surface-3 hidden md:flex items-center gap-3">
+                <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" />
+                <button
+                onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })}
+                className="flex-1 bg-surface-2 text-on-surface-variant text-left text-sm px-4 py-2.5 rounded-full hover:bg-surface-3 transition-colors"
+                >
+                Write your reply...
+                </button>
+            </div>
+        )}
         
         {allReplies.length > 0 && (
             <div className="mt-4 px-4 space-y-4">
