@@ -35,14 +35,13 @@ export const useSavedFeeds = () => {
             let v2Pref: SavedFeedsPrefV2;
 
             if (!feedsPref) {
+                // No preferences found, start with a clean slate.
                 v2Pref = { $type: V2_TYPE, items: [] };
-            } else if (AppBskyActorDefs.isSavedFeedsPref(feedsPref)) { // V1 pref, needs migration
+            } else if (AppBskyActorDefs.isSavedFeedsPref(feedsPref)) { 
+                // V1 preferences found, migrate them robustly.
                 const v1 = feedsPref as SavedFeedsPref;
-                
-                // Robustly handle potentially malformed v1 preferences
                 const pinnedUrisV1 = Array.isArray(v1.pinned) ? v1.pinned.filter(u => typeof u === 'string') : [];
                 const savedUrisV1 = Array.isArray(v1.saved) ? v1.saved.filter(u => typeof u === 'string') : [];
-                
                 const allV1Uris = [...new Set([...pinnedUrisV1, ...savedUrisV1])];
                 
                 v2Pref = {
@@ -55,12 +54,26 @@ export const useSavedFeeds = () => {
                     }))
                 };
             } else {
-                v2Pref = feedsPref as SavedFeedsPrefV2;
+                // V2 preferences found, validate and sanitize them.
+                const potentialV2 = feedsPref as Partial<SavedFeedsPrefV2>;
+                if (Array.isArray(potentialV2.items)) {
+                    const validItems = potentialV2.items.filter((item: any): item is SavedFeed => 
+                        item &&
+                        typeof item.id === 'string' &&
+                        item.type === 'feed' &&
+                        typeof item.value === 'string' &&
+                        typeof item.pinned === 'boolean'
+                    );
+                    v2Pref = { $type: V2_TYPE, items: validItems };
+                } else {
+                    // `items` is missing or not an array. Reset to empty.
+                    v2Pref = { $type: V2_TYPE, items: [] };
+                }
             }
 
             setPreferences(v2Pref);
 
-            const urisToFetch = v2Pref.items.map(item => item.value);
+            const urisToFetch = v2Pref.items.map(item => item.value).filter(Boolean);
             if (urisToFetch.length > 0) {
                 const { data: generators } = await agent.app.bsky.feed.getFeedGenerators({ feeds: urisToFetch });
                 setFeedViews(new Map(generators.feeds.map(f => [f.uri, f])));
@@ -126,13 +139,18 @@ export const useSavedFeeds = () => {
 
     const togglePin = useCallback(async (uri: string) => {
         if (!preferences) return;
-        const newPref = { ...preferences, items: [...preferences.items] };
-        const item = newPref.items.find(i => i.value === uri);
-        if (item) {
-            item.pinned = !item.pinned;
-            await savePreferences(newPref);
-            toast({ title: item.pinned ? 'Feed Pinned' : 'Feed Unpinned' });
-        }
+        
+        const newItems = preferences.items.map(item => {
+            if (item.value === uri) {
+                return { ...item, pinned: !item.pinned };
+            }
+            return item;
+        });
+
+        const newPref = { ...preferences, items: newItems };
+
+        await savePreferences(newPref);
+        toast({ title: newPref.items.find(i => i.value === uri)?.pinned ? 'Feed Pinned' : 'Feed Unpinned' });
     }, [preferences, savePreferences, toast]);
     
     const removeFeed = useCallback(async (uri: string) => {
