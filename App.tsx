@@ -15,6 +15,7 @@ import NotificationsScreen from './components/NotificationsScreen';
 import LoginPrompt from './components/LoginPrompt';
 import FeedsScreen from './components/FeedsScreen';
 import FeedHeaderModal from './components/FeedHeaderModal';
+import FeedViewScreen from './components/FeedViewScreen';
 
 const App: React.FC = () => {
   return (
@@ -71,6 +72,11 @@ const Main: React.FC = () => {
 
     switch (parts[0]) {
       case 'profile':
+        if (parts[2] === 'feed' && parts[3]) {
+          const handle = parts[1];
+          const rkey = parts[3];
+          return <FeedViewScreen handle={handle} rkey={rkey} key={`${handle}-${rkey}`} />;
+        }
         return <ProfileScreen actor={parts[1]} key={parts[1]} />;
       case 'post':
         const did = parts[1];

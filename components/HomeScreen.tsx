@@ -1,27 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
-import { useUI } from '../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
 import Timeline from './Timeline';
 import FeedSelector from './FeedSelector';
-import FeedViewHeader from './FeedViewHeader';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
 const HomeScreen: React.FC = () => {
   const { agent, session } = useAtp();
-  const { setCustomFeedHeaderVisible } = useUI();
   const [feeds, setFeeds] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
   const [selectedFeed, setSelectedFeed] = useState<string>(session ? 'following' : DISCOVER_FEED_URI);
   const [isLoadingFeeds, setIsLoadingFeeds] = useState(true);
-
-  const isCustomFeed = selectedFeed !== 'following';
-
-  useEffect(() => {
-    setCustomFeedHeaderVisible(isCustomFeed);
-    return () => setCustomFeedHeaderVisible(false); // Cleanup on unmount
-  }, [isCustomFeed, setCustomFeedHeaderVisible]);
 
   useEffect(() => {
     if (!session) {
@@ -87,19 +77,12 @@ const HomeScreen: React.FC = () => {
 
   return (
     <div>
-       {isCustomFeed ? (
-          <FeedViewHeader 
-              feedUri={selectedFeed} 
-              onBack={() => setSelectedFeed('following')} 
-          />
-      ) : (
-          <FeedSelector
-            feeds={feeds}
-            selectedFeed={selectedFeed}
-            onSelectFeed={setSelectedFeed}
-            isLoading={isLoadingFeeds}
-          />
-      )}
+      <FeedSelector
+        feeds={feeds}
+        selectedFeed={selectedFeed}
+        onSelectFeed={setSelectedFeed}
+        isLoading={isLoadingFeeds}
+      />
       <div className="mt-4">
         <Timeline key={selectedFeed} feedUri={selectedFeed} />
       </div>
