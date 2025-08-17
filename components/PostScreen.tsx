@@ -7,7 +7,7 @@ import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBsk
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from './ui/use-toast';
-import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Share2, BadgeCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from './RichTextRenderer';
 
@@ -192,7 +192,12 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                 </a>
                 <a href={`#/profile/${postAuthor.handle}`} className="flex items-center gap-3 truncate">
                     <img src={postAuthor.avatar} alt={postAuthor.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
-                    <p className="font-bold truncate leading-tight">{postAuthor.displayName}</p>
+                    <div className="font-bold truncate leading-tight flex items-center gap-1.5">
+                        <span className="truncate">{postAuthor.displayName}</span>
+                        {postAuthor.labels?.some(label => label.val === 'blue-check') && (
+                            <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
+                        )}
+                    </div>
                 </a>
             </div>
             <div className="flex items-center gap-2">

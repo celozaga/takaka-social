@@ -3,7 +3,7 @@ import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../context/AtpContext';
 import { usePostActions } from '../hooks/usePostActions';
-import { Images, ExternalLink, PlayCircle, Heart } from 'lucide-react';
+import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck } from 'lucide-react';
 import RichTextRenderer from './RichTextRenderer';
 
 type PostCardProps = {
@@ -165,7 +165,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
                         alt={`${author.displayName}'s avatar`} 
                         className="w-7 h-7 rounded-full bg-surface-3 flex-shrink-0" 
                      />
-                     <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || author.handle}</span>
+                     <div className="flex items-center gap-1 truncate">
+                        <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || author.handle}</span>
+                        {author.labels?.some(label => label.val === 'blue-check') && (
+                            <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
+                        )}
+                     </div>
                    </a>
                    <button 
                         onClick={handleLike} 

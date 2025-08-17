@@ -1,8 +1,10 @@
 
+
 import React, { useState } from 'react';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from './ui/use-toast';
+import { BadgeCheck } from 'lucide-react';
 
 interface ActorSearchResultCardProps {
   actor: AppBskyActorDefs.ProfileView;
@@ -78,7 +80,12 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center">
             <div className="min-w-0">
-              <p className="font-bold truncate">{actor.displayName || actor.handle}</p>
+              <div className="font-bold truncate flex items-center gap-1">
+                  <span className="truncate">{actor.displayName || actor.handle}</span>
+                  {actor.labels?.some(label => label.val === 'blue-check') && (
+                    <BadgeCheck size={16} className="text-primary flex-shrink-0" fill="currentColor" />
+                  )}
+              </div>
               <p className="text-on-surface-variant text-sm truncate">@{actor.handle}</p>
             </div>
             <div className="ml-2">

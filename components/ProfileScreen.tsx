@@ -6,7 +6,7 @@ import { useToast } from './ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
 import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck } from 'lucide-react';
 import RichTextRenderer from './RichTextRenderer';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
@@ -339,7 +339,12 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         <ActionsMenu />
                     </div>
                 )}
-                <h2 className="text-3xl font-bold">{profile.displayName}</h2>
+                <h2 className="text-3xl font-bold flex items-center gap-2">
+                    <span>{profile.displayName}</span>
+                    {profile.labels?.some(label => label.val === 'blue-check') && (
+                        <BadgeCheck className="w-6 h-6 text-primary" fill="currentColor" />
+                    )}
+                </h2>
                 <p className="text-on-surface-variant">@{profile.handle}</p>
                 <div className="flex items-center gap-4 text-on-surface-variant text-sm mt-2">
                     <span><strong className="text-on-surface">{profile.followersCount}</strong> Followers</span>

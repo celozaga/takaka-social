@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AppBskyNotificationListNotifications, AppBskyFeedPost, AtUri } from '@atproto/api';
-import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign } from 'lucide-react';
+import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from './RichTextRenderer';
 
@@ -23,8 +23,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   const postLink = `#/post/${postUri.hostname}/${postUri.rkey}`;
 
   const AuthorLink = () => (
-    <a href={profileLink} className="font-bold hover:underline" onClick={e => e.stopPropagation()}>
-      {author.displayName || `@${author.handle}`}
+    <a href={profileLink} className="font-bold hover:underline inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
+      <span>{author.displayName || `@${author.handle}`}</span>
+      {author.labels?.some(label => label.val === 'blue-check') && (
+        <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
+      )}
     </a>
   );
 

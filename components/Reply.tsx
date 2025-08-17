@@ -5,6 +5,7 @@ import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from './RichTextRenderer';
 import PostActions from './PostActions';
+import { BadgeCheck } from 'lucide-react';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -85,8 +86,11 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-            <a href={`#/profile/${author.handle}`} className="font-bold hover:underline leading-tight text-sm">
-                {author.displayName || `@${author.handle}`}
+            <a href={`#/profile/${author.handle}`} className="font-bold hover:underline leading-tight text-sm inline-flex items-center gap-1">
+                <span>{author.displayName || `@${author.handle}`}</span>
+                {author.labels?.some(label => label.val === 'blue-check') && (
+                    <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
+                )}
             </a>
             <span className="text-on-surface-variant text-sm">{timeAgo}</span>
         </div>
