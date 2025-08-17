@@ -1,36 +1,26 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
 import PostActions from './PostActions';
-import PostStats from './PostStats';
 import { ArrowLeft, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import PostScreenActionBar from './PostScreenActionBar';
+import { usePostActions } from '../hooks/usePostActions';
 
 interface PostScreenProps {
   did: string;
   rkey: string;
 }
 
-const REPLIES_PER_PAGE = 15;
-
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { agent, session } = useAtp();
-  const { openComposer } = useUI();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUserProfile, setCurrentUserProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
-  
-  const [visibleReplies, setVisibleReplies] = useState<AppBskyFeedDefs.ThreadViewPost[]>([]);
-  const [replyCursor, setReplyCursor] = useState(0);
-  const [hasMoreReplies, setHasMoreReplies] = useState(false);
-  const allRepliesRef = useRef<AppBskyFeedDefs.ThreadViewPost[]>([]);
-  const loaderRef = useRef<HTMLDivElement>(null);
-
-
+ 
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
   useEffect(() => {
@@ -38,20 +28,11 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       setIsLoading(true);
       setError(null);
       try {
-        const { data } = await agent.getPostThread({ uri: postUri, depth: 100 });
+        const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
         if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
           setThread(data.thread);
-          const allReplies = (data.thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
-          allRepliesRef.current = allReplies;
-          setVisibleReplies(allReplies.slice(0, REPLIES_PER_PAGE));
-          setReplyCursor(REPLIES_PER_PAGE);
-          setHasMoreReplies(allReplies.length > REPLIES_PER_PAGE);
         } else {
           throw new Error("Post not found or is not a valid thread root.");
-        }
-        if (session?.did) {
-           const profileRes = await agent.getProfile({ actor: session.did });
-           setCurrentUserProfile(profileRes.data);
         }
       } catch (err: any) {
         console.error("Failed to fetch post thread:", err);
@@ -61,37 +42,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       }
     };
     fetchThread();
-  }, [agent, postUri, session?.did]);
-
-  const loadMoreReplies = useCallback(() => {
-    const nextReplies = allRepliesRef.current.slice(replyCursor, replyCursor + REPLIES_PER_PAGE);
-    setVisibleReplies(prev => [...prev, ...nextReplies]);
-    const newCursor = replyCursor + REPLIES_PER_PAGE;
-    setReplyCursor(newCursor);
-    setHasMoreReplies(allRepliesRef.current.length > newCursor);
-  }, [replyCursor]);
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMoreReplies) {
-          loadMoreReplies();
-        }
-      },
-      { rootMargin: '400px' }
-    );
-
-    const currentLoader = loaderRef.current;
-    if (currentLoader) {
-      observer.observe(currentLoader);
-    }
-
-    return () => {
-      if (currentLoader) {
-        observer.unobserve(currentLoader);
-      }
-    };
-  }, [hasMoreReplies, loadMoreReplies]);
+  }, [agent, postUri]);
 
 
   const renderMedia = (post: AppBskyFeedDefs.PostView) => {
@@ -155,69 +106,42 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const mainPost = thread.post;
   const record = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
   const author = mainPost.author;
+  const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
 
   return (
     <div>
-      <header className="fixed top-0 left-0 right-0 md:left-20 bg-surface-1/80 backdrop-blur-md z-40 border-b border-surface-3">
+      <header className="fixed top-0 left-0 right-0 md:left-20 bg-surface-1/95 backdrop-blur-md z-40">
         <div className="container mx-auto max-w-3xl px-4 h-16 flex items-center justify-between gap-4">
             <a href="#" onClick={() => window.history.back()} className="flex items-center gap-2 text-on-surface p-2 -ml-2 rounded-full hover:bg-surface-3">
                 <ArrowLeft size={20} />
             </a>
-            <span className="font-bold text-lg">Post</span>
+            <a href={`#/profile/${author.handle}`} className="flex items-center gap-3 truncate">
+                <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
+                <p className="font-bold truncate">{author.displayName}</p>
+            </a>
             <div className="w-8"></div>
         </div>
       </header>
       
       <div className="pt-16">
         <div className="p-4">
-             <div className="flex items-center justify-between gap-4 mb-3">
-                 <a href={`#/profile/${author.handle}`} className="flex items-center gap-3">
-                    <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
-                    <div>
-                        <p className="font-bold">{author.displayName}</p>
-                        <p className="text-sm text-on-surface-variant">@{author.handle}</p>
-                    </div>
-                </a>
-                <button className="p-2 rounded-full hover:bg-surface-3"><MoreHorizontal size={20}/></button>
-            </div>
-             {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap">{record.text}</p>}
              {renderMedia(mainPost)}
+             {record.text && <p className="my-3 text-on-surface whitespace-pre-wrap">{record.text}</p>}
              <p className="text-sm text-on-surface-variant my-3">{format(new Date(record.createdAt), "h:mm a · MMM d, yyyy")}</p>
-             
-             {(mainPost.likeCount > 0 || mainPost.repostCount > 0) && (
-                <div className="border-t border-surface-3 pt-3">
-                    <PostStats post={mainPost} />
-                </div>
-             )}
         </div>
         
-        <div className="px-4 py-2 border-y border-surface-3">
+        <div className="px-4 py-2 border-y border-surface-3 hidden md:block">
             <PostActions post={mainPost} />
         </div>
         
-        {session && currentUserProfile && (
-             <div className="flex items-center gap-3 p-4 border-b border-surface-3">
-                <img src={currentUserProfile.avatar} alt="My avatar" className="w-8 h-8 rounded-full bg-surface-3"/>
-                <button onClick={() => openComposer({ uri: mainPost.uri, cid: mainPost.cid })} className="text-on-surface-variant text-left flex-1 hover:text-on-surface">
-                    Write your reply...
-                </button>
-             </div>
-        )}
-
-        {visibleReplies.length > 0 && (
+        {allReplies.length > 0 && (
             <div className="mt-4 px-4 space-y-4">
-            {visibleReplies.map(reply => (
-                <Reply key={reply.post.cid} reply={reply} />
-            ))}
+              <Reply reply={thread} isRoot={true} />
             </div>
         )}
-
-        <div ref={loaderRef} className="h-10">
-          {hasMoreReplies && (
-            <div className="w-8 h-8 mx-auto my-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
-          )}
-        </div>
       </div>
+      
+      <PostScreenActionBar post={mainPost} />
     </div>
   );
 };

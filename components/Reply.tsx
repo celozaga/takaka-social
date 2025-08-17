@@ -1,53 +1,126 @@
 
-import React from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import PostActions from './PostActions';
+import { useUI } from '../context/UIContext';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
+  isRoot?: boolean;
 }
 
-const Reply: React.FC<ReplyProps> = ({ reply }) => {
+const REPLIES_PER_PAGE = 10;
+
+const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
+  const { openComposer } = useUI();
   const { post, replies } = reply;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
+  const allSubReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
+  const hasSubReplies = allSubReplies.length > 0;
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [visibleReplies, setVisibleReplies] = useState<AppBskyFeedDefs.ThreadViewPost[]>([]);
+  const [replyCursor, setReplyCursor] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
   const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
-  const nestedReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
-  const hasReplies = nestedReplies.length > 0;
+
+  const loadMore = useCallback(() => {
+    const nextReplies = allSubReplies.slice(replyCursor, replyCursor + REPLIES_PER_PAGE);
+    setVisibleReplies(prev => [...prev, ...nextReplies]);
+    const newCursor = replyCursor + REPLIES_PER_PAGE;
+    setReplyCursor(newCursor);
+    setHasMore(allSubReplies.length > newCursor);
+  }, [replyCursor, allSubReplies]);
+
+  useEffect(() => {
+    if (isExpanded) {
+      // Load initial batch when expanded for the first time
+      const initialReplies = allSubReplies.slice(0, REPLIES_PER_PAGE);
+      setVisibleReplies(initialReplies);
+      setReplyCursor(REPLIES_PER_PAGE);
+      setHasMore(allSubReplies.length > REPLIES_PER_PAGE);
+    }
+  }, [isExpanded, allSubReplies]);
+  
+   useEffect(() => {
+    if (!isExpanded || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: '400px' }
+    );
+
+    const currentLoader = loaderRef.current;
+    if (currentLoader) observer.observe(currentLoader);
+    return () => {
+      if (currentLoader) observer.unobserve(currentLoader);
+    };
+  }, [isExpanded, hasMore, loadMore]);
+
+  if (isRoot) {
+    // Special case for the root of the thread to just render the replies
+    return (
+      <div className="space-y-4">
+        {allSubReplies.map(r => <Reply key={r.post.cid} reply={r} />)}
+      </div>
+    )
+  }
 
   return (
     <div className="relative flex gap-3">
-      {/* Thread lines - flex-shrink-0 prevents the column from shrinking */}
       <div className="flex flex-col items-center flex-shrink-0">
         <a href={`#/profile/${author.handle}`} className="block">
           <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
         </a>
-        {hasReplies && <div className="w-0.5 flex-1 grow bg-outline/20 mt-2"></div>}
+        {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow bg-outline/20 mt-2"></div>}
       </div>
 
-      <div className="flex-1 min-w-0"> {/* min-w-0 prevents content from overflowing flex container */}
+      <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between">
             <div>
                 <a href={`#/profile/${author.handle}`} className="font-bold hover:underline leading-tight text-sm">
-                    {author.displayName || author.handle}
+                    {author.displayName || `@${author.handle}`}
                 </a>
                 <span className="text-on-surface-variant text-sm ml-2">{timeAgo}</span>
             </div>
         </div>
-        <a href={`#/post/${post.author.did}/${post.uri.split('/').pop()}`}>
+        
+        <a href={`#/post/${post.author.did}/${post.uri.split('/').pop()}`} className="block">
             <p className="text-on-surface whitespace-pre-wrap mt-0.5 text-sm break-words">{record.text}</p>
         </a>
-        <div className="mt-2">
+        <div className="mt-2 flex items-center justify-between">
             <PostActions post={post} />
+            <button 
+                onClick={() => openComposer({ uri: post.uri, cid: post.cid })}
+                className="text-xs font-semibold text-on-surface-variant hover:underline"
+            >
+                Reply
+            </button>
         </div>
 
-        {hasReplies && (
+        {hasSubReplies && !isExpanded && (
+            <button onClick={() => setIsExpanded(true)} className="text-sm font-semibold text-on-surface-variant hover:underline mt-2">
+                View {allSubReplies.length} replies
+            </button>
+        )}
+        
+        {isExpanded && (
           <div className="mt-4 space-y-4">
-            {nestedReplies.map((nestedReply) => (
+            {visibleReplies.map((nestedReply) => (
               <Reply key={nestedReply.post.cid} reply={nestedReply} />
             ))}
+            <div ref={loaderRef} className="h-1"></div>
+             {!hasMore && visibleReplies.length > 0 && (
+                <div className="text-center text-on-surface-variant text-xs py-4">You've reached the end!</div>
+            )}
           </div>
         )}
       </div>

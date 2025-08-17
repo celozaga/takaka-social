@@ -1,11 +1,9 @@
 
-
-import React, { useState } from 'react';
-import { AppBskyFeedDefs } from '@atproto/api';
+import React from 'react';
 import { Heart, Repeat, MessageCircle } from 'lucide-react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
-import { useToast } from './ui/use-toast';
+import { usePostActions } from '../hooks/usePostActions';
 
 interface PostActionsProps {
   post: {
@@ -23,19 +21,14 @@ interface PostActionsProps {
 }
 
 const PostActions: React.FC<PostActionsProps> = ({ post }) => {
-  const { agent, session } = useAtp();
+  const { session } = useAtp();
   const { openLoginModal, openComposer } = useUI();
-  const { toast } = useToast();
-
-  const [likeUri, setLikeUri] = useState(post.viewer?.like);
-  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
-  const [isLiking, setIsLiking] = useState(false);
-
-  const [repostUri, setRepostUri] = useState(post.viewer?.repost);
-  const [repostCount, setRepostCount] = useState(post.repostCount || 0);
-  const [isReposting, setIsReposting] = useState(false);
+  const {
+    likeUri, likeCount, isLiking, handleLike,
+    repostUri, repostCount, isReposting, handleRepost
+  } = usePostActions(post);
   
-  const ensureSession = (action: string) => {
+  const ensureSession = () => {
     if (!session) {
       openLoginModal();
       return false;
@@ -46,66 +39,8 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   const handleReplyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!ensureSession('reply')) return;
+    if (!ensureSession()) return;
     openComposer({ uri: post.uri, cid: post.cid });
-  };
-
-  const handleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!ensureSession('like')) return;
-    if (isLiking) return;
-    setIsLiking(true);
-
-    try {
-      if (likeUri) {
-        setLikeUri(undefined);
-        setLikeCount(c => c - 1);
-        await agent.deleteLike(likeUri);
-      } else {
-        const tempUri = 'temp-uri';
-        setLikeUri(tempUri);
-        setLikeCount(c => c + 1);
-        const { uri } = await agent.like(post.uri, post.cid);
-        setLikeUri(uri);
-      }
-    } catch (error) {
-      console.error('Failed to like/unlike post:', error);
-      toast({ title: "Action failed", description: "Could not update like status.", variant: "destructive" });
-      setLikeUri(post.viewer?.like);
-      setLikeCount(post.likeCount || 0);
-    } finally {
-      setIsLiking(false);
-    }
-  };
-  
-  const handleRepost = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!ensureSession('repost')) return;
-    if (isReposting) return;
-    setIsReposting(true);
-
-    try {
-        if (repostUri) {
-            setRepostUri(undefined);
-            setRepostCount(c => c - 1);
-            await agent.deleteRepost(repostUri);
-        } else {
-            const tempUri = 'temp-uri';
-            setRepostUri(tempUri);
-            setRepostCount(c => c + 1);
-            const { uri } = await agent.repost(post.uri, post.cid);
-            setRepostUri(uri);
-        }
-    } catch (error) {
-        console.error('Failed to repost:', error);
-        toast({ title: "Action failed", description: "Could not repost.", variant: "destructive" });
-        setRepostUri(post.viewer?.repost);
-        setRepostCount(post.repostCount || 0);
-    } finally {
-        setIsReposting(false);
-    }
   };
 
   return (
