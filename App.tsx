@@ -2,23 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { AtpProvider, useAtp } from './context/AtpContext';
 import { UIProvider, useUI } from './context/UIContext';
-import LoginScreen from './components/LoginScreen';
-import HomeScreen from './components/HomeScreen';
+import LoginScreen from './components/auth/LoginScreen';
+import HomeScreen from './components/home/HomeScreen';
 import { Toaster, ToastProvider } from './components/ui/Toaster';
-import ProfileScreen from './components/ProfileScreen';
-import PostScreen from './components/PostScreen';
-import SearchScreen from './components/SearchScreen';
-import Navbar from './components/Navbar';
-import BottomNavbar from './components/BottomNavbar';
-import Composer from './components/Composer';
-import NotificationsScreen from './components/NotificationsScreen';
-import LoginPrompt from './components/LoginPrompt';
-import FeedsScreen from './components/FeedsScreen';
-import FeedHeaderModal from './components/FeedHeaderModal';
-import FeedViewScreen from './components/FeedViewScreen';
-import SettingsScreen from './components/SettingsScreen';
-import NotificationSettingsScreen from './components/NotificationSettingsScreen';
-import MoreScreen from './components/MoreScreen';
+import ProfileScreen from './components/profile/ProfileScreen';
+import PostScreen from './components/post/PostScreen';
+import SearchScreen from './components/search/SearchScreen';
+import Navbar from './components/layout/Navbar';
+import BottomNavbar from './components/layout/BottomNavbar';
+import Composer from './components/composer/Composer';
+import NotificationsScreen from './components/notifications/NotificationsScreen';
+import LoginPrompt from './components/auth/LoginPrompt';
+import FeedsScreen from './components/feeds/FeedsScreen';
+import FeedHeaderModal from './components/feeds/FeedHeaderModal';
+import FeedViewScreen from './components/feeds/FeedViewScreen';
+import SettingsScreen from './components/settings/SettingsScreen';
+import NotificationSettingsScreen from './components/settings/NotificationSettingsScreen';
+import MoreScreen from './components/more/MoreScreen';
 
 const App: React.FC = () => {
   return (
