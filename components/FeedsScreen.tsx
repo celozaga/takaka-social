@@ -3,19 +3,15 @@ import React from 'react';
 import { useSavedFeeds } from '../hooks/useSavedFeeds';
 import { useAtp } from '../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
-import { Pin, PinOff, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react';
+import { Pin, PinOff, Trash2, Search } from 'lucide-react';
 import PopularFeeds from './PopularFeeds';
 
 const FeedItem: React.FC<{
     feed: AppBskyFeedDefs.GeneratorView;
     isPinned: boolean;
     onTogglePin: () => void;
-    onRemove?: () => void;
-    onMoveUp?: () => void;
-    onMoveDown?: () => void;
-    isFirst?: boolean;
-    isLast?: boolean;
-}> = ({ feed, isPinned, onTogglePin, onRemove, onMoveUp, onMoveDown, isFirst, isLast }) => {
+    onRemove: () => void;
+}> = ({ feed, isPinned, onTogglePin, onRemove }) => {
     const feedLink = `#/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
 
     return (
@@ -27,25 +23,13 @@ const FeedItem: React.FC<{
                     <p className="text-sm text-on-surface-variant">by @{feed.creator.handle}</p>
                 </a>
             </div>
-            <div className="flex items-center gap-1">
-                {isPinned && onMoveUp && onMoveDown && (
-                    <>
-                        <button onClick={onMoveUp} disabled={isFirst} className="p-2 rounded-full hover:bg-surface-3 disabled:opacity-50" title="Move up">
-                            <ArrowUp size={18} />
-                        </button>
-                        <button onClick={onMoveDown} disabled={isLast} className="p-2 rounded-full hover:bg-surface-3 disabled:opacity-50" title="Move down">
-                            <ArrowDown size={18} />
-                        </button>
-                    </>
-                )}
-                <button onClick={onTogglePin} className="p-2 rounded-full hover:bg-surface-3" title={isPinned ? 'Unpin' : 'Pin'}>
-                    {isPinned ? <PinOff size={18} className="text-primary" /> : <Pin size={18} />}
+            <div className="flex items-center gap-1 text-on-surface-variant">
+                <button onClick={onTogglePin} className="p-2 rounded-full hover:bg-surface-3 hover:text-on-surface" title={isPinned ? 'Unpin' : 'Pin'}>
+                    {isPinned ? <PinOff size={18} /> : <Pin size={18} />}
                 </button>
-                {onRemove && (
-                    <button onClick={onRemove} className="p-2 rounded-full hover:bg-error/20 text-on-surface-variant hover:text-error" title="Remove">
-                        <Trash2 size={18} />
-                    </button>
-                )}
+                <button onClick={onRemove} className="p-2 rounded-full hover:bg-error/20 hover:text-error" title="Remove">
+                    <Trash2 size={18} />
+                </button>
             </div>
         </div>
     );
@@ -59,23 +43,16 @@ const FeedsScreen: React.FC = () => {
         allUris, 
         feedViews, 
         togglePin, 
-        removeFeed, 
-        reorder 
+        removeFeed
     } = useSavedFeeds();
     
-    const pinnedFeedItems = React.useMemo(() => 
-        [...pinnedUris]
+    const orderedPinnedFeeds = React.useMemo(() =>
+        allUris
+            .filter(uri => pinnedUris.has(uri))
             .map(uri => feedViews.get(uri))
             .filter((feed): feed is AppBskyFeedDefs.GeneratorView => !!feed),
-        [pinnedUris, feedViews]
+        [allUris, pinnedUris, feedViews]
     );
-    
-    // Sort pinned feeds based on the order in the preferences
-    const orderedPinnedFeeds = React.useMemo(() => {
-        const uris = [...pinnedUris];
-        return pinnedFeedItems.sort((a, b) => uris.indexOf(a.uri) - uris.indexOf(b.uri));
-    }, [pinnedFeedItems, pinnedUris]);
-
 
     const savedFeedItems = React.useMemo(() =>
         allUris.filter(uri => !pinnedUris.has(uri))
@@ -125,18 +102,14 @@ const FeedsScreen: React.FC = () => {
                     <h2 className="text-lg font-bold mb-3 text-on-surface-variant">Pinned Feeds</h2>
                     {orderedPinnedFeeds.length > 0 ? (
                         <div className="space-y-2">
-                            {orderedPinnedFeeds.map((feed, index) => (
-                                <div key={feed.uri}>
-                                    <FeedItem
-                                        feed={feed}
-                                        isPinned={true}
-                                        onTogglePin={() => togglePin(feed.uri)}
-                                        onMoveUp={() => reorder(index, index - 1)}
-                                        onMoveDown={() => reorder(index, index + 1)}
-                                        isFirst={index === 0}
-                                        isLast={index === orderedPinnedFeeds.length - 1}
-                                    />
-                                </div>
+                            {orderedPinnedFeeds.map(feed => (
+                                <FeedItem
+                                    key={feed.uri}
+                                    feed={feed}
+                                    isPinned={true}
+                                    onTogglePin={() => togglePin(feed.uri)}
+                                    onRemove={() => removeFeed(feed.uri)}
+                                />
                             ))}
                         </div>
                     ) : (
@@ -148,7 +121,7 @@ const FeedsScreen: React.FC = () => {
                 </section>
                 
                 <section>
-                     <h2 className="text-lg font-bold mb-3 text-on-surface-variant">Other Saved Feeds</h2>
+                     <h2 className="text-lg font-bold mb-3 text-on-surface-variant">Saved Feeds</h2>
                     {savedFeedItems.length > 0 ? (
                          <div className="space-y-2">
                             {savedFeedItems.map(feed => (
