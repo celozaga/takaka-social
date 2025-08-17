@@ -24,14 +24,8 @@ const HomeScreen: React.FC = () => {
     const fetchFeeds = async () => {
       setIsLoadingFeeds(true);
       try {
-        // Fetch preferences and the discover feed generator in parallel for speed
-        const prefsPromise = agent.app.bsky.actor.getPreferences();
-        const discoverFeedPromise = agent.app.bsky.feed.getFeedGenerator({ feed: DISCOVER_FEED_URI });
-
-        const [prefsResult, discoverFeedResult] = await Promise.all([prefsPromise, discoverFeedPromise]);
+        const prefsResult = await agent.app.bsky.actor.getPreferences();
         
-        const discoverFeedView = discoverFeedResult.data.view;
-
         const savedFeedsPref = prefsResult.data.preferences.find(
           (pref) =>
             pref.$type === 'app.bsky.actor.defs#savedFeedsPrefV2' || pref.$type === 'app.bsky.actor.defs#savedFeedsPref'
@@ -48,18 +42,17 @@ const HomeScreen: React.FC = () => {
             }
         }
         
+        // Exclude the Discover feed since it's now a static button in the selector
         const otherPinnedUris = pinnedFeedUris.filter(uri => uri !== DISCOVER_FEED_URI);
-        let finalFeeds: AppBskyFeedDefs.GeneratorView[] = [discoverFeedView];
 
         if (otherPinnedUris.length > 0) {
             const { data } = await agent.app.bsky.feed.getFeedGenerators({
                 feeds: otherPinnedUris,
             });
-            // Combine feeds, with Discover always first, followed by other pinned feeds
-            finalFeeds = [discoverFeedView, ...data.feeds];
+            setFeeds(data.feeds);
+        } else {
+            setFeeds([]);
         }
-        
-        setFeeds(finalFeeds);
 
       } catch (error) {
         console.error("Failed to fetch feeds:", error);

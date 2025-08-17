@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { useAtp } from '../context/AtpContext';
@@ -9,6 +10,8 @@ interface FeedSelectorProps {
   onSelectFeed: (feedUri: string) => void;
   isLoading: boolean;
 }
+
+const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
 const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSelectFeed, isLoading }) => {
   const { session } = useAtp();
@@ -35,6 +38,15 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
         Following
       </button>
       
+      {session && (
+        <button 
+          onClick={() => onSelectFeed(DISCOVER_FEED_URI)}
+          className={`${baseClasses} ${selectedFeed === DISCOVER_FEED_URI ? activeClasses : inactiveClasses}`}
+        >
+          Discover
+        </button>
+      )}
+
       {session && isLoading && [...Array(5)].map((_, i) => (
         <div key={i} className="h-9 w-24 bg-surface-2 rounded-full animate-pulse flex-shrink-0"></div>
       ))}
@@ -51,8 +63,8 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
       
       {!session && (
           <button 
-            onClick={() => onSelectFeed('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot')}
-            className={`${baseClasses} ${selectedFeed !== 'following' ? activeClasses : inactiveClasses}`}
+            onClick={() => onSelectFeed(DISCOVER_FEED_URI)}
+            className={`${baseClasses} ${selectedFeed === DISCOVER_FEED_URI ? activeClasses : inactiveClasses}`}
            >
             Discover
           </button>

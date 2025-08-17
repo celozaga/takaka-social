@@ -13,6 +13,23 @@ const FeedsScreen: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [recommendedFeeds, setRecommendedFeeds] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
+    const [isLoadingRecommended, setIsLoadingRecommended] = useState(true);
+
+    useEffect(() => {
+        const fetchRecommended = async () => {
+            setIsLoadingRecommended(true);
+            try {
+                const { data } = await (agent.api.app.bsky.unspecced as any).getPopularFeedGenerators({ limit: 25 });
+                setRecommendedFeeds(data.feeds);
+            } catch (error) {
+                console.error("Failed to fetch recommended feeds:", error);
+            } finally {
+                setIsLoadingRecommended(false);
+            }
+        };
+        fetchRecommended();
+    }, [agent]);
 
     const pinnedFeeds = allUris.filter(uri => pinnedUris.has(uri)).map(uri => feedViews.get(uri)).filter(Boolean) as AppBskyFeedDefs.GeneratorView[];
     const savedFeeds = allUris.filter(uri => !pinnedUris.has(uri)).map(uri => feedViews.get(uri)).filter(Boolean) as AppBskyFeedDefs.GeneratorView[];
@@ -25,13 +42,20 @@ const FeedsScreen: React.FC = () => {
         }
         setIsSearching(true);
         try {
-            // Corrected API call to use the unspecced namespace for searching feeds
             const { data } = await (agent.api.app.bsky.unspecced as any).searchFeedGenerators({ q: searchQuery, limit: 25 });
             setSearchResults(data.feeds);
         } catch (error) {
             console.error("Feed search failed:", error);
         } finally {
             setIsSearching(false);
+        }
+    };
+
+    const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newQuery = e.target.value;
+        setSearchQuery(newQuery);
+        if (newQuery.trim() === '') {
+            setSearchResults([]);
         }
     };
 
@@ -54,7 +78,7 @@ const FeedsScreen: React.FC = () => {
     
     const toggleMode = () => {
         if (mode === 'edit') {
-            load(); // Refresh state when exiting edit mode
+            load(); 
         }
         setMode(prev => prev === 'view' ? 'edit' : 'view');
     }
@@ -122,6 +146,33 @@ const FeedsScreen: React.FC = () => {
         </>
     );
 
+    const renderDiscoverContent = () => {
+        const hasSearchQuery = searchQuery.trim().length > 0;
+        const feedsToShow = hasSearchQuery ? searchResults : recommendedFeeds;
+        const isLoadingContent = hasSearchQuery ? isSearching : isLoadingRecommended;
+
+        if (isLoadingContent) {
+            return (
+                 <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-[88px] animate-pulse"></div>)}
+                 </div>
+            );
+        }
+
+        return (
+            <div className="space-y-3">
+                {feedsToShow.map(feed => (
+                    <FeedSearchResultCard
+                        key={feed.uri}
+                        feed={feed}
+                        isPinned={pinnedUris.has(feed.uri)}
+                        onTogglePin={() => handleTogglePin(feed)}
+                    />
+                ))}
+            </div>
+        );
+    }
+
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
@@ -150,28 +201,13 @@ const FeedsScreen: React.FC = () => {
                                 <input
                                     type="search"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={handleSearchQueryChange}
                                     placeholder="Search for feeds..."
                                     className="w-full pl-10 pr-4 py-2 bg-surface-2 border border-surface-3 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none transition"
                                 />
                             </div>
                         </form>
-                        {isSearching ? (
-                             <div className="space-y-3">
-                                {[...Array(3)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-[88px] animate-pulse"></div>)}
-                             </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {searchResults.map(feed => (
-                                    <FeedSearchResultCard
-                                        key={feed.uri}
-                                        feed={feed}
-                                        isPinned={pinnedUris.has(feed.uri)}
-                                        onTogglePin={() => handleTogglePin(feed)}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        {renderDiscoverContent()}
                     </div>
                 </div>
             )}
