@@ -164,6 +164,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
                         src={author.avatar || `https://picsum.photos/seed/${author.did}/24`} 
                         alt={`${author.displayName}'s avatar`} 
                         className="w-7 h-7 rounded-full bg-surface-3 flex-shrink-0" 
+                        loading="lazy"
                      />
                      <div className="flex items-center gap-1 truncate">
                         <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || author.handle}</span>

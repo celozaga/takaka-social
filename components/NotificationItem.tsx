@@ -89,7 +89,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
             <div className="flex-1">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
+                        <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" loading="lazy" />
                         <div className="text-sm">{title}</div>
                     </div>
                     <span className="text-xs text-on-surface-variant flex-shrink-0 ml-2">{timeAgo}</span>

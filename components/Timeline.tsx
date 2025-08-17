@@ -153,8 +153,8 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   if (isLoading) {
     return (
-      <div className="columns-2 gap-4 space-y-4">
-        {[...Array(8)].map((_, i) => <div key={i} className="break-inside-avoid"><PostCardSkeleton /></div>)}
+      <div className="grid grid-cols-2 gap-4">
+        {[...Array(8)].map((_, i) => <PostCardSkeleton key={i} />)}
       </div>
     );
   }
@@ -169,19 +169,17 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   return (
     <div>
-      <div className="columns-2 gap-4 space-y-4">
+      <div className="grid grid-cols-2 gap-4">
         {feed.map(({ post }) => (
-          <div key={post.cid} className="break-inside-avoid">
-            <PostCard post={post} />
-          </div>
+          <PostCard key={post.cid} post={post} />
         ))}
       </div>
 
       <div ref={loaderRef} className="h-10"> {/* Sentinel element */}
         {isLoadingMore && (
-          <div className="columns-2 gap-4 space-y-4 mt-4">
-            <div className="break-inside-avoid"><PostCardSkeleton /></div>
-            <div className="break-inside-avoid"><PostCardSkeleton /></div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <PostCardSkeleton />
+            <PostCardSkeleton />
           </div>
         )}
       </div>

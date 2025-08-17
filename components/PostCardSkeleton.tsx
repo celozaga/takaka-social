@@ -1,13 +1,10 @@
 import React from 'react';
 
 const PostCardSkeleton: React.FC = () => {
-  // Use a random height to better simulate a masonry layout
-  const randomHeight = Math.floor(Math.random() * (350 - 200 + 1)) + 200;
-
   return (
     <div className="bg-surface-2 rounded-xl overflow-hidden animate-pulse flex flex-col">
       {/* Media placeholder */}
-      <div className="w-full bg-surface-3" style={{ height: `${randomHeight}px` }}></div>
+      <div className="w-full bg-surface-3" style={{ height: `250px` }}></div>
       
       {/* Content placeholder */}
       <div className="p-3">

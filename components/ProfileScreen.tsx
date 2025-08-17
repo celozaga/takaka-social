@@ -269,8 +269,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
     if (isLoading) {
         return (
-             <div className="columns-2 gap-4 space-y-4">
-                {[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid"><PostCardSkeleton /></div>)}
+             <div className="grid grid-cols-2 gap-4">
+                {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
             </div>
         );
     }
@@ -326,9 +326,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     return (
         <div>
             <div className="h-48 bg-surface-3 rounded-t-lg -mx-4 -mt-4 relative">
-                {profile.banner && <img src={profile.banner} alt="Banner" className="w-full h-full object-cover rounded-t-lg"/>}
+                {profile.banner && <img src={profile.banner} alt="Banner" className="w-full h-full object-cover rounded-t-lg" loading="lazy"/>}
                 <div className="absolute -bottom-16 left-8">
-                    <img src={profile.avatar} alt="Avatar" className="w-32 h-32 rounded-full border-4 border-surface-1 bg-surface-3"/>
+                    <img src={profile.avatar} alt="Avatar" className="w-32 h-32 rounded-full border-4 border-surface-1 bg-surface-3" loading="lazy"/>
                 </div>
             </div>
             
@@ -378,19 +378,17 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
                     )}
                     
-                    <div className="columns-2 gap-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                         {feed.map(({ post }) => (
-                            <div key={post.cid} className="break-inside-avoid">
-                                <PostCard post={post} />
-                            </div>
+                            <PostCard key={post.cid} post={post} />
                         ))}
                     </div>
 
                     <div ref={loaderRef} className="h-10">
                         {isLoadingMore && (
-                          <div className="columns-2 gap-4 space-y-4 mt-4">
-                            <div className="break-inside-avoid"><PostCardSkeleton /></div>
-                            <div className="break-inside-avoid"><PostCardSkeleton /></div>
+                          <div className="grid grid-cols-2 gap-4 mt-4">
+                            <PostCardSkeleton />
+                            <PostCardSkeleton />
                           </div>
                         )}
                     </div>
