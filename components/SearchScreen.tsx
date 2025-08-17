@@ -32,7 +32,6 @@ const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
     const [query, setQuery] = useState(initialQuery);
-    const [activeFilter, setActiveFilter] = useState<FilterType>(initialFilter as FilterType || 'top');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -41,6 +40,9 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
+
+    // Derive activeFilter directly from props, making the URL the single source of truth.
+    const activeFilter = (initialFilter as FilterType) || 'top';
     
     const showDiscoveryContent = !initialQuery.trim();
     const supportsInfiniteScroll = activeFilter !== 'people';
@@ -141,8 +143,8 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     };
     
     const handleFilterChange = (filter: FilterType) => {
-        setActiveFilter(filter);
         if (query.trim()) {
+            // Simply update the URL. The component will be re-mounted with new props.
             window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${filter}`;
         }
     };
