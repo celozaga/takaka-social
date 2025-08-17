@@ -5,6 +5,7 @@ import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedReco
 import PostCard from './PostCard';
 import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock } from 'lucide-react';
 import PostCardSkeleton from './PostCardSkeleton';
+import ActorSearchResultCard from './ActorSearchResultCard';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people';
@@ -149,13 +150,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         return (
           <div className="space-y-3">
             {(results as AppBskyActorDefs.ProfileView[]).map(actor => (
-                <a href={`#/profile/${actor.handle}`} key={actor.did} className="flex items-center gap-4 p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
-                  <img src={actor.avatar} alt={actor.displayName} className="w-12 h-12 rounded-full bg-surface-3" />
-                  <div>
-                    <p className="font-bold">{actor.displayName || actor.handle}</p>
-                    <p className="text-on-surface-variant">@{actor.handle}</p>
-                  </div>
-                </a>
+                <ActorSearchResultCard key={actor.did} actor={actor} />
             ))}
           </div>
         );
