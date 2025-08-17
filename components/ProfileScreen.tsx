@@ -269,13 +269,12 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
     if (isLoading) {
         return (
-             <div className="flex gap-4">
-                <div className="w-1/2 space-y-4">
-                  {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col1-${i}`} />)}
-                </div>
-                 <div className="w-1/2 space-y-4">
-                  {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col2-${i}`} />)}
-                </div>
+             <div className="columns-2 gap-4">
+                {[...Array(6)].map((_, i) => (
+                    <div key={i} className="break-inside-avoid mb-4">
+                        <PostCardSkeleton />
+                    </div>
+                ))}
             </div>
         );
     }
@@ -328,9 +327,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         </div>
     );
     
-    const column1Posts = feed.filter((_, index) => index % 2 === 0);
-    const column2Posts = feed.filter((_, index) => index % 2 === 1);
-
     return (
         <div>
             <div className="h-48 bg-surface-3 rounded-t-lg -mx-4 -mt-4 relative">
@@ -386,26 +382,21 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
                     )}
                     
-                    <div className="flex gap-4">
-                        <div className="w-1/2 space-y-4">
-                            {column1Posts.map(({ post }) => (
-                                <PostCard key={post.cid} post={post} />
-                            ))}
-                        </div>
-                        <div className="w-1/2 space-y-4">
-                            {column2Posts.map(({ post }) => (
-                                <PostCard key={post.cid} post={post} />
-                            ))}
-                        </div>
+                    <div className="columns-2 gap-4">
+                        {feed.map(({ post }) => (
+                            <div key={post.cid} className="break-inside-avoid mb-4">
+                                <PostCard post={post} />
+                            </div>
+                        ))}
                     </div>
 
                     <div ref={loaderRef} className="h-10">
                         {isLoadingMore && (
-                          <div className="flex gap-4 mt-4">
-                            <div className="w-1/2 space-y-4">
+                          <div className="columns-2 gap-4 mt-4">
+                            <div className="break-inside-avoid mb-4">
                                <PostCardSkeleton />
                             </div>
-                            <div className="w-1/2 space-y-4">
+                            <div className="break-inside-avoid mb-4">
                                <PostCardSkeleton />
                             </div>
                           </div>

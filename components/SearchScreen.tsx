@@ -158,21 +158,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
       }
       
       const postResults = results as AppBskyFeedDefs.PostView[];
-      const column1Posts = postResults.filter((_, index) => index % 2 === 0);
-      const column2Posts = postResults.filter((_, index) => index % 2 === 1);
-
       return (
-        <div className="flex gap-4">
-            <div className="w-1/2 space-y-4">
-                {column1Posts.map(post => (
-                    <PostCard key={post.cid} post={post} />
-                ))}
+        <div className="columns-2 gap-4">
+          {postResults.map(post => (
+            <div key={post.cid} className="break-inside-avoid mb-4">
+              <PostCard post={post} />
             </div>
-            <div className="w-1/2 space-y-4">
-                {column2Posts.map(post => (
-                    <PostCard key={post.cid} post={post} />
-                ))}
-            </div>
+          ))}
         </div>
       );
     }
@@ -208,13 +200,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             </div>
 
             {isLoading && (
-                <div className="flex gap-4">
-                    <div className="w-1/2 space-y-4">
-                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col1-${i}`} />)}
-                    </div>
-                     <div className="w-1/2 space-y-4">
-                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`col2-${i}`} />)}
-                    </div>
+                <div className="columns-2 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="break-inside-avoid mb-4">
+                            <PostCardSkeleton />
+                        </div>
+                    ))}
                 </div>
             )}
             {!isLoading && results.length > 0 && renderResults()}
@@ -229,11 +220,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             
             <div ref={loaderRef} className="h-10">
                 {isLoadingMore && isPostSearch && (
-                  <div className="flex gap-4 mt-4">
-                    <div className="w-1/2 space-y-4">
+                  <div className="columns-2 gap-4 mt-4">
+                    <div className="break-inside-avoid mb-4">
                         <PostCardSkeleton />
                     </div>
-                     <div className="w-1/2 space-y-4">
+                     <div className="break-inside-avoid mb-4">
                         <PostCardSkeleton />
                     </div>
                   </div>
