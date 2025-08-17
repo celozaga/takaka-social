@@ -88,7 +88,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         <div className="flex items-center gap-2">
             <a href={`#/profile/${author.handle}`} className="font-bold hover:underline leading-tight text-sm inline-flex items-center gap-1">
                 <span>{author.displayName || `@${author.handle}`}</span>
-                {author.labels?.some(l => l.val === 'blue-check') && (
+                {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                     <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
                 )}
             </a>

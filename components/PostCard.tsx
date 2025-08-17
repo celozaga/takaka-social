@@ -167,7 +167,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, isClickable = true, showAllMe
                      />
                      <div className="flex items-center gap-1 truncate">
                         <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || author.handle}</span>
-                        {author.labels?.some(l => l.val === 'blue-check') && (
+                        {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                             <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
                         )}
                      </div>
