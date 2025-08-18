@@ -141,7 +141,7 @@ const Main: React.FC = () => {
     }
   };
   
-  const mainContainerClasses = `w-full flex justify-center ${!isWatchScreen ? 'md:pl-20' : ''}`;
+  const mainContainerClasses = `w-full flex justify-center md:pl-20`;
 
   const mainContentClasses = isWatchScreen
     ? 'w-full h-screen bg-black'

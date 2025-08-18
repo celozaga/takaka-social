@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPlayer from './VideoPlayer';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import Swiper from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Mousewheel } from 'swiper/modules';
+import type { Swiper as SwiperCore } from 'swiper';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
@@ -17,9 +19,6 @@ const WatchScreen: React.FC = () => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
-
-    const swiperRef = useRef<Swiper | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
 
     const isPostVideo = (post: AppBskyFeedDefs.PostView): boolean => {
         return !!post.embed && (
@@ -37,7 +36,9 @@ const WatchScreen: React.FC = () => {
             let nextCursor = currentCursor;
             let attempts = 0;
 
-            while (fetchedPosts.filter(p => isPostVideo(p.post)).length < 5 && attempts < 5 && hasMore) {
+            // Fetch until we have at least 5 videos or run out of posts/attempts
+            while (fetchedPosts.filter(p => isPostVideo(p.post)).length < 5 && attempts < 5 && (hasMore || !currentCursor)) {
+                if(!hasMore && currentCursor) break;
                 attempts++;
                 const response = await agent.app.bsky.feed.getFeed({ feed: DISCOVER_FEED_URI, cursor: nextCursor, limit: 50 });
                 fetchedPosts.push(...response.data.feed);
@@ -68,64 +69,58 @@ const WatchScreen: React.FC = () => {
 
     useEffect(() => {
         fetchVideos();
-    }, []);
+    }, [fetchVideos]);
     
-    useEffect(() => {
-        if (containerRef.current && !swiperRef.current) {
-            swiperRef.current = new Swiper(containerRef.current, {
-                direction: 'vertical',
-                resistanceRatio: 0.85,
-                mousewheel: true,
-            });
-            swiperRef.current.on('slideChange', () => {
-                setActiveIndex(swiperRef.current?.activeIndex || 0);
-            });
-        }
-        return () => {
-            swiperRef.current?.destroy(true, true);
-            swiperRef.current = null;
-        }
-    }, []);
+    const handleSlideChange = (swiper: SwiperCore) => {
+        setActiveIndex(swiper.activeIndex);
+    };
     
-    useEffect(() => {
-        if (swiperRef.current) {
-            swiperRef.current.update();
-        }
-        if (!isLoadingMore && hasMore && activeIndex >= videoPosts.length - 3) {
+    const handleReachEnd = () => {
+        if (!isLoadingMore && hasMore) {
             fetchVideos(cursor);
         }
-    }, [videoPosts, activeIndex, isLoadingMore, hasMore, cursor, fetchVideos]);
+    };
 
     if (isLoading && videoPosts.length === 0) {
-        return <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+        return <div className="w-full h-full flex items-center justify-center bg-black"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
     }
 
     if (error) {
-        return <div className="w-full h-full flex items-center justify-center text-error p-4">{error}</div>;
+        return <div className="w-full h-full flex items-center justify-center text-error p-4 bg-black">{error}</div>;
     }
 
     return (
         <div className="w-full h-full relative">
-            <div ref={containerRef} className="swiper h-full">
-                <div className="swiper-wrapper">
-                    {videoPosts.map((postView, index) => (
-                        <div key={`${postView.post.uri}-${index}`} className="swiper-slide">
-                            <VideoPlayer postView={postView} isActive={index === activeIndex} />
-                        </div>
-                    ))}
-                     {hasMore && (
-                        <div className="swiper-slide flex items-center justify-center bg-black">
+            <Swiper
+                direction={'vertical'}
+                slidesPerView={1}
+                mousewheel={true}
+                modules={[Mousewheel]}
+                className="h-full"
+                onSlideChange={handleSlideChange}
+                onReachEnd={handleReachEnd}
+            >
+                {videoPosts.map((postView, index) => (
+                    <SwiperSlide key={`${postView.post.uri}-${index}`}>
+                        <VideoPlayer postView={postView} isActive={index === activeIndex} />
+                    </SwiperSlide>
+                ))}
+                 {(isLoadingMore || (isLoading && videoPosts.length > 0)) && (
+                    <SwiperSlide>
+                        <div className="w-full h-full flex items-center justify-center bg-black">
                             <Loader2 className="w-8 h-8 animate-spin text-white" />
                         </div>
-                     )}
-                     {!hasMore && videoPosts.length > 0 && (
-                        <div className="swiper-slide flex flex-col items-center justify-center bg-black text-white">
+                    </SwiperSlide>
+                 )}
+                 {!hasMore && videoPosts.length > 0 && !isLoadingMore && (
+                    <SwiperSlide>
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white">
                             <p className="text-lg font-semibold">You've seen it all!</p>
                             <p className="text-sm text-on-surface-variant mt-1">Check back later for more videos.</p>
                         </div>
-                     )}
-                </div>
-            </div>
+                    </SwiperSlide>
+                 )}
+            </Swiper>
 
             <button onClick={() => window.history.back()} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
                 <ArrowLeft size={24} />
