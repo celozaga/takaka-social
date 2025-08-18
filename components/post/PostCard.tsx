@@ -17,9 +17,14 @@ const getResizedImage = (url: string, width: number): string => {
     return url;
   }
   try {
-    // URL can be malformed, so we wrap in try/catch
     const urlObj = new URL(url);
     const parts = urlObj.pathname.split('/');
+    const filename = parts[parts.length - 1];
+    
+    // Do not attempt to resize GIFs, as the service may not support it or may return a static image.
+    if (filename.includes('@gif')) {
+        return url;
+    }
     
     // Path: /img/{type}/plain/{...rest}
     // We want: /img/{type}/rs:w:{width}/plain/{...rest}
