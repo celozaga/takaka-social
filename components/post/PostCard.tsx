@@ -12,53 +12,6 @@ type PostCardProps = {
     showAllMedia?: boolean;
 }
 
-const getResizedImage = (url: string, width: number, mimeType?: string): string => {
-  if (!url || !url.includes('cdn.bsky.app/img/')) {
-    return url;
-  }
-
-  // The resizing service works for JPEG/PNG. We need to avoid GIFs.
-  // We can either check the URL suffix for image embeds, or trust the explicit mimeType for video posters.
-  const urlLower = url.toLowerCase();
-  const isKnownResizableSuffix = urlLower.endsWith('@jpeg') || urlLower.endsWith('@jpg') || urlLower.endsWith('@png');
-  const isForcedResizableMime = mimeType === 'image/jpeg' || mimeType === 'image/png';
-
-  if (!isKnownResizableSuffix && !isForcedResizableMime) {
-      return url;
-  }
-  
-  try {
-    const urlObj = new URL(url);
-    const parts = urlObj.pathname.split('/');
-    
-    // Path: /img/{type}/plain/{...rest}
-    // We want: /img/{type}/rs:w:{width}/plain/{...rest}
-    const plainIndex = parts.indexOf('plain');
-    
-    if (plainIndex > 1) {
-        // Avoid adding multiple resize parameters
-        if (parts[plainIndex - 1].startsWith('rs:')) {
-            return url;
-        }
-
-        const newParts = [
-            ...parts.slice(0, plainIndex),
-            `rs:w:${width}`,
-            ...parts.slice(plainIndex),
-        ];
-        urlObj.pathname = newParts.join('/');
-        return urlObj.toString();
-    }
-    
-    return url;
-  } catch (e) {
-    // Don't crash the app if URL parsing fails.
-    console.warn('Could not parse or resize image URL:', url, e);
-    return url;
-  }
-};
-
-
 const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
     const { post, reason, reply } = feedViewPost;
@@ -79,11 +32,10 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                 return (
                     <div className={`grid ${gridCols} gap-1.5`}>
                         {embed.images.map((image, index) => {
-                            const resizedThumb = getResizedImage(image.thumb, 400);
                             return (
                                 <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 rounded-md overflow-hidden">
                                     <img
-                                        src={resizedThumb}
+                                        src={image.thumb}
                                         alt={image.alt || `Post image ${index + 1}`}
                                         className="w-full h-full object-cover"
                                         loading="lazy"
@@ -101,12 +53,10 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const firstImage = embed.images[0];
             if (!firstImage) return null;
             
-            const resizedThumb = getResizedImage(firstImage.thumb, 400);
-
             return (
                 <div className="relative">
                     <img 
-                        src={resizedThumb} 
+                        src={firstImage.thumb} 
                         alt={firstImage.alt || 'Post image'} 
                         className="w-full h-auto object-cover" 
                         loading="lazy"
@@ -160,11 +110,9 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                  );
             }
             
-            const resizedPoster = getResizedImage(posterUrl, 400, 'image/jpeg');
-            
             return (
                 <div className="relative">
-                    <img src={resizedPoster} className="w-full h-auto object-cover bg-black" />
+                    <img src={posterUrl} className="w-full h-auto object-cover bg-black" />
                     <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
                         <PlayCircle size={14}/>
                     </div>
