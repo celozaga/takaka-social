@@ -147,7 +147,7 @@ const WatchScreen: React.FC = () => {
                 onReachEnd={handleReachEnd}
             >
                 {videoPosts.map((postView, index) => {
-                    const shouldLoad = Math.abs(index - activeIndex) <= 1; // Preload next and previous
+                    const shouldLoad = Math.abs(index - activeIndex) <= 2; // Preload next 2 and previous 2
                     return (
                         <SwiperSlide key={`${postView.post.uri}-${index}`}>
                             <VideoPlayer 
