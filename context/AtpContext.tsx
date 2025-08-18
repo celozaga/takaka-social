@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 
@@ -60,22 +59,30 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const fetchChatUnreadCount = useCallback(async () => {
     if (!agent.hasSession) {
-      if (chatSupported !== false) setChatSupported(false);
+      setChatSupported(false);
       return;
     }
     
-    if (chatSupported === false) return; // Don't re-check if we know it's not supported
+    // This function can be called multiple times. If we already know it's not supported,
+    // don't try again until a new login. The `login` function resets `chatSupported` to `undefined`.
+    if (chatSupported === false) {
+      return;
+    }
 
     try {
         const { data } = await agent.chat.bsky.convo.listConvos();
         const totalUnread = data.convos.reduce((acc, convo) => acc + convo.unreadCount, 0);
         setChatUnreadCount(totalUnread);
-        if (chatSupported !== true) setChatSupported(true);
+        if (chatSupported !== true) {
+            setChatSupported(true);
+        }
     } catch (error: any) {
         if (error.name === 'XRPCNotSupported') {
             console.warn("Chat feature not supported by this PDS.");
-            setChatSupported(false);
-            setChatUnreadCount(0);
+            if (chatSupported !== false) {
+                setChatSupported(false);
+                setChatUnreadCount(0);
+            }
         } else {
             console.error("Failed to fetch chat unread count:", error);
         }
@@ -97,7 +104,10 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
           setSession(parsedSession);
-          await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
+          // Run checks sequentially to ensure chat support is known before starting polls.
+          await fetchUnreadCount();
+          await fetchChatUnreadCount();
+
           pollInterval = window.setInterval(() => {
             fetchUnreadCount();
             fetchChatUnreadCount();
@@ -128,7 +138,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if(agent.session) {
         setSession(agent.session);
         setChatSupported(undefined); // Reset on new login to re-check
-        await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
+        await fetchUnreadCount();
+        await fetchChatUnreadCount();
     }
     return response;
   };

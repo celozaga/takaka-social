@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { ChatBskyConvoDefs, AppBskyActorDefs } from '@atproto/api';
@@ -23,9 +24,9 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
     try {
       const { data } = await agent.chat.bsky.convo.getMessages({ convoId: peerDid });
       const validMessages = data.messages.filter(
-        (msg): msg is ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView =>
+        (msg) =>
           ChatBskyConvoDefs.isMessageView(msg) || ChatBskyConvoDefs.isDeletedMessageView(msg)
-      );
+      ) as (ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView)[];
       setMessages(validMessages.reverse()); // Reverse to show latest at the bottom
       setCursor(data.cursor);
       // Fetch profile info for the header
@@ -56,10 +57,10 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
         const { data } = await agent.chat.bsky.convo.getMessages({ convoId: peerDid, limit: 50 });
         const newMessages = data.messages
           .filter(
-            (msg): msg is ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView =>
+            (msg) =>
               ChatBskyConvoDefs.isMessageView(msg) || ChatBskyConvoDefs.isDeletedMessageView(msg)
           )
-          .reverse();
+          .reverse() as (ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView)[];
         
         setMessages(currentMessages => {
           const lastCurrentId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : null;
