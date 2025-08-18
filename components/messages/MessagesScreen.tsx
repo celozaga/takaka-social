@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { AppBskyChatBskyConvoDefs } from '@atproto/api';
+import { ChatBskyConvoDefs } from '@atproto/api';
 import { Loader2 } from 'lucide-react';
 import MessagesHeader from './MessagesHeader';
 import ConvoListItem from './ConvoListItem';
@@ -10,7 +9,7 @@ import ConvoListItem from './ConvoListItem';
 const MessagesScreen: React.FC = () => {
   const { agent } = useAtp();
   const { setCustomFeedHeaderVisible } = useUI();
-  const [convos, setConvos] = useState<AppBskyChatBskyConvoDefs.ConvoView[]>([]);
+  const [convos, setConvos] = useState<ChatBskyConvoDefs.ConvoView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

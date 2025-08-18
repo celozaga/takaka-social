@@ -44,7 +44,7 @@ const App: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { session, isLoadingSession } = useAtp();
+  const { session, isLoadingSession, chatSupported } = useAtp();
   const { 
     isLoginModalOpen, closeLoginModal, 
     isComposerOpen, closeComposer, composerReplyTo, composerInitialText, 
@@ -150,6 +150,14 @@ const Main: React.FC = () => {
         if (!session) {
             window.location.hash = '#/';
             return null;
+        }
+        if (!chatSupported) {
+          return (
+            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">
+              <h2 className="font-bold text-lg text-on-surface">Messaging Not Supported</h2>
+              <p className="mt-1">Your Bluesky server (PDS) does not currently support the direct messaging feature.</p>
+            </div>
+          );
         }
         if (parts[1]) {
             return <ConvoScreen peerDid={parts[1]} key={parts[1]} />;

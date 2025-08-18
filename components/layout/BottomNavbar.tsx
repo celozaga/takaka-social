@@ -9,7 +9,7 @@ interface BottomNavbarProps {
 }
 
 const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
-  const { session, logout, unreadCount, chatUnreadCount } = useAtp();
+  const { session, logout, unreadCount, chatUnreadCount, chatSupported } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const [currentHash, setCurrentHash] = React.useState(window.location.hash || '#/');
 
@@ -19,7 +19,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
     return () => window.removeEventListener('hashchange', handler);
   }, []);
 
-  const loggedInNavItems = [
+  const baseLoggedInNavItems = [
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
     { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
@@ -27,6 +27,11 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
     { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
     { href: '#/more', label: 'More', icon: LayoutGrid, activeCondition: currentHash.startsWith('#/more') },
   ];
+
+  const loggedInNavItems = chatSupported 
+    ? baseLoggedInNavItems 
+    : baseLoggedInNavItems.filter(item => item.label !== 'Messages');
+
 
   const guestNavItems = [
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },

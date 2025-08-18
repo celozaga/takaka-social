@@ -1,16 +1,15 @@
-
 import React from 'react';
-import { AppBskyChatBskyConvoDefs } from '@atproto/api';
+import { ChatBskyConvoDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 
 interface MessageBubbleProps {
-  message: AppBskyChatBskyConvoDefs.MessageView;
+  message: ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const { session } = useAtp();
 
-  if (!AppBskyChatBskyConvoDefs.isMessageView(message)) {
+  if (!ChatBskyConvoDefs.isMessageView(message)) {
     return (
       <div className="flex justify-center">
         <p className="text-xs text-on-surface-variant bg-surface-2 px-2 py-1 rounded-full">

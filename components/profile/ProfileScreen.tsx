@@ -57,7 +57,7 @@ const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter):
 };
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
-    const { agent, session } = useAtp();
+    const { agent, session, chatSupported } = useAtp();
     const { toast } = useToast();
     const { openEditProfileModal, setCustomFeedHeaderVisible } = useUI();
 
@@ -417,9 +417,11 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     ) : session && viewerState && (
                         <>
                             <FollowButton />
-                            <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
-                                <MessageSquare size={20} />
-                            </a>
+                            {chatSupported && (
+                                <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
+                                    <MessageSquare size={20} />
+                                </a>
+                            )}
                         </>
                     )}
                 </div>

@@ -12,6 +12,7 @@ interface AtpContextType {
   chatUnreadCount: number;
   resetUnreadCount: () => void;
   resetChatUnreadCount: () => void;
+  chatSupported: boolean;
 }
 
 const AtpContext = createContext<AtpContextType | undefined>(undefined);
@@ -21,6 +22,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
+  const [chatSupported, setChatSupported] = useState(true); // Optimistically true
 
   const agent = useMemo(() => new BskyAgent({
     service: 'https://bsky.social',
@@ -56,15 +58,22 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   const fetchChatUnreadCount = useCallback(async () => {
-    if (!agent.hasSession) return;
+    if (!agent.hasSession || !chatSupported) return;
     try {
         const { data } = await agent.chat.bsky.convo.listConvos();
         const totalUnread = data.convos.reduce((acc, convo) => acc + convo.unreadCount, 0);
         setChatUnreadCount(totalUnread);
-    } catch (error) {
-        console.error("Failed to fetch chat unread count:", error);
+        if (!chatSupported) setChatSupported(true); // It works now, so re-enable
+    } catch (error: any) {
+        if (error.name === 'XRPCNotSupported') {
+            console.warn("Chat feature not supported by this PDS.");
+            setChatSupported(false);
+            setChatUnreadCount(0);
+        } else {
+            console.error("Failed to fetch chat unread count:", error);
+        }
     }
-  }, [agent]);
+  }, [agent, chatSupported]);
 
   const resetChatUnreadCount = useCallback(() => {
     setChatUnreadCount(0);
@@ -108,6 +117,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });
     if(agent.session) {
         setSession(agent.session);
+        setChatSupported(true); // Reset on new login to re-check
         await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
     }
     return response;
@@ -124,7 +134,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AtpContext.Provider value={{ 
         agent, session, isLoadingSession, login, logout, 
         unreadCount, resetUnreadCount,
-        chatUnreadCount, resetChatUnreadCount
+        chatUnreadCount, resetChatUnreadCount,
+        chatSupported
     }}>
       {children}
     </AtpContext.Provider>

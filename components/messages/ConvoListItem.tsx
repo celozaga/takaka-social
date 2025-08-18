@@ -1,18 +1,17 @@
-
 import React from 'react';
-import { AppBskyChatBskyConvoDefs } from '@atproto/api';
+import { ChatBskyConvoDefs } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ConvoListItemProps {
-  convo: AppBskyChatBskyConvoDefs.ConvoView;
+  convo: ChatBskyConvoDefs.ConvoView;
 }
 
 const ConvoListItem: React.FC<ConvoListItemProps> = ({ convo }) => {
   const { peer, lastMessage, unreadCount } = convo;
-  const lastMessageText = AppBskyChatBskyConvoDefs.isMessageView(lastMessage)
+  const lastMessageText = ChatBskyConvoDefs.isMessageView(lastMessage)
     ? lastMessage.text
     : 'Message deleted';
-  const lastMessageDate = AppBskyChatBskyConvoDefs.isMessageView(lastMessage)
+  const lastMessageDate = ChatBskyConvoDefs.isMessageView(lastMessage)
     ? new Date(lastMessage.sentAt)
     : null;
 

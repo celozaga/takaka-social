@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyChatBskyConvoDefs, AppBskyActorDefs } from '@atproto/api';
+import { ChatBskyConvoDefs, AppBskyActorDefs } from '@atproto/api';
 import { Loader2 } from 'lucide-react';
 import ConvoHeader from './ConvoHeader';
 import MessageBubble from './MessageBubble';
@@ -9,7 +8,7 @@ import MessageInput from './MessageInput';
 
 const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const { agent, session } = useAtp();
-  const [messages, setMessages] = useState<AppBskyChatBskyConvoDefs.MessageView[]>([]);
+  const [messages, setMessages] = useState<(ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView)[]>([]);
   const [peer, setPeer] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +17,7 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
 
   const fetchConvo = useCallback(async () => {
     try {
-      const { data } = await agent.chat.bsky.convo.getConvo({ convoId: peerDid });
+      const { data } = await agent.chat.bsky.convo.getMessages({ convoId: peerDid });
       setMessages(data.messages.reverse()); // Reverse to show latest at the bottom
       setCursor(data.cursor);
       // Fetch profile info for the header
@@ -38,7 +37,7 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
 
     const pollInterval = setInterval(async () => {
       try {
-        const { data } = await agent.chat.bsky.convo.getConvo({ convoId: peerDid, limit: 50 });
+        const { data } = await agent.chat.bsky.convo.getMessages({ convoId: peerDid, limit: 50 });
         const newMessages = data.messages.reverse();
         // A simple check to see if new messages have arrived
         if (newMessages.length > 0 && (messages.length === 0 || newMessages[newMessages.length - 1].id !== messages[messages.length - 1].id)) {
@@ -53,7 +52,7 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
     return () => {
         clearInterval(pollInterval);
     }
-  }, [agent, peerDid]);
+  }, [agent, peerDid, messages.length]);
 
   useEffect(() => {
     // Scroll to bottom on new message
@@ -64,7 +63,7 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
     if (!text.trim()) return;
     try {
       // Optimistic update
-      const optimisticMessage: AppBskyChatBskyConvoDefs.MessageView = {
+      const optimisticMessage: ChatBskyConvoDefs.MessageView = {
         $type: 'app.bsky.chat.convo.defs#messageView',
         id: `temp-${Date.now()}`,
         rev: '',
@@ -79,7 +78,7 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
         message: { text },
       });
       // Replace optimistic message with real one
-      setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? data.message : m));
+      setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? data : m));
     } catch (err) {
       console.error('Failed to send message:', err);
       // Revert optimistic update on failure

@@ -35,7 +35,7 @@ const AppGridItem: React.FC<{
 
 
 const MoreScreen: React.FC = () => {
-    const { agent, session } = useAtp();
+    const { agent, session, chatSupported } = useAtp();
     const { setCustomFeedHeaderVisible } = useUI();
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +59,7 @@ const MoreScreen: React.FC = () => {
     
     const profileLink = `#/profile/${session?.handle}`;
 
-    const appGridItems = session ? [
+    const baseAppGridItems = session ? [
         { icon: List, label: 'My Feeds', href: '#/feeds', colorClass: 'text-sky-400' },
         { icon: MessageSquare, label: 'Messages', href: '#/messages', colorClass: 'text-fuchsia-400' },
         { icon: Clapperboard, label: 'Watch', href: '#/watch', colorClass: 'text-rose-400' },
@@ -69,6 +69,8 @@ const MoreScreen: React.FC = () => {
         { icon: UserCheck, label: 'Following', href: `#/profile/${session.handle}/following`, colorClass: 'text-cyan-400' },
         { icon: Settings, label: 'Settings', href: '#/settings', colorClass: 'text-slate-400' },
     ] : [];
+    
+    const appGridItems = chatSupported ? baseAppGridItems : baseAppGridItems.filter(item => item.label !== 'Messages');
 
     return (
         <div>
