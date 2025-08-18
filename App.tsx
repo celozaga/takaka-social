@@ -8,6 +8,7 @@ import BottomNavbar from './components/layout/BottomNavbar';
 import Composer from './components/composer/Composer';
 import LoginPrompt from './components/auth/LoginPrompt';
 import { Loader2 } from 'lucide-react';
+import { useHeadManager } from './hooks/useHeadManager';
 
 // Lazy load screen components
 const LoginScreen = lazy(() => import('./components/auth/LoginScreen'));
@@ -50,6 +51,8 @@ const Main: React.FC = () => {
     isEditProfileModalOpen, closeEditProfileModal
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
+
+  useHeadManager(); // Set default head tags
 
   useEffect(() => {
     const handleHashChange = () => {

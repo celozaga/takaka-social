@@ -5,6 +5,8 @@ import { useUI } from '../../context/UIContext';
 import Timeline from '../shared/Timeline';
 import FeedViewHeader from './FeedViewHeader';
 import { ArrowLeft } from 'lucide-react';
+import { useHeadManager } from '../../hooks/useHeadManager';
+import { useFeedActions } from '../../hooks/useFeedActions';
 
 interface FeedViewScreenProps {
     handle: string;
@@ -17,6 +19,14 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     const [feedUri, setFeedUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const { feedView } = useFeedActions(feedUri || undefined);
+
+    useHeadManager({
+        title: feedView ? `Feed: ${feedView.displayName}` : 'Feed',
+        description: feedView?.description,
+        imageUrl: feedView?.avatar,
+    });
 
     useEffect(() => {
         // This screen uses the custom header, so we tell the main App component to hide the default navbar.

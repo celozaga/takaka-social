@@ -8,11 +8,30 @@ import { useToast } from '../ui/use-toast';
 import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 interface PostScreenProps {
   did: string;
   rkey: string;
 }
+
+const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined => {
+    if (!post.embed) return undefined;
+    
+    let embed = post.embed;
+    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+        embed = embed.media;
+    }
+
+    if (AppBskyEmbedImages.isView(embed) && embed.images[0]) {
+        return embed.images[0].thumb;
+    }
+    if (AppBskyEmbedVideo.isView(embed)) {
+        return embed.thumbnail;
+    }
+    return undefined;
+};
+
 
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { agent, session } = useAtp();
@@ -27,6 +46,15 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const touchStartXRef = useRef(0);
  
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
+
+  const record = thread?.post.record as { text: string, facets?: RichText['facets'], createdAt: string };
+  const postExcerpt = record?.text ? (record.text.length > 100 ? record.text.substring(0, 100) + '…' : record.text) : '';
+  const title = postAuthor ? `Post by @${postAuthor.handle}${postExcerpt ? `: "${postExcerpt}"` : ''}` : 'Post';
+  const description = record?.text;
+  const imageUrl = thread?.post ? getImageUrlFromPost(thread.post) : undefined;
+
+  useHeadManager({ title, description, imageUrl, type: 'article' });
+
 
   useEffect(() => {
     setCurrentImageIndex(0); // Reset for new posts
@@ -236,7 +264,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   }
 
   const mainPost = thread.post;
-  const record = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
+  const currentRecord = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
   const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
   const isMe = session?.did === postAuthor.did;
 
@@ -288,12 +316,12 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       <div>
         <div className="p-4">
              {renderMedia(mainPost)}
-             {record.text && (
+             {currentRecord.text && (
                 <div className="my-3 text-on-surface whitespace-pre-wrap break-words">
-                    <RichTextRenderer record={record} />
+                    <RichTextRenderer record={currentRecord} />
                 </div>
              )}
-             <p className="text-sm text-on-surface-variant my-3">{format(new Date(record.createdAt), "h:mm a · MMM d, yyyy")}</p>
+             <p className="text-sm text-on-surface-variant my-3">{format(new Date(currentRecord.createdAt), "h:mm a · MMM d, yyyy")}</p>
         </div>
         
         <PostScreenActionBar post={mainPost} />

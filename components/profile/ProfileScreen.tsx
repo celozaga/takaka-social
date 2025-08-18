@@ -8,6 +8,7 @@ import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, Send, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 type FeedFilter = 'all' | 'photos' | 'videos';
 
@@ -69,6 +70,13 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
     const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
+
+    useHeadManager({
+        title: profile ? `${profile.displayName || profile.handle}` : 'Profile',
+        description: profile?.description,
+        imageUrl: profile?.avatar,
+        type: 'profile'
+    });
 
     const loaderRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
