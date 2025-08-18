@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 
@@ -8,7 +9,9 @@ interface AtpContextType {
   login: (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => Promise<any>;
   logout: () => Promise<void>;
   unreadCount: number;
+  chatUnreadCount: number;
   resetUnreadCount: () => void;
+  resetChatUnreadCount: () => void;
 }
 
 const AtpContext = createContext<AtpContextType | undefined>(undefined);
@@ -17,6 +20,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [session, setSession] = useState<AtpSessionData | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
   const agent = useMemo(() => new BskyAgent({
     service: 'https://bsky.social',
@@ -51,6 +55,21 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUnreadCount(0);
   }, []);
 
+  const fetchChatUnreadCount = useCallback(async () => {
+    if (!agent.hasSession) return;
+    try {
+        const { data } = await agent.chat.bsky.convo.listConvos();
+        const totalUnread = data.convos.reduce((acc, convo) => acc + convo.unreadCount, 0);
+        setChatUnreadCount(totalUnread);
+    } catch (error) {
+        console.error("Failed to fetch chat unread count:", error);
+    }
+  }, [agent]);
+
+  const resetChatUnreadCount = useCallback(() => {
+    setChatUnreadCount(0);
+  }, []);
+
   useEffect(() => {
     let pollInterval: number;
 
@@ -62,8 +81,11 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
           setSession(parsedSession);
-          await fetchUnreadCount();
-          pollInterval = window.setInterval(fetchUnreadCount, 30000);
+          await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
+          pollInterval = window.setInterval(() => {
+            fetchUnreadCount();
+            fetchChatUnreadCount();
+          }, 30000);
         } catch (error) {
           console.error("Failed to resume session:", error);
           localStorage.removeItem('atp-session');
@@ -80,13 +102,13 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             clearInterval(pollInterval);
         }
     };
-  }, [agent, fetchUnreadCount]);
+  }, [agent, fetchUnreadCount, fetchChatUnreadCount]);
 
   const login = async (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => {
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });
     if(agent.session) {
         setSession(agent.session);
-        await fetchUnreadCount(); // Fetch count immediately on login
+        await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
     }
     return response;
   };
@@ -95,10 +117,15 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await agent.logout();
     setSession(null);
     setUnreadCount(0);
+    setChatUnreadCount(0);
   };
 
   return (
-    <AtpContext.Provider value={{ agent, session, isLoadingSession, login, logout, unreadCount, resetUnreadCount }}>
+    <AtpContext.Provider value={{ 
+        agent, session, isLoadingSession, login, logout, 
+        unreadCount, resetUnreadCount,
+        chatUnreadCount, resetChatUnreadCount
+    }}>
       {children}
     </AtpContext.Provider>
   );

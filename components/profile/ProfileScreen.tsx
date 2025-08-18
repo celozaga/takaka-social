@@ -5,7 +5,7 @@ import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, Send, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import { useHeadManager } from '../../hooks/useHeadManager';
@@ -59,7 +59,7 @@ const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter):
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
-    const { openEditProfileModal, openComposer, setCustomFeedHeaderVisible } = useUI();
+    const { openEditProfileModal, setCustomFeedHeaderVisible } = useUI();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
@@ -417,9 +417,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     ) : session && viewerState && (
                         <>
                             <FollowButton />
-                            <button onClick={() => openComposer({initialText: `@${profile.handle} `})} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Mention user">
-                                <Send size={20} />
-                            </button>
+                            <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
+                                <MessageSquare size={20} />
+                            </a>
                         </>
                     )}
                 </div>

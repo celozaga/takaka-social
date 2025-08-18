@@ -2,14 +2,14 @@
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { Home, Search, Edit3, LogOut, Bell, LogIn, List, LayoutGrid } from 'lucide-react';
+import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid, MessageSquare } from 'lucide-react';
 
 interface BottomNavbarProps {
   isHidden?: boolean;
 }
 
 const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
-  const { session, logout, unreadCount } = useAtp();
+  const { session, logout, unreadCount, chatUnreadCount } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const [currentHash, setCurrentHash] = React.useState(window.location.hash || '#/');
 
@@ -23,6 +23,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
     { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
     { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
+    { href: '#/messages', label: 'Messages', icon: MessageSquare, activeCondition: currentHash.startsWith('#/messages') },
     { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
     { href: '#/more', label: 'More', icon: LayoutGrid, activeCondition: currentHash.startsWith('#/more') },
   ];
@@ -36,13 +37,21 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const navItems = session ? loggedInNavItems : guestNavItems;
 
   const renderNavItem = (item: (typeof navItems)[number]) => {
-    const hasBadge = item.label === 'Notifications' && unreadCount > 0;
-    
+    const isNotifications = item.label === 'Notifications';
+    const isMessages = item.label === 'Messages';
+    const hasNotificationBadge = isNotifications && unreadCount > 0;
+    const hasMessageBadge = isMessages && chatUnreadCount > 0;
+
     const content = (
       <>
         <div className={`relative w-16 h-8 flex items-center justify-center rounded-full transition-colors ${item.activeCondition ? 'bg-primary-container' : 'group-hover:bg-surface-3'}`}>
           <item.icon size={24} className={item.activeCondition ? 'text-on-primary-container' : 'text-on-surface-variant group-hover:text-on-surface'}/>
-          {hasBadge && <div className="absolute top-1 right-3.5 w-2 h-2 bg-primary rounded-full"></div>}
+           {hasNotificationBadge && <div className="absolute top-1 right-3.5 w-2 h-2 bg-primary rounded-full"></div>}
+           {hasMessageBadge && (
+             <div className="absolute top-0 right-1.5 bg-primary text-on-primary text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center">
+                {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+            </div>
+           )}
         </div>
         <span className={`text-xs font-medium ${item.activeCondition ? 'text-on-surface' : 'text-on-surface-variant'}`}>{item.label}</span>
       </>

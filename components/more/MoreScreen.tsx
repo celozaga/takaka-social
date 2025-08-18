@@ -5,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { 
     Settings, ChevronRight, BadgeCheck, List, Search, 
-    Bell, Users, UserCheck, Clapperboard
+    Bell, Users, UserCheck, Clapperboard, MessageSquare
 } from 'lucide-react';
 import MoreHeader from './MoreHeader';
 
@@ -61,6 +61,7 @@ const MoreScreen: React.FC = () => {
 
     const appGridItems = session ? [
         { icon: List, label: 'My Feeds', href: '#/feeds', colorClass: 'text-sky-400' },
+        { icon: MessageSquare, label: 'Messages', href: '#/messages', colorClass: 'text-fuchsia-400' },
         { icon: Clapperboard, label: 'Watch', href: '#/watch', colorClass: 'text-rose-400' },
         { icon: Search, label: 'Search', href: '#/search', colorClass: 'text-amber-400' },
         { icon: Bell, label: 'Notifications', href: '#/notifications', colorClass: 'text-indigo-400' },

@@ -26,6 +26,8 @@ const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
 const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
+const MessagesScreen = lazy(() => import('./components/messages/MessagesScreen'));
+const ConvoScreen = lazy(() => import('./components/messages/ConvoScreen'));
 
 
 const App: React.FC = () => {
@@ -83,7 +85,8 @@ const Main: React.FC = () => {
   
   const isWatchScreen = route.startsWith('#/watch');
   const isPostScreen = route.startsWith('#/post/');
-  const isNavbarHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen;
+  const isConvoScreen = route.startsWith('#/messages/');
+  const isNavbarHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen;
 
   const renderContent = () => {
     const pathWithQuery = route.replace(/^#\//, '');
@@ -143,6 +146,15 @@ const Main: React.FC = () => {
           return null;
         }
         return <WatchScreen />;
+      case 'messages':
+        if (!session) {
+            window.location.hash = '#/';
+            return null;
+        }
+        if (parts[1]) {
+            return <ConvoScreen peerDid={parts[1]} key={parts[1]} />;
+        }
+        return <MessagesScreen />;
       default:
         return <HomeScreen />;
     }
@@ -150,7 +162,7 @@ const Main: React.FC = () => {
   
   const mainContainerClasses = `w-full flex justify-center md:pl-20`;
 
-  const mainContentClasses = isWatchScreen
+  const mainContentClasses = isWatchScreen || isConvoScreen
     ? 'w-full h-screen bg-black'
     : isPostScreen
       ? 'w-full max-w-3xl transition-all duration-300 pb-8'
