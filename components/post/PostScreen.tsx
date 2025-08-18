@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -26,6 +26,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewBasic | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartXRef = useRef(0);
  
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
@@ -110,7 +111,6 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
 
             const activeImage = embed.images[currentImageIndex];
 
-            // Single image view
             if (embed.images.length === 1) {
                 return (
                     <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block relative group bg-black rounded-xl overflow-hidden">
@@ -123,36 +123,61 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             }
             
             // Carousel for multiple images
-            const handlePrev = (e: React.MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
+            const handlePrev = (e?: React.MouseEvent) => {
+                e?.preventDefault();
+                e?.stopPropagation();
                 setCurrentImageIndex(prev => Math.max(0, prev - 1));
             };
 
-            const handleNext = (e: React.MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
+            const handleNext = (e?: React.MouseEvent) => {
+                e?.preventDefault();
+                e?.stopPropagation();
                 setCurrentImageIndex(prev => Math.min(embed.images.length - 1, prev + 1));
             };
             
+            const handleTouchStart = (e: React.TouchEvent) => {
+                touchStartXRef.current = e.targetTouches[0].clientX;
+            };
+    
+            const handleTouchEnd = (e: React.TouchEvent) => {
+                if (touchStartXRef.current === 0) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const deltaX = touchEndX - touchStartXRef.current;
+                touchStartXRef.current = 0; // Reset immediately
+    
+                // Swipe threshold
+                if (Math.abs(deltaX) > 50) {
+                    if (deltaX < 0) { // Swiped left
+                        handleNext();
+                    } else { // Swiped right
+                        handlePrev();
+                    }
+                }
+            };
+
             return (
-                <div className="relative group">
+                <div className="relative group" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                     <div className="relative bg-black rounded-xl overflow-hidden">
-                         <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                        <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
                             <img 
                                 src={activeImage.thumb} 
                                 alt={activeImage.alt || `Post image ${currentImageIndex + 1}`} 
                                 className="w-full h-auto object-contain max-h-[80vh] transition-opacity duration-200"
                                 key={currentImageIndex}
                             />
-                         </a>
+                        </a>
                     </div>
                     
-                    {/* Navigation Buttons */}
+                    {/* Counter */}
+                     <div className="absolute top-3 right-3 bg-black/70 text-white text-xs font-semibold py-1 px-2.5 rounded-full backdrop-blur-sm">
+                        {currentImageIndex + 1}/{embed.images.length}
+                    </div>
+
+                    {/* Desktop Navigation Arrows */}
                     {currentImageIndex > 0 &&
                         <button 
                             onClick={handlePrev}
-                            className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100"
+                            className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center"
                             aria-label="Previous image"
                         >
                             <ChevronLeft size={24} />
@@ -161,7 +186,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                     {currentImageIndex < embed.images.length - 1 &&
                         <button 
                             onClick={handleNext}
-                            className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100"
+                            className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center"
                             aria-label="Next image"
                         >
                             <ChevronRight size={24} />
@@ -169,7 +194,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                     }
 
                     {/* Indicator Dots */}
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1 bg-black/30 rounded-full backdrop-blur-sm">
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
                         {embed.images.map((_, index) => (
                             <button 
                                 key={index}
