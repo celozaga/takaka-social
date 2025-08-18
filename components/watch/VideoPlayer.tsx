@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
+import {AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoActions from './VideoActions';
 import { Volume2, VolumeX, Play, Loader2 } from 'lucide-react';
@@ -11,9 +11,10 @@ interface VideoPlayerProps {
     postView: AppBskyFeedDefs.FeedViewPost;
     isActive: boolean;
     shouldLoad: boolean;
+    hlsUrl?: string;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoad }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoad, hlsUrl }) => {
     const { agent } = useAtp();
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
@@ -52,53 +53,42 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
-            videoElement.removeAttribute('src');
-            videoElement.load();
+            if (videoElement.src) {
+                videoElement.removeAttribute('src');
+                videoElement.load();
+            }
             setIsLoadingStream(false);
         };
 
-        const setupFallbackPlayer = () => {
-            videoElement.src = blobVideoUrl;
-            setIsLoadingStream(false);
-        };
-        
-        const setupPlayer = async () => {
-            if (!authorDid || !videoCid) return;
+        const setupPlayer = () => {
             setIsLoadingStream(true);
 
-            try {
-                const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
-                    did: authorDid,
-                    cid: videoCid,
-                });
-                const hlsUrl = result.data.url;
-
+            if (hlsUrl) {
                 if (Hls.isSupported()) {
                     const hls = new Hls();
                     hlsRef.current = hls;
                     hls.loadSource(hlsUrl);
                     hls.attachMedia(videoElement);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        setIsLoadingStream(false);
-                    });
-                     hls.on(Hls.Events.ERROR, (event, data) => {
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => setIsLoadingStream(false));
+                    hls.on(Hls.Events.ERROR, (event, data) => {
                         console.error('HLS Error:', data);
                         if (data.fatal) {
                             cleanup();
-                            setupFallbackPlayer();
+                            videoElement.src = blobVideoUrl; // Fallback
+                            setIsLoadingStream(false);
                         }
                     });
                 } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
                     videoElement.src = hlsUrl;
-                    videoElement.addEventListener('loadedmetadata', () => {
-                        setIsLoadingStream(false);
-                    });
+                    videoElement.addEventListener('loadedmetadata', () => setIsLoadingStream(false));
                 } else {
-                    setupFallbackPlayer();
+                    videoElement.src = blobVideoUrl;
+                    setIsLoadingStream(false);
                 }
-            } catch (error) {
-                console.warn("Could not get HLS playback URL, falling back to blob.", error);
-                setupFallbackPlayer();
+            } else {
+                // Fallback if hlsUrl is not yet available, still better than nothing
+                videoElement.src = blobVideoUrl;
+                setIsLoadingStream(false);
             }
         };
 
@@ -109,13 +99,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
         }
 
         return cleanup;
-    }, [shouldLoad, agent, authorDid, videoCid, blobVideoUrl]);
+    }, [shouldLoad, hlsUrl, blobVideoUrl]);
     
     // Effect for PLAYING/PAUSING the video
     useEffect(() => {
         const videoElement = videoRef.current;
         if (videoElement) {
-            if (isActive && !isLoadingStream) {
+            if (isActive && !isLoadingStream && videoElement.readyState >= 3) { // readyState 3 is HAVE_FUTURE_DATA
                 videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
             } else {
                 videoElement.pause();

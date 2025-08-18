@@ -13,6 +13,7 @@ const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.g
 const WatchScreen: React.FC = () => {
     const { agent } = useAtp();
     const [videoPosts, setVideoPosts] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
+    const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
@@ -67,9 +68,54 @@ const WatchScreen: React.FC = () => {
         }
     }, [agent, hasMore, isLoadingMore]);
 
+    const fetchPlaybackUrls = useCallback(async (posts: AppBskyFeedDefs.FeedViewPost[]) => {
+        const postsWithoutUrls = posts.filter(p => !playbackUrls.has(p.post.uri));
+        if (postsWithoutUrls.length === 0) return;
+
+        const urls = await Promise.all(postsWithoutUrls.map(async (p) => {
+            try {
+                const embed = p.post.embed;
+                let videoEmbed: AppBskyEmbedVideo.View | undefined;
+                if (AppBskyEmbedVideo.isView(embed)) {
+                    videoEmbed = embed;
+                } else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) {
+                    videoEmbed = embed.media as AppBskyEmbedVideo.View;
+                }
+                
+                if (!videoEmbed) return null;
+
+                const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
+                    did: p.post.author.did,
+                    cid: videoEmbed.cid,
+                });
+                return { uri: p.post.uri, url: result.data.url };
+            } catch (error) {
+                console.warn(`Could not get playback URL for ${p.post.uri}`, error);
+                return null;
+            }
+        }));
+
+        setPlaybackUrls(prev => {
+            const newMap = new Map(prev);
+            for (const item of urls) {
+                if (item) {
+                    newMap.set(item.uri, item.url);
+                }
+            }
+            return newMap;
+        });
+    }, [agent, playbackUrls]);
+
     useEffect(() => {
+        // Initial fetch
         fetchVideos();
-    }, [fetchVideos]);
+    }, []);
+
+     useEffect(() => {
+        if (videoPosts.length > 0) {
+            fetchPlaybackUrls(videoPosts);
+        }
+    }, [videoPosts, fetchPlaybackUrls]);
     
     const handleSlideChange = (swiper: SwiperCore) => {
         setActiveIndex(swiper.activeIndex);
@@ -108,6 +154,7 @@ const WatchScreen: React.FC = () => {
                                 postView={postView} 
                                 isActive={index === activeIndex} 
                                 shouldLoad={shouldLoad}
+                                hlsUrl={playbackUrls.get(postView.post.uri)}
                             />
                         </SwiperSlide>
                     );
