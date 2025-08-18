@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -156,50 +155,52 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             };
 
             return (
-                <div className="relative group" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-                    <div className="relative bg-black rounded-xl overflow-hidden">
-                        <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                            <img 
-                                src={activeImage.thumb} 
-                                alt={activeImage.alt || `Post image ${currentImageIndex + 1}`} 
-                                className="w-full h-auto object-contain max-h-[80vh] transition-opacity duration-200"
-                                key={currentImageIndex}
-                            />
-                        </a>
-                    </div>
-                    
-                    {/* Counter */}
-                     <div className="absolute top-3 right-3 bg-black/70 text-white text-xs font-semibold py-1 px-2.5 rounded-full backdrop-blur-sm">
-                        {currentImageIndex + 1}/{embed.images.length}
-                    </div>
+                <div>
+                    <div className="relative group" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+                        <div className="relative bg-black rounded-xl overflow-hidden">
+                            <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                                <img 
+                                    src={activeImage.thumb} 
+                                    alt={activeImage.alt || `Post image ${currentImageIndex + 1}`} 
+                                    className="w-full h-auto object-contain max-h-[80vh] transition-opacity duration-200"
+                                    key={currentImageIndex}
+                                />
+                            </a>
+                        </div>
+                        
+                        {/* Counter */}
+                         <div className="absolute top-3 right-3 bg-black/70 text-white text-xs font-semibold py-1 px-2.5 rounded-full backdrop-blur-sm">
+                            {currentImageIndex + 1}/{embed.images.length}
+                        </div>
 
-                    {/* Desktop Navigation Arrows */}
-                    {currentImageIndex > 0 &&
-                        <button 
-                            onClick={handlePrev}
-                            className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center"
-                            aria-label="Previous image"
-                        >
-                            <ChevronLeft size={24} />
-                        </button>
-                    }
-                    {currentImageIndex < embed.images.length - 1 &&
-                        <button 
-                            onClick={handleNext}
-                            className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center"
-                            aria-label="Next image"
-                        >
-                            <ChevronRight size={24} />
-                        </button>
-                    }
+                        {/* Desktop Navigation Arrows */}
+                        {currentImageIndex > 0 &&
+                            <button 
+                                onClick={handlePrev}
+                                className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center"
+                                aria-label="Previous image"
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+                        }
+                        {currentImageIndex < embed.images.length - 1 &&
+                            <button 
+                                onClick={handleNext}
+                                className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center"
+                                aria-label="Next image"
+                            >
+                                <ChevronRight size={24} />
+                            </button>
+                        }
+                    </div>
 
                     {/* Indicator Dots */}
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                    <div className="flex justify-center items-center gap-2 mt-4">
                         {embed.images.map((_, index) => (
                             <button 
                                 key={index}
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex(index); }}
-                                className={`w-2 h-2 rounded-full transition-colors duration-300 ${currentImageIndex === index ? 'bg-white' : 'bg-white/50 hover:bg-white/75'}`}
+                                className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${currentImageIndex === index ? 'bg-primary' : 'bg-outline hover:bg-on-surface-variant'}`}
                                 aria-label={`Go to image ${index + 1}`}
                             />
                         ))}
