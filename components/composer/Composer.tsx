@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -291,7 +289,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
 
   return (
     <div className="flex flex-col h-full w-full bg-surface-1">
-        <header className="flex-shrink-0 flex items-center justify-between p-2 md:p-4 border-b border-outline">
+        <header className="flex-shrink-0 flex items-center justify-between p-2 md:p-4">
             <button onClick={onClose} className="text-primary font-medium px-4 py-2 rounded-full hover:bg-primary/10 transition-colors">
                 Cancel
             </button>
@@ -306,7 +304,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         </header>
 
         <main className="flex-1 flex gap-4 p-4 overflow-y-auto">
-            <img src={profile?.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${session?.did}/48`} alt="My avatar" className="w-12 h-12 rounded-full bg-surface-3" loading="lazy"/>
+            <img src={profile?.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${session?.did}/48`} alt="My avatar" className="w-12 h-12 rounded-full bg-surface-3 flex-shrink-0" loading="lazy"/>
             <div className="w-full flex flex-col">
                 <textarea
                     ref={textareaRef}
@@ -335,7 +333,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
             </div>
         </main>
         
-        <footer className="flex-shrink-0 flex justify-between items-center p-2 border-t border-outline">
+        <footer className="flex-shrink-0 flex justify-between items-center p-2 border-t border-surface-3">
             <div className="flex items-center gap-1">
                 <button 
                     onClick={() => fileInputRef.current?.click()} 
@@ -394,7 +392,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                         </div>
                     )}
                 </div>
-                <div className="w-px h-5 bg-outline"></div>
+                <div className="w-px h-5 bg-surface-3"></div>
                 <CharacterCount remainingChars={remainingChars} max={MAX_CHARS} />
             </div>
         </footer>
