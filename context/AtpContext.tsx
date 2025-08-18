@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
+import { PDS_URL } from '../lib/config';
 
 interface AtpContextType {
   agent: BskyAgent;
@@ -25,7 +26,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [chatSupported, setChatSupported] = useState<boolean | undefined>(undefined);
 
   const agent = useMemo(() => new BskyAgent({
-    service: 'https://bsky.social',
+    service: PDS_URL,
     persistSession: (evt: AtpSessionEvent, sess?: AtpSessionData) => {
       switch (evt) {
         case 'create':

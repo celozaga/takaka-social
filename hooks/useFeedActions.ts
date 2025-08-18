@@ -6,6 +6,7 @@ import { useAtp } from '../context/AtpContext';
 import { useToast } from '../components/ui/use-toast';
 import { useSavedFeeds } from './useSavedFeeds';
 import {AppBskyFeedDefs} from '@atproto/api';
+import { WEB_CLIENT_URL } from '../lib/config';
 
 export const useFeedActions = (feedUri?: string) => {
     const { agent, session } = useAtp();
@@ -92,7 +93,7 @@ export const useFeedActions = (feedUri?: string) => {
         if (!feedView) return;
         const handle = feedView.creator.handle;
         const rkey = new URL(feedView.uri).pathname.split('/').pop();
-        const url = `https://bsky.app/profile/${handle}/feed/${rkey}`;
+        const url = `${WEB_CLIENT_URL}/profile/${handle}/feed/${rkey}`;
         navigator.clipboard.writeText(url);
         toast({ title: t('post.linkCopied'), description: t('post.linkCopiedDescription') });
     };

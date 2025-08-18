@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { AtSign, KeyRound, LogIn } from 'lucide-react';
+import { WEB_CLIENT_URL } from '../lib/config';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -59,7 +60,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
         </div>
         <div className="text-xs text-on-surface-variant text-center px-2">
           <strong>Important:</strong> For security, please use an{' '}
-          <a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <a href={`${WEB_CLIENT_URL}/settings/app-passwords`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
             App Password
           </a>
           , not your main password.
