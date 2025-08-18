@@ -1,10 +1,11 @@
 
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { RichText, AppBskyActorDefs, AtUri } from '@atproto/api';
-import { ImageUp, Send, X, Video, Globe } from 'lucide-react';
+import { RichText, AppBskyActorDefs } from '@atproto/api';
+import { ImageUp, Send, X, Video } from 'lucide-react';
 import { useToast } from '../ui/use-toast';
 
 interface ComposerProps {
@@ -38,7 +39,6 @@ const LANGUAGES = [
     { code: 'tr', name: 'Türkçe' }, { code: 'uk', name: 'Українська' },
 ];
 
-
 // Helper to generate a video thumbnail
 const generateVideoThumbnail = (videoFile: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -67,6 +67,50 @@ const generateVideoThumbnail = (videoFile: File): Promise<Blob> => {
     });
 };
 
+const CharacterCount: React.FC<{ remainingChars: number; max: number }> = ({ remainingChars, max }) => {
+    const count = max - remainingChars;
+    const progress = Math.min(count, max) / max;
+    const radius = 16;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - progress * circumference;
+
+    const progressColor = remainingChars < 0 ? 'text-error' : (remainingChars < 20 ? 'text-accent' : 'text-primary');
+
+    return (
+        <div className="relative w-10 h-10 flex items-center justify-center">
+            <svg className="absolute w-full h-full" viewBox="0 0 40 40">
+                <circle
+                    className="text-surface-3"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="transparent"
+                    r={radius}
+                    cx="20"
+                    cy="20"
+                />
+                <circle
+                    className={progressColor}
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    r={radius}
+                    cx="20"
+                    cy="20"
+                    style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 0.3s ease' }}
+                />
+            </svg>
+            {remainingChars <= 20 && (
+                <span className={`text-xs font-medium ${remainingChars < 0 ? 'text-error' : 'text-on-surface-variant'}`}>
+                    {remainingChars}
+                </span>
+            )}
+        </div>
+    );
+};
+
 const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, initialText }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
@@ -76,11 +120,11 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const [isPosting, setIsPosting] = useState(false);
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [langSearchTerm, setLangSearchTerm] = useState('');
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (session?.did) {
@@ -93,10 +137,17 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   }, [agent, session?.did]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (e.target.value.length <= MAX_CHARS) {
-      setText(e.target.value);
-    }
+    setText(e.target.value);
   };
+  
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [text]);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -130,7 +181,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const removeMedia = (index: number) => {
     setMediaFiles(prev => {
         const newFiles = prev.filter((_, i) => i !== index);
-        // Clean up object URL
         URL.revokeObjectURL(prev[index].preview);
         return newFiles;
     });
@@ -140,8 +190,8 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   };
 
   const handlePost = async () => {
-    if (!text.trim() && mediaFiles.length === 0) {
-        toast({ title: t('composer.toast.emptyPost'), variant: "destructive" });
+    if ((!text.trim() && mediaFiles.length === 0) || (text.length > MAX_CHARS)) {
+        toast({ title: text.length > MAX_CHARS ? "Post is too long." : t('composer.toast.emptyPost'), variant: "destructive" });
         return;
     }
     setIsPosting(true);
@@ -240,120 +290,114 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const hasVideoOrGif = mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif');
 
   return (
-    <div className="relative bg-surface-2 p-4 rounded-xl">
-      {onClose && (
-        <button onClick={onClose} className="absolute top-3 right-3 text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-3 transition-colors z-10" aria-label={t('common.close')}>
-            <X className="w-5 h-5" />
-        </button>
-      )}
-      <div className="flex gap-4">
-        <img src={profile?.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${session?.did}/48`} alt="My avatar" className="w-12 h-12 rounded-full bg-surface-3" loading="lazy"/>
-        <div className="w-full">
-          <textarea
-            value={text}
-            onChange={handleTextChange}
-            placeholder={replyTo ? t('composer.replyPlaceholder') : t('composer.placeholder')}
-            className="w-full bg-transparent text-lg resize-none outline-none placeholder-on-surface-variant"
-            rows={replyTo ? 2 : 3}
-            autoFocus
-          />
-          {mediaFiles.length > 0 && (
-            <div className={`mt-2 grid gap-2 ${mediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                {mediaFiles.map((mf, index) => (
-                    <div key={index} className="relative group">
-                         {mf.type === 'video' ? (
-                            <video src={mf.preview} controls className="rounded-lg w-full h-auto object-contain max-h-72" />
-                        ) : (
-                            <img src={mf.preview} alt={`Preview ${index}`} className="rounded-lg w-full h-auto object-cover max-h-72"/>
-                        )}
-                        <button onClick={() => removeMedia(index)} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/75 transition-colors opacity-0 group-hover:opacity-100">
-                            <X className="w-4 h-4"/>
-                        </button>
-                    </div>
-                ))}
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="flex justify-between items-center mt-4 pt-4">
-        <div className="flex items-center gap-2">
-            <button 
-                onClick={() => fileInputRef.current?.click()} 
-                className="text-primary hover:text-primary/90 transition-colors p-2 rounded-full hover:bg-primary/20 disabled:text-on-surface-variant/50 disabled:cursor-not-allowed"
-                disabled={mediaFiles.length >= MAX_IMAGES || hasVideoOrGif}
-                aria-label="Upload image"
-            >
-                <ImageUp className="w-6 h-6"/>
+    <div className="flex flex-col h-full w-full bg-surface-1">
+        <header className="flex-shrink-0 flex items-center justify-between p-2 md:p-4 border-b border-outline">
+            <button onClick={onClose} className="text-primary font-medium px-4 py-2 rounded-full hover:bg-primary/10 transition-colors">
+                Cancel
             </button>
-             <button 
-                onClick={() => fileInputRef.current?.click()} 
-                className="text-primary hover:text-primary/90 transition-colors p-2 rounded-full hover:bg-primary/20 disabled:text-on-surface-variant/50 disabled:cursor-not-allowed"
-                disabled={mediaFiles.length > 0}
-                aria-label="Upload video"
+            <button
+                onClick={handlePost}
+                disabled={isPosting || (!text.trim() && mediaFiles.length === 0) || text.length > MAX_CHARS}
+                className="bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-on-primary font-bold py-1.5 px-5 rounded-full transition duration-200 flex items-center gap-2 text-sm"
             >
-                <Video className="w-6 h-6"/>
+                {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
+                {!isPosting && <Send className="w-4 h-4" />}
             </button>
-            <div className="relative" ref={langMenuRef}>
-                 <button 
-                    onClick={() => setIsLangMenuOpen(prev => !prev)} 
-                    className="text-primary hover:text-primary/90 transition-colors p-2 rounded-full hover:bg-primary/20"
-                    aria-label="Select languages"
-                >
-                    <Globe className="w-6 h-6"/>
-                </button>
-                {isLangMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface-3 rounded-lg z-20">
-                         <input
-                            type="text"
-                            placeholder={t('composer.searchLanguages')}
-                            value={langSearchTerm}
-                            onChange={(e) => setLangSearchTerm(e.target.value)}
-                            className="w-full px-3 py-2 bg-surface-2 border-b border-outline outline-none rounded-t-lg"
-                        />
-                        <ul className="max-h-60 overflow-y-auto">
-                            {filteredLangs.map(lang => (
-                                <li key={lang.code}>
-                                    <button
-                                        onClick={() => handleLangSelect(lang.code)}
-                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-2 ${selectedLangs.includes(lang.code) ? 'bg-primary-container text-on-primary-container' : 'text-on-surface'}`}
-                                        disabled={!selectedLangs.includes(lang.code) && selectedLangs.length >= MAX_LANGS}
-                                    >
-                                        {lang.name}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+        </header>
+
+        <main className="flex-1 flex gap-4 p-4 overflow-y-auto">
+            <img src={profile?.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${session?.did}/48`} alt="My avatar" className="w-12 h-12 rounded-full bg-surface-3" loading="lazy"/>
+            <div className="w-full flex flex-col">
+                <textarea
+                    ref={textareaRef}
+                    value={text}
+                    onChange={handleTextChange}
+                    placeholder={replyTo ? t('composer.replyPlaceholder') : t('composer.placeholder')}
+                    className="w-full bg-transparent text-xl resize-none outline-none placeholder-on-surface-variant flex-1 min-h-[100px]"
+                    autoFocus
+                />
+                {mediaFiles.length > 0 && (
+                    <div className={`mt-4 grid gap-2 ${mediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {mediaFiles.map((mf, index) => (
+                            <div key={index} className="relative group">
+                                {mf.type === 'video' ? (
+                                    <video src={mf.preview} controls className="rounded-lg w-full h-auto object-contain max-h-72" />
+                                ) : (
+                                    <img src={mf.preview} alt={`Preview ${index}`} className="rounded-lg w-full h-auto object-cover max-h-72"/>
+                                )}
+                                <button onClick={() => removeMedia(index)} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/75 transition-colors opacity-0 group-hover:opacity-100">
+                                    <X className="w-4 h-4"/>
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
+        </main>
+        
+        <footer className="flex-shrink-0 flex justify-between items-center p-2 border-t border-outline">
             <div className="flex items-center gap-1">
-                {selectedLangs.map(lang => (
-                    <span key={lang} className="text-xs font-semibold bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full">
-                        {lang.toUpperCase()}
-                    </span>
-                ))}
+                <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    className="text-primary hover:text-primary/90 transition-colors p-2 rounded-full hover:bg-primary/20 disabled:text-on-surface-variant/50 disabled:cursor-not-allowed"
+                    disabled={mediaFiles.length >= MAX_IMAGES || hasVideoOrGif}
+                    aria-label="Upload image"
+                >
+                    <ImageUp className="w-6 h-6"/>
+                </button>
+                <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    className="text-primary hover:text-primary/90 transition-colors p-2 rounded-full hover:bg-primary/20 disabled:text-on-surface-variant/50 disabled:cursor-not-allowed"
+                    disabled={mediaFiles.length > 0}
+                    aria-label="Upload video"
+                >
+                    <Video className="w-6 h-6"/>
+                </button>
+                 <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/png, image/jpeg, image/gif, video/mp4, video/quicktime" 
+                    className="hidden"
+                    multiple={!hasVideoOrGif}
+                />
             </div>
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                accept="image/png, image/jpeg, image/gif, video/mp4, video/quicktime" 
-                className="hidden"
-                multiple={!hasVideoOrGif}
-            />
-        </div>
-        <div className="flex items-center gap-4">
-            <span className={`text-sm ${remainingChars < 20 ? 'text-yellow-400' : 'text-on-surface-variant'}`}>{remainingChars}</span>
-            <button 
-                onClick={handlePost} 
-                disabled={isPosting || (!text.trim() && mediaFiles.length === 0)}
-                className="bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-on-primary font-bold py-2 px-6 rounded-full transition duration-200 flex items-center gap-2"
-            >
-              {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
-              {!isPosting && <Send className="w-4 h-4"/>}
-            </button>
-        </div>
-      </div>
+
+            <div className="flex items-center gap-2">
+                <div className="relative" ref={langMenuRef}>
+                    <button onClick={() => setIsLangMenuOpen(prev => !prev)} className="text-primary text-sm font-medium px-3 py-1 rounded-full hover:bg-primary/10">
+                        {selectedLangs.length > 0 ? LANGUAGES.find(l => l.code === selectedLangs[0])?.name : 'English'}
+                        {selectedLangs.length > 1 && ` +${selectedLangs.length - 1}`}
+                    </button>
+                    {isLangMenuOpen && (
+                        <div className="absolute bottom-full right-0 mb-2 w-64 bg-surface-3 rounded-lg z-20 shadow-lg">
+                            <input
+                                type="text"
+                                placeholder={t('composer.searchLanguages')}
+                                value={langSearchTerm}
+                                onChange={(e) => setLangSearchTerm(e.target.value)}
+                                className="w-full px-3 py-2 bg-surface-2 border-b border-outline outline-none rounded-t-lg"
+                            />
+                            <ul className="max-h-60 overflow-y-auto">
+                                {filteredLangs.map(lang => (
+                                    <li key={lang.code}>
+                                        <button
+                                            onClick={() => handleLangSelect(lang.code)}
+                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-surface-2 ${selectedLangs.includes(lang.code) ? 'bg-primary-container text-on-primary-container' : 'text-on-surface'}`}
+                                            disabled={!selectedLangs.includes(lang.code) && selectedLangs.length >= MAX_LANGS}
+                                        >
+                                            {lang.name}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                <div className="w-px h-5 bg-outline"></div>
+                <CharacterCount remainingChars={remainingChars} max={MAX_CHARS} />
+            </div>
+        </footer>
     </div>
   );
 };

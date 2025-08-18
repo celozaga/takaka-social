@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -224,8 +225,8 @@ const Main: React.FC = () => {
       {!session && !isPostScreen && !isWatchScreen && <LoginPrompt />}
 
       {isComposerOpen && session && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300">
-          <div className="relative w-full max-w-xl">
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-start md:items-center justify-center animate-in fade-in-0 duration-300 md:p-4" onClick={closeComposer}>
+          <div className="relative w-full h-full md:h-auto md:max-h-[80vh] md:max-w-2xl bg-surface-1 md:rounded-2xl flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
              <Composer 
                 onPostSuccess={closeComposer}
                 onClose={closeComposer}
