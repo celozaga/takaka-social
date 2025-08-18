@@ -59,13 +59,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const fetchChatUnreadCount = useCallback(async () => {
     if (!agent.hasSession) {
-      setChatSupported(false);
-      return;
-    }
-    
-    // This function can be called multiple times. If we already know it's not supported,
-    // don't try again until a new login. The `login` function resets `chatSupported` to `undefined`.
-    if (chatSupported === false) {
       return;
     }
 
@@ -73,21 +66,17 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const { data } = await agent.chat.bsky.convo.listConvos();
         const totalUnread = data.convos.reduce((acc, convo) => acc + convo.unreadCount, 0);
         setChatUnreadCount(totalUnread);
-        if (chatSupported !== true) {
-            setChatSupported(true);
-        }
+        setChatSupported(true);
     } catch (error: any) {
         if (error.name === 'XRPCNotSupported') {
             console.warn("Chat feature not supported by this PDS.");
-            if (chatSupported !== false) {
-                setChatSupported(false);
-                setChatUnreadCount(0);
-            }
+            setChatSupported(false);
+            setChatUnreadCount(0);
         } else {
             console.error("Failed to fetch chat unread count:", error);
         }
     }
-  }, [agent, chatSupported]);
+  }, [agent]);
 
   const resetChatUnreadCount = useCallback(() => {
     setChatUnreadCount(0);
@@ -110,6 +99,10 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
           pollInterval = window.setInterval(() => {
             fetchUnreadCount();
+            // We need a way to check chatSupported without causing a dependency loop.
+            // A simple approach is to let fetchChatUnreadCount handle its own logic.
+            // A better way would be a ref, but to keep changes minimal, we accept
+            // that this might poll an unsupported endpoint, which `fetchChatUnreadCount` now handles gracefully.
             fetchChatUnreadCount();
           }, 30000);
         } catch (error) {
