@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { TrendingUp } from 'lucide-react';
@@ -11,7 +12,7 @@ const TrendingTopics: React.FC = () => {
         const fetchTrends = async () => {
             setIsLoading(true);
             try {
-                // Use the unspecced endpoint for trending hashtags
+                // The `getTrendingHashtags` method is on the unspecced API namespace.
                 const { data } = await (agent.api.app.bsky.unspecced as any).getTrendingHashtags({ limit: 10 });
                 if (data.hashtags) {
                     setTrends(data.hashtags.map(h => h.tag));
