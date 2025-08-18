@@ -5,9 +5,11 @@ import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, Send } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, Send, Image as ImageIcon, Video } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
+
+type FeedFilter = 'all' | 'photos' | 'videos';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -25,7 +27,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
-
+    const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
 
     const loaderRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -156,25 +158,35 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     };
     
-    const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
+    const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
+        if (filter === 'all') return posts;
         return posts.filter(item => {
             const embed = item.post.embed;
             if (!embed) return false;
-            if (AppBskyEmbedImages.isView(embed) || AppBskyEmbedVideo.isView(embed)) return true;
+            
+            const targetType = filter === 'photos' ? 'app.bsky.embed.images#view' : 'app.bsky.embed.video#view';
+
+            if (embed.$type === targetType) return true;
             if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                const media = embed.media;
-                if (AppBskyEmbedImages.isView(media) || AppBskyEmbedVideo.isView(media)) return true;
+                if (embed.media?.$type === targetType) return true;
             }
             return false;
         });
     };
 
-    useEffect(() => {
-        const fetchProfileAndFeed = async () => {
+    const fetchProfileAndFeed = useCallback(async (currentCursor?: string) => {
+        if (!currentCursor) {
             setIsLoading(true);
             setError(null);
+            setFeed([]);
+            setCursor(undefined);
             setHasMore(true);
-            try {
+        } else {
+            setIsLoadingMore(true);
+        }
+
+        try {
+            if (!currentCursor) {
                 const profileRes = await agent.getProfile({ actor });
                 setProfile(profileRes.data);
                 setViewerState(profileRes.data.viewer);
@@ -184,31 +196,33 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     setIsLoading(false);
                     return;
                 }
-
-                const feedRes = await agent.getAuthorFeed({ actor, limit: 30 });
-                const mediaPosts = filterMediaPosts(feedRes.data.feed);
-                setFeed(mediaPosts);
-                
-                if (feedRes.data.cursor && feedRes.data.feed.length > 0) {
-                    setCursor(feedRes.data.cursor);
-                } else {
-                    setHasMore(false);
-                }
-
-            } catch (err: any) {
-                console.error("Failed to fetch profile data:", err);
-                if (err.error === 'BlockedByActor') {
-                    setError("You are blocked by this user.");
-                } else {
-                    setError(err.message || "Could not load profile.");
-                }
-            } finally {
-                setIsLoading(false);
             }
-        };
 
-        fetchProfileAndFeed();
+            const feedRes = await agent.getAuthorFeed({ actor, limit: 30, cursor: currentCursor });
+            setFeed(prevFeed => [...prevFeed, ...feedRes.data.feed]);
+            
+            if (feedRes.data.cursor && feedRes.data.feed.length > 0) {
+                setCursor(feedRes.data.cursor);
+                setHasMore(true);
+            } else {
+                setHasMore(false);
+            }
+        } catch (err: any) {
+            console.error("Failed to fetch profile data:", err);
+            if (err.error === 'BlockedByActor') {
+                setError("You are blocked by this user.");
+            } else {
+                setError(err.message || "Could not load profile.");
+            }
+        } finally {
+            setIsLoading(false);
+            setIsLoadingMore(false);
+        }
     }, [agent, actor]);
+
+    useEffect(() => {
+        fetchProfileAndFeed();
+    }, [fetchProfileAndFeed]);
     
     useEffect(() => {
         if (profile?.description) {
@@ -223,30 +237,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [profile?.description, agent]);
 
-
-    const loadMorePosts = useCallback(async () => {
-        if (isLoadingMore || !cursor || !hasMore) return;
-        setIsLoadingMore(true);
-        try {
-          const response = await agent.getAuthorFeed({ actor, cursor, limit: 30 });
-          if (response.data.feed.length > 0) {
-            const newMediaPosts = filterMediaPosts(response.data.feed);
-            setFeed(prevFeed => [...prevFeed, ...newMediaPosts]);
-            if (response.data.cursor) {
-              setCursor(response.data.cursor);
-            } else {
-              setHasMore(false);
-            }
-          } else {
-            setHasMore(false);
-          }
-        } catch (err) {
-          console.error('Failed to fetch more posts:', err);
-        } finally {
-          setIsLoadingMore(false);
-        }
-    }, [agent, actor, cursor, hasMore, isLoadingMore]);
-    
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -261,7 +251,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         const observer = new IntersectionObserver(
           (entries) => {
             if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-              loadMorePosts();
+              fetchProfileAndFeed(cursor);
             }
           },
           { rootMargin: '400px' }
@@ -271,9 +261,11 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [hasMore, isLoading, isLoadingMore, loadMorePosts]);
+    }, [hasMore, isLoading, isLoadingMore, fetchProfileAndFeed, cursor]);
+    
+    const displayedFeed = filterPosts(feed, activeFilter);
 
-    if (isLoading) {
+    if (isLoading && feed.length === 0) {
         return (
              <div className="columns-2 gap-4">
                 {[...Array(6)].map((_, i) => (
@@ -388,6 +380,15 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     </div>
                 )}
             </div>
+            
+             <div className="sticky top-0 bg-surface-1 z-20 -mx-4 px-4 pb-4">
+                <div className="flex items-center justify-around border-b border-surface-3">
+                    <button onClick={() => setActiveFilter('all')} className={`w-full py-3 font-semibold text-center transition-colors ${activeFilter === 'all' ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant'}`}>All</button>
+                    <button onClick={() => setActiveFilter('photos')} className={`w-full py-3 font-semibold text-center transition-colors ${activeFilter === 'photos' ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant'}`}>Photos</button>
+                    <button onClick={() => setActiveFilter('videos')} className={`w-full py-3 font-semibold text-center transition-colors ${activeFilter === 'videos' ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant'}`}>Videos</button>
+                </div>
+            </div>
+
 
             {viewerState?.blocking ? (
                 <div className="text-center p-8 bg-surface-2 rounded-xl">
@@ -399,12 +400,14 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </div>
             ) : (
                 <>
-                    {feed.length === 0 && !isLoadingMore && (
-                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
+                    {displayedFeed.length === 0 && !hasMore && (
+                         <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">
+                            This user has not posted any {activeFilter !== 'all' ? `${activeFilter.slice(0,-1)}s` : 'media'} yet.
+                        </div>
                     )}
                     
                     <div className="columns-2 gap-4">
-                        {feed.map((feedViewPost) => (
+                        {displayedFeed.map((feedViewPost) => (
                             <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
                                 <PostCard feedViewPost={feedViewPost} />
                             </div>
@@ -424,7 +427,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         )}
                     </div>
 
-                    {!hasMore && feed.length > 0 && (
+                    {!hasMore && displayedFeed.length > 0 && (
                         <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
                     )}
                 </>

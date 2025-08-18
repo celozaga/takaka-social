@@ -58,7 +58,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
         URL.revokeObjectURL(bannerPreview);
       }
     };
-  }, []);
+  }, [avatarPreview, bannerPreview]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
     const file = e.target.files?.[0];
