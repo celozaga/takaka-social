@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
@@ -12,6 +11,7 @@ import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import { useUI } from '../../context/UIContext';
 import SearchHeader from './SearchHeader';
+import TrendingTopics from './TrendingTopics';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -246,6 +246,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
 
                 {showDiscoveryContent ? (
                      <div className="space-y-8">
+                        <TrendingTopics />
                         <SuggestedFollows />
                         <PopularFeeds />
                     </div>
