@@ -11,10 +11,10 @@ const TrendingTopics: React.FC = () => {
         const fetchTrends = async () => {
             setIsLoading(true);
             try {
-                // This is an unofficial endpoint used by the official client
-                const response = await (agent.api.app.bsky.unspecced as any).getPopular({ includeAllTime: false });
-                if (response.data?.tags) {
-                    setTrends(response.data.tags.slice(0, 10)); // Limit to top 10
+                // Use the unspecced endpoint for trending hashtags
+                const { data } = await (agent.api.app.bsky.unspecced as any).getTrendingHashtags({ limit: 10 });
+                if (data.hashtags) {
+                    setTrends(data.hashtags.map(h => h.tag));
                 }
             } catch (error) {
                 console.error("Failed to fetch trending topics:", error);
