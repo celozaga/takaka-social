@@ -1,6 +1,15 @@
 
+
 import React from 'react';
-import { AppBskyNotificationListNotifications, AppBskyFeedPost, AtUri } from '@atproto/api';
+import { useAtp } from '../../context/AtpContext';
+import { 
+  AppBskyNotificationListNotifications, 
+  AppBskyFeedPost, 
+  AtUri, 
+  AppBskyEmbedImages, 
+  AppBskyEmbedRecord, 
+  AppBskyEmbedRecordWithMedia 
+} from '@atproto/api';
 import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -8,6 +17,64 @@ import RichTextRenderer from '../shared/RichTextRenderer';
 interface NotificationItemProps {
   notification: AppBskyNotificationListNotifications.Notification;
 }
+
+const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: string }> = ({ record, postUri }) => {
+    const { agent } = useAtp();
+    
+    const renderMedia = () => {
+        const embed = record.embed;
+        if (!embed) return null;
+
+        let mediaEmbed: AppBskyEmbedImages.Main | undefined;
+        let recordEmbed: AppBskyEmbedRecord.Main | undefined;
+
+        if (AppBskyEmbedImages.isMain(embed)) {
+            mediaEmbed = embed;
+        } else if (AppBskyEmbedRecord.isMain(embed)) {
+            recordEmbed = embed;
+        } else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
+            recordEmbed = embed.record;
+            if (AppBskyEmbedImages.isMain(embed.media)) {
+                mediaEmbed = embed.media;
+            }
+        }
+
+        if (mediaEmbed && mediaEmbed.images.length > 0) {
+            const firstImage = mediaEmbed.images[0];
+            const authorDid = new AtUri(postUri).hostname;
+            const imageUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${firstImage.image.ref.cid}`;
+            
+            return (
+                <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-md bg-surface-3">
+                    <img src={imageUrl} className="w-full h-full object-cover" loading="lazy"/>
+                </div>
+            );
+        }
+        
+        if (recordEmbed && !record.text) {
+             return (
+                <div className="text-xs text-on-surface-variant border border-outline rounded p-2 self-start">
+                    Quoted Post
+                </div>
+            );
+        }
+
+        return null;
+    };
+
+    const mediaElement = renderMedia();
+
+    return (
+        <div className="border border-outline rounded-lg p-2 mt-2 bg-surface-1 flex gap-3 items-center">
+            {mediaElement}
+            {record.text && (
+                 <div className="text-on-surface whitespace-pre-wrap break-words text-sm line-clamp-4 flex-1">
+                    <RichTextRenderer record={{ text: record.text, facets: record.facets }} />
+                </div>
+            )}
+        </div>
+    );
+};
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
   const { reason, author, record, uri, isRead, indexedAt } = notification;
@@ -35,8 +102,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       Icon = <Heart className="w-6 h-6 text-pink-500" />;
       title = <p><AuthorLink /> liked your post</p>;
       link = postLink;
-      if (AppBskyFeedPost.isRecord(record) && record.text) {
-        content = <div className="text-sm text-on-surface-variant line-clamp-2 mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
+      if (AppBskyFeedPost.isRecord(record)) {
+        content = <PostPreview record={record} postUri={uri} />;
       }
       break;
 
@@ -44,8 +111,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       Icon = <Repeat className="w-6 h-6 text-primary" />;
       title = <p><AuthorLink /> reposted your post</p>;
       link = postLink;
-      if (AppBskyFeedPost.isRecord(record) && record.text) {
-        content = <div className="text-sm text-on-surface-variant line-clamp-2 mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
+      if (AppBskyFeedPost.isRecord(record)) {
+        content = <PostPreview record={record} postUri={uri} />;
       }
       break;
 
@@ -59,8 +126,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       Icon = <MessageCircle className="w-6 h-6 text-primary" />;
       title = <p><AuthorLink /> replied to your post</p>;
       link = postLink;
-      if (AppBskyFeedPost.isRecord(record) && record.text) {
-        content = <div className="text-on-surface whitespace-pre-wrap mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
+       if (AppBskyFeedPost.isRecord(record)) {
+        content = <PostPreview record={record} postUri={uri} />;
       }
       break;
       
@@ -68,8 +135,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
         Icon = <AtSign className="w-6 h-6 text-primary" />;
         title = <p><AuthorLink /> mentioned you in a post</p>;
         link = postLink;
-        if (AppBskyFeedPost.isRecord(record) && record.text) {
-          content = <div className="text-on-surface whitespace-pre-wrap mt-1"><RichTextRenderer record={record as AppBskyFeedPost.Record} /></div>;
+        if (AppBskyFeedPost.isRecord(record)) {
+          content = <PostPreview record={record} postUri={uri} />;
         }
         break;
 
@@ -82,19 +149,21 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   const timeAgo = formatDistanceToNow(new Date(indexedAt), { addSuffix: true });
 
   return (
-    <li className="py-4">
-        <a href={link} className={`flex items-start gap-4 p-4 rounded-xl transition-colors ${!isRead ? 'bg-primary/10' : 'bg-surface-2'} hover:bg-surface-3`}>
-            <div className="flex-shrink-0 mt-1">{Icon}</div>
+    <li className="py-2">
+        <a href={link} className={`block p-4 rounded-xl transition-colors ${!isRead ? 'bg-primary/10' : 'bg-surface-2'} hover:bg-surface-3`}>
+          <div className="flex gap-4">
+            <div className="flex-shrink-0">{Icon}</div>
             <div className="flex-1">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <img src={author.avatar} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" loading="lazy" />
                         <div className="text-sm">{title}</div>
                     </div>
-                    <span className="text-xs text-on-surface-variant flex-shrink-0 ml-2">{timeAgo}</span>
+                    <span className="text-xs text-on-surface-variant flex-shrink-0 ml-2 pt-1">{timeAgo}</span>
                 </div>
-                {content && <div className="mt-2 text-sm">{content}</div>}
+                {content && <div className="mt-1">{content}</div>}
             </div>
+          </div>
         </a>
     </li>
   );
