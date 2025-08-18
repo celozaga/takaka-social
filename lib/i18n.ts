@@ -16,7 +16,10 @@ i18n
   .init({
     supportedLngs: supportedLanguages.map(l => l.code),
     fallbackLng: 'en',
-    debug: false,
+    debug: true, // Enable debug logs for easier troubleshooting
+    // Explicitly define the namespace
+    ns: ['translation'],
+    defaultNS: 'translation',
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
@@ -26,7 +29,8 @@ i18n
       lookupLocalStorage: 'takaka-lang',
     },
     backend: {
-      loadPath: '/locales/{{lng}}/translation.json',
+      // Use the {{ns}} placeholder for robustness
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
     react: {
       useSuspense: true,
