@@ -4,7 +4,7 @@ import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import PostActions from './PostActions';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Loader2 } from 'lucide-react';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -21,34 +21,41 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const allSubReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
   const hasSubReplies = allSubReplies.length > 0;
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(isRoot);
   const [visibleReplies, setVisibleReplies] = useState<AppBskyFeedDefs.ThreadViewPost[]>([]);
   const [replyCursor, setReplyCursor] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
 
   const loadMore = useCallback(() => {
-    const nextReplies = allSubReplies.slice(replyCursor, replyCursor + REPLIES_PER_PAGE);
-    setVisibleReplies(prev => [...prev, ...nextReplies]);
-    const newCursor = replyCursor + REPLIES_PER_PAGE;
-    setReplyCursor(newCursor);
-    setHasMore(allSubReplies.length > newCursor);
-  }, [replyCursor, allSubReplies]);
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    // Add a small delay for a better user experience, showing the loader briefly.
+    setTimeout(() => {
+        const nextReplies = allSubReplies.slice(replyCursor, replyCursor + REPLIES_PER_PAGE);
+        setVisibleReplies(prev => [...prev, ...nextReplies]);
+        const newCursor = replyCursor + REPLIES_PER_PAGE;
+        setReplyCursor(newCursor);
+        setHasMore(allSubReplies.length > newCursor);
+        setIsLoadingMore(false);
+    }, 500);
+  }, [replyCursor, allSubReplies, isLoadingMore]);
 
   useEffect(() => {
-    if (isExpanded) {
-      // Load initial batch when expanded for the first time
+    // Load the initial set of replies when a thread is expanded or for the root replies.
+    if (isExpanded && hasSubReplies && visibleReplies.length === 0) {
       const initialReplies = allSubReplies.slice(0, REPLIES_PER_PAGE);
       setVisibleReplies(initialReplies);
       setReplyCursor(REPLIES_PER_PAGE);
       setHasMore(allSubReplies.length > REPLIES_PER_PAGE);
     }
-  }, [isExpanded, allSubReplies]);
+  }, [isExpanded, hasSubReplies, allSubReplies, visibleReplies.length]);
   
    useEffect(() => {
-    if (!isExpanded || !hasMore) return;
+    if (!isExpanded || !hasMore || isLoadingMore) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
@@ -63,13 +70,32 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
     return () => {
       if (currentLoader) observer.unobserve(currentLoader);
     };
-  }, [isExpanded, hasMore, loadMore]);
+  }, [isExpanded, hasMore, loadMore, isLoadingMore]);
+  
+  const ReplyList = () => (
+    <>
+      {visibleReplies.map((nestedReply) => (
+        <Reply key={nestedReply.post.cid} reply={nestedReply} />
+      ))}
+      <div ref={loaderRef} className="h-20 flex items-center justify-center">
+        {isLoadingMore && (
+          <div className="flex items-center gap-2 text-on-surface-variant">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Loading more replies...</span>
+          </div>
+        )}
+      </div>
+      {!hasMore && isExpanded && hasSubReplies && !isRoot && (
+         <div className="text-center text-on-surface-variant text-xs py-4">End of this thread.</div>
+      )}
+    </>
+  );
 
   if (isRoot) {
-    // Special case for the root of the thread to just render the replies
+    // The root component is just a container for the first level of replies.
     return (
       <div>
-        {allSubReplies.map(r => <Reply key={r.post.cid} reply={r} />)}
+        <ReplyList />
       </div>
     )
   }
@@ -109,15 +135,9 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
             </button>
         )}
         
-        {isExpanded && (
+        {isExpanded && hasSubReplies && (
           <div className="mt-4 space-y-4">
-            {visibleReplies.map((nestedReply) => (
-              <Reply key={nestedReply.post.cid} reply={nestedReply} />
-            ))}
-            <div ref={loaderRef} className="h-1"></div>
-             {!hasMore && visibleReplies.length > 0 && (
-                <div className="text-center text-on-surface-variant text-xs py-4">You've reached the end!</div>
-            )}
+            <ReplyList />
           </div>
         )}
       </div>
