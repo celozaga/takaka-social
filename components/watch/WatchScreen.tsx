@@ -105,7 +105,7 @@ const WatchScreen: React.FC = () => {
 
     return (
         <div className="w-full h-full relative">
-            <div ref={containerRef} className="swiper-container h-full">
+            <div ref={containerRef} className="swiper h-full">
                 <div className="swiper-wrapper">
                     {videoPosts.map((postView, index) => (
                         <div key={`${postView.post.uri}-${index}`} className="swiper-slide">

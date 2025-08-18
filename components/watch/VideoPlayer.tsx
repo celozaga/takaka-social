@@ -22,14 +22,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
     const record = post.record as any;
 
     useEffect(() => {
+        const videoElement = videoRef.current;
+        if (!videoElement) return;
+
         if (isActive) {
-            videoRef.current?.play().then(() => setIsPlaying(true)).catch(e => {
-                 // Autoplay was likely blocked, we can ignore this error.
-                 // The user can manually play by tapping.
-                setIsPlaying(false);
-            });
+            // Attempt to play the video when the slide becomes active.
+            const playPromise = videoElement.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        setIsPlaying(true);
+                    })
+                    .catch(() => {
+                        // Autoplay was prevented. User will need to tap to play.
+                        setIsPlaying(false);
+                    });
+            }
         } else {
-            videoRef.current?.pause();
+            // When the slide is not active, pause it and reset its time.
+            videoElement.pause();
+            videoElement.currentTime = 0;
             setIsPlaying(false);
         }
     }, [isActive]);
