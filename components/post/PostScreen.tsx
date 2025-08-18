@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -385,7 +384,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                 <a href={`#/profile/${postAuthor.handle}`} className="flex items-center gap-3 truncate">
                     <img src={postAuthor.avatar} alt={postAuthor.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
                     <div className="font-bold truncate leading-tight flex items-center gap-1.5">
-                        <span className="truncate">{postAuthor.displayName}</span>
+                        <span className="truncate">{postAuthor.displayName || `@${postAuthor.handle}`}</span>
                         {postAuthor.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                             <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
                         )}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -196,7 +195,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                         loading="lazy"
                      />
                      <div className="flex items-center gap-1 truncate">
-                        <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || author.handle}</span>
+                        <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || `@${author.handle}`}</span>
                         {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                             <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
                         )}

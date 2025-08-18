@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -93,7 +92,7 @@ const MoreScreen: React.FC = () => {
                                 <img src={profile.avatar} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
                                 <div>
                                     <p className="font-bold text-lg flex items-center gap-1.5">
-                                        <span>{profile.displayName}</span>
+                                        <span>{profile.displayName || `@${profile.handle}`}</span>
                                         {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                                             <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
                                         )}

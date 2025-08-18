@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -80,7 +79,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
           <div className="flex justify-between items-center">
             <div className="min-w-0">
               <div className="font-bold truncate flex items-center gap-1">
-                  <span className="truncate">{actor.displayName || actor.handle}</span>
+                  <span className="truncate">{actor.displayName || `@${actor.handle}`}</span>
                   {actor.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                     <BadgeCheck size={16} className="text-primary flex-shrink-0" fill="currentColor" />
                   )}

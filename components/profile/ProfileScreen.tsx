@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -416,7 +415,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 
                 <div className="mt-3">
                     <h2 className="text-lg font-bold flex items-center gap-2">
-                        <span>{profile.displayName}</span>
+                        <span>{profile.displayName || `@${profile.handle}`}</span>
                         {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                             <BadgeCheck className="w-5 h-5 text-primary" fill="currentColor" />
                         )}
