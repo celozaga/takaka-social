@@ -3,7 +3,8 @@ import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoActions from './VideoActions';
-import { Volume2, VolumeX, Play } from 'lucide-react';
+import { Volume2, VolumeX, Play, Loader2 } from 'lucide-react';
+import Hls from 'hls.js';
 
 interface VideoPlayerProps {
     postView: AppBskyFeedDefs.FeedViewPost;
@@ -13,9 +14,11 @@ interface VideoPlayerProps {
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
     const { agent } = useAtp();
     const videoRef = useRef<HTMLVideoElement>(null);
+    const hlsRef = useRef<Hls | null>(null);
     const [isMuted, setIsMuted] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [showPlayIcon, setShowPlayIcon] = useState(false);
+    const [isLoadingStream, setIsLoadingStream] = useState(false);
 
     const { post } = postView;
     const record = post.record as any;
@@ -35,33 +38,82 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
 
     const serviceUrl = agent.service.toString();
     const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-    const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
+    const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
     
     useEffect(() => {
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
-        if (isActive) {
-            // Only set the source and play if the component is active.
-            // This prevents loading all videos at once.
-            if (videoElement.src !== videoUrl) {
-                videoElement.src = videoUrl;
+        const cleanup = () => {
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
             }
-            
-            const playPromise = videoElement.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => setIsPlaying(true))
-                    .catch(() => setIsPlaying(false)); // Autoplay failed
-            }
-        } else {
-            // If the component is not active, pause and unload the video to save memory.
             videoElement.pause();
             videoElement.removeAttribute('src');
             videoElement.load();
             setIsPlaying(false);
+            setIsLoadingStream(false);
+        };
+
+        const setupFallbackPlayer = () => {
+            videoElement.src = blobVideoUrl;
+            videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            setIsLoadingStream(false);
+        };
+        
+        const setupPlayer = async () => {
+            if (!authorDid || !videoCid) return;
+            setIsLoadingStream(true);
+
+            try {
+                // Use the unspecced API to get the HLS stream URL
+                const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
+                    did: authorDid,
+                    cid: videoCid,
+                });
+                const hlsUrl = result.data.url;
+
+                if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    hlsRef.current = hls;
+                    hls.loadSource(hlsUrl);
+                    hls.attachMedia(videoElement);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+                        setIsLoadingStream(false);
+                    });
+                     hls.on(Hls.Events.ERROR, (event, data) => {
+                        console.error('HLS Error:', data);
+                        if (data.fatal) {
+                            cleanup();
+                            setupFallbackPlayer();
+                        }
+                    });
+                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Native HLS support (e.g., Safari)
+                    videoElement.src = hlsUrl;
+                    videoElement.addEventListener('loadedmetadata', () => {
+                        videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+                        setIsLoadingStream(false);
+                    });
+                } else {
+                    setupFallbackPlayer();
+                }
+            } catch (error) {
+                console.warn("Could not get HLS playback URL, falling back to blob.", error);
+                setupFallbackPlayer();
+            }
+        };
+
+        if (isActive) {
+            setupPlayer();
+        } else {
+            cleanup();
         }
-    }, [isActive, videoUrl]);
+
+        return cleanup;
+    }, [isActive, agent, authorDid, videoCid, blobVideoUrl]);
 
 
     const handleVideoClick = () => {
@@ -93,6 +145,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
                 muted={isMuted}
                 className="w-full h-full object-contain"
             />
+
+            {isLoadingStream && (
+                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none">
+                    <Loader2 className="w-10 h-10 text-white animate-spin" />
+                </div>
+            )}
             
             {showPlayIcon && !isPlaying && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none animate-in fade-in-0 duration-200">

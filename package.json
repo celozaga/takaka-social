@@ -14,7 +14,8 @@
     "lucide-react": "^0.539.0",
     "date-fns": "^4.1.0",
     "@atproto/api": "^0.16.2",
-    "swiper": "^11.2.10"
+    "swiper": "^11.2.10",
+    "hls.js": "^1.5.11"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
