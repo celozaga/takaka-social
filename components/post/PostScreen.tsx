@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -107,7 +108,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
 
   const record = thread?.post.record as { text: string, facets?: RichText['facets'], createdAt: string };
   const postExcerpt = record?.text ? (record.text.length > 100 ? record.text.substring(0, 100) + '…' : record.text) : '';
-  const title = postAuthor ? `Post by @${postAuthor.handle}${postExcerpt ? `: "${postExcerpt}"` : ''}` : 'Post';
+  const title = postAuthor ? `${t('post.byline', { user: `@${postAuthor.handle}`})}${postExcerpt ? `: "${postExcerpt}"` : ''}` : t('common.post');
   const description = record?.text;
   const imageUrl = thread?.post ? getImageUrlFromPost(thread.post) : undefined;
 

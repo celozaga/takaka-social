@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -8,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import ConvoHeader from './ConvoHeader';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const { agent, session, chatSupported } = useAtp();
@@ -18,6 +20,8 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const [error, setError] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const listEndRef = useRef<HTMLDivElement>(null);
+
+  useHeadManager({ title: peer ? t('messages.convoTitle', { peerName: peer.displayName || peer.handle }) : t('messages.title') });
 
   const fetchConvo = useCallback(async () => {
     if (chatSupported === false) {

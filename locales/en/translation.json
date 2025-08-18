@@ -106,6 +106,7 @@
   },
   "messages": {
     "title": "Messages",
+    "convoTitle": "Chat with {{peerName}}",
     "loadingError": "Could not load messages.",
     "emptyTitle": "No messages yet",
     "emptyDescription": "Start a conversation from someone's profile.",
@@ -137,6 +138,7 @@
     "quotedPost": "Quoted from another post."
   },
   "post": {
+    "byline": "Post by {{user}}",
     "notFound": "Post not found or is not a valid thread root.",
     "loadingError": "Could not load post.",
     "linkCopied": "Link Copied!",

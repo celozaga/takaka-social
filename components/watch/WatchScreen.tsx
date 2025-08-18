@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -9,6 +10,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Mousewheel } from 'swiper/modules';
 import type { Swiper as SwiperCore } from 'swiper';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
@@ -23,6 +25,8 @@ const WatchScreen: React.FC = () => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
+
+    useHeadManager({ title: t('more.watch') });
 
     const isPostVideo = (post: AppBskyFeedDefs.PostView): boolean => {
         return !!post.embed && (

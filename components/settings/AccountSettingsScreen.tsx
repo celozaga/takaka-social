@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ChevronRight, ShieldCheck } from 'lucide-react';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 interface SettingsListItemProps {
     icon: React.ElementType;
@@ -44,6 +46,9 @@ const AccountSettingsScreen: React.FC = () => {
     const { session, agent, logout } = useAtp();
     const { setCustomFeedHeaderVisible, openUpdateEmailModal, openUpdateHandleModal } = useUI();
     const { toast } = useToast();
+    const { t } = useTranslation();
+
+    useHeadManager({ title: t('accountSettings.title') });
 
     React.useEffect(() => {
         setCustomFeedHeaderVisible(true);

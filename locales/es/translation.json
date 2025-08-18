@@ -106,6 +106,7 @@
   },
   "messages": {
     "title": "Mensajes",
+    "convoTitle": "Chat con {{peerName}}",
     "loadingError": "No se pudieron cargar los mensajes.",
     "emptyTitle": "Aún no hay mensajes",
     "emptyDescription": "Inicia una conversación desde el perfil de alguien.",
@@ -137,6 +138,7 @@
     "quotedPost": "Citado de otra publicación."
   },
   "post": {
+    "byline": "Publicación de {{user}}",
     "notFound": "Publicación no encontrada o no es una raíz de hilo válida.",
     "loadingError": "No se pudo cargar la publicación.",
     "linkCopied": "¡Enlace copiado!",

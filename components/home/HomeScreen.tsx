@@ -1,17 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
 import Timeline from '../shared/Timeline';
 import FeedSelector from '../feeds/FeedSelector';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
 const HomeScreen: React.FC = () => {
   const { agent, session } = useAtp();
+  const { t } = useTranslation();
   const [feeds, setFeeds] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
   const [selectedFeed, setSelectedFeed] = useState<string>(session ? 'following' : DISCOVER_FEED_URI);
   const [isLoadingFeeds, setIsLoadingFeeds] = useState(true);
+
+  useHeadManager({ title: t('nav.home') });
 
   useEffect(() => {
     if (!session) {

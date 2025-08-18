@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -15,6 +16,7 @@ import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import TrendingTopics from './TrendingTopics';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -37,6 +39,8 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
+
+    useHeadManager({ title: t('search.title') });
 
     const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
       { id: 'top', label: t('search.top'), icon: TrendingUp },

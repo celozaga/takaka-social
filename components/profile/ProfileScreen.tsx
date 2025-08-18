@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -80,6 +81,7 @@ const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter):
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session, chatSupported } = useAtp();
+    const { t } = useTranslation();
     const { toast } = useToast();
     const { openEditProfileModal, setCustomFeedHeaderVisible } = useUI();
 
@@ -97,7 +99,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
 
     useHeadManager({
-        title: profile ? `${profile.displayName || profile.handle}` : 'Profile',
+        title: profile ? `${profile.displayName || profile.handle}` : t('profile.title'),
         description: profile?.description,
         imageUrl: profile?.avatar,
         type: 'profile'

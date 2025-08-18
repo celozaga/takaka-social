@@ -35,7 +35,7 @@ export const useHeadManager = ({ title, description, imageUrl, type = 'website' 
   useEffect(() => {
     const originalTitle = document.title;
     
-    const newTitle = title ? `${title} | Takaka` : DEFAULT_TITLE;
+    const newTitle = title ? `${title} - Takaka` : DEFAULT_TITLE;
     const newDescription = description ? description.substring(0, 160).replace(/\n/g, ' ') : DEFAULT_DESCRIPTION;
     const newImageUrl = imageUrl || new URL(DEFAULT_IMAGE_PATH, window.location.origin).toString();
     const canonicalUrl = window.location.href;

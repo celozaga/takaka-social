@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -10,6 +11,7 @@ import {
     Bell, Users, UserCheck, Clapperboard, MessageSquare
 } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 const AppGridItem: React.FC<{
     icon: React.ElementType,
@@ -42,6 +44,8 @@ const MoreScreen: React.FC = () => {
     const { t } = useTranslation();
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    useHeadManager({ title: t('more.title') });
 
     useEffect(() => {
         setCustomFeedHeaderVisible(true);

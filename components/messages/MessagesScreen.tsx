@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -8,6 +9,7 @@ import { ChatBskyConvoDefs } from '@atproto/api';
 import { Loader2 } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
 import ConvoListItem from './ConvoListItem';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 const MessagesScreen: React.FC = () => {
   const { agent, chatSupported } = useAtp();
@@ -16,6 +18,8 @@ const MessagesScreen: React.FC = () => {
   const [convos, setConvos] = useState<ChatBskyConvoDefs.ConvoView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useHeadManager({ title: t('messages.title') });
 
   useEffect(() => {
     setCustomFeedHeaderVisible(true);

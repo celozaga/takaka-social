@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
@@ -10,6 +11,7 @@ import PopularFeeds from './PopularFeeds';
 import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import FeedAvatar from './FeedAvatar';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 const EditableFeedItem: React.FC<{
     feed: AppBskyFeedDefs.GeneratorView;
@@ -72,6 +74,8 @@ const FeedsScreen: React.FC = () => {
     } = useSavedFeeds();
 
     const [isUpdating, setIsUpdating] = useState(false);
+
+    useHeadManager({ title: t('feeds.title') });
 
     useEffect(() => {
         setCustomFeedHeaderVisible(true);

@@ -106,6 +106,7 @@
   },
   "messages": {
     "title": "Mensagens",
+    "convoTitle": "Conversa com {{peerName}}",
     "loadingError": "Não foi possível carregar as mensagens.",
     "emptyTitle": "Nenhuma mensagem ainda",
     "emptyDescription": "Inicie uma conversa a partir do perfil de alguém.",
@@ -137,6 +138,7 @@
     "quotedPost": "Citado de outra publicação."
   },
   "post": {
+    "byline": "Publicação de {{user}}",
     "notFound": "Publicação não encontrada ou não é uma raiz de tópico válida.",
     "loadingError": "Não foi possível carregar a publicação.",
     "linkCopied": "Link copiado!",

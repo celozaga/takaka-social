@@ -1,11 +1,14 @@
 
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Settings } from 'lucide-react';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows' | 'quotes';
 
@@ -21,6 +24,7 @@ const filters: { id: NotificationFilter; label: string }[] = [
 const NotificationsScreen: React.FC = () => {
   const { agent, resetUnreadCount } = useAtp();
   const { setCustomFeedHeaderVisible } = useUI();
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<AppBskyNotificationListNotifications.Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +34,8 @@ const NotificationsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NotificationFilter>('all');
 
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  useHeadManager({ title: t('notifications.title') });
 
   useEffect(() => {
     setCustomFeedHeaderVisible(true);

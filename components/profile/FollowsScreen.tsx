@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -7,6 +8,7 @@ import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } from '@atproto/api';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 interface FollowsScreenProps {
     actor: string;
@@ -24,6 +26,9 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const loaderRef = useRef<HTMLDivElement>(null);
+
+    const title = t(`common.${type}`);
+    useHeadManager({ title });
 
     useEffect(() => {
         setCustomFeedHeaderVisible(true);
@@ -95,8 +100,6 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
     }, [hasMore, isLoading, isLoadingMore, loadMore]);
     
-    const title = t(`common.${type}`);
-
     return (
         <div>
             <ScreenHeader title={title} />

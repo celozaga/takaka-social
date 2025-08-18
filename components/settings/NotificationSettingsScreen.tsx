@@ -1,10 +1,13 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Quote, Bell, Loader2 } from 'lucide-react';
+import { useHeadManager } from '../../hooks/useHeadManager';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
 const APP_ID = 'social.takaka.app'; // A unique identifier for our app
@@ -48,6 +51,7 @@ const NotificationSettingsScreen: React.FC = () => {
     const { setCustomFeedHeaderVisible } = useUI();
     const { agent } = useAtp();
     const { toast } = useToast();
+    const { t } = useTranslation();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -61,6 +65,8 @@ const NotificationSettingsScreen: React.FC = () => {
         quote: true,
     });
     type SettingsKey = keyof typeof settings;
+
+    useHeadManager({ title: t('notificationSettings.title') });
 
     // Load initial settings from preferences and browser permissions
     useEffect(() => {
