@@ -110,9 +110,14 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             if (!embed) return false;
 
                             if (searchFilter === 'images') {
-                                if (AppBskyEmbedImages.isView(embed)) return true;
+                                if (AppBskyEmbedImages.isView(embed)) {
+                                    return embed.images.length > 0;
+                                }
                                 if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                                    return AppBskyEmbedImages.isView(embed.media);
+                                    const media = embed.media;
+                                    if (AppBskyEmbedImages.isView(media)) {
+                                        return media.images.length > 0;
+                                    }
                                 }
                             } else if (searchFilter === 'videos') {
                                 if (AppBskyEmbedVideo.isView(embed)) return true;

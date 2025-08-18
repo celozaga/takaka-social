@@ -20,7 +20,10 @@ const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
         return embed.images.length > 0;
     }
     if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        return AppBskyEmbedImages.isView(embed.media);
+        const media = embed.media;
+        if (AppBskyEmbedImages.isView(media)) {
+             return media.images.length > 0;
+        }
     }
     return false;
 }
