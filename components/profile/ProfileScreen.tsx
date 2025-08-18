@@ -27,7 +27,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     // State for 'All Media' tab
     const [allFeed, setAllFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [allCursor, setAllCursor] = useState<string | undefined>(undefined);
-    const [isAllLoading, setIsAllLoading] = useState(true);
+    const [isAllLoading, setIsAllLoading] = useState(false);
     const [isAllLoadingMore, setIsAllLoadingMore] = useState(false);
     const [hasMoreAll, setHasMoreAll] = useState(true);
     
