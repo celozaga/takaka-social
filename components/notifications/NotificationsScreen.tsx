@@ -132,20 +132,24 @@ const NotificationsScreen: React.FC = () => {
     );
   };
   
+  const baseClasses = "px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap";
+  const activeClasses = "bg-primary-container text-on-primary-container";
+  const inactiveClasses = "text-on-surface-variant hover:bg-surface-3";
+
   return (
     <div>
       <NotificationsHeader />
       <div className="mt-4">
-        <div className="flex">
-          <button 
+        <div className="flex items-center gap-2 pb-2">
+          <button
             onClick={() => setActiveTab('all')}
-            className={`flex-1 py-3 text-center font-semibold transition-colors ${activeTab === 'all' ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant'}`}
+            className={`${baseClasses} ${activeTab === 'all' ? activeClasses : inactiveClasses}`}
           >
             All
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('mentions')}
-            className={`flex-1 py-3 text-center font-semibold transition-colors ${activeTab === 'mentions' ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant'}`}
+            className={`${baseClasses} ${activeTab === 'mentions' ? activeClasses : inactiveClasses}`}
           >
             Mentions
           </button>
