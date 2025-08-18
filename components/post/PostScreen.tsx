@@ -6,7 +6,7 @@ import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBsk
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from '../ui/use-toast';
-import { ArrowLeft, ExternalLink, Share2, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 
@@ -30,6 +30,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
   useEffect(() => {
+    setCurrentImageIndex(0); // Reset for new posts
     const fetchThread = async () => {
       setIsLoading(true);
       setError(null);
@@ -107,12 +108,13 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         const processImageEmbed = (embed: AppBskyEmbedImages.View) => {
             if (embed.images.length === 0) return null;
 
+            const activeImage = embed.images[currentImageIndex];
+
             // Single image view
             if (embed.images.length === 1) {
-                const image = embed.images[0];
                 return (
-                    <a href={image.fullsize} target="_blank" rel="noopener noreferrer" className="block relative group bg-surface-3 rounded-xl overflow-hidden">
-                        <img src={image.thumb} alt={image.alt || 'Post image'} className="w-full h-auto object-contain max-h-[80vh]" loading="lazy" />
+                    <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block relative group bg-black rounded-xl overflow-hidden">
+                        <img src={activeImage.thumb} alt={activeImage.alt || 'Post image'} className="w-full h-auto object-contain max-h-[80vh]" loading="lazy" />
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <ExternalLink className="text-white w-6 h-6" />
                         </div>
@@ -120,36 +122,61 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                 );
             }
             
-            // Gallery for multiple images
-            const activeImage = embed.images[currentImageIndex];
+            // Carousel for multiple images
+            const handlePrev = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setCurrentImageIndex(prev => Math.max(0, prev - 1));
+            };
 
+            const handleNext = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setCurrentImageIndex(prev => Math.min(embed.images.length - 1, prev + 1));
+            };
+            
             return (
-                <div className="space-y-2">
-                    {/* Main Image */}
-                    <div className="relative">
-                        <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block relative group bg-surface-3 rounded-xl overflow-hidden aspect-[4/3]">
-                            <img src={activeImage.thumb} alt={activeImage.alt || `Post image ${currentImageIndex + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <ExternalLink className="text-white w-6 h-6" />
-                            </div>
-                        </a>
-                        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs font-bold py-1 px-2 rounded-full backdrop-blur-sm">
-                            {currentImageIndex + 1} / {embed.images.length}
-                        </div>
+                <div className="relative group">
+                    <div className="relative bg-black rounded-xl overflow-hidden">
+                         <a href={activeImage.fullsize} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                            <img 
+                                src={activeImage.thumb} 
+                                alt={activeImage.alt || `Post image ${currentImageIndex + 1}`} 
+                                className="w-full h-auto object-contain max-h-[80vh] transition-opacity duration-200"
+                                key={currentImageIndex}
+                            />
+                         </a>
                     </div>
                     
-                    {/* Thumbnails */}
-                    <div className="grid grid-cols-4 gap-2">
-                        {embed.images.map((image, index) => (
+                    {/* Navigation Buttons */}
+                    {currentImageIndex > 0 &&
+                        <button 
+                            onClick={handlePrev}
+                            className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100"
+                            aria-label="Previous image"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+                    }
+                    {currentImageIndex < embed.images.length - 1 &&
+                        <button 
+                            onClick={handleNext}
+                            className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100"
+                            aria-label="Next image"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    }
+
+                    {/* Indicator Dots */}
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1 bg-black/30 rounded-full backdrop-blur-sm">
+                        {embed.images.map((_, index) => (
                             <button 
                                 key={index}
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex(index); }}
-                                className={`block relative bg-surface-3 rounded-md overflow-hidden aspect-square border-2 transition-all ${currentImageIndex === index ? 'border-primary' : 'border-transparent'}`}
-                                aria-label={`View image ${index + 1}`}
-                            >
-                                <img src={image.thumb} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                                {currentImageIndex !== index && <div className="absolute inset-0 bg-black/50 hover:bg-black/30 transition-colors"></div>}
-                            </button>
+                                className={`w-2 h-2 rounded-full transition-colors duration-300 ${currentImageIndex === index ? 'bg-white' : 'bg-white/50 hover:bg-white/75'}`}
+                                aria-label={`Go to image ${index + 1}`}
+                            />
                         ))}
                     </div>
                 </div>
