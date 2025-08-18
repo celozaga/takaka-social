@@ -1,5 +1,7 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } from '@atproto/api';
@@ -13,6 +15,7 @@ interface FollowsScreenProps {
 
 const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     const { agent } = useAtp();
+    const { t } = useTranslation();
     const { setCustomFeedHeaderVisible } = useUI();
     const [list, setList] = useState<AppBskyActorDefs.ProfileView[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -49,13 +52,13 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
                 setHasMore(!!data.cursor);
             } catch (err: any) {
                 console.error(`Failed to fetch ${type}:`, err);
-                setError(`Could not load ${type}.`);
+                setError(t('follows.loadingError', { type }));
             } finally {
                 setIsLoading(false);
             }
         };
         loadInitial();
-    }, [fetchList, type]);
+    }, [fetchList, type, t]);
 
     const loadMore = useCallback(async () => {
         if (isLoadingMore || !cursor || !hasMore) return;
@@ -92,9 +95,11 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
     }, [hasMore, isLoading, isLoadingMore, loadMore]);
     
+    const title = t(`common.${type}`);
+
     return (
         <div>
-            <ScreenHeader title={type.charAt(0).toUpperCase() + type.slice(1)} />
+            <ScreenHeader title={title} />
             <div className="mt-4 space-y-3">
                 {isLoading && (
                     [...Array(8)].map((_, i) => (
@@ -105,7 +110,7 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
                     <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error}</div>
                 )}
                 {!isLoading && !error && list.length === 0 && (
-                    <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No users found.</div>
+                    <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('follows.empty')}</div>
                 )}
                 {list.map(user => (
                     <ActorSearchResultCard key={user.did} actor={user} />

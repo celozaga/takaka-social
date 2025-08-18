@@ -1,4 +1,7 @@
+
+
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -90,6 +93,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { agent, session } = useAtp();
   const { openComposer } = useUI();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,17 +125,17 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
           setThread(data.thread);
           setPostAuthor(data.thread.post.author);
         } else {
-          throw new Error("Post not found or is not a valid thread root.");
+          throw new Error(t('post.notFound'));
         }
       } catch (err: any) {
         console.error("Failed to fetch post thread:", err);
-        setError(err.message || "Could not load post.");
+        setError(err.message || t('post.loadingError'));
       } finally {
         setIsLoading(false);
       }
     };
     fetchThread();
-  }, [agent, postUri]);
+  }, [agent, postUri, t]);
 
   useEffect(() => {
     if (!thread?.post) return;
@@ -172,7 +176,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
           setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: uri } } : null);
       } catch (e) {
           console.error("Failed to follow:", e);
-          toast({ title: "Error", description: "Could not follow user.", variant: "destructive" });
+          toast({ title: t('common.error'), description: t('profile.toast.followError'), variant: "destructive" });
           setPostAuthor(oldAuthor);
       } finally {
           setIsActionLoading(false);
@@ -188,7 +192,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
           await agent.deleteFollow(postAuthor.viewer.following);
       } catch (e) {
           console.error("Failed to unfollow:", e);
-          toast({ title: "Error", description: "Could not unfollow user.", variant: "destructive" });
+          toast({ title: t('common.error'), description: t('profile.toast.unfollowError'), variant: "destructive" });
           setPostAuthor(oldAuthor);
       } finally {
           setIsActionLoading(false);
@@ -198,7 +202,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const handleShare = () => {
     const url = `${window.location.origin}/#/post/${did}/${rkey}`;
     navigator.clipboard.writeText(url);
-    toast({ title: "Link Copied!", description: "Post URL has been copied to your clipboard." });
+    toast({ title: t('post.linkCopied'), description: t('post.linkCopiedDescription') });
   };
 
 
@@ -347,7 +351,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   }
 
   if (error || !thread || !postAuthor) {
-    return <div className="text-center text-error p-8 bg-surface-2 rounded-xl pt-20">{error || "Post not found."}</div>;
+    return <div className="text-center text-error p-8 bg-surface-2 rounded-xl pt-20">{error}</div>;
   }
 
   const mainPost = thread.post;
@@ -368,7 +372,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                 }
                 disabled:opacity-50`}
         >
-            {postAuthor.viewer?.following ? 'Following' : 'Follow'}
+            {postAuthor.viewer?.following ? t('common.following') : t('common.follow')}
         </button>
     );
   };
@@ -418,7 +422,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             <>
               <div className="px-4 pt-4 pb-2">
                 <h2 className="text-lg font-bold">
-                  {mainPost.replyCount} {mainPost.replyCount === 1 ? 'Reply' : 'Replies'}
+                  {mainPost.replyCount} {t(mainPost.replyCount === 1 ? 'common.reply' : 'common.replies')}
                 </h2>
               </div>
               {allReplies.length > 0 && (
@@ -430,7 +434,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
           ) : (
             <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4 mx-4 md:mx-0">
                 <MessageSquareDashed size={40} className="mx-auto mb-4 opacity-50" />
-                <p className="font-semibold text-on-surface">No one has replied to this post yet.</p>
+                <p className="font-semibold text-on-surface">{t('post.noReplies')}</p>
             </div>
           )}
         </div>

@@ -1,4 +1,7 @@
+
+
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChatBskyConvoDefs } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import { useAtp } from '../../context/AtpContext';
@@ -9,6 +12,7 @@ interface ConvoListItemProps {
 
 const ConvoListItem: React.FC<ConvoListItemProps> = ({ convo }) => {
   const { session } = useAtp();
+  const { t } = useTranslation();
   const peer = convo.members.find(member => member.did !== session?.did);
 
   if (!peer) {
@@ -18,7 +22,7 @@ const ConvoListItem: React.FC<ConvoListItemProps> = ({ convo }) => {
   const { lastMessage, unreadCount } = convo;
   const lastMessageText = ChatBskyConvoDefs.isMessageView(lastMessage)
     ? lastMessage.text
-    : 'Message deleted';
+    : t('messages.deleted');
   const lastMessageDate = ChatBskyConvoDefs.isMessageView(lastMessage)
     ? new Date(lastMessage.sentAt)
     : null;

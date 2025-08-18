@@ -1,5 +1,7 @@
 
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -14,6 +16,7 @@ interface ReplyProps {
 const REPLIES_PER_PAGE = 10;
 
 const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
+  const { t } = useTranslation();
   const { post, replies } = reply;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
@@ -81,12 +84,12 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         {isLoadingMore && (
           <div className="flex items-center gap-2 text-on-surface-variant">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span>Loading more replies...</span>
+            <span>{t('post.loadingMoreReplies')}</span>
           </div>
         )}
       </div>
       {!hasMore && isExpanded && hasSubReplies && !isRoot && (
-         <div className="text-center text-on-surface-variant text-xs py-4">End of this thread.</div>
+         <div className="text-center text-on-surface-variant text-xs py-4">{t('post.endOfThread')}</div>
       )}
     </>
   );
@@ -131,7 +134,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
 
         {hasSubReplies && !isExpanded && (
             <button onClick={() => setIsExpanded(true)} className="text-sm font-semibold text-on-surface-variant hover:underline mt-2">
-                View {allSubReplies.length} {allSubReplies.length === 1 ? 'reply' : 'replies'}
+                {t('post.viewReplies', { count: allSubReplies.length })}
             </button>
         )}
         

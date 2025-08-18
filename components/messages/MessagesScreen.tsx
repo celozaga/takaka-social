@@ -1,14 +1,18 @@
+
+
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { ChatBskyConvoDefs } from '@atproto/api';
 import { Loader2 } from 'lucide-react';
-import MessagesHeader from './MessagesHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 import ConvoListItem from './ConvoListItem';
 
 const MessagesScreen: React.FC = () => {
   const { agent, chatSupported } = useAtp();
   const { setCustomFeedHeaderVisible } = useUI();
+  const { t } = useTranslation();
   const [convos, setConvos] = useState<ChatBskyConvoDefs.ConvoView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,14 +40,14 @@ const MessagesScreen: React.FC = () => {
       } catch (err: any) {
         console.error('Failed to fetch conversations:', err);
         if (err.name !== 'XRPCNotSupported') {
-          setError(err.message || "Could not load messages.");
+          setError(err.message || t('messages.loadingError'));
         }
       } finally {
         setIsLoading(false);
       }
     };
     fetchConvos();
-  }, [agent, chatSupported]);
+  }, [agent, chatSupported, t]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -69,8 +73,8 @@ const MessagesScreen: React.FC = () => {
     if (convos.length === 0) {
       return (
         <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">
-          <h2 className="font-bold text-lg text-on-surface">No messages yet</h2>
-          <p className="mt-1">Start a conversation from someone's profile.</p>
+          <h2 className="font-bold text-lg text-on-surface">{t('messages.emptyTitle')}</h2>
+          <p className="mt-1">{t('messages.emptyDescription')}</p>
         </div>
       );
     }
@@ -86,7 +90,7 @@ const MessagesScreen: React.FC = () => {
 
   return (
     <div>
-      <MessagesHeader />
+      <ScreenHeader title={t('messages.title')} />
       <div className="mt-4">{renderContent()}</div>
     </div>
   );

@@ -1,5 +1,7 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { RichText, AppBskyActorDefs, AtUri } from '@atproto/api';
 import { ImageUp, Send, X, Video, Globe } from 'lucide-react';
@@ -68,6 +70,7 @@ const generateVideoThumbnail = (videoFile: File): Promise<Blob> => {
 const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, initialText }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [text, setText] = useState(initialText || '');
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isPosting, setIsPosting] = useState(false);
@@ -100,19 +103,19 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
     if (!files || files.length === 0) return;
 
     if (mediaFiles.length + files.length > MAX_IMAGES && !Array.from(files).some(f => f.type.startsWith('video'))) {
-        toast({ title: `You can only select up to ${MAX_IMAGES} images.`, variant: 'destructive' });
+        toast({ title: t('composer.toast.maxImages', { max: MAX_IMAGES }), variant: 'destructive' });
         return;
     }
 
     if (mediaFiles.length > 0 || files.length > 1) {
         if (Array.from(files).some(f => f.type.startsWith('video') || f.type === 'image/gif')) {
-            toast({ title: 'You can only upload one video or GIF at a time.', variant: 'destructive' });
+            toast({ title: t('composer.toast.oneVideoOrGif'), variant: 'destructive' });
             return;
         }
     }
     
     if (mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif')) {
-        toast({ title: 'You cannot add more images with a video or GIF.', variant: 'destructive' });
+        toast({ title: t('composer.toast.noMoreImagesWithVideoOrGif'), variant: 'destructive' });
         return;
     }
 
@@ -138,7 +141,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
 
   const handlePost = async () => {
     if (!text.trim() && mediaFiles.length === 0) {
-        toast({ title: "Cannot create an empty post.", variant: "destructive" });
+        toast({ title: t('composer.toast.emptyPost'), variant: "destructive" });
         return;
     }
     setIsPosting(true);
@@ -197,14 +200,14 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
       
       await agent.post(postRecord);
 
-      toast({ title: replyTo ? "Reply sent!" : "Post published successfully!" });
+      toast({ title: replyTo ? t('composer.toast.replySuccess') : t('composer.toast.postSuccess') });
       setText('');
       setMediaFiles([]);
       setSelectedLangs([]);
       onPostSuccess();
     } catch (error) {
       console.error('Failed to post:', error);
-      toast({ title: "Failed to publish post.", description: "Please try again.", variant: "destructive" });
+      toast({ title: t('composer.toast.postFailed'), description: t('common.tryAgain'), variant: "destructive" });
     } finally {
       setIsPosting(false);
     }
@@ -239,7 +242,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   return (
     <div className="relative bg-surface-2 p-4 rounded-xl">
       {onClose && (
-        <button onClick={onClose} className="absolute top-3 right-3 text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-3 transition-colors z-10" aria-label="Close composer">
+        <button onClick={onClose} className="absolute top-3 right-3 text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-3 transition-colors z-10" aria-label={t('common.close')}>
             <X className="w-5 h-5" />
         </button>
       )}
@@ -249,7 +252,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
           <textarea
             value={text}
             onChange={handleTextChange}
-            placeholder={replyTo ? "Write your reply..." : "What's happening?"}
+            placeholder={replyTo ? t('composer.replyPlaceholder') : t('composer.placeholder')}
             className="w-full bg-transparent text-lg resize-none outline-none placeholder-on-surface-variant"
             rows={replyTo ? 2 : 3}
             autoFocus
@@ -302,7 +305,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                     <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface-3 rounded-lg z-20">
                          <input
                             type="text"
-                            placeholder="Search languages..."
+                            placeholder={t('composer.searchLanguages')}
                             value={langSearchTerm}
                             onChange={(e) => setLangSearchTerm(e.target.value)}
                             className="w-full px-3 py-2 bg-surface-2 border-b border-outline outline-none rounded-t-lg"
@@ -346,7 +349,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                 disabled={isPosting || (!text.trim() && mediaFiles.length === 0)}
                 className="bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-on-primary font-bold py-2 px-6 rounded-full transition duration-200 flex items-center gap-2"
             >
-              {isPosting ? 'Posting...' : (replyTo ? 'Reply' : 'Post')}
+              {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
               {!isPosting && <Send className="w-4 h-4"/>}
             </button>
         </div>

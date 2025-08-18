@@ -1,5 +1,7 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { ChatBskyConvoDefs, AppBskyActorDefs } from '@atproto/api';
 import { Loader2 } from 'lucide-react';
@@ -9,6 +11,7 @@ import MessageInput from './MessageInput';
 
 const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const { agent, session, chatSupported } = useAtp();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<(ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView)[]>([]);
   const [peer, setPeer] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,12 +38,12 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
     } catch (err: any) {
       console.error('Failed to fetch conversation:', err);
       if (err.name !== 'XRPCNotSupported') {
-        setError(err.message || "Could not load conversation.");
+        setError(err.message || t('messages.convoLoadingError'));
       }
     } finally {
       setIsLoading(false);
     }
-  }, [agent, peerDid, chatSupported]);
+  }, [agent, peerDid, chatSupported, t]);
 
   useEffect(() => {
     if (chatSupported === false) {

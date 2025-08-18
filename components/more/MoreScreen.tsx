@@ -1,5 +1,7 @@
 
+
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs } from '@atproto/api';
@@ -37,6 +39,7 @@ const AppGridItem: React.FC<{
 const MoreScreen: React.FC = () => {
     const { agent, session, chatSupported } = useAtp();
     const { setCustomFeedHeaderVisible } = useUI();
+    const { t } = useTranslation();
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -60,21 +63,21 @@ const MoreScreen: React.FC = () => {
     const profileLink = `#/profile/${session?.handle}`;
 
     const baseAppGridItems = session ? [
-        { icon: List, label: 'My Feeds', href: '#/feeds', colorClass: 'text-sky-400' },
-        { icon: MessageSquare, label: 'Messages', href: '#/messages', colorClass: 'text-fuchsia-400' },
-        { icon: Clapperboard, label: 'Watch', href: '#/watch', colorClass: 'text-rose-400' },
-        { icon: Search, label: 'Search', href: '#/search', colorClass: 'text-amber-400' },
-        { icon: Bell, label: 'Notifications', href: '#/notifications', colorClass: 'text-indigo-400' },
-        { icon: Users, label: 'Followers', href: `#/profile/${session.handle}/followers`, colorClass: 'text-teal-400' },
-        { icon: UserCheck, label: 'Following', href: `#/profile/${session.handle}/following`, colorClass: 'text-cyan-400' },
-        { icon: Settings, label: 'Settings', href: '#/settings', colorClass: 'text-slate-400' },
+        { icon: List, label: t('more.myFeeds'), href: '#/feeds', colorClass: 'text-sky-400' },
+        { icon: MessageSquare, label: t('nav.messages'), href: '#/messages', colorClass: 'text-fuchsia-400' },
+        { icon: Clapperboard, label: t('more.watch'), href: '#/watch', colorClass: 'text-rose-400' },
+        { icon: Search, label: t('nav.search'), href: '#/search', colorClass: 'text-amber-400' },
+        { icon: Bell, label: t('nav.notifications'), href: '#/notifications', colorClass: 'text-indigo-400' },
+        { icon: Users, label: t('common.followers'), href: `#/profile/${session.handle}/followers`, colorClass: 'text-teal-400' },
+        { icon: UserCheck, label: t('common.following'), href: `#/profile/${session.handle}/following`, colorClass: 'text-cyan-400' },
+        { icon: Settings, label: t('nav.settings'), href: '#/settings', colorClass: 'text-slate-400' },
     ] : [];
     
-    const appGridItems = chatSupported ? baseAppGridItems : baseAppGridItems.filter(item => item.label !== 'Messages');
+    const appGridItems = chatSupported ? baseAppGridItems : baseAppGridItems.filter(item => item.label !== t('nav.messages'));
 
     return (
         <div>
-            <ScreenHeader title="More" />
+            <ScreenHeader title={t('more.title')} />
             <div className="mt-4 space-y-8">
                 {isLoading ? (
                     <div className="bg-surface-2 rounded-lg p-4 animate-pulse">
@@ -108,7 +111,7 @@ const MoreScreen: React.FC = () => {
 
                 {session && (
                     <div>
-                        <h2 className="text-base font-bold text-on-surface-variant mb-4 px-1">All Apps</h2>
+                        <h2 className="text-base font-bold text-on-surface-variant mb-4 px-1">{t('more.allApps')}</h2>
                         <div className="grid grid-cols-4 gap-y-6 gap-x-2">
                             {appGridItems.map(item => (
                                 <AppGridItem key={item.label} {...item} />

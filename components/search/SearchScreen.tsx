@@ -1,5 +1,7 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
@@ -22,17 +24,9 @@ interface SearchScreenProps {
   initialFilter?: string;
 }
 
-const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
-    { id: 'top', label: 'Top', icon: TrendingUp },
-    { id: 'latest', label: 'Latest', icon: Clock },
-    { id: 'images', label: 'Images', icon: ImageIcon },
-    { id: 'videos', label: 'Videos', icon: Video },
-    { id: 'people', label: 'People', icon: UserCircle },
-    { id: 'feeds', label: 'Feeds', icon: List },
-];
-
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
+    const { t } = useTranslation();
     const { setCustomFeedHeaderVisible } = useUI();
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -43,6 +37,15 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
+
+    const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
+      { id: 'top', label: t('search.top'), icon: TrendingUp },
+      { id: 'latest', label: t('search.latest'), icon: Clock },
+      { id: 'images', label: t('common.images'), icon: ImageIcon },
+      { id: 'videos', label: t('common.videos'), icon: Video },
+      { id: 'people', label: t('common.people'), icon: UserCircle },
+      { id: 'feeds', label: t('common.feeds'), icon: List },
+    ];
 
     useEffect(() => {
         setCustomFeedHeaderVisible(true);
@@ -245,7 +248,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     
     return (
         <div>
-            <ScreenHeader title="Search" />
+            <ScreenHeader title={t('search.title')} />
             <div className="mt-4">
                 <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
                     <div className="relative flex-grow">
@@ -254,7 +257,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             type="search"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder={`Search posts, users, and feeds`}
+                            placeholder={t('search.placeholder')}
                             className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
                         />
                     </div>
@@ -303,11 +306,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         {!isLoading && results.length > 0 && renderResults()}
                         
                         {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && (
-                            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+                            <div className="text-center text-on-surface-variant py-8">{t('common.endOfList')}</div>
                         )}
                         
                         {!isLoading && results.length === 0 && (
-                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{initialQuery}".</div>
+                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('search.empty', { query: initialQuery })}</div>
                         )}
                         
                         <div ref={loaderRef} className="h-10">
