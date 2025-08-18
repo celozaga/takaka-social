@@ -3,8 +3,36 @@ import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs } from '@atproto/api';
-import { Settings, ChevronRight, BadgeCheck, List } from 'lucide-react';
+import { 
+    Settings, ChevronRight, BadgeCheck, List, Search, 
+    Bell, Users, UserCheck
+} from 'lucide-react';
 import MoreHeader from './MoreHeader';
+
+const AppGridItem: React.FC<{
+    icon: React.ElementType,
+    label: string,
+    href?: string,
+    onClick?: () => void,
+    colorClass?: string
+}> = ({ icon: Icon, label, href, onClick, colorClass }) => {
+    const content = (
+        <>
+            <div className="w-16 h-16 bg-surface-2 rounded-2xl flex items-center justify-center group-hover:bg-surface-3 transition-colors">
+                <Icon size={32} className={colorClass || 'text-on-surface-variant'} />
+            </div>
+            <span className="text-xs text-center text-on-surface font-medium">{label}</span>
+        </>
+    );
+
+    const className = "flex flex-col items-center justify-start gap-2 group";
+
+    if (href) {
+        return <a href={href} className={className}>{content}</a>;
+    }
+    return <button onClick={onClick} className={className}>{content}</button>;
+};
+
 
 const MoreScreen: React.FC = () => {
     const { agent, session } = useAtp();
@@ -31,10 +59,19 @@ const MoreScreen: React.FC = () => {
     
     const profileLink = `#/profile/${session?.handle}`;
 
+    const appGridItems = session ? [
+        { icon: List, label: 'My Feeds', href: '#/feeds', colorClass: 'text-sky-400' },
+        { icon: Search, label: 'Search', href: '#/search', colorClass: 'text-amber-400' },
+        { icon: Bell, label: 'Notifications', href: '#/notifications', colorClass: 'text-indigo-400' },
+        { icon: Users, label: 'Followers', href: `#/profile/${session.handle}/followers`, colorClass: 'text-rose-400' },
+        { icon: UserCheck, label: 'Following', href: `#/profile/${session.handle}/following`, colorClass: 'text-cyan-400' },
+        { icon: Settings, label: 'Settings', href: '#/settings', colorClass: 'text-slate-400' },
+    ] : [];
+
     return (
         <div>
             <MoreHeader />
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-8">
                 {isLoading ? (
                     <div className="bg-surface-2 rounded-lg p-4 animate-pulse">
                         <div className="flex items-center gap-4">
@@ -65,22 +102,16 @@ const MoreScreen: React.FC = () => {
                     </a>
                 )}
 
-                <div className="space-y-2">
-                    <a href="#/feeds" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
-                        <div className="flex items-center gap-4">
-                            <List className="w-6 h-6 text-on-surface-variant" />
-                            <span className="font-semibold">My Feeds</span>
+                {session && (
+                    <div>
+                        <h2 className="text-base font-bold text-on-surface-variant mb-4 px-1">All Apps</h2>
+                        <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+                            {appGridItems.map(item => (
+                                <AppGridItem key={item.label} {...item} />
+                            ))}
                         </div>
-                        <ChevronRight className="w-5 h-5 text-on-surface-variant" />
-                    </a>
-                    <a href="#/settings" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
-                        <div className="flex items-center gap-4">
-                            <Settings className="w-6 h-6 text-on-surface-variant" />
-                            <span className="font-semibold">Settings</span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-on-surface-variant" />
-                    </a>
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );
