@@ -204,39 +204,45 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
 
         try {
-            let newMediaPosts: AppBskyFeedDefs.FeedViewPost[] = [];
+            let foundPosts: AppBskyFeedDefs.FeedViewPost[] = [];
             let nextCursor: string | undefined = cursor;
+            let hasNextPage = true;
             let attempts = 0;
-            const requiredPosts = cursor ? 1 : 10;
+            const requiredPostsOnInitialLoad = 10;
 
-            while (newMediaPosts.length < requiredPosts && nextCursor !== undefined && attempts < 5) {
+            do {
                 attempts++;
                 const res = await agent.getAuthorFeed({ actor, cursor: nextCursor, limit: 50 });
-                if (res.data.feed.length === 0) {
-                    nextCursor = undefined;
-                    break;
+
+                if (res.data.feed.length > 0) {
+                    const filtered = res.data.feed.filter(item => {
+                        if (item.reason) return false;
+                        const embed = item.post.embed;
+                        if (!embed) return false;
+                        const hasImage = (AppBskyEmbedImages.isView(embed)) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedImages.isView(embed.media));
+                        const hasVideo = (AppBskyEmbedVideo.isView(embed)) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media));
+                        switch (tab) {
+                            case 'all': return hasImage || hasVideo;
+                            case 'photos': return hasImage;
+                            case 'videos': return hasVideo;
+                        }
+                    });
+                    foundPosts.push(...filtered);
                 }
-
-                const filtered = res.data.feed.filter(item => {
-                    if (item.reason) return false;
-                    const embed = item.post.embed;
-                    if (!embed) return false;
-                    const hasImage = (AppBskyEmbedImages.isView(embed)) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedImages.isView(embed.media));
-                    const hasVideo = (AppBskyEmbedVideo.isView(embed)) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media));
-                    switch (tab) {
-                        case 'all': return hasImage || hasVideo;
-                        case 'photos': return hasImage;
-                        case 'videos': return hasVideo;
-                    }
-                });
                 
-                newMediaPosts.push(...filtered);
                 nextCursor = res.data.cursor;
-            }
+                hasNextPage = !!nextCursor;
 
-            setFeed(prev => cursor ? [...prev, ...newMediaPosts] : newMediaPosts);
+            } while (
+                !cursor && // Only loop on initial load
+                foundPosts.length < requiredPostsOnInitialLoad && 
+                hasNextPage && 
+                attempts < 5
+            );
+
+            setFeed(prev => cursor ? [...prev, ...foundPosts] : foundPosts);
             setCursor(nextCursor);
-            setHasMore(!!nextCursor);
+            setHasMore(hasNextPage);
         } catch (err) {
             console.error(`Failed to fetch ${tab}:`, err);
         } finally {
@@ -274,11 +280,17 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 if (tab === 'videos') return videosFeed.length === 0;
                 return true;
             };
-            if (isEmpty(activeTab)) {
+            const isLoading = (tab: ProfileTab) => {
+                 if (tab === 'all') return isAllLoading;
+                if (tab === 'photos') return isPhotosLoading;
+                if (tab === 'videos') return isVideosLoading;
+                return false;
+            }
+            if (isEmpty(activeTab) && !isLoading(activeTab)) {
                 fetchFilteredFeed(activeTab);
             }
         }
-    }, [activeTab, profile, viewerState, allFeed.length, photosFeed.length, videosFeed.length, fetchFilteredFeed]);
+    }, [activeTab, profile, viewerState, allFeed.length, photosFeed.length, videosFeed.length, isAllLoading, isPhotosLoading, isVideosLoading, fetchFilteredFeed]);
 
     useEffect(() => {
         if (profile?.description) {
