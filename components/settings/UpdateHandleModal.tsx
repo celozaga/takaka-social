@@ -20,7 +20,7 @@ const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSucces
         setIsSaving(true);
         setError('');
         try {
-            await agent.updateHandle(handle.replace('@', ''));
+            await agent.com.atproto.identity.updateHandle({ handle: handle.replace('@', '') });
             toast({ title: "Handle updated!", description: "You have been logged out. Please sign in again with your new handle." });
             await logout();
             onSuccess();

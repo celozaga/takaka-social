@@ -22,7 +22,7 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
         setError('');
         setSuccess(false);
         try {
-            const { data } = await agent.requestEmailUpdate(email);
+            const { data } = await agent.com.atproto.server.requestEmailUpdate({ email });
 
             if (data.tokenRequired) {
                 setSuccess(true);

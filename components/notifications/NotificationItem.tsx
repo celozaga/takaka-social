@@ -20,55 +20,53 @@ interface NotificationItemProps {
 const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: string }> = ({ record, postUri }) => {
     const { agent } = useAtp();
     
-    const renderMedia = () => {
-        const embed = record.embed;
-        if (!embed) return null;
+    const embed = record.embed;
+    let mediaEmbed: AppBskyEmbedImages.Main | undefined;
+    let recordEmbed: AppBskyEmbedRecord.Main | undefined;
 
-        let mediaEmbed: AppBskyEmbedImages.Main | undefined;
-        let recordEmbed: AppBskyEmbedRecord.Main | undefined;
-
-        if (AppBskyEmbedImages.isMain(embed)) {
-            mediaEmbed = embed;
-        } else if (AppBskyEmbedRecord.isMain(embed)) {
-            recordEmbed = embed;
-        } else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
-            recordEmbed = embed.record;
-            if (AppBskyEmbedImages.isMain(embed.media)) {
-                mediaEmbed = embed.media;
-            }
+    if (AppBskyEmbedImages.isMain(embed)) {
+        mediaEmbed = embed;
+    } else if (AppBskyEmbedRecord.isMain(embed)) {
+        recordEmbed = embed;
+    } else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
+        recordEmbed = embed.record;
+        if (AppBskyEmbedImages.isMain(embed.media)) {
+            mediaEmbed = embed.media;
         }
+    }
 
-        if (mediaEmbed && mediaEmbed.images.length > 0) {
-            const firstImage = mediaEmbed.images[0];
-            const authorDid = new AtUri(postUri).hostname;
-            const imageUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${firstImage.image.ref.cid}`;
-            
-            return (
-                <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-md bg-surface-3">
-                    <img src={imageUrl} className="w-full h-full object-cover" loading="lazy"/>
-                </div>
-            );
-        }
+    const renderImage = () => {
+        if (!mediaEmbed || mediaEmbed.images.length === 0) return null;
+        const firstImage = mediaEmbed.images[0];
+        const authorDid = new AtUri(postUri).hostname;
+        const imageUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${firstImage.image.ref.toString()}`;
         
-        if (recordEmbed && !record.text) {
-             return (
-                <div className="text-xs text-on-surface-variant border border-outline rounded p-2 self-start">
-                    Quoted Post
-                </div>
-            );
-        }
-
-        return null;
+        return (
+            <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-md bg-surface-3">
+                <img src={imageUrl} className="w-full h-full object-cover" loading="lazy"/>
+            </div>
+        );
     };
 
-    const mediaElement = renderMedia();
+    const imageElement = renderImage();
+    const hasTextContent = record.text && record.text.trim().length > 0;
+    const hasVisibleContent = hasTextContent || imageElement;
 
     return (
-        <div className="border border-outline rounded-lg p-2 mt-2 bg-surface-1 flex gap-3 items-center">
-            {mediaElement}
-            {record.text && (
-                 <div className="text-on-surface whitespace-pre-wrap break-words text-sm line-clamp-4 flex-1">
-                    <RichTextRenderer record={{ text: record.text, facets: record.facets }} />
+        <div className="border border-outline rounded-lg p-2 mt-2 bg-surface-1">
+            {hasVisibleContent && (
+                <div className="flex gap-3 items-center">
+                    {imageElement}
+                    {hasTextContent && (
+                         <div className="text-on-surface whitespace-pre-wrap break-words text-sm line-clamp-4 flex-1">
+                            <RichTextRenderer record={{ text: record.text!, facets: record.facets }} />
+                        </div>
+                    )}
+                </div>
+            )}
+            {recordEmbed && (
+                <div className={`text-xs text-on-surface-variant border border-outline rounded p-2 bg-surface-2 ${hasVisibleContent ? 'mt-2' : ''}`}>
+                    Quoted from another post.
                 </div>
             )}
         </div>

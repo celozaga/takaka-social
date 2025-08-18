@@ -5,17 +5,15 @@ import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import { useUI } from '../../context/UIContext';
 import NotificationsHeader from './NotificationsHeader';
-import { AtSign, MessageCircle, Repeat, UserPlus, Quote } from 'lucide-react';
 
-type NotificationFilter = 'all' | 'mentions' | 'replies' | 'reposts' | 'follows' | 'quotes';
+type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows' | 'quotes';
 
-const filters: { id: NotificationFilter; label: string; icon: React.FC<any> | null }[] = [
-    { id: 'all', label: 'All', icon: null },
-    { id: 'mentions', label: 'Mentions', icon: AtSign },
-    { id: 'replies', label: 'Replies', icon: MessageCircle },
-    { id: 'reposts', label: 'Reposts', icon: Repeat },
-    { id: 'quotes', label: 'Quotes', icon: Quote },
-    { id: 'follows', label: 'Follows', icon: UserPlus },
+const filters: { id: NotificationFilter; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'mentions', label: 'Mentions' },
+    { id: 'reposts', label: 'Reposts' },
+    { id: 'quotes', label: 'Quotes' },
+    { id: 'follows', label: 'Follows' },
 ];
 
 
@@ -95,8 +93,6 @@ const NotificationsScreen: React.FC = () => {
         return notifications;
       case 'mentions':
         return notifications.filter(n => n.reason === 'mention' || n.reason === 'reply');
-      case 'replies':
-        return notifications.filter(n => n.reason === 'reply');
       case 'reposts':
         return notifications.filter(n => n.reason === 'repost');
       case 'follows':
@@ -164,11 +160,10 @@ const NotificationsScreen: React.FC = () => {
             <button
               key={filter.id}
               onClick={() => setActiveTab(filter.id)}
-              className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
+              className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap
                   ${activeTab === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
               `}
             >
-              {filter.icon && <filter.icon size={16} />}
               {filter.label}
             </button>
           ))}
