@@ -21,6 +21,7 @@ import NotificationSettingsScreen from './components/settings/NotificationSettin
 import MoreScreen from './components/more/MoreScreen';
 import FollowsScreen from './components/profile/FollowsScreen';
 import EditProfileModal from './components/profile/EditProfileModal';
+import WatchScreen from './components/watch/WatchScreen';
 
 const App: React.FC = () => {
   return (
@@ -73,8 +74,9 @@ const Main: React.FC = () => {
     return <div className="min-h-screen bg-surface-1" />;
   }
   
+  const isWatchScreen = route.startsWith('#/watch');
   const isPostScreen = route.startsWith('#/post/');
-  const isNavbarHidden = isPostScreen || isCustomFeedHeaderVisible;
+  const isNavbarHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen;
 
   const renderContent = () => {
     const pathWithQuery = route.replace(/^#\//, '');
@@ -128,27 +130,37 @@ const Main: React.FC = () => {
           return null;
         }
         return <MoreScreen />;
+      case 'watch':
+        if (!session) {
+          window.location.hash = '#/';
+          return null;
+        }
+        return <WatchScreen />;
       default:
         return <HomeScreen />;
     }
   };
   
-  const mainContentClasses = isPostScreen
-    ? 'w-full max-w-3xl transition-all duration-300 pb-8'
-    : `w-full max-w-3xl px-4 ${isNavbarHidden ? 'pt-4' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+  const mainContainerClasses = `w-full flex justify-center ${!isWatchScreen ? 'md:pl-20' : ''}`;
+
+  const mainContentClasses = isWatchScreen
+    ? 'w-full h-screen bg-black'
+    : isPostScreen
+      ? 'w-full max-w-3xl transition-all duration-300 pb-8'
+      : `w-full max-w-3xl px-4 ${isNavbarHidden ? 'pt-4' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
 
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      <BottomNavbar isHidden={isPostScreen} />
+      <BottomNavbar isHidden={isNavbarHidden} />
       {!isNavbarHidden && <Navbar />}
-      <div className="md:pl-20 w-full flex justify-center">
+      <div className={mainContainerClasses}>
         <main className={mainContentClasses}>
           {renderContent()}
         </main>
       </div>
       
-      {!session && !isPostScreen && <LoginPrompt />}
+      {!session && !isPostScreen && !isWatchScreen && <LoginPrompt />}
 
       {isComposerOpen && session && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300">
