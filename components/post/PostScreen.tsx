@@ -5,7 +5,7 @@ import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBsk
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from '../ui/use-toast';
-import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useHeadManager } from '../../hooks/useHeadManager';
@@ -413,18 +413,24 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         
         <PostScreenActionBar post={mainPost} />
         
-         <div className="md:mt-4">
-          {(mainPost.replyCount || 0) > 0 && (
-            <div className="px-4 pt-4 pb-2">
-              <h2 className="text-lg font-bold">
-                {mainPost.replyCount} {mainPost.replyCount === 1 ? 'Reply' : 'Replies'}
-              </h2>
-            </div>
-          )}
-
-          {allReplies.length > 0 && (
-            <div>
-              <Reply reply={thread} isRoot={true} />
+        <div className="md:mt-4">
+          {(mainPost.replyCount || 0) > 0 ? (
+            <>
+              <div className="px-4 pt-4 pb-2">
+                <h2 className="text-lg font-bold">
+                  {mainPost.replyCount} {mainPost.replyCount === 1 ? 'Reply' : 'Replies'}
+                </h2>
+              </div>
+              {allReplies.length > 0 && (
+                <div>
+                  <Reply reply={thread} isRoot={true} />
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4 mx-4 md:mx-0">
+                <MessageSquareDashed size={40} className="mx-auto mb-4 opacity-50" />
+                <p className="font-semibold text-on-surface">No one has replied to this post yet.</p>
             </div>
           )}
         </div>
