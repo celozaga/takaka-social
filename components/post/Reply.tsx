@@ -80,7 +80,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         <a href={`#/profile/${author.handle}`} className="block">
           <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
         </a>
-        {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow mt-2"></div>}
+        {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow mt-2 bg-outline"></div>}
       </div>
 
       <div className="flex-1 min-w-0">
@@ -125,4 +125,4 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   );
 };
 
-export default Reply;
+export default React.memo(Reply);

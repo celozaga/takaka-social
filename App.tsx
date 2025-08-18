@@ -1,27 +1,31 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AtpProvider, useAtp } from './context/AtpContext';
 import { UIProvider, useUI } from './context/UIContext';
-import LoginScreen from './components/auth/LoginScreen';
-import HomeScreen from './components/home/HomeScreen';
 import { Toaster, ToastProvider } from './components/ui/Toaster';
-import ProfileScreen from './components/profile/ProfileScreen';
-import PostScreen from './components/post/PostScreen';
-import SearchScreen from './components/search/SearchScreen';
 import Navbar from './components/layout/Navbar';
 import BottomNavbar from './components/layout/BottomNavbar';
 import Composer from './components/composer/Composer';
-import NotificationsScreen from './components/notifications/NotificationsScreen';
 import LoginPrompt from './components/auth/LoginPrompt';
-import FeedsScreen from './components/feeds/FeedsScreen';
-import FeedHeaderModal from './components/feeds/FeedHeaderModal';
-import FeedViewScreen from './components/feeds/FeedViewScreen';
-import SettingsScreen from './components/settings/SettingsScreen';
-import NotificationSettingsScreen from './components/settings/NotificationSettingsScreen';
-import MoreScreen from './components/more/MoreScreen';
-import FollowsScreen from './components/profile/FollowsScreen';
-import EditProfileModal from './components/profile/EditProfileModal';
-import WatchScreen from './components/watch/WatchScreen';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load screen components
+const LoginScreen = lazy(() => import('./components/auth/LoginScreen'));
+const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
+const ProfileScreen = lazy(() => import('./components/profile/ProfileScreen'));
+const PostScreen = lazy(() => import('./components/post/PostScreen'));
+const SearchScreen = lazy(() => import('./components/search/SearchScreen'));
+const NotificationsScreen = lazy(() => import('./components/notifications/NotificationsScreen'));
+const FeedsScreen = lazy(() => import('./components/feeds/FeedsScreen'));
+const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'));
+const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
+const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
+const NotificationSettingsScreen = lazy(() => import('./components/settings/NotificationSettingsScreen'));
+const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
+const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
+const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
+const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
+
 
 const App: React.FC = () => {
   return (
@@ -156,7 +160,13 @@ const Main: React.FC = () => {
       {!isNavbarHidden && <Navbar />}
       <div className={mainContainerClasses}>
         <main className={mainContentClasses}>
-          {renderContent()}
+          <Suspense fallback={
+            <div className="w-full flex justify-center items-center pt-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          }>
+            {renderContent()}
+          </Suspense>
         </main>
       </div>
       
@@ -178,7 +188,9 @@ const Main: React.FC = () => {
       {isLoginModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeLoginModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <LoginScreen onSuccess={closeLoginModal} />
+            <Suspense fallback={<div className="w-full max-w-md h-96 bg-surface-2 rounded-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                <LoginScreen onSuccess={closeLoginModal} />
+            </Suspense>
           </div>
         </div>
       )}
@@ -186,7 +198,9 @@ const Main: React.FC = () => {
       {isFeedModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeFeedModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <FeedHeaderModal />
+            <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                <FeedHeaderModal />
+            </Suspense>
           </div>
         </div>
       )}
@@ -194,16 +208,18 @@ const Main: React.FC = () => {
       {isEditProfileModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeEditProfileModal}>
           <div className="relative w-full max-w-xl" onClick={e => e.stopPropagation()}>
-            <EditProfileModal
-              onClose={closeEditProfileModal}
-              onSuccess={() => {
-                closeEditProfileModal();
-                // Force a reload of the profile page if we are on it to see changes
-                if (window.location.hash === `#/profile/${session?.handle}` || window.location.hash === `#/profile/${session?.did}`) {
-                    window.location.reload();
-                }
-              }}
-            />
+            <Suspense fallback={<div className="w-full max-w-xl h-[500px] bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                <EditProfileModal
+                onClose={closeEditProfileModal}
+                onSuccess={() => {
+                    closeEditProfileModal();
+                    // Force a reload of the profile page if we are on it to see changes
+                    if (window.location.hash === `#/profile/${session?.handle}` || window.location.hash === `#/profile/${session?.did}`) {
+                        window.location.reload();
+                    }
+                }}
+                />
+            </Suspense>
           </div>
         </div>
       )}

@@ -215,4 +215,4 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     );
 };
 
-export default PostCard;
+export default React.memo(PostCard);

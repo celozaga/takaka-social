@@ -199,4 +199,4 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
     );
 };
 
-export default VideoPlayer;
+export default React.memo(VideoPlayer);

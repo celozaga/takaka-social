@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
@@ -163,14 +164,14 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         }
     };
     
-    const handlePinToggle = (feed:AppBskyFeedDefs.GeneratorView) => {
+    const handlePinToggle = useCallback((feed:AppBskyFeedDefs.GeneratorView) => {
         const isPinned = pinnedUris.has(feed.uri);
         if (isPinned) {
             togglePin(feed.uri);
         } else {
             addFeed(feed, true);
         }
-    }
+    }, [pinnedUris, togglePin, addFeed]);
     
      // Effect for IntersectionObserver
     useEffect(() => {

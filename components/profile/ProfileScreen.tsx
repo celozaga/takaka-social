@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -38,6 +38,19 @@ const hasMedia = (post: AppBskyFeedDefs.PostView): boolean => {
     return hasPhotos(post) || hasVideos(post);
 }
 // --- End Filter Logic Helpers ---
+
+const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
+    switch (filter) {
+        case 'all':
+            return posts.filter(item => hasMedia(item.post));
+        case 'photos':
+            return posts.filter(item => hasPhotos(item.post));
+        case 'videos':
+            return posts.filter(item => hasVideos(item.post));
+        default:
+            return posts.filter(item => hasMedia(item.post));
+    }
+};
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -185,19 +198,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             setIsActionLoading(false);
         }
     };
-    
-    const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
-        switch (filter) {
-            case 'all':
-                return posts.filter(item => hasMedia(item.post));
-            case 'photos':
-                return posts.filter(item => hasPhotos(item.post));
-            case 'videos':
-                return posts.filter(item => hasVideos(item.post));
-            default:
-                return posts.filter(item => hasMedia(item.post));
-        }
-    };
 
     const fetchProfileAndFeed = useCallback(async (currentCursor?: string) => {
         if (!currentCursor) {
@@ -288,7 +288,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         };
     }, [hasMore, isLoading, isLoadingMore, fetchProfileAndFeed, cursor]);
     
-    const displayedFeed = filterPosts(feed, activeFilter);
+    const displayedFeed = useMemo(() => filterPosts(feed, activeFilter), [feed, activeFilter]);
     
     if (isLoading && feed.length === 0) {
         return (

@@ -102,4 +102,4 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   );
 };
 
-export default ActorSearchResultCard;
+export default React.memo(ActorSearchResultCard);

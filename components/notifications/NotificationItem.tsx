@@ -100,4 +100,4 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   );
 };
 
-export default NotificationItem;
+export default React.memo(NotificationItem);

@@ -51,4 +51,4 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
     );
 };
 
-export default FeedSearchResultCard;
+export default React.memo(FeedSearchResultCard);

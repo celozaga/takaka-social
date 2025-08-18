@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Heart, MessageCircle, Repeat, Share2, BadgeCheck, Plus, Check } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useUI } from '../../context/UIContext';
@@ -31,7 +32,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
 
     const isMe = session?.did === post.author.did;
 
-    const handleFollow = (e: React.MouseEvent) => {
+    const handleFollow = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         if (isFollowLoading || isMe || followUri) return;
 
@@ -47,9 +48,9 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
             .finally(() => {
                 setIsFollowLoading(false);
             });
-    };
+    }, [agent, isFollowLoading, isMe, followUri, post.author.did, toast]);
     
-    const handleUnfollow = (e: React.MouseEvent) => {
+    const handleUnfollow = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         if (isFollowLoading || isMe || !followUri) return;
 
@@ -65,22 +66,22 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
             .finally(() => {
                 setIsFollowLoading(false);
             });
-    };
+    }, [agent, isFollowLoading, isMe, followUri, toast]);
 
-    const handleComment = (e: React.MouseEvent) => {
+    const handleComment = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
-    };
+    }, [openComposer, post.uri, post.cid]);
 
-    const handleLikeClick = (e: React.MouseEvent) => {
+    const handleLikeClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         handleLike();
-    };
+    }, [handleLike]);
     
-    const handleRepostClick = (e: React.MouseEvent) => {
+    const handleRepostClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         handleRepost();
-    };
+    }, [handleRepost]);
 
     return (
         <div className="absolute bottom-24 right-2 flex flex-col items-center gap-5 text-white">
@@ -127,4 +128,4 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     );
 };
 
-export default VideoActions;
+export default React.memo(VideoActions);
