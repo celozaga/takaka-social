@@ -20,6 +20,7 @@ import SettingsScreen from './components/settings/SettingsScreen';
 import NotificationSettingsScreen from './components/settings/NotificationSettingsScreen';
 import MoreScreen from './components/more/MoreScreen';
 import FollowsScreen from './components/profile/FollowsScreen';
+import EditProfileModal from './components/profile/EditProfileModal';
 
 const App: React.FC = () => {
   return (
@@ -36,7 +37,13 @@ const App: React.FC = () => {
 
 const Main: React.FC = () => {
   const { session, isLoadingSession } = useAtp();
-  const { isLoginModalOpen, closeLoginModal, isComposerOpen, closeComposer, composerReplyTo, composerInitialText, isCustomFeedHeaderVisible, isFeedModalOpen, closeFeedModal } = useUI();
+  const { 
+    isLoginModalOpen, closeLoginModal, 
+    isComposerOpen, closeComposer, composerReplyTo, composerInitialText, 
+    isCustomFeedHeaderVisible, 
+    isFeedModalOpen, closeFeedModal,
+    isEditProfileModalOpen, closeEditProfileModal
+  } = useUI();
   const [route, setRoute] = useState(window.location.hash);
 
   useEffect(() => {
@@ -54,11 +61,12 @@ const Main: React.FC = () => {
         closeComposer();
         closeLoginModal();
         closeFeedModal();
+        closeEditProfileModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal, closeFeedModal]);
+  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal]);
 
   if (isLoadingSession) {
     // Show a minimal loading state while session is being restored
@@ -167,6 +175,23 @@ const Main: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeFeedModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <FeedHeaderModal />
+          </div>
+        </div>
+      )}
+
+      {isEditProfileModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeEditProfileModal}>
+          <div className="relative w-full max-w-xl" onClick={e => e.stopPropagation()}>
+            <EditProfileModal
+              onClose={closeEditProfileModal}
+              onSuccess={() => {
+                closeEditProfileModal();
+                // Force a reload of the profile page if we are on it to see changes
+                if (window.location.hash === `#/profile/${session?.handle}` || window.location.hash === `#/profile/${session?.did}`) {
+                    window.location.reload();
+                }
+              }}
+            />
           </div>
         </div>
       )}

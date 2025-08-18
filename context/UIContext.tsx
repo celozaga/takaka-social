@@ -26,6 +26,9 @@ interface UIContextType {
   closeFeedModal: () => void;
   isCustomFeedHeaderVisible: boolean;
   setCustomFeedHeaderVisible: (visible: boolean) => void;
+  isEditProfileModalOpen: boolean;
+  openEditProfileModal: () => void;
+  closeEditProfileModal: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -38,6 +41,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
   const [feedModalUri, setFeedModalUri] = useState<string | undefined>(undefined);
   const [isCustomFeedHeaderVisible, setCustomFeedHeaderVisible] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
   const openLoginModal = useCallback(() => {
     setIsLoginModalOpen(true);
@@ -68,13 +72,22 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setIsFeedModalOpen(false);
     setFeedModalUri(undefined);
   }, []);
+  
+  const openEditProfileModal = useCallback(() => {
+    setIsEditProfileModalOpen(true);
+  }, []);
+  
+  const closeEditProfileModal = useCallback(() => {
+    setIsEditProfileModalOpen(false);
+  }, []);
 
   return (
     <UIContext.Provider value={{ 
         isLoginModalOpen, openLoginModal, closeLoginModal, 
         isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
         isFeedModalOpen, feedModalUri, openFeedModal, closeFeedModal,
-        isCustomFeedHeaderVisible, setCustomFeedHeaderVisible
+        isCustomFeedHeaderVisible, setCustomFeedHeaderVisible,
+        isEditProfileModalOpen, openEditProfileModal, closeEditProfileModal
     }}>
       {children}
     </UIContext.Provider>
