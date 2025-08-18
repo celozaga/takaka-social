@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -358,27 +359,38 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             return <div className="text-center p-8 bg-surface-2 rounded-xl">{viewerState.blocking ? `You have blocked @${profile.handle}` : `You are blocked by @${profile.handle}`}</div>;
         }
 
-        let isLoading, feed, noContentMessage;
+        let isLoading, feed, hasMore;
+        let definitiveEmptyMessage = "This user has not posted any media yet.";
+        let tentativeEmptyMessage = "No media found in recent posts. Scroll to find more.";
+
         switch(activeTab) {
             case 'photos':
                 isLoading = isPhotosLoading;
                 feed = photosFeed;
-                noContentMessage = "This user has not posted any photos yet.";
+                hasMore = hasMorePhotos;
+                definitiveEmptyMessage = "This user has not posted any photos yet.";
+                tentativeEmptyMessage = "No photos found in recent posts. Scroll to find more.";
                 break;
             case 'videos':
                 isLoading = isVideosLoading;
                 feed = videosFeed;
-                noContentMessage = "This user has not posted any videos yet.";
+                hasMore = hasMoreVideos;
+                definitiveEmptyMessage = "This user has not posted any videos yet.";
+                tentativeEmptyMessage = "No videos found in recent posts. Scroll to find more.";
                 break;
             case 'all':
             default:
                 isLoading = isAllLoading;
                 feed = allFeed;
-                noContentMessage = "This user has not posted any media yet.";
+                hasMore = hasMoreAll;
         }
 
         if (isLoading) return <div className="columns-2 gap-4 mt-4">{[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>)}</div>;
-        if (feed.length === 0) return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">{noContentMessage}</div>;
+        
+        if (feed.length === 0) {
+            const message = hasMore ? tentativeEmptyMessage : definitiveEmptyMessage;
+            return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">{message}</div>;
+        }
         
         return (
             <div className="columns-2 gap-4">
