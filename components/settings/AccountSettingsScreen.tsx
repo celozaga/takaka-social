@@ -3,7 +3,7 @@ import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
-import AccountSettingsHeader from './AccountSettingsHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ChevronRight, ShieldCheck } from 'lucide-react';
 
 interface SettingsListItemProps {
@@ -98,7 +98,7 @@ const AccountSettingsScreen: React.FC = () => {
 
     return (
         <div>
-            <AccountSettingsHeader />
+            <ScreenHeader title="Account" />
             <div className="mt-4 space-y-6">
                 <div className="bg-surface-2 rounded-lg overflow-hidden divide-y divide-outline">
                     <SettingsListItem icon={Mail} label="Email" value={emailValue} />

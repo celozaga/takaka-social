@@ -4,7 +4,8 @@ import { useAtp } from '../../context/AtpContext';
 import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import { useUI } from '../../context/UIContext';
-import NotificationsHeader from './NotificationsHeader';
+import ScreenHeader from '../layout/ScreenHeader';
+import { Settings } from 'lucide-react';
 
 type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows' | 'quotes';
 
@@ -153,7 +154,11 @@ const NotificationsScreen: React.FC = () => {
   
   return (
     <div>
-      <NotificationsHeader />
+        <ScreenHeader title="Notifications">
+            <a href="#/settings" className="p-2 rounded-full hover:bg-surface-3" aria-label="Settings">
+                <Settings size={20} />
+            </a>
+        </ScreenHeader>
       <div className="mt-4">
         <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
           {filters.map(filter => (

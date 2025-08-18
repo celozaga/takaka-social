@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -6,7 +7,7 @@ import {
     Settings, ChevronRight, BadgeCheck, List, Search, 
     Bell, Users, UserCheck, Clapperboard, MessageSquare
 } from 'lucide-react';
-import MoreHeader from './MoreHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 
 const AppGridItem: React.FC<{
     icon: React.ElementType,
@@ -73,7 +74,7 @@ const MoreScreen: React.FC = () => {
 
     return (
         <div>
-            <MoreHeader />
+            <ScreenHeader title="More" />
             <div className="mt-4 space-y-8">
                 {isLoading ? (
                     <div className="bg-surface-2 rounded-lg p-4 animate-pulse">

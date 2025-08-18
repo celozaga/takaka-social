@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -53,7 +54,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   };
 
   const FollowButton = () => {
-    if (!session) return null;
+    if (!session || (session.did === actor.did)) return null;
 
     return (
       <button

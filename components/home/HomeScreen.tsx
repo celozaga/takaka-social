@@ -73,7 +73,7 @@ const HomeScreen: React.FC = () => {
     } else {
       setSelectedFeed(DISCOVER_FEED_URI);
     }
-  }, [session]);
+  }, [session, selectedFeed]);
 
   return (
     <div>

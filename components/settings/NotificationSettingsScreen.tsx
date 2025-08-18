@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
-import NotificationSettingsHeader from './NotificationSettingsHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Quote, Bell, Loader2 } from 'lucide-react';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
@@ -191,7 +191,7 @@ const NotificationSettingsScreen: React.FC = () => {
     if (isLoading) {
         return (
             <div>
-                <NotificationSettingsHeader />
+                <ScreenHeader title="Notifications" />
                 <div className="flex justify-center items-center h-64">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
@@ -201,7 +201,7 @@ const NotificationSettingsScreen: React.FC = () => {
 
     return (
         <div>
-            <NotificationSettingsHeader />
+            <ScreenHeader title="Notifications" />
             <div className="mt-4 space-y-4">
                  <div className="bg-surface-2 rounded-lg p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">

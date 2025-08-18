@@ -1,9 +1,8 @@
 
-
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { Bell, UserCircle, ChevronRight, LogOut } from 'lucide-react';
-import SettingsHeader from './SettingsHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 import { useUI } from '../../context/UIContext';
 
 const SettingsScreen: React.FC = () => {
@@ -24,7 +23,7 @@ const SettingsScreen: React.FC = () => {
 
     return (
         <div>
-            <SettingsHeader />
+            <ScreenHeader title="Settings" />
             <div className="mt-4 space-y-2">
                 <a href="#/settings/notifications" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
                     <div className="flex items-center gap-4">

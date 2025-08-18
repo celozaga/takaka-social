@@ -62,10 +62,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     if (feedUri === 'following') {
-      // UPDATED GUARD: Rely only on the agent's state, which is mutated synchronously on logout,
-      // avoiding potential race conditions with React's async state updates.
       if (!agent.hasSession) {
-        // Gracefully handle logout race condition
         return Promise.resolve({
             success: true,
             data: { feed: [], cursor: undefined }
@@ -86,7 +83,6 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
       if (response.data.feed.length > 0) {
         const newMediaPosts = filterMediaPosts(response.data.feed);
-        // Avoid adding duplicate posts
         setFeed(prevFeed => {
             const existingCids = new Set(prevFeed.map(p => p.post.cid));
             const uniqueNewPosts = newMediaPosts.filter(p => !existingCids.has(p.post.cid));
@@ -146,7 +142,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
           loadMorePosts();
         }
       },
-      { rootMargin: '200px' } // Start loading 200px before the element is visible
+      { rootMargin: '200px' }
     );
 
     const currentLoader = loaderRef.current;

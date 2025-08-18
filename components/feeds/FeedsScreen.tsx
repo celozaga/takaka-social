@@ -6,7 +6,7 @@ import { AppBskyFeedDefs } from '@atproto/api';
 import { Pin, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import PopularFeeds from './PopularFeeds';
 import { useUI } from '../../context/UIContext';
-import FeedsHeader from './FeedsHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 import FeedAvatar from './FeedAvatar';
 
 const EditableFeedItem: React.FC<{
@@ -90,7 +90,7 @@ const FeedsScreen: React.FC = () => {
     if (!session) {
         return (
             <div>
-                <FeedsHeader />
+                <ScreenHeader title="Feeds" />
                 <div className="mt-4">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-bold">Discover Feeds</h2>
@@ -107,7 +107,7 @@ const FeedsScreen: React.FC = () => {
     if (isLoadingSavedFeeds) {
         return (
              <div>
-                <FeedsHeader />
+                <ScreenHeader title="Feeds" />
                 <div className="mt-4">
                     <div className="space-y-4">
                         {[...Array(5)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-20 animate-pulse"></div>)}
@@ -119,7 +119,7 @@ const FeedsScreen: React.FC = () => {
 
     return (
         <div>
-            <FeedsHeader />
+            <ScreenHeader title="Feeds" />
             <div className="mt-4">
                 <p className="text-on-surface-variant text-sm mb-6">
                     Reorder, pin, or remove your feeds. Changes are saved automatically.

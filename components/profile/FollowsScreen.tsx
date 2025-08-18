@@ -1,11 +1,10 @@
 
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } from '@atproto/api';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
-import FollowsHeader from './FollowsHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 
 interface FollowsScreenProps {
     actor: string;
@@ -95,7 +94,7 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     
     return (
         <div>
-            <FollowsHeader type={type} />
+            <ScreenHeader title={type.charAt(0).toUpperCase() + type.slice(1)} />
             <div className="mt-4 space-y-3">
                 {isLoading && (
                     [...Array(8)].map((_, i) => (

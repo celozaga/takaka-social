@@ -11,7 +11,7 @@ import SuggestedFollows from '../profile/SuggestedFollows';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import { useUI } from '../../context/UIContext';
-import SearchHeader from './SearchHeader';
+import ScreenHeader from '../layout/ScreenHeader';
 import TrendingTopics from './TrendingTopics';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
@@ -245,7 +245,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     
     return (
         <div>
-            <SearchHeader />
+            <ScreenHeader title="Search" />
             <div className="mt-4">
                 <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
                     <div className="relative flex-grow">
