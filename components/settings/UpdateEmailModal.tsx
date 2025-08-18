@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -23,9 +22,9 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
         setError('');
         setSuccess(false);
         try {
-            // Use the low-level `service.call` to ensure the request is formatted correctly,
+            // Use the low-level `api.call` to ensure the request is formatted correctly,
             // bypassing a potential issue with the generated SDK method.
-            const result = await agent.service.call('com.atproto.server.requestEmailUpdate', undefined, { email });
+            const result = await agent.api.call('com.atproto.server.requestEmailUpdate', undefined, { email });
 
             if (result.data.tokenRequired) {
                 setSuccess(true);
