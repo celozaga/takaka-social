@@ -21,13 +21,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
-  const [bannerPreview, setBannerPreview] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     if (session?.did) {
@@ -38,7 +35,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
           setDisplayName(data.displayName || '');
           setDescription(data.description || '');
           setAvatarPreview(data.avatar);
-          setBannerPreview(data.banner);
         })
         .catch(err => {
           console.error("Failed to fetch profile for editing:", err);
@@ -54,13 +50,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
       if (avatarPreview && avatarPreview.startsWith('blob:')) {
         URL.revokeObjectURL(avatarPreview);
       }
-      if (bannerPreview && bannerPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(bannerPreview);
-      }
     };
-  }, [avatarPreview, bannerPreview]);
+  }, [avatarPreview]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -70,29 +63,19 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
     }
 
     const previewUrl = URL.createObjectURL(file);
-    if (type === 'avatar') {
-      setAvatarFile(file);
-      if (avatarPreview && avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
-      setAvatarPreview(previewUrl);
-    } else {
-      setBannerFile(file);
-      if (bannerPreview && bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
-      setBannerPreview(previewUrl);
-    }
+    setAvatarFile(file);
+    if (avatarPreview && avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview(previewUrl);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      let avatarBlob, bannerBlob;
+      let avatarBlob;
 
       if (avatarFile) {
         const res = await agent.uploadBlob(new Uint8Array(await avatarFile.arrayBuffer()), { encoding: avatarFile.type });
         avatarBlob = res.data.blob;
-      }
-      if (bannerFile) {
-        const res = await agent.uploadBlob(new Uint8Array(await bannerFile.arrayBuffer()), { encoding: bannerFile.type });
-        bannerBlob = res.data.blob;
       }
 
       await agent.upsertProfile((existing) => {
@@ -101,7 +84,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
           displayName: displayName,
           description: description,
           avatar: avatarBlob || existing?.avatar,
-          banner: bannerBlob || existing?.banner,
+          banner: existing?.banner, // Keep existing banner
         };
       });
 
@@ -140,20 +123,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
             </button>
         </div>
         
-        <div className="overflow-y-auto">
-            <div>
-                <div className="h-48 bg-surface-3 relative">
-                    {bannerPreview && <img src={bannerPreview} alt="Banner preview" className="w-full h-full object-cover" />}
-                    <button
-                        onClick={() => bannerInputRef.current?.click()}
-                        className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity"
-                        aria-label="Change banner image"
-                    >
-                        <Camera className="w-8 h-8 text-white" />
-                    </button>
-                    <input type="file" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} accept="image/jpeg, image/png, image/gif" className="hidden" />
-                </div>
-                <div className="relative -mt-16 ml-6">
+        <div className="overflow-y-auto p-6">
+            <div className="flex justify-center mb-6">
+                <div className="relative">
                     <div className="w-32 h-32 rounded-full border-4 border-surface-2 bg-surface-3 overflow-hidden group">
                         {avatarPreview && <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />}
                         <button
@@ -163,12 +135,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
                         >
                             <Camera className="w-8 h-8 text-white" />
                         </button>
-                        <input type="file" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} accept="image/jpeg, image/png, image/gif" className="hidden" />
+                        <input type="file" ref={avatarInputRef} onChange={handleFileChange} accept="image/jpeg, image/png, image/gif" className="hidden" />
                     </div>
                 </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="space-y-4">
                 <div>
                     <label htmlFor="displayName" className="block text-sm font-medium text-on-surface-variant mb-1">Display Name</label>
                     <input

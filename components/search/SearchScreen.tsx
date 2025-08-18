@@ -107,10 +107,17 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         const mediaPosts = allFetchedPosts.filter(post => {
                             const embed = post.embed;
                             if (!embed) return false;
-                            const targetType = searchFilter === 'images' ? 'app.bsky.embed.images#view' : 'app.bsky.embed.video#view';
-                            if (embed.$type === targetType) return true;
-                            if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                                if (embed.media?.$type === targetType) return true;
+
+                            if (searchFilter === 'images') {
+                                if (AppBskyEmbedImages.isView(embed)) return true;
+                                if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                                    return AppBskyEmbedImages.isView(embed.media);
+                                }
+                            } else if (searchFilter === 'videos') {
+                                if (AppBskyEmbedVideo.isView(embed)) return true;
+                                if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                                    return AppBskyEmbedVideo.isView(embed.media);
+                                }
                             }
                             return false;
                         });
