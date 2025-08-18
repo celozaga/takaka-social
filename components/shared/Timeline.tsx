@@ -29,7 +29,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
       // Case 1: Standard image embed
       if (AppBskyEmbedImages.isView(embed)) {
-        return true;
+        return embed.images.length > 0;
       }
 
       // Case 2: Direct video embed
@@ -41,7 +41,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
       if (AppBskyEmbedRecordWithMedia.isView(embed)) {
         const media = embed.media;
         if (AppBskyEmbedImages.isView(media)) {
-          return true;
+          return media.images.length > 0;
         }
         if (AppBskyEmbedVideo.isView(media)) {
           return true;
