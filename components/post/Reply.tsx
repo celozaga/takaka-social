@@ -107,7 +107,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
     <div className="relative flex gap-3 p-4">
       <div className="flex flex-col items-center flex-shrink-0">
         <a href={`#/profile/${author.handle}`} className="block">
-          <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
+          <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
         </a>
         {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow mt-2"></div>}
       </div>

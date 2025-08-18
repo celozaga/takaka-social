@@ -93,7 +93,7 @@ const MoreScreen: React.FC = () => {
                     <a href={profileLink} className="block bg-surface-2 rounded-lg p-4 hover:bg-surface-3 transition-colors">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <img src={profile.avatar} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
+                                <img src={profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
                                 <div>
                                     <p className="font-bold text-lg flex items-center gap-1.5">
                                         <span>{profile.displayName || `@${profile.handle}`}</span>

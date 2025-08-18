@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs, AppBskyFeedPost } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -95,7 +96,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 {renderContext()}
                 <div className="flex items-start gap-3">
                     <a href={`#/profile/${author.handle}`} className="flex-shrink-0" onClick={e => e.stopPropagation()}>
-                        <img src={author.avatar} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
+                        <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
                     </a>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-sm">

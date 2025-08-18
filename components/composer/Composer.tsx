@@ -247,7 +247,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         </button>
       )}
       <div className="flex gap-4">
-        <img src={profile?.avatar || `https://picsum.photos/seed/${session?.did}/48`} alt="My avatar" className="w-12 h-12 rounded-full bg-surface-3" loading="lazy"/>
+        <img src={profile?.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${session?.did}/48`} alt="My avatar" className="w-12 h-12 rounded-full bg-surface-3" loading="lazy"/>
         <div className="w-full">
           <textarea
             value={text}

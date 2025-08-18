@@ -190,7 +190,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                  <div className="flex items-center justify-between gap-2 text-sm mt-2">
                    <a href={profileLink} className="flex items-center gap-2 truncate hover:opacity-80 transition-opacity min-w-0">
                      <img 
-                        src={author.avatar || `https://picsum.photos/seed/${author.did}/24`} 
+                        src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${author.did}/24`} 
                         alt={`${author.displayName}'s avatar`} 
                         className="w-7 h-7 rounded-full bg-surface-3 flex-shrink-0" 
                         loading="lazy"

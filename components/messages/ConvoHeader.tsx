@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppBskyActorDefs } from '@atproto/api';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -17,7 +18,7 @@ const ConvoHeader: React.FC<ConvoHeaderProps> = ({ peer, isLoading }) => {
         {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
         {!isLoading && peer && (
           <a href={`#/profile/${peer.handle}`} className="flex items-center gap-3 truncate">
-            <img src={peer.avatar} alt={peer.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
+            <img src={peer.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={peer.displayName} className="w-8 h-8 rounded-full bg-surface-3" />
             <div className="font-bold truncate leading-tight">
               <span className="truncate">{peer.displayName || `@${peer.handle}`}</span>
               {peer.displayName && <p className="text-xs font-normal opacity-70">@{peer.handle}</p>}

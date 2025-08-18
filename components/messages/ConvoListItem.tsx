@@ -37,7 +37,7 @@ const ConvoListItem: React.FC<ConvoListItemProps> = ({ convo }) => {
       >
         <div className="relative flex-shrink-0">
             <img
-                src={peer.avatar}
+                src={peer.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')}
                 alt={peer.displayName}
                 className="w-14 h-14 rounded-full bg-surface-3"
                 loading="lazy"
