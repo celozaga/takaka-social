@@ -21,7 +21,6 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUserProfile, setCurrentUserProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewBasic | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -51,16 +50,6 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
     };
     fetchThread();
   }, [agent, postUri]);
-
-  useEffect(() => {
-    if (session?.did) {
-      agent.getProfile({ actor: session.did }).then(({ data }) => {
-        setCurrentUserProfile(data);
-      });
-    } else {
-      setCurrentUserProfile(null);
-    }
-  }, [agent, session?.did]);
 
   const handleFollow = async () => {
       if (!postAuthor || isActionLoading || !session) return;
@@ -226,7 +215,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         if (AppBskyEmbedVideo.isView(embed)) return processVideoEmbed(embed);
         if (AppBskyEmbedRecordWithMedia.isView(embed)) {
             const media = embed.media;
-            if (AppBskyEmbedImages.isView(media)) return processImageEmbed(media);
+            if (AppBskyEmbedImages.isView(media)) return processImageEmbed(media as AppBskyEmbedImages.View);
             if (AppBskyEmbedVideo.isView(media)) return processVideoEmbed(media);
         }
         return null;
@@ -307,21 +296,9 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
              <p className="text-sm text-on-surface-variant my-3">{format(new Date(record.createdAt), "h:mm a · MMM d, yyyy")}</p>
         </div>
         
-        <div className="hidden md:block px-4">
-            {session && currentUserProfile && (
-                <div className="py-3 flex items-center gap-3">
-                    <img src={currentUserProfile.avatar} alt="My avatar" className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
-                    <button
-                        onClick={() => openComposer({ replyTo: { uri: mainPost.uri, cid: mainPost.cid } })}
-                        className="flex-1 bg-surface-2 text-on-surface-variant text-left px-4 py-2.5 rounded-full hover:bg-surface-3 transition-colors"
-                    >
-                        Write your reply...
-                    </button>
-                </div>
-            )}
-        </div>
+        <PostScreenActionBar post={mainPost} />
         
-         <div className="border-t border-surface-3 mt-4">
+         <div className="border-t border-surface-3 md:mt-4">
           {(mainPost.replyCount || 0) > 0 && (
             <div className="px-4 pt-4 pb-2">
               <h2 className="text-lg font-bold">
@@ -337,8 +314,6 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
           )}
         </div>
       </div>
-
-      <PostScreenActionBar post={mainPost} />
     </div>
   );
 };
