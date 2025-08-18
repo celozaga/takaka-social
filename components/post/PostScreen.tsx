@@ -414,7 +414,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         
         <PostScreenActionBar post={mainPost} />
         
-         <div className="border-t border-surface-3 md:mt-4">
+         <div className="md:mt-4">
           {(mainPost.replyCount || 0) > 0 && (
             <div className="px-4 pt-4 pb-2">
               <h2 className="text-lg font-bold">
