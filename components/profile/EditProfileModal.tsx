@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -108,7 +107,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
 
   return (
     <div className="bg-surface-2 rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div className="p-4 flex items-center justify-between border-b border-surface-3 flex-shrink-0">
+        <div className="p-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-4">
                 <button onClick={onClose} className="p-2 rounded-full hover:bg-surface-3 -ml-2"><X /></button>
                 <h2 className="text-xl font-bold">Edit Profile</h2>

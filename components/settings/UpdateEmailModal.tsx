@@ -51,7 +51,7 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
 
     return (
         <div className="bg-surface-2 rounded-xl">
-            <div className="p-4 flex items-center justify-between border-b border-surface-3">
+            <div className="p-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold">Update Email</h2>
                 <button onClick={onClose} className="p-2 rounded-full hover:bg-surface-3"><X /></button>
             </div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -100,7 +99,7 @@ const AccountSettingsScreen: React.FC = () => {
         <div>
             <ScreenHeader title="Account" />
             <div className="mt-4 space-y-6">
-                <div className="bg-surface-2 rounded-lg overflow-hidden divide-y divide-outline">
+                <div className="bg-surface-2 rounded-lg overflow-hidden">
                     <SettingsListItem icon={Mail} label="Email" value={emailValue} />
                     <SettingsListItem icon={Edit} label="Update email" onClick={openUpdateEmailModal} />
                     <SettingsListItem icon={Lock} label="Password" href="https://bsky.app/settings/password" />
@@ -108,7 +107,7 @@ const AccountSettingsScreen: React.FC = () => {
                     <SettingsListItem icon={Cake} label="Birthday" href="https://bsky.app/settings/birthday" />
                 </div>
 
-                <div className="bg-surface-2 rounded-lg overflow-hidden divide-y divide-outline">
+                <div className="bg-surface-2 rounded-lg overflow-hidden">
                     <SettingsListItem icon={Download} label="Export my data" onClick={handleExportData} />
                     <SettingsListItem icon={Power} label="Deactivate account" onClick={handleDeactivate} isDestructive />
                     <SettingsListItem icon={Trash2} label="Delete account" onClick={handleDeleteAccount} isDestructive />

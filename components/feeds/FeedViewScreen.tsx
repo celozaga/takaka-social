@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -56,8 +54,8 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     
     if (isLoading) {
         return (
-             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-md z-30 animate-pulse">
-                <div className="flex items-center justify-between h-16 border-b border-surface-3">
+             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-sm z-30 animate-pulse">
+                <div className="flex items-center justify-between h-16">
                     <div className="h-8 w-10 bg-surface-3 rounded-full"></div>
                     <div className="h-8 w-48 bg-surface-3 rounded-md"></div>
                     <div className="h-8 w-16 bg-surface-3 rounded-full"></div>
@@ -68,8 +66,8 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
 
     if (error || !feedUri) {
          return (
-             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-md z-30">
-                <div className="flex items-center justify-between h-16 border-b border-surface-3">
+             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-sm z-30">
+                <div className="flex items-center justify-between h-16">
                      <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
                         <ArrowLeft size={20} />
                     </button>

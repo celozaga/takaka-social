@@ -380,8 +380,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     return (
         <div>
-             <div className="sticky top-0 bg-surface-1 z-30 -mx-4 px-4">
-                <div className="flex items-center justify-between h-16 border-b border-surface-3">
+             <div className="sticky top-0 bg-surface-1/80 backdrop-blur-sm z-30 -mx-4 px-4">
+                <div className="flex items-center justify-between h-16">
                     <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
                         <ArrowLeft size={20} />
                     </button>
@@ -459,7 +459,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </div>
             ) : (
                 <>
-                    <div className="flex items-center justify-around border-b border-t border-surface-3">
+                    <div className="flex items-center justify-around border-b border-surface-3">
                         <button onClick={() => setActiveFilter('all')} className={`w-full p-4 flex justify-center ${activeFilter === 'all' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><Grid size={22} /></button>
                         <button onClick={() => setActiveFilter('photos')} className={`w-full p-4 flex justify-center ${activeFilter === 'photos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><ImageIcon size={22} /></button>
                         <button onClick={() => setActiveFilter('videos')} className={`w-full p-4 flex justify-center ${activeFilter === 'videos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><VideoIcon size={22} /></button>
