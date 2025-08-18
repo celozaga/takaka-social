@@ -21,8 +21,10 @@ const getResizedImage = (url: string, width: number): string => {
     const parts = urlObj.pathname.split('/');
     const filename = parts[parts.length - 1];
     
-    // Do not attempt to resize GIFs, as the service may not support it or may return a static image.
-    if (filename.includes('@gif')) {
+    // The image resizing service seems to work reliably for JPEG and PNG.
+    // To avoid breaking GIFs or other formats, we'll only apply resizing to these.
+    const isResizable = filename.includes('@jpeg') || filename.includes('@png');
+    if (!isResizable) {
         return url;
     }
     
