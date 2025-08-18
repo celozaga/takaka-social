@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, Grid, Heart, Send } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, Grid, Send, Image as ImageIcon, Video } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import ProfileHeader from './ProfileHeader';
 
-type ProfileTab = 'posts' | 'likes';
+type ProfileTab = 'all' | 'photos' | 'videos';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -22,21 +21,28 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+    const [activeTab, setActiveTab] = useState<ProfileTab>('all');
 
-    // State for 'Posts' tab
-    const [postsFeed, setPostsFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
-    const [postsCursor, setPostsCursor] = useState<string | undefined>(undefined);
-    const [isPostsLoading, setIsPostsLoading] = useState(true);
-    const [isPostsLoadingMore, setIsPostsLoadingMore] = useState(false);
-    const [hasMorePosts, setHasMorePosts] = useState(true);
+    // State for 'All Media' tab
+    const [allFeed, setAllFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
+    const [allCursor, setAllCursor] = useState<string | undefined>(undefined);
+    const [isAllLoading, setIsAllLoading] = useState(true);
+    const [isAllLoadingMore, setIsAllLoadingMore] = useState(false);
+    const [hasMoreAll, setHasMoreAll] = useState(true);
     
-    // State for 'Likes' tab
-    const [likesFeed, setLikesFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
-    const [likesCursor, setLikesCursor] = useState<string | undefined>(undefined);
-    const [isLikesLoading, setIsLikesLoading] = useState(false);
-    const [isLikesLoadingMore, setIsLikesLoadingMore] = useState(false);
-    const [hasMoreLikes, setHasMoreLikes] = useState(true);
+    // State for 'Photos' tab
+    const [photosFeed, setPhotosFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
+    const [photosCursor, setPhotosCursor] = useState<string | undefined>(undefined);
+    const [isPhotosLoading, setIsPhotosLoading] = useState(false);
+    const [isPhotosLoadingMore, setIsPhotosLoadingMore] = useState(false);
+    const [hasMorePhotos, setHasMorePhotos] = useState(true);
+    
+     // State for 'Videos' tab
+    const [videosFeed, setVideosFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
+    const [videosCursor, setVideosCursor] = useState<string | undefined>(undefined);
+    const [isVideosLoading, setIsVideosLoading] = useState(false);
+    const [isVideosLoadingMore, setIsVideosLoadingMore] = useState(false);
+    const [hasMoreVideos, setHasMoreVideos] = useState(true);
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -161,86 +167,80 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     };
     
-    const fetchPosts = useCallback(async (cursor?: string) => {
+    const fetchFilteredFeed = useCallback(async (tab: ProfileTab, cursor?: string) => {
+        const setLoading = (val: boolean) => {
+            if (tab === 'all') setIsAllLoading(val);
+            else if (tab === 'photos') setIsPhotosLoading(val);
+            else if (tab === 'videos') setIsVideosLoading(val);
+        };
+        const setLoadingMore = (val: boolean) => {
+            if (tab === 'all') setIsAllLoadingMore(val);
+            else if (tab === 'photos') setIsPhotosLoadingMore(val);
+            else if (tab === 'videos') setIsVideosLoadingMore(val);
+        };
+        const setFeed = (updater: React.SetStateAction<AppBskyFeedDefs.FeedViewPost[]>) => {
+            if (tab === 'all') setAllFeed(updater);
+            else if (tab === 'photos') setPhotosFeed(updater);
+            else if (tab === 'videos') setVideosFeed(updater);
+        };
+        const setCursor = (val?: string) => {
+            if (tab === 'all') setAllCursor(val);
+            else if (tab === 'photos') setPhotosCursor(val);
+            else if (tab === 'videos') setVideosCursor(val);
+        };
+        const setHasMore = (val: boolean) => {
+            if (tab === 'all') setHasMoreAll(val);
+            else if (tab === 'photos') setHasMorePhotos(val);
+            else if (tab === 'videos') setHasMoreVideos(val);
+        };
+
         if (!cursor) {
-            setIsPostsLoading(true);
-            setPostsFeed([]);
-            setHasMorePosts(true);
+            setLoading(true);
+            setFeed([]);
+            setHasMore(true);
         } else {
-            setIsPostsLoadingMore(true);
+            setLoadingMore(true);
         }
 
         try {
-            const feedRes = await agent.getAuthorFeed({ actor, cursor, limit: 30 });
-            const mediaPosts = feedRes.data.feed.filter(item => {
-                if (item.reason) return false;
-                const embed = item.post.embed;
-                if (!embed) return false;
-                if (AppBskyEmbedImages.isView(embed) || AppBskyEmbedVideo.isView(embed)) return true;
-                if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                     const media = embed.media;
-                     if (AppBskyEmbedImages.isView(media) || AppBskyEmbedVideo.isView(media)) return true;
-                }
-                return false;
-            });
-
-            setPostsFeed(prev => cursor ? [...prev, ...mediaPosts] : mediaPosts);
-            setPostsCursor(feedRes.data.cursor);
-            setHasMorePosts(!!feedRes.data.cursor && feedRes.data.feed.length > 0);
-        } catch (err) {
-            console.error("Failed to fetch posts:", err);
-        } finally {
-            setIsPostsLoading(false);
-            setIsPostsLoadingMore(false);
-        }
-    }, [agent, actor]);
-
-    const fetchLikes = useCallback(async (cursor?: string) => {
-        if (!cursor) {
-            setIsLikesLoading(true);
-            setLikesFeed([]);
-            setHasMoreLikes(true);
-        } else {
-            setIsLikesLoadingMore(true);
-        }
-    
-        try {
-            let newMediaLikes: AppBskyFeedDefs.FeedViewPost[] = [];
+            let newMediaPosts: AppBskyFeedDefs.FeedViewPost[] = [];
             let nextCursor: string | undefined = cursor;
             let attempts = 0;
-    
-            while (newMediaLikes.length === 0 && nextCursor !== undefined && attempts < 5) {
+            const requiredPosts = cursor ? 1 : 10;
+
+            while (newMediaPosts.length < requiredPosts && nextCursor !== undefined && attempts < 5) {
                 attempts++;
-                const res = await agent.api.app.bsky.feed.getActorLikes({ actor, cursor: nextCursor, limit: 50 });
-    
+                const res = await agent.getAuthorFeed({ actor, cursor: nextCursor, limit: 50 });
                 if (res.data.feed.length === 0) {
                     nextCursor = undefined;
                     break;
                 }
-    
-                newMediaLikes = res.data.feed.filter(item => {
+
+                const filtered = res.data.feed.filter(item => {
+                    if (item.reason) return false;
                     const embed = item.post.embed;
                     if (!embed) return false;
-                    if (AppBskyEmbedImages.isView(embed) || AppBskyEmbedVideo.isView(embed)) return true;
-                    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                        const media = embed.media;
-                        if (AppBskyEmbedImages.isView(media) || AppBskyEmbedVideo.isView(media)) return true;
+                    const hasImage = (AppBskyEmbedImages.isView(embed)) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedImages.isView(embed.media));
+                    const hasVideo = (AppBskyEmbedVideo.isView(embed)) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media));
+                    switch (tab) {
+                        case 'all': return hasImage || hasVideo;
+                        case 'photos': return hasImage;
+                        case 'videos': return hasVideo;
                     }
-                    return false;
                 });
                 
+                newMediaPosts.push(...filtered);
                 nextCursor = res.data.cursor;
             }
-            
-            setLikesFeed(prev => cursor ? [...prev, ...newMediaLikes] : newMediaLikes);
-            setLikesCursor(nextCursor);
-            setHasMoreLikes(!!nextCursor);
-    
+
+            setFeed(prev => cursor ? [...prev, ...newMediaPosts] : newMediaPosts);
+            setCursor(nextCursor);
+            setHasMore(!!nextCursor);
         } catch (err) {
-            console.error("Failed to fetch likes:", err);
+            console.error(`Failed to fetch ${tab}:`, err);
         } finally {
-            setIsLikesLoading(false);
-            setIsLikesLoadingMore(false);
+            setLoading(false);
+            setLoadingMore(false);
         }
     }, [agent, actor]);
 
@@ -267,13 +267,17 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
     useEffect(() => {
         if (profile && !viewerState?.blocking && !viewerState?.blockedBy) {
-            if (activeTab === 'posts' && postsFeed.length === 0) {
-                fetchPosts();
-            } else if (activeTab === 'likes' && likesFeed.length === 0) {
-                fetchLikes();
+            const isEmpty = (tab: ProfileTab) => {
+                if (tab === 'all') return allFeed.length === 0;
+                if (tab === 'photos') return photosFeed.length === 0;
+                if (tab === 'videos') return videosFeed.length === 0;
+                return true;
+            };
+            if (isEmpty(activeTab)) {
+                fetchFilteredFeed(activeTab);
             }
         }
-    }, [activeTab, profile, viewerState, postsFeed.length, likesFeed.length, fetchPosts, fetchLikes]);
+    }, [activeTab, profile, viewerState, allFeed.length, photosFeed.length, videosFeed.length, fetchFilteredFeed]);
 
     useEffect(() => {
         if (profile?.description) {
@@ -292,15 +296,16 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         const observer = new IntersectionObserver(
           (entries) => {
             if (entries[0].isIntersecting) {
-              if (activeTab === 'posts' && hasMorePosts && !isPostsLoadingMore) fetchPosts(postsCursor);
-              if (activeTab === 'likes' && hasMoreLikes && !isLikesLoadingMore) fetchLikes(likesCursor);
+              if (activeTab === 'all' && hasMoreAll && !isAllLoadingMore) fetchFilteredFeed('all', allCursor);
+              if (activeTab === 'photos' && hasMorePhotos && !isPhotosLoadingMore) fetchFilteredFeed('photos', photosCursor);
+              if (activeTab === 'videos' && hasMoreVideos && !isVideosLoadingMore) fetchFilteredFeed('videos', videosCursor);
             }
           }, { rootMargin: '400px' }
         );
         const currentLoader = loaderRef.current;
         if (currentLoader) observer.observe(currentLoader);
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
-    }, [activeTab, hasMorePosts, isPostsLoadingMore, postsCursor, hasMoreLikes, isLikesLoadingMore, likesCursor, fetchPosts, fetchLikes]);
+    }, [activeTab, hasMoreAll, isAllLoadingMore, allCursor, hasMorePhotos, isPhotosLoadingMore, photosCursor, hasMoreVideos, isVideosLoadingMore, videosCursor, fetchFilteredFeed]);
 
     if (isLoadingProfile) {
         return (
@@ -353,11 +358,24 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             return <div className="text-center p-8 bg-surface-2 rounded-xl">{viewerState.blocking ? `You have blocked @${profile.handle}` : `You are blocked by @${profile.handle}`}</div>;
         }
 
-        const isLoading = activeTab === 'posts' ? isPostsLoading : isLikesLoading;
-        const feed = activeTab === 'posts' ? postsFeed : likesFeed;
-        const noContentMessage = activeTab === 'posts' 
-            ? "This user has not posted any media yet." 
-            : "This user hasn't liked any media posts yet.";
+        let isLoading, feed, noContentMessage;
+        switch(activeTab) {
+            case 'photos':
+                isLoading = isPhotosLoading;
+                feed = photosFeed;
+                noContentMessage = "This user has not posted any photos yet.";
+                break;
+            case 'videos':
+                isLoading = isVideosLoading;
+                feed = videosFeed;
+                noContentMessage = "This user has not posted any videos yet.";
+                break;
+            case 'all':
+            default:
+                isLoading = isAllLoading;
+                feed = allFeed;
+                noContentMessage = "This user has not posted any media yet.";
+        }
 
         if (isLoading) return <div className="columns-2 gap-4 mt-4">{[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>)}</div>;
         if (feed.length === 0) return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">{noContentMessage}</div>;
@@ -429,15 +447,16 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
             <div className="mt-4 border-b border-surface-3">
                  <div className="flex">
-                    <TabButton tab="posts" icon={Grid} />
-                    <TabButton tab="likes" icon={Heart} />
+                    <TabButton tab="all" icon={Grid} />
+                    <TabButton tab="photos" icon={ImageIcon} />
+                    <TabButton tab="videos" icon={Video} />
                 </div>
             </div>
 
             <div className="mt-4">
                 {renderContent()}
                 <div ref={loaderRef} className="h-10">
-                    { (isPostsLoadingMore || isLikesLoadingMore) && (
+                    { (isAllLoadingMore || isPhotosLoadingMore || isVideosLoadingMore) && (
                         <div className="columns-2 gap-4 mt-4">
                           <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
                           <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
