@@ -75,6 +75,7 @@ const WatchScreen: React.FC = () => {
             swiperRef.current = new Swiper(containerRef.current, {
                 direction: 'vertical',
                 resistanceRatio: 0.85,
+                mousewheel: true,
             });
             swiperRef.current.on('slideChange', () => {
                 setActiveIndex(swiperRef.current?.activeIndex || 0);
