@@ -11,6 +11,34 @@ import { useUI } from '../../context/UIContext';
 
 type FeedFilter = 'all' | 'photos' | 'videos';
 
+// --- Start Filter Logic Helpers ---
+const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+    if (AppBskyEmbedImages.isView(embed)) {
+        return embed.images.length > 0;
+    }
+    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+        return AppBskyEmbedImages.isView(embed.media);
+    }
+    return false;
+}
+
+const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+    if (AppBskyEmbedVideo.isView(embed)) return true;
+    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+        return AppBskyEmbedVideo.isView(embed.media);
+    }
+    return false;
+}
+
+const hasMedia = (post: AppBskyFeedDefs.PostView): boolean => {
+    return hasPhotos(post) || hasVideos(post);
+}
+// --- End Filter Logic Helpers ---
+
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
@@ -159,24 +187,16 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     };
     
     const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
-        if (filter === 'all') return posts;
-        return posts.filter(item => {
-            const embed = item.post.embed;
-            if (!embed) return false;
-            
-            if (filter === 'photos') {
-                if (AppBskyEmbedImages.isView(embed)) return true;
-                if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                    return AppBskyEmbedImages.isView(embed.media);
-                }
-            } else if (filter === 'videos') {
-                if (AppBskyEmbedVideo.isView(embed)) return true;
-                if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                    return AppBskyEmbedVideo.isView(embed.media);
-                }
-            }
-            return false;
-        });
+        switch (filter) {
+            case 'all':
+                return posts.filter(item => hasMedia(item.post));
+            case 'photos':
+                return posts.filter(item => hasPhotos(item.post));
+            case 'videos':
+                return posts.filter(item => hasVideos(item.post));
+            default:
+                return posts.filter(item => hasMedia(item.post));
+        }
     };
 
     const fetchProfileAndFeed = useCallback(async (currentCursor?: string) => {
@@ -396,7 +416,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             
             {viewerState?.blocking ? (
                 <div className="text-center p-8 bg-surface-2 rounded-xl">
-                    <p className="font-bold text-lg">You have blocked @{profile.handle}</p>
+                    <p className="font-bold text-lg">You have blocked @${profile.handle}</p>
                     <p className="text-on-surface-variant text-sm mb-4">You won't see their posts or be able to follow them.</p>
                     <button onClick={handleUnblock} disabled={isActionLoading} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 disabled:opacity-50">
                         Unblock
