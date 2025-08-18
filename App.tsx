@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
 import { UIProvider, useUI } from './context/UIContext';
 import { Toaster, ToastProvider } from './components/ui/Toaster';
@@ -23,6 +23,7 @@ const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const NotificationSettingsScreen = lazy(() => import('./components/settings/NotificationSettingsScreen'));
 const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSettingsScreen'));
+const LanguageSettingsScreen = lazy(() => import('./components/settings/LanguageSettingsScreen'));
 const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
@@ -58,8 +59,13 @@ const Main: React.FC = () => {
     isUpdateHandleModalOpen, closeUpdateHandleModal,
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
+  const { i18n } = useTranslation();
 
   useHeadManager(); // Set default head tags
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -142,6 +148,9 @@ const Main: React.FC = () => {
         }
         if (parts[1] === 'account') {
           return <AccountSettingsScreen />;
+        }
+        if (parts[1] === 'language') {
+            return <LanguageSettingsScreen />;
         }
         return <SettingsScreen />;
       case 'more':

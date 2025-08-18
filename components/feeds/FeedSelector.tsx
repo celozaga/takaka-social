@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -16,6 +16,7 @@ const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.g
 const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSelectFeed, isLoading }) => {
   const { session } = useAtp();
   const { openLoginModal } = useUI();
+  const { t } = useTranslation();
 
   const baseClasses = "flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap";
   const activeClasses = "bg-primary-container text-on-primary-container";
@@ -35,7 +36,7 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
         onClick={handleFollowingClick}
         className={`${baseClasses} ${selectedFeed === 'following' ? activeClasses : inactiveClasses}`}
       >
-        Following
+        {t('home.following')}
       </button>
       
       {session && (
@@ -43,7 +44,7 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
           onClick={() => onSelectFeed(DISCOVER_FEED_URI)}
           className={`${baseClasses} ${selectedFeed === DISCOVER_FEED_URI ? activeClasses : inactiveClasses}`}
         >
-          Discover
+          {t('home.discover')}
         </button>
       )}
 
@@ -66,7 +67,7 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
             onClick={() => onSelectFeed(DISCOVER_FEED_URI)}
             className={`${baseClasses} ${selectedFeed === DISCOVER_FEED_URI ? activeClasses : inactiveClasses}`}
            >
-            Discover
+            {t('home.discover')}
           </button>
       )}
     </div>

@@ -1,0 +1,47 @@
+{
+  "common": {
+    "save": "Save",
+    "saving": "Saving...",
+    "close": "Close",
+    "error": "Error",
+    "success": "Success"
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "compose": "Compose",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "more": "More",
+    "feeds": "Feeds",
+    "signIn": "Sign In",
+    "logout": "Logout",
+    "settings": "Settings"
+  },
+  "home": {
+    "following": "Following",
+    "discover": "Discover"
+  },
+  "signIn": {
+    "title": "Sign In to Takaka",
+    "description": "to interact and post",
+    "handlePlaceholder": "your-handle.bsky.social",
+    "appPasswordPlaceholder": "App Password",
+    "appPasswordNotice": "<strong>Important:</strong> For security, please use an <1>App Password</1>, not your main password.",
+    "button": "Sign In",
+    "buttonLoading": "Signing In...",
+    "loginFailed": "Login failed. Please check your handle and app password."
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "language": "Language",
+    "notifications": "Notifications",
+    "signOut": "Sign Out",
+    "signOutConfirm": "Are you sure you want to sign out?"
+  },
+  "languageSettings": {
+    "title": "App Language",
+    "description": "Choose the language for the app's interface."
+  }
+}

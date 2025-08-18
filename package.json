@@ -15,7 +15,11 @@
     "date-fns": "^4.1.0",
     "@atproto/api": "^0.16.2",
     "swiper": "^11.2.10",
-    "hls.js": "^1.5.11"
+    "hls.js": "^1.5.11",
+    "i18next": "^23.11.5",
+    "react-i18next": "^14.1.2",
+    "i18next-browser-languagedetector": "^8.0.0",
+    "i18next-http-backend": "^2.5.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

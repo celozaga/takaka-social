@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AtSign, KeyRound, LogIn } from 'lucide-react';
 
@@ -13,6 +13,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAtp();
+  const { t } = useTranslation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +23,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
       await login(identifier, appPassword);
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your handle and app password.');
+      setError(err.message || t('signIn.loginFailed'));
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -34,8 +35,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   return (
     <div className="w-full max-w-md bg-surface-2 rounded-2xl p-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-primary">Sign In to Takaka</h1>
-        <p className="text-on-surface-variant mt-2">to interact and post</p>
+        <h1 className="text-4xl font-bold text-primary">{t('signIn.title')}</h1>
+        <p className="text-on-surface-variant mt-2">{t('signIn.description')}</p>
       </div>
       <form onSubmit={handleLogin} className="space-y-6">
         <div className="relative">
@@ -44,7 +45,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
             type="text"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="your-handle.bsky.social"
+            placeholder={t('signIn.handlePlaceholder')}
             className={inputClasses}
             required
           />
@@ -55,17 +56,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
             type="password"
             value={appPassword}
             onChange={(e) => setAppPassword(e.target.value)}
-            placeholder="App Password"
+            placeholder={t('signIn.appPasswordPlaceholder')}
             className={inputClasses}
             required
           />
         </div>
         <div className="text-xs text-on-surface-variant text-center px-2">
-          <strong>Important:</strong> For security, please use an{' '}
-          <a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-            App Password
-          </a>
-          , not your main password.
+          <Trans i18nKey="signIn.appPasswordNotice">
+            <strong>Important:</strong> For security, please use an{' '}
+            <a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              App Password
+            </a>
+            , not your main password.
+          </Trans>
         </div>
         {error && <p className="text-error text-sm text-center">{error}</p>}
         <button
@@ -76,12 +79,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
           {isLoading ? (
             <>
               <div className="w-5 h-5 border-2 border-t-transparent border-on-primary rounded-full animate-spin"></div>
-              <span>Signing In...</span>
+              <span>{t('signIn.buttonLoading')}</span>
             </>
           ) : (
             <>
               <LogIn className="w-5 h-5" />
-              <span>Sign In</span>
+              <span>{t('signIn.button')}</span>
             </>
           )}
         </button>

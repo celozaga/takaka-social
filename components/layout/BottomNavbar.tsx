@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid, MessageSquare } from 'lucide-react';
@@ -12,6 +12,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const { session, logout, unreadCount, chatUnreadCount, chatSupported } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const [currentHash, setCurrentHash] = React.useState(window.location.hash || '#/');
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     const handler = () => setCurrentHash(window.location.hash || '#/');
@@ -20,30 +21,30 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   }, []);
 
   const baseLoggedInNavItems = [
-    { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
-    { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
-    { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
-    { href: '#/messages', label: 'Messages', icon: MessageSquare, activeCondition: currentHash.startsWith('#/messages') },
-    { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
-    { href: '#/more', label: 'More', icon: LayoutGrid, activeCondition: currentHash.startsWith('#/more') },
+    { href: '#/', labelKey: 'nav.home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
+    { href: '#/search', labelKey: 'nav.search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
+    { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
+    { href: '#/messages', labelKey: 'nav.messages', icon: MessageSquare, activeCondition: currentHash.startsWith('#/messages') },
+    { href: '#/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
+    { href: '#/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: currentHash.startsWith('#/more') },
   ];
 
   const loggedInNavItems = chatSupported 
     ? baseLoggedInNavItems 
-    : baseLoggedInNavItems.filter(item => item.label !== 'Messages');
+    : baseLoggedInNavItems.filter(item => item.labelKey !== 'nav.messages');
 
 
   const guestNavItems = [
-    { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
-    { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
-    { isAction: true, action: openLoginModal, label: 'Sign In', icon: LogIn, activeCondition: false },
+    { href: '#/', labelKey: 'nav.home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
+    { href: '#/search', labelKey: 'nav.search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
+    { isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false },
   ];
 
   const navItems = session ? loggedInNavItems : guestNavItems;
 
   const renderNavItem = (item: (typeof navItems)[number]) => {
-    const isNotifications = item.label === 'Notifications';
-    const isMessages = item.label === 'Messages';
+    const isNotifications = item.labelKey === 'nav.notifications';
+    const isMessages = item.labelKey === 'nav.messages';
     const hasNotificationBadge = isNotifications && unreadCount > 0;
     const hasMessageBadge = isMessages && chatUnreadCount > 0;
 
@@ -62,7 +63,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
             </div>
            )}
         </div>
-        <span className={`text-xs font-medium ${item.activeCondition ? 'text-on-surface' : 'text-on-surface-variant'}`}>{item.label}</span>
+        <span className={`text-xs font-medium ${item.activeCondition ? 'text-on-surface' : 'text-on-surface-variant'}`}>{t(item.labelKey)}</span>
       </>
     );
     
@@ -70,13 +71,13 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
 
     if (item.isAction) {
       return (
-        <button key={item.label} onClick={item.action} className={commonClasses} aria-label={item.label}>
+        <button key={item.labelKey} onClick={item.action} className={commonClasses} aria-label={t(item.labelKey)}>
           {content}
         </button>
       );
     }
     return (
-      <a key={item.href} href={item.href} className={commonClasses} aria-label={item.label}>
+      <a key={item.href} href={item.href} className={commonClasses} aria-label={t(item.labelKey)}>
         {content}
       </a>
     );
@@ -92,16 +93,16 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
       {/* Desktop Navigation Rail */}
       <nav className="hidden md:flex fixed top-0 left-0 h-full w-20 bg-surface-2 flex-col items-center justify-between py-6 z-50">
         <div className="flex flex-col items-center gap-4 w-full">
-            {loggedInNavItems.filter(item => item.label !== 'More' && item.label !== 'Logout').map(item => renderNavItem(item))}
+            {loggedInNavItems.filter(item => item.labelKey !== 'nav.more' && item.labelKey !== 'nav.logout').map(item => renderNavItem(item))}
         </div>
         {session && (
           <div className="flex flex-col items-center gap-4 w-full">
-              {renderNavItem(loggedInNavItems.find(i => i.label === 'More')!)}
-              <button onClick={logout} title="Logout" className="flex flex-col items-center justify-center gap-1 w-full group transition-colors">
+              {renderNavItem(loggedInNavItems.find(i => i.labelKey === 'nav.more')!)}
+              <button onClick={logout} title={t('nav.logout')} className="flex flex-col items-center justify-center gap-1 w-full group transition-colors">
                   <div className="w-16 h-8 flex items-center justify-center rounded-full transition-colors group-hover:bg-surface-3">
                       <LogOut size={22} className="text-on-surface-variant group-hover:text-on-surface"/>
                   </div>
-                  <span className="text-xs font-medium text-on-surface-variant">Logout</span>
+                  <span className="text-xs font-medium text-on-surface-variant">{t('nav.logout')}</span>
               </button>
           </div>
         )}

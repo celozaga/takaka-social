@@ -1,0 +1,47 @@
+{
+  "common": {
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "close": "Cerrar",
+    "error": "Error",
+    "success": "Éxito"
+  },
+  "nav": {
+    "home": "Inicio",
+    "search": "Buscar",
+    "compose": "Componer",
+    "messages": "Mensajes",
+    "notifications": "Notificaciones",
+    "more": "Más",
+    "feeds": "Feeds",
+    "signIn": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "settings": "Configuración"
+  },
+  "home": {
+    "following": "Siguiendo",
+    "discover": "Descubrir"
+  },
+  "signIn": {
+    "title": "Inicia sesión en Takaka",
+    "description": "para interactuar y publicar",
+    "handlePlaceholder": "tu-handle.bsky.social",
+    "appPasswordPlaceholder": "Contraseña de aplicación",
+    "appPasswordNotice": "<strong>Importante:</strong> Por seguridad, utiliza una <1>contraseña de aplicación</1>, no tu contraseña principal.",
+    "button": "Iniciar sesión",
+    "buttonLoading": "Iniciando sesión...",
+    "loginFailed": "Falló el inicio de sesión. Por favor, revisa tu handle y contraseña de aplicación."
+  },
+  "settings": {
+    "title": "Configuración",
+    "account": "Cuenta",
+    "language": "Idioma",
+    "notifications": "Notificaciones",
+    "signOut": "Cerrar sesión",
+    "signOutConfirm": "¿Estás seguro de que quieres cerrar la sesión?"
+  },
+  "languageSettings": {
+    "title": "Idioma de la aplicación",
+    "description": "Elige el idioma para la interfaz de la aplicación."
+  }
+}
