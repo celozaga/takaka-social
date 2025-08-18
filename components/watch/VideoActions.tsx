@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Repeat, Share2, BadgeCheck, Plus } from 'lucide-react';
+import { Heart, MessageCircle, Repeat, Share2, BadgeCheck, Plus, Check } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useUI } from '../../context/UIContext';
 import { useAtp } from '../../context/AtpContext';
@@ -22,27 +22,45 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     const { toast } = useToast();
     const { likeUri, likeCount, isLiking, handleLike, repostUri, repostCount, isReposting, handleRepost } = usePostActions(post);
 
-    const [isFollowing, setIsFollowing] = useState(!!post.author.viewer?.following);
+    const [followUri, setFollowUri] = useState(post.author.viewer?.following);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
 
     useEffect(() => {
-        setIsFollowing(!!post.author.viewer?.following);
+        setFollowUri(post.author.viewer?.following);
     }, [post.author.viewer?.following]);
 
     const isMe = session?.did === post.author.did;
 
     const handleFollow = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (isFollowLoading || isMe || isFollowing) return;
+        if (isFollowLoading || isMe || followUri) return;
 
         setIsFollowLoading(true);
         agent.follow(post.author.did)
-            .then(() => {
-                setIsFollowing(true);
+            .then(({ uri }) => {
+                setFollowUri(uri);
             })
             .catch(err => {
                 console.error("Failed to follow:", err);
                 toast({ title: "Error", description: "Could not follow user.", variant: "destructive" });
+            })
+            .finally(() => {
+                setIsFollowLoading(false);
+            });
+    };
+    
+    const handleUnfollow = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isFollowLoading || isMe || !followUri) return;
+
+        setIsFollowLoading(true);
+        agent.deleteFollow(followUri)
+            .then(() => {
+                setFollowUri(undefined);
+            })
+            .catch(err => {
+                console.error("Failed to unfollow:", err);
+                toast({ title: "Error", description: "Could not unfollow user.", variant: "destructive" });
             })
             .finally(() => {
                 setIsFollowLoading(false);
@@ -75,14 +93,20 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                         </div>
                     )}
                 </a>
-                {!isMe && !isFollowing && (
+                {!isMe && (
                     <button 
-                        onClick={handleFollow} 
+                        onClick={followUri ? handleUnfollow : handleFollow} 
                         disabled={isFollowLoading}
-                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center border-2 border-black"
-                        aria-label="Follow user"
+                        className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center border-2 border-black transition-colors ${
+                            followUri ? 'bg-zinc-800' : 'bg-red-500'
+                        }`}
+                        aria-label={followUri ? "Unfollow user" : "Follow user"}
                     >
-                        <Plus size={16} className="text-white" />
+                        {followUri ? (
+                            <Check size={16} className="text-red-500" strokeWidth={3} />
+                        ) : (
+                            <Plus size={16} className="text-white" />
+                        )}
                     </button>
                 )}
             </div>
