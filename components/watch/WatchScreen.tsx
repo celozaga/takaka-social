@@ -100,11 +100,18 @@ const WatchScreen: React.FC = () => {
                 onSlideChange={handleSlideChange}
                 onReachEnd={handleReachEnd}
             >
-                {videoPosts.map((postView, index) => (
-                    <SwiperSlide key={`${postView.post.uri}-${index}`}>
-                        <VideoPlayer postView={postView} isActive={index === activeIndex} />
-                    </SwiperSlide>
-                ))}
+                {videoPosts.map((postView, index) => {
+                    const shouldLoad = Math.abs(index - activeIndex) <= 1; // Preload next and previous
+                    return (
+                        <SwiperSlide key={`${postView.post.uri}-${index}`}>
+                            <VideoPlayer 
+                                postView={postView} 
+                                isActive={index === activeIndex} 
+                                shouldLoad={shouldLoad}
+                            />
+                        </SwiperSlide>
+                    );
+                })}
                  {(isLoadingMore || (isLoading && videoPosts.length > 0)) && (
                     <SwiperSlide>
                         <div className="w-full h-full flex items-center justify-center bg-black">

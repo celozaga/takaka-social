@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
@@ -9,9 +10,10 @@ import Hls from 'hls.js';
 interface VideoPlayerProps {
     postView: AppBskyFeedDefs.FeedViewPost;
     isActive: boolean;
+    shouldLoad: boolean;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoad }) => {
     const { agent } = useAtp();
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
@@ -40,6 +42,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
     const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
     const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
     
+    // Effect for LOADING the video data
     useEffect(() => {
         const videoElement = videoRef.current;
         if (!videoElement) return;
@@ -49,16 +52,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
-            videoElement.pause();
             videoElement.removeAttribute('src');
             videoElement.load();
-            setIsPlaying(false);
             setIsLoadingStream(false);
         };
 
         const setupFallbackPlayer = () => {
             videoElement.src = blobVideoUrl;
-            videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
             setIsLoadingStream(false);
         };
         
@@ -67,7 +67,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
             setIsLoadingStream(true);
 
             try {
-                // Use the unspecced API to get the HLS stream URL
                 const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
                     did: authorDid,
                     cid: videoCid,
@@ -80,7 +79,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
                     hls.loadSource(hlsUrl);
                     hls.attachMedia(videoElement);
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
                         setIsLoadingStream(false);
                     });
                      hls.on(Hls.Events.ERROR, (event, data) => {
@@ -91,10 +89,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
                         }
                     });
                 } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                    // Native HLS support (e.g., Safari)
                     videoElement.src = hlsUrl;
                     videoElement.addEventListener('loadedmetadata', () => {
-                        videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
                         setIsLoadingStream(false);
                     });
                 } else {
@@ -106,14 +102,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
             }
         };
 
-        if (isActive) {
+        if (shouldLoad) {
             setupPlayer();
         } else {
             cleanup();
         }
 
         return cleanup;
-    }, [isActive, agent, authorDid, videoCid, blobVideoUrl]);
+    }, [shouldLoad, agent, authorDid, videoCid, blobVideoUrl]);
+    
+    // Effect for PLAYING/PAUSING the video
+    useEffect(() => {
+        const videoElement = videoRef.current;
+        if (videoElement) {
+            if (isActive && !isLoadingStream) {
+                videoElement.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            } else {
+                videoElement.pause();
+                videoElement.currentTime = 0; // Reset video on slide away
+                setIsPlaying(false);
+            }
+        }
+    }, [isActive, isLoadingStream]);
 
 
     const handleVideoClick = () => {
