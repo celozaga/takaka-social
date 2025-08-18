@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -12,27 +11,26 @@ type PostCardProps = {
     showAllMedia?: boolean;
 }
 
-const getResizedImage = (url: string, width: number): string => {
+const getResizedImage = (url: string, width: number, mimeType?: string): string => {
   if (!url || !url.includes('cdn.bsky.app/img/')) {
     return url;
   }
+  
+  // The official resizing service works for JPEG and PNG.
+  // We will explicitly check the MIME type to avoid breaking other formats like GIFs.
+  const isResizable = mimeType === 'image/jpeg' || mimeType === 'image/png';
+  if (!isResizable) {
+      return url;
+  }
+  
   try {
     const urlObj = new URL(url);
     const parts = urlObj.pathname.split('/');
-    const filename = parts[parts.length - 1];
-    
-    // The image resizing service seems to work reliably for JPEG and PNG.
-    // To avoid breaking GIFs or other formats, we'll only apply resizing to these.
-    const isResizable = filename.includes('@jpeg') || filename.includes('@png');
-    if (!isResizable) {
-        return url;
-    }
     
     // Path: /img/{type}/plain/{...rest}
     // We want: /img/{type}/rs:w:{width}/plain/{...rest}
     const plainIndex = parts.indexOf('plain');
     
-    // Ensure we have a `plain` segment and that it's not the first part of the path.
     if (plainIndex > 1) {
         // Avoid adding multiple resize parameters
         if (parts[plainIndex - 1].startsWith('rs:')) {
@@ -55,6 +53,7 @@ const getResizedImage = (url: string, width: number): string => {
     return url;
   }
 };
+
 
 const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
@@ -157,7 +156,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                  );
             }
             
-            const resizedPoster = getResizedImage(posterUrl, 400);
+            const resizedPoster = getResizedImage(posterUrl, 400, 'image/jpeg');
             
             return (
                 <div className="relative">
@@ -182,10 +181,10 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
         if (AppBskyEmbedRecordWithMedia.isView(embed)) {
             const media = embed.media;
             if (AppBskyEmbedImages.isView(media)) {
-                return processImageEmbed(media);
+                return processImageEmbed(media as AppBskyEmbedImages.View);
             }
             if (AppBskyEmbedVideo.isView(media)) {
-                return processVideoEmbed(media);
+                return processVideoEmbed(media as AppBskyEmbedVideo.View);
             }
         }
         return null;
