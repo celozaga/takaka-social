@@ -5,7 +5,7 @@ import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, RichText, AtUri, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, Grid, Heart } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, Grid, Heart, Send } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import ProfileHeader from './ProfileHeader';
@@ -43,7 +43,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
 
     const loaderRef = useRef<HTMLDivElement>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
     
     const isMe = session?.did === profile?.did;
 
@@ -81,6 +80,82 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         } catch (e) {
             setViewerState(oldViewerState);
             setProfile(p => p ? { ...p, followersCount: oldFollowersCount } : null);
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+    
+    const handleMute = async () => {
+        if (!profile || isActionLoading) return;
+        setIsActionLoading(true);
+        setIsMenuOpen(false);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, muted: true } : undefined);
+        try {
+            await agent.mute(profile.did);
+            toast({ title: "User Muted", description: `You will no longer see posts from @${profile.handle}`});
+        } catch (e) {
+            toast({ title: "Error", description: "Could not mute user.", variant: "destructive" });
+            setViewerState(oldViewerState);
+        } finally {
+            setIsActionLoading(false);
+        }
+    }
+    
+    const handleUnmute = async () => {
+        if (!profile || isActionLoading) return;
+        setIsActionLoading(true);
+        setIsMenuOpen(false);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, muted: false } : undefined);
+        try {
+            await agent.unmute(profile.did);
+            toast({ title: "User Unmuted" });
+        } catch (e) {
+            toast({ title: "Error", description: "Could not unmute user.", variant: "destructive" });
+            setViewerState(oldViewerState);
+        } finally {
+            setIsActionLoading(false);
+        }
+    }
+    
+    const handleBlock = async () => {
+        if (!profile || isActionLoading || !session) return;
+        setIsMenuOpen(false);
+        if (!window.confirm(`Are you sure you want to block @${profile.handle}? They will not be able to see your posts or interact with you.`)) return;
+        setIsActionLoading(true);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, blocking: 'temp-uri', following: undefined } : undefined);
+        try {
+            const { uri } = await agent.app.bsky.graph.block.create(
+                { repo: session.did }, 
+                { subject: profile.did, createdAt: new Date().toISOString() }
+            );
+            setViewerState(prev => prev ? { ...prev, blocking: uri } : undefined);
+            toast({ title: "User Blocked" });
+        } catch (e) {
+            toast({ title: "Error", description: "Could not block user.", variant: "destructive" });
+            setViewerState(oldViewerState);
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleUnblock = async () => {
+        if (!profile || !viewerState?.blocking || isActionLoading || !session) return;
+        setIsActionLoading(true);
+        setIsMenuOpen(false);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, blocking: undefined } : undefined);
+        try {
+            await agent.app.bsky.graph.block.delete({
+                repo: session.did,
+                rkey: new AtUri(viewerState.blocking).rkey,
+            });
+            toast({ title: "User Unblocked" });
+        } catch (e) {
+            toast({ title: "Error", description: "Could not unblock user.", variant: "destructive" });
+            setViewerState(oldViewerState);
         } finally {
             setIsActionLoading(false);
         }
@@ -134,7 +209,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             let nextCursor: string | undefined = cursor;
             let attempts = 0;
     
-            // Keep fetching until we find at least one media post, or run out of pages/attempts.
             while (newMediaLikes.length === 0 && nextCursor !== undefined && attempts < 5) {
                 attempts++;
                 const res = await agent.api.app.bsky.feed.getActorLikes({ actor, cursor: nextCursor, limit: 50 });
@@ -170,7 +244,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [agent, actor]);
 
-    // Initial profile load
     useEffect(() => {
         const fetchProfile = async () => {
             setIsLoadingProfile(true);
@@ -192,7 +265,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         fetchProfile();
     }, [agent, actor]);
 
-    // Fetch data for the active tab
     useEffect(() => {
         if (profile && !viewerState?.blocking && !viewerState?.blockedBy) {
             if (activeTab === 'posts' && postsFeed.length === 0) {
@@ -203,7 +275,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [activeTab, profile, viewerState, postsFeed.length, likesFeed.length, fetchPosts, fetchLikes]);
 
-    // Process profile description
     useEffect(() => {
         if (profile?.description) {
             const processDescription = async () => {
@@ -217,7 +288,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [profile?.description, agent]);
     
-    // Infinite scroll observer
     useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
@@ -233,19 +303,48 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     }, [activeTab, hasMorePosts, isPostsLoadingMore, postsCursor, hasMoreLikes, isLikesLoadingMore, likesCursor, fetchPosts, fetchLikes]);
 
     if (isLoadingProfile) {
-        return <div>{/* Skeleton for header + profile card */}</div>;
+        return (
+             <div>
+                <div className="sticky top-0 -mx-4 -mt-4 px-4 bg-surface-1 z-30 h-16 animate-pulse"></div>
+                <div className="px-4 mt-4">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="w-24 h-24 rounded-full bg-surface-3"></div>
+                        <div className="flex-1 grid grid-cols-3 gap-2">
+                             <div className="h-10 bg-surface-3 rounded-lg"></div>
+                             <div className="h-10 bg-surface-3 rounded-lg"></div>
+                             <div className="h-10 bg-surface-3 rounded-lg"></div>
+                        </div>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                        <div className="h-5 w-40 bg-surface-3 rounded"></div>
+                        <div className="h-4 w-full bg-surface-3 rounded"></div>
+                        <div className="h-4 w-3/4 bg-surface-3 rounded"></div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (error || !profile) {
-        return <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error || "Profile not found."}</div>;
+        return <div className="text-center text-error p-8 bg-surface-2 rounded-xl mt-4">{error || "Profile not found."}</div>;
     }
 
-    const FollowButton = () => ( <button onClick={viewerState?.following ? handleUnfollow : handleFollow} disabled={isActionLoading} className={`font-bold py-2.5 px-6 rounded-lg transition duration-200 flex items-center gap-2 flex-grow justify-center ${viewerState?.following ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' : 'bg-primary text-on-primary hover:bg-primary/90'} disabled:opacity-50`}><span>{viewerState?.following ? 'Following' : 'Follow'}</span></button> );
-    const MentionButton = () => ( <button onClick={() => openComposer({ initialText: `@${profile.handle} ` })} className="font-bold py-2.5 px-6 rounded-lg transition duration-200 flex items-center gap-2 flex-grow justify-center bg-surface-3 text-on-surface hover:bg-surface-3/80"><span>Mention</span></button> );
+    const FollowButton = () => (
+        <button onClick={viewerState?.following ? handleUnfollow : handleFollow} disabled={isActionLoading} className={`flex-1 font-bold py-2.5 rounded-lg transition duration-200 text-center ${viewerState?.following ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' : 'bg-accent text-on-accent hover:bg-accent/90'} disabled:opacity-50`}>
+            {viewerState?.following ? 'Following' : 'Follow'}
+        </button>
+    );
     
-    const TabButton: React.FC<{tab: ProfileTab, icon: React.FC<any>, label: string}> = ({ tab, icon: Icon, label }) => (
-        <button onClick={() => setActiveTab(tab)} className={`flex-1 flex justify-center items-center gap-2 py-3 font-semibold transition-colors ${activeTab === tab ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant'}`}>
-            <Icon size={20} />
+    const MentionButton = () => (
+        <button onClick={() => openComposer({ initialText: `@${profile.handle} ` })} className="px-3 rounded-lg transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80">
+            <Send size={20} />
+        </button>
+    );
+    
+    const TabButton: React.FC<{tab: ProfileTab, icon: React.FC<any>}> = ({ tab, icon: Icon }) => (
+        <button onClick={() => setActiveTab(tab)} className={`flex-1 flex justify-center items-center gap-2 py-3 font-semibold transition-colors relative ${activeTab === tab ? 'text-on-surface' : 'text-on-surface-variant'}`}>
+            <Icon size={24} />
+            {activeTab === tab && <div className="absolute bottom-0 h-0.5 w-12 bg-on-surface rounded-full"></div>}
         </button>
     );
 
@@ -254,63 +353,96 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             return <div className="text-center p-8 bg-surface-2 rounded-xl">{viewerState.blocking ? `You have blocked @${profile.handle}` : `You are blocked by @${profile.handle}`}</div>;
         }
 
-        switch (activeTab) {
-            case 'posts':
-                if (isPostsLoading) return <div className="columns-2 gap-4 mt-4">{[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>)}</div>;
-                if (postsFeed.length === 0) return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">This user has not posted any media yet.</div>;
-                return (
-                    <div className="columns-2 gap-4">
-                        {postsFeed.map((feedViewPost) => (
-                            <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
-                                <PostCard feedViewPost={feedViewPost} />
-                            </div>
-                        ))}
+        const isLoading = activeTab === 'posts' ? isPostsLoading : isLikesLoading;
+        const feed = activeTab === 'posts' ? postsFeed : likesFeed;
+        const noContentMessage = activeTab === 'posts' 
+            ? "This user has not posted any media yet." 
+            : "This user hasn't liked any media posts yet.";
+
+        if (isLoading) return <div className="columns-2 gap-4 mt-4">{[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>)}</div>;
+        if (feed.length === 0) return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">{noContentMessage}</div>;
+        
+        return (
+            <div className="columns-2 gap-4">
+                {feed.map((feedViewPost) => (
+                    <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
+                        <PostCard feedViewPost={feedViewPost} />
                     </div>
-                );
-            
-            case 'likes':
-                if (isLikesLoading) return <div className="columns-2 gap-4 mt-4">{[...Array(6)].map((_, i) => <div key={i} className="break-inside-avoid mb-4"><PostCardSkeleton /></div>)}</div>;
-                if (likesFeed.length === 0) return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">This user hasn't liked any media posts yet.</div>;
-                return (
-                    <div className="columns-2 gap-4">
-                        {likesFeed.map((feedViewPost) => (
-                            <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
-                                <PostCard feedViewPost={feedViewPost} />
-                            </div>
-                        ))}
-                    </div>
-                );
-        }
+                ))}
+            </div>
+        );
     };
 
     return (
         <div>
-            <ProfileHeader handle={profile.handle} />
-            <div className="p-4 bg-surface-2 rounded-xl mt-4">
-                <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-bold break-words flex items-center gap-2"><span>{profile.displayName}</span>{profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && <BadgeCheck className="w-6 h-6 text-primary flex-shrink-0" fill="currentColor" />}</h2>
-                        <p className="text-on-surface-variant">@{profile.handle}</p>
+            <ProfileHeader handle={profile.handle} onMoreClick={() => setIsMenuOpen(true)} />
+
+             {isMenuOpen && (
+                <div className="fixed inset-0 bg-black/60 z-[90]" onClick={() => setIsMenuOpen(false)}>
+                    <div className="fixed bottom-0 left-0 right-0 bg-surface-2 p-4 rounded-t-2xl animate-in slide-in-from-bottom-5 duration-300" onClick={e => e.stopPropagation()}>
+                         <ul className="space-y-2">
+                            <li><button onClick={viewerState?.muted ? handleUnmute : handleMute} className="w-full text-left px-4 py-3 hover:bg-surface-3 rounded-lg flex items-center gap-3 text-lg"><MicOff size={20} /> {viewerState?.muted ? 'Unmute' : 'Mute'}</button></li>
+                            <li><button onClick={viewerState?.blocking ? handleUnblock : handleBlock} className={`w-full text-left px-4 py-3 flex items-center gap-3 text-lg rounded-lg ${viewerState?.blocking ? 'hover:bg-surface-3' : 'hover:bg-error/20 text-error'}`}>{viewerState?.blocking ? <><ShieldOff size={20}/> Unblock</> : <><Shield size={20}/> Block</>}</button></li>
+                        </ul>
                     </div>
-                    <img src={profile.avatar} alt="Avatar" className="w-20 h-20 rounded-full bg-surface-3" loading="lazy"/>
                 </div>
-                {profile.description && (<div className="mt-3 text-on-surface whitespace-pre-wrap break-words">{descriptionWithFacets ? <RichTextRenderer record={descriptionWithFacets} /> : <>{profile.description}</>}</div>)}
-                <div className="flex items-center gap-4 text-sm text-on-surface-variant mt-3">
-                    <a href={`#/profile/${profile.handle}/followers`} className="hover:underline"><strong className="text-on-surface">{profile.followersCount}</strong> followers</a>
-                    <a href={`#/profile/${profile.handle}/following`} className="hover:underline"><strong className="text-on-surface">{profile.followsCount}</strong> following</a>
+            )}
+
+            <div className="px-4">
+                <div className="flex items-center justify-between gap-4 mt-4">
+                    <img src={profile.avatar} alt="Avatar" className="w-24 h-24 rounded-full bg-surface-3" loading="lazy"/>
+                    <div className="flex-1 grid grid-cols-3 text-center gap-2">
+                        <a href={`#/profile/${profile.handle}/following`} className="hover:bg-surface-3 rounded-md py-2">
+                            <p className="font-bold text-lg">{profile.followsCount}</p>
+                            <p className="text-sm text-on-surface-variant">Following</p>
+                        </a>
+                        <a href={`#/profile/${profile.handle}/followers`} className="hover:bg-surface-3 rounded-md py-2">
+                            <p className="font-bold text-lg">{profile.followersCount}</p>
+                            <p className="text-sm text-on-surface-variant">Followers</p>
+                        </a>
+                         <div className="py-2">
+                            <p className="font-bold text-lg">{profile.postsCount}</p>
+                            <p className="text-sm text-on-surface-variant">Posts</p>
+                        </div>
+                    </div>
                 </div>
-                {session && !isMe && viewerState && (<div className="flex items-center gap-2 mt-4"><FollowButton />{session && !isMe && <MentionButton />}</div>)}
+
+                <div className="mt-4">
+                    <h2 className="text-lg font-bold flex items-center gap-2">
+                        <span>{profile.displayName}</span>
+                        {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />}
+                    </h2>
+                    {profile.description && (
+                        <div className="mt-1 text-on-surface whitespace-pre-wrap break-words text-sm">
+                            {descriptionWithFacets ? <RichTextRenderer record={descriptionWithFacets} /> : <>{profile.description}</>}
+                        </div>
+                    )}
+                </div>
+
+                {session && !isMe && viewerState && (
+                    <div className="flex items-stretch gap-2 mt-4">
+                        <FollowButton />
+                        <MentionButton />
+                    </div>
+                )}
             </div>
-            <div className="mt-4 bg-surface-2 rounded-xl overflow-hidden">
-                <div className="flex border-b border-surface-3">
-                    <TabButton tab="posts" icon={Grid} label="Posts" />
-                    <TabButton tab="likes" icon={Heart} label="Likes" />
+
+            <div className="mt-4 border-b border-surface-3">
+                 <div className="flex">
+                    <TabButton tab="posts" icon={Grid} />
+                    <TabButton tab="likes" icon={Heart} />
                 </div>
-                <div className="p-4">
-                    {renderContent()}
-                    <div ref={loaderRef} className="h-10">
-                         { (isPostsLoadingMore || isLikesLoadingMore) && <div className="mt-4 bg-surface-3 rounded-xl h-24 animate-pulse"></div> }
-                    </div>
+            </div>
+
+            <div className="mt-4">
+                {renderContent()}
+                <div ref={loaderRef} className="h-10">
+                    { (isPostsLoadingMore || isLikesLoadingMore) && (
+                        <div className="columns-2 gap-4 mt-4">
+                          <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                          <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                        </div>
+                    ) }
                 </div>
             </div>
         </div>
