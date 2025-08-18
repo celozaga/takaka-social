@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 
@@ -12,7 +13,7 @@ interface AtpContextType {
   chatUnreadCount: number;
   resetUnreadCount: () => void;
   resetChatUnreadCount: () => void;
-  chatSupported: boolean;
+  chatSupported: boolean | undefined;
 }
 
 const AtpContext = createContext<AtpContextType | undefined>(undefined);
@@ -22,7 +23,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
-  const [chatSupported, setChatSupported] = useState(true); // Optimistically true
+  const [chatSupported, setChatSupported] = useState<boolean | undefined>(undefined);
 
   const agent = useMemo(() => new BskyAgent({
     service: 'https://bsky.social',
@@ -58,12 +59,18 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   const fetchChatUnreadCount = useCallback(async () => {
-    if (!agent.hasSession || !chatSupported) return;
+    if (!agent.hasSession) {
+      if (chatSupported !== false) setChatSupported(false);
+      return;
+    }
+    
+    if (chatSupported === false) return; // Don't re-check if we know it's not supported
+
     try {
         const { data } = await agent.chat.bsky.convo.listConvos();
         const totalUnread = data.convos.reduce((acc, convo) => acc + convo.unreadCount, 0);
         setChatUnreadCount(totalUnread);
-        if (!chatSupported) setChatSupported(true); // It works now, so re-enable
+        if (chatSupported !== true) setChatSupported(true);
     } catch (error: any) {
         if (error.name === 'XRPCNotSupported') {
             console.warn("Chat feature not supported by this PDS.");
@@ -99,7 +106,10 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.error("Failed to resume session:", error);
           localStorage.removeItem('atp-session');
           setSession(null);
+          setChatSupported(false);
         }
+      } else {
+        setChatSupported(false);
       }
       setIsLoadingSession(false);
     };
@@ -117,7 +127,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });
     if(agent.session) {
         setSession(agent.session);
-        setChatSupported(true); // Reset on new login to re-check
+        setChatSupported(undefined); // Reset on new login to re-check
         await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
     }
     return response;
@@ -128,6 +138,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSession(null);
     setUnreadCount(0);
     setChatUnreadCount(0);
+    setChatSupported(false);
   };
 
   return (

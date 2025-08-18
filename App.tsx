@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AtpProvider, useAtp } from './context/AtpContext';
 import { UIProvider, useUI } from './context/UIContext';
@@ -151,7 +152,14 @@ const Main: React.FC = () => {
             window.location.hash = '#/';
             return null;
         }
-        if (!chatSupported) {
+        if (chatSupported === undefined) {
+          return (
+            <div className="w-full flex justify-center items-center pt-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          );
+        }
+        if (chatSupported === false) {
           return (
             <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">
               <h2 className="font-bold text-lg text-on-surface">Messaging Not Supported</h2>
