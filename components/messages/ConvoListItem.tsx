@@ -1,13 +1,21 @@
 import React from 'react';
 import { ChatBskyConvoDefs } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
+import { useAtp } from '../../context/AtpContext';
 
 interface ConvoListItemProps {
   convo: ChatBskyConvoDefs.ConvoView;
 }
 
 const ConvoListItem: React.FC<ConvoListItemProps> = ({ convo }) => {
-  const { peer, lastMessage, unreadCount } = convo;
+  const { session } = useAtp();
+  const peer = convo.members.find(member => member.did !== session?.did);
+
+  if (!peer) {
+    return null; // Don't render if we can't find the peer (e.g. self-convo)
+  }
+
+  const { lastMessage, unreadCount } = convo;
   const lastMessageText = ChatBskyConvoDefs.isMessageView(lastMessage)
     ? lastMessage.text
     : 'Message deleted';

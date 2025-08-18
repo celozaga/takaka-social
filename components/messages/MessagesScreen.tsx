@@ -7,7 +7,7 @@ import MessagesHeader from './MessagesHeader';
 import ConvoListItem from './ConvoListItem';
 
 const MessagesScreen: React.FC = () => {
-  const { agent } = useAtp();
+  const { agent, chatSupported } = useAtp();
   const { setCustomFeedHeaderVisible } = useUI();
   const [convos, setConvos] = useState<ChatBskyConvoDefs.ConvoView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,6 +19,15 @@ const MessagesScreen: React.FC = () => {
   }, [setCustomFeedHeaderVisible]);
 
   useEffect(() => {
+    if (chatSupported === false) {
+      setIsLoading(false);
+      return;
+    }
+    
+    if (chatSupported !== true) {
+      return;
+    }
+
     const fetchConvos = async () => {
       setIsLoading(true);
       try {
@@ -26,13 +35,15 @@ const MessagesScreen: React.FC = () => {
         setConvos(data.convos);
       } catch (err: any) {
         console.error('Failed to fetch conversations:', err);
-        setError(err.message || "Could not load messages.");
+        if (err.name !== 'XRPCNotSupported') {
+          setError(err.message || "Could not load messages.");
+        }
       } finally {
         setIsLoading(false);
       }
     };
     fetchConvos();
-  }, [agent]);
+  }, [agent, chatSupported]);
 
   const renderContent = () => {
     if (isLoading) {

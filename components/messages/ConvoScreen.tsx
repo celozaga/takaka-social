@@ -7,7 +7,7 @@ import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 
 const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
-  const { agent, session } = useAtp();
+  const { agent, session, chatSupported } = useAtp();
   const [messages, setMessages] = useState<(ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView)[]>([]);
   const [peer, setPeer] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,43 +16,76 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const listEndRef = useRef<HTMLDivElement>(null);
 
   const fetchConvo = useCallback(async () => {
+    if (chatSupported === false) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const { data } = await agent.chat.bsky.convo.getMessages({ convoId: peerDid });
-      setMessages(data.messages.reverse()); // Reverse to show latest at the bottom
+      const validMessages = data.messages.filter(
+        (msg): msg is ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView =>
+          ChatBskyConvoDefs.isMessageView(msg) || ChatBskyConvoDefs.isDeletedMessageView(msg)
+      );
+      setMessages(validMessages.reverse()); // Reverse to show latest at the bottom
       setCursor(data.cursor);
       // Fetch profile info for the header
       const profileRes = await agent.getProfile({ actor: peerDid });
       setPeer(profileRes.data);
     } catch (err: any) {
       console.error('Failed to fetch conversation:', err);
-      setError(err.message || "Could not load conversation.");
+      if (err.name !== 'XRPCNotSupported') {
+        setError(err.message || "Could not load conversation.");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [agent, peerDid]);
+  }, [agent, peerDid, chatSupported]);
 
   useEffect(() => {
+    if (chatSupported === false) {
+      return;
+    }
+
     fetchConvo();
-    agent.chat.bsky.convo.updateRead({ convoId: peerDid });
+    agent.chat.bsky.convo.updateRead({ convoId: peerDid }).catch(err => {
+      if (err.name !== 'XRPCNotSupported') console.error("Failed to mark convo as read", err);
+    });
 
     const pollInterval = setInterval(async () => {
       try {
         const { data } = await agent.chat.bsky.convo.getMessages({ convoId: peerDid, limit: 50 });
-        const newMessages = data.messages.reverse();
-        // A simple check to see if new messages have arrived
-        if (newMessages.length > 0 && (messages.length === 0 || newMessages[newMessages.length - 1].id !== messages[messages.length - 1].id)) {
-            setMessages(newMessages);
-            agent.chat.bsky.convo.updateRead({ convoId: peerDid });
+        const newMessages = data.messages
+          .filter(
+            (msg): msg is ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView =>
+              ChatBskyConvoDefs.isMessageView(msg) || ChatBskyConvoDefs.isDeletedMessageView(msg)
+          )
+          .reverse();
+        
+        setMessages(currentMessages => {
+          const lastCurrentId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : null;
+          const lastNewId = newMessages.length > 0 ? newMessages[newMessages.length - 1].id : null;
+
+          if (lastNewId && lastNewId !== lastCurrentId) {
+            agent.chat.bsky.convo.updateRead({ convoId: peerDid }).catch(err => {
+              if (err.name !== 'XRPCNotSupported') console.error("Failed to mark convo as read on poll", err);
+            });
+            return newMessages;
+          }
+          return currentMessages;
+        });
+      } catch (err: any) {
+        if (err.name === 'XRPCNotSupported') {
+            clearInterval(pollInterval);
+        } else {
+            console.error("Polling for messages failed:", err);
         }
-      } catch (err) {
-        console.error("Polling for messages failed:", err);
       }
-    }, 5000); // Poll every 5 seconds
+    }, 5000);
 
     return () => {
         clearInterval(pollInterval);
     }
-  }, [agent, peerDid, messages.length]);
+  }, [agent, peerDid, fetchConvo, chatSupported]);
 
   useEffect(() => {
     // Scroll to bottom on new message
@@ -60,11 +93,11 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   }, [messages]);
 
   const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || chatSupported === false) return;
     try {
       // Optimistic update
       const optimisticMessage: ChatBskyConvoDefs.MessageView = {
-        $type: 'app.bsky.chat.convo.defs#messageView',
+        $type: 'chat.bsky.convo.defs#messageView',
         id: `temp-${Date.now()}`,
         rev: '',
         text: text,
@@ -82,7 +115,7 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
     } catch (err) {
       console.error('Failed to send message:', err);
       // Revert optimistic update on failure
-      setMessages(prev => prev.filter(m => m.id !== `temp-${Date.now()}`));
+      setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
     }
   };
   
