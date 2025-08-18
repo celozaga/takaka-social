@@ -54,7 +54,7 @@ const AccountSettingsScreen: React.FC = () => {
     const handleExportData = async () => {
         toast({ title: "Requesting Data Export...", description: "This may take a few moments." });
         try {
-            await agent.com.atproto.server.requestAccountExport();
+            await (agent.com.atproto.server as any).requestAccountExport();
             toast({ title: "Export Started", description: "Your data export is being prepared. You will receive an email when it is ready to download." });
         } catch (e) {
             console.error("Failed to request data export", e);
