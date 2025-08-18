@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPlayer from './VideoPlayer';
@@ -12,6 +13,7 @@ const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.g
 
 const WatchScreen: React.FC = () => {
     const { agent } = useAtp();
+    const { t } = useTranslation();
     const [videoPosts, setVideoPosts] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
@@ -61,12 +63,12 @@ const WatchScreen: React.FC = () => {
 
         } catch (err: any) {
             console.error('Failed to fetch video feed:', err);
-            setError('Could not load videos.');
+            setError(t('timeline.loadingError'));
         } finally {
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent, hasMore, isLoadingMore]);
+    }, [agent, hasMore, isLoadingMore, t]);
 
     const fetchPlaybackUrls = useCallback(async (posts: AppBskyFeedDefs.FeedViewPost[]) => {
         const postsWithoutUrls = posts.filter(p => !playbackUrls.has(p.post.uri));
@@ -109,7 +111,7 @@ const WatchScreen: React.FC = () => {
     useEffect(() => {
         // Initial fetch
         fetchVideos();
-    }, []);
+    }, [fetchVideos]);
 
      useEffect(() => {
         if (videoPosts.length > 0) {
@@ -169,8 +171,8 @@ const WatchScreen: React.FC = () => {
                  {!hasMore && videoPosts.length > 0 && !isLoadingMore && (
                     <SwiperSlide>
                         <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white">
-                            <p className="text-lg font-semibold">You've seen it all!</p>
-                            <p className="text-sm text-on-surface-variant mt-1">Check back later for more videos.</p>
+                            <p className="text-lg font-semibold">{t('watch.allSeenTitle')}</p>
+                            <p className="text-sm text-on-surface-variant mt-1">{t('watch.allSeenDescription')}</p>
                         </div>
                     </SwiperSlide>
                  )}

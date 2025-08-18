@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
@@ -11,6 +12,7 @@ interface TimelineProps {
 
 const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const { agent } = useAtp();
+  const { t } = useTranslation();
   const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,14 +127,14 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
         }
       } catch (err: any) {
         console.error('Failed to fetch timeline:', err);
-        setError('Could not load this feed. Please try again later.');
+        setError(t('timeline.loadingError'));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchInitialTimeline();
-  }, [fetchPosts]);
+  }, [fetchPosts, t]);
 
   // Effect for IntersectionObserver
   useEffect(() => {
@@ -174,7 +176,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   }
   
   if (feed.length === 0) {
-    return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No visual posts found in this feed.</div>;
+    return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('timeline.empty')}</div>;
   }
 
   return (
@@ -201,7 +203,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
       </div>
 
       {!hasMore && feed.length > 0 && (
-        <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+        <div className="text-center text-on-surface-variant py-8">{t('common.endOfList')}</div>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import Timeline from '../shared/Timeline';
@@ -15,6 +16,7 @@ interface FeedViewScreenProps {
 
 const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     const { agent } = useAtp();
+    const { t } = useTranslation();
     const { setCustomFeedHeaderVisible } = useUI();
     const [feedUri, setFeedUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -23,15 +25,13 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     const { feedView } = useFeedActions(feedUri || undefined);
 
     useHeadManager({
-        title: feedView ? `Feed: ${feedView.displayName}` : 'Feed',
+        title: feedView ? `${t('common.feeds')}: ${feedView.displayName}` : t('common.feeds'),
         description: feedView?.description,
         imageUrl: feedView?.avatar,
     });
 
     useEffect(() => {
-        // This screen uses the custom header, so we tell the main App component to hide the default navbar.
         setCustomFeedHeaderVisible(true);
-        // Clean up when the component unmounts
         return () => setCustomFeedHeaderVisible(false);
     }, [setCustomFeedHeaderVisible]);
 
@@ -45,15 +45,14 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
                 setFeedUri(uri);
             } catch (err) {
                 console.error("Failed to resolve handle to create feed URI:", err);
-                setError("Could not find the specified feed.");
+                setError(t('feedView.notFound'));
             } finally {
                 setIsLoading(false);
             }
         };
         resolveHandleAndSetUri();
-    }, [agent, handle, rkey]);
+    }, [agent, handle, rkey, t]);
     
-    // Show a loading skeleton for the header while we resolve the handle
     if (isLoading) {
         return (
              <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-md z-30 animate-pulse">

@@ -60,7 +60,7 @@ const Main: React.FC = () => {
     isUpdateHandleModalOpen, closeUpdateHandleModal,
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   useHeadManager(); // Set default head tags
 
@@ -181,8 +181,8 @@ const Main: React.FC = () => {
         if (chatSupported === false) {
           return (
             <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">
-              <h2 className="font-bold text-lg text-on-surface">Messaging Not Supported</h2>
-              <p className="mt-1">Your Bluesky server (PDS) does not currently support the direct messaging feature.</p>
+              <h2 className="font-bold text-lg text-on-surface">{t('app.messagingNotSupported')}</h2>
+              <p className="mt-1">{t('app.messagingNotSupportedDescription')}</p>
             </div>
           );
         }

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
 import FeedAvatar from './FeedAvatar';
@@ -12,6 +13,7 @@ interface FeedSearchResultCardProps {
 
 const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPinned, onTogglePin }) => {
     const { session } = useAtp();
+    const { t } = useTranslation();
     const feedLink = `#/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
 
     const handleTogglePin = (e: React.MouseEvent) => {
@@ -28,7 +30,7 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
                     <div className="flex justify-between items-start">
                         <div className="min-w-0">
                             <h3 className="font-bold truncate">{feed.displayName}</h3>
-                            <p className="text-sm text-on-surface-variant">Feed by @{feed.creator.handle}</p>
+                            <p className="text-sm text-on-surface-variant">{t('feeds.byline', { handle: feed.creator.handle })}</p>
                         </div>
                         {session && (
                              <button 
@@ -40,7 +42,7 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
                                     }
                                 `}
                             >
-                                {isPinned ? 'Unpin' : 'Pin Feed'}
+                                {isPinned ? t('feeds.unpinAction') : t('feeds.pinAction')}
                             </button>
                         )}
                     </div>

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../components/ui/use-toast';
@@ -19,6 +20,7 @@ export const usePostActions = (post: PostActionable) => {
   const { agent, session } = useAtp();
   const { openLoginModal } = useUI();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [likeUri, setLikeUri] = useState(post.viewer?.like);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
@@ -59,7 +61,7 @@ export const usePostActions = (post: PostActionable) => {
       }
     } catch (error) {
       console.error('Failed to like/unlike post:', error);
-      toast({ title: "Action failed", description: "Could not update like status.", variant: "destructive" });
+      toast({ title: t('hooks.actionFailed'), description: t('hooks.likeError'), variant: "destructive" });
       setLikeUri(originalLikeUri);
       setLikeCount(originalLikeCount);
     } finally {
@@ -90,7 +92,7 @@ export const usePostActions = (post: PostActionable) => {
       }
     } catch (error) {
       console.error('Failed to repost:', error);
-      toast({ title: "Action failed", description: "Could not repost.", variant: "destructive" });
+      toast({ title: t('hooks.actionFailed'), description: t('hooks.repostError'), variant: "destructive" });
       setRepostUri(originalRepostUri);
       setRepostCount(originalRepostCount);
     } finally {

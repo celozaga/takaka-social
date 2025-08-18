@@ -1,13 +1,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from '../components/ui/use-toast';
 import { useSavedFeeds } from './useSavedFeeds';
-import { AppBskyFeedDefs} from '@atproto/api';
+import {AppBskyFeedDefs} from '@atproto/api';
 
 export const useFeedActions = (feedUri?: string) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
 
     const [feedView, setFeedView] = useState<AppBskyFeedDefs.GeneratorView | null>(null);
@@ -37,13 +39,13 @@ export const useFeedActions = (feedUri?: string) => {
                 setLikeCount(data.view.likeCount || 0);
             } catch (err: any) {
                 console.error("Failed to fetch feed generator:", err);
-                setError(err.message || "Could not load feed details.");
+                setError(err.message || t('feedModal.loadingError'));
             } finally {
                 setIsLoading(false);
             }
         }
         fetchFeed();
-    }, [agent, feedUri]);
+    }, [agent, feedUri, t]);
 
     const handleLike = async () => {
         if (!feedView || isLiking || !session) return;
@@ -68,7 +70,7 @@ export const useFeedActions = (feedUri?: string) => {
             }
         } catch (err) {
             console.error("Failed to like/unlike feed:", err);
-            toast({ title: "Error", description: "Action failed.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('hooks.actionFailed'), variant: "destructive" });
             setLikeUri(originalLikeUri);
             setLikeCount(originalLikeCount);
         } finally {
@@ -87,13 +89,11 @@ export const useFeedActions = (feedUri?: string) => {
 
     const handleShare = () => {
         if (!feedView) return;
-        // This assumes a web URL structure, which may vary.
-        // A robust solution might use a dedicated sharing service or known URL format.
         const handle = feedView.creator.handle;
         const rkey = new URL(feedView.uri).pathname.split('/').pop();
         const url = `https://bsky.app/profile/${handle}/feed/${rkey}`;
         navigator.clipboard.writeText(url);
-        toast({ title: "Link Copied!", description: "Feed URL copied to clipboard." });
+        toast({ title: t('post.linkCopied'), description: t('post.linkCopiedDescription') });
     };
 
     return {

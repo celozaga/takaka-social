@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from '../components/ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
@@ -14,6 +15,7 @@ const V1_TYPE = 'app.bsky.actor.defs#savedFeedsPref';
 export const useSavedFeeds = () => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
+    const { t } = useTranslation();
 
     const [preferences, setPreferences] = useState<SavedFeedsPrefV2 | undefined>(undefined);
     const [feedViews, setFeedViews] = useState<Map<string, AppBskyFeedDefs.GeneratorView>>(new Map());
@@ -83,11 +85,11 @@ export const useSavedFeeds = () => {
 
         } catch (error) {
             console.error("Failed to load feeds:", error);
-            toast({ title: "Error", description: "Could not load your feeds.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('hooks.loadFeedsError'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
-    }, [agent, session, toast]);
+    }, [agent, session, toast, t]);
 
     useEffect(() => {
         load();
@@ -109,14 +111,14 @@ export const useSavedFeeds = () => {
             setPreferences(newPreferences);
         } catch (error) {
             console.error("Failed to save preferences:", error);
-            toast({ title: "Error", description: "Your changes could not be saved.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('hooks.saveFeedsError'), variant: "destructive" });
             await load(); // Re-fetch to revert optimistic update
         }
-    }, [agent, toast, load]);
+    }, [agent, toast, load, t]);
     
     const addFeed = useCallback(async (feed: AppBskyFeedDefs.GeneratorView, pin = false) => {
         if (!session) {
-            toast({ title: "Please sign in", description: "You must be signed in to save feeds." });
+            toast({ title: t('hooks.signInToSave'), description: t('hooks.signInToSaveDescription') });
             return;
         }
         setFeedViews(prev => new Map(prev).set(feed.uri, feed));
@@ -134,8 +136,8 @@ export const useSavedFeeds = () => {
         }
 
         await savePreferences(newPref);
-        toast({ title: pin ? 'Feed Pinned' : 'Feed Saved' });
-    }, [preferences, savePreferences, session, toast]);
+        toast({ title: pin ? t('hooks.feedPinned') : t('hooks.feedSaved') });
+    }, [preferences, savePreferences, session, toast, t]);
 
     const togglePin = useCallback(async (uri: string) => {
         if (!preferences) return;
@@ -150,8 +152,8 @@ export const useSavedFeeds = () => {
         const newPref = { ...preferences, items: newItems };
 
         await savePreferences(newPref);
-        toast({ title: newPref.items.find(i => i.value === uri)?.pinned ? 'Feed Pinned' : 'Feed Unpinned' });
-    }, [preferences, savePreferences, toast]);
+        toast({ title: newPref.items.find(i => i.value === uri)?.pinned ? t('hooks.feedPinned') : t('hooks.feedUnpinned') });
+    }, [preferences, savePreferences, toast, t]);
     
     const removeFeed = useCallback(async (uri: string) => {
         if (!preferences) return;
@@ -160,8 +162,8 @@ export const useSavedFeeds = () => {
             items: preferences.items.filter(i => i.value !== uri)
         };
         await savePreferences(newPref);
-        toast({ title: 'Feed Removed' });
-    }, [preferences, savePreferences, toast]);
+        toast({ title: t('hooks.feedRemoved') });
+    }, [preferences, savePreferences, toast, t]);
 
     const reorder = useCallback(async (from: number, to: number) => {
         if (!preferences) return;
