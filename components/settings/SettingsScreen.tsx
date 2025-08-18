@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { Bell, UserCircle, ChevronRight, LogOut } from 'lucide-react';
@@ -32,10 +33,10 @@ const SettingsScreen: React.FC = () => {
                     </div>
                     <ChevronRight className="w-5 h-5 text-on-surface-variant" />
                 </a>
-                 <a href="#" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors cursor-not-allowed opacity-50">
+                 <a href="#/settings/account" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
                     <div className="flex items-center gap-4">
                         <UserCircle className="w-6 h-6 text-on-surface-variant" />
-                        <span className="font-semibold">Account (coming soon)</span>
+                        <span className="font-semibold">Account</span>
                     </div>
                     <ChevronRight className="w-5 h-5 text-on-surface-variant" />
                 </a>

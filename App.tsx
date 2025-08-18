@@ -23,6 +23,7 @@ const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'))
 const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const NotificationSettingsScreen = lazy(() => import('./components/settings/NotificationSettingsScreen'));
+const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSettingsScreen'));
 const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
@@ -133,6 +134,9 @@ const Main: React.FC = () => {
         }
         if (parts[1] === 'notifications') {
           return <NotificationSettingsScreen />;
+        }
+        if (parts[1] === 'account') {
+          return <AccountSettingsScreen />;
         }
         return <SettingsScreen />;
       case 'more':
