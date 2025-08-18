@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -15,11 +16,14 @@ const getResizedImage = (url: string, width: number, mimeType?: string): string 
   if (!url || !url.includes('cdn.bsky.app/img/')) {
     return url;
   }
-  
-  // The official resizing service works for JPEG and PNG.
-  // We will explicitly check the MIME type to avoid breaking other formats like GIFs.
-  const isResizable = mimeType === 'image/jpeg' || mimeType === 'image/png';
-  if (!isResizable) {
+
+  // The resizing service works for JPEG/PNG. We need to avoid GIFs.
+  // We can either check the URL suffix for image embeds, or trust the explicit mimeType for video posters.
+  const urlLower = url.toLowerCase();
+  const isKnownResizableSuffix = urlLower.endsWith('@jpeg') || urlLower.endsWith('@jpg') || urlLower.endsWith('@png');
+  const isForcedResizableMime = mimeType === 'image/jpeg' || mimeType === 'image/png';
+
+  if (!isKnownResizableSuffix && !isForcedResizableMime) {
       return url;
   }
   
