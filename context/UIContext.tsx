@@ -29,6 +29,12 @@ interface UIContextType {
   isEditProfileModalOpen: boolean;
   openEditProfileModal: () => void;
   closeEditProfileModal: () => void;
+  isUpdateEmailModalOpen: boolean;
+  openUpdateEmailModal: () => void;
+  closeUpdateEmailModal: () => void;
+  isUpdateHandleModalOpen: boolean;
+  openUpdateHandleModal: () => void;
+  closeUpdateHandleModal: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -42,14 +48,11 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [feedModalUri, setFeedModalUri] = useState<string | undefined>(undefined);
   const [isCustomFeedHeaderVisible, setCustomFeedHeaderVisible] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [isUpdateEmailModalOpen, setIsUpdateEmailModalOpen] = useState(false);
+  const [isUpdateHandleModalOpen, setIsUpdateHandleModalOpen] = useState(false);
 
-  const openLoginModal = useCallback(() => {
-    setIsLoginModalOpen(true);
-  }, []);
-  
-  const closeLoginModal = useCallback(() => {
-    setIsLoginModalOpen(false);
-  }, []);
+  const openLoginModal = useCallback(() => setIsLoginModalOpen(true), []);
+  const closeLoginModal = useCallback(() => setIsLoginModalOpen(false), []);
 
   const openComposer = useCallback((options?: ComposerOptions) => {
     setComposerReplyTo(options?.replyTo);
@@ -73,13 +76,14 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setFeedModalUri(undefined);
   }, []);
   
-  const openEditProfileModal = useCallback(() => {
-    setIsEditProfileModalOpen(true);
-  }, []);
+  const openEditProfileModal = useCallback(() => setIsEditProfileModalOpen(true), []);
+  const closeEditProfileModal = useCallback(() => setIsEditProfileModalOpen(false), []);
   
-  const closeEditProfileModal = useCallback(() => {
-    setIsEditProfileModalOpen(false);
-  }, []);
+  const openUpdateEmailModal = useCallback(() => setIsUpdateEmailModalOpen(true), []);
+  const closeUpdateEmailModal = useCallback(() => setIsUpdateEmailModalOpen(false), []);
+  
+  const openUpdateHandleModal = useCallback(() => setIsUpdateHandleModalOpen(true), []);
+  const closeUpdateHandleModal = useCallback(() => setIsUpdateHandleModalOpen(false), []);
 
   return (
     <UIContext.Provider value={{ 
@@ -87,7 +91,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
         isFeedModalOpen, feedModalUri, openFeedModal, closeFeedModal,
         isCustomFeedHeaderVisible, setCustomFeedHeaderVisible,
-        isEditProfileModalOpen, openEditProfileModal, closeEditProfileModal
+        isEditProfileModalOpen, openEditProfileModal, closeEditProfileModal,
+        isUpdateEmailModalOpen, openUpdateEmailModal, closeUpdateEmailModal,
+        isUpdateHandleModalOpen, openUpdateHandleModal, closeUpdateHandleModal
     }}>
       {children}
     </UIContext.Provider>

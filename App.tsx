@@ -30,6 +30,8 @@ const EditProfileModal = lazy(() => import('./components/profile/EditProfileModa
 const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
 const MessagesScreen = lazy(() => import('./components/messages/MessagesScreen'));
 const ConvoScreen = lazy(() => import('./components/messages/ConvoScreen'));
+const UpdateEmailModal = lazy(() => import('./components/settings/UpdateEmailModal'));
+const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleModal'));
 
 
 const App: React.FC = () => {
@@ -52,7 +54,9 @@ const Main: React.FC = () => {
     isComposerOpen, closeComposer, composerReplyTo, composerInitialText, 
     isCustomFeedHeaderVisible, 
     isFeedModalOpen, closeFeedModal,
-    isEditProfileModalOpen, closeEditProfileModal
+    isEditProfileModalOpen, closeEditProfileModal,
+    isUpdateEmailModalOpen, closeUpdateEmailModal,
+    isUpdateHandleModalOpen, closeUpdateHandleModal,
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
 
@@ -74,11 +78,13 @@ const Main: React.FC = () => {
         closeLoginModal();
         closeFeedModal();
         closeEditProfileModal();
+        closeUpdateEmailModal();
+        closeUpdateHandleModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal]);
+  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal]);
 
   if (isLoadingSession) {
     // Show a minimal loading state while session is being restored
@@ -253,6 +259,32 @@ const Main: React.FC = () => {
                         window.location.reload();
                     }
                 }}
+                />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      {isUpdateEmailModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeUpdateEmailModal}>
+          <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                <UpdateEmailModal
+                    onClose={closeUpdateEmailModal}
+                    onSuccess={closeUpdateEmailModal}
+                />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      {isUpdateHandleModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeUpdateHandleModal}>
+          <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                <UpdateHandleModal
+                    onClose={closeUpdateHandleModal}
+                    onSuccess={closeUpdateHandleModal}
                 />
             </Suspense>
           </div>

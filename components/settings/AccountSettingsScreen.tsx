@@ -43,7 +43,7 @@ const SettingsListItem: React.FC<SettingsListItemProps> = ({ icon: Icon, label, 
 
 const AccountSettingsScreen: React.FC = () => {
     const { session, agent, logout } = useAtp();
-    const { setCustomFeedHeaderVisible } = useUI();
+    const { setCustomFeedHeaderVisible, openUpdateEmailModal, openUpdateHandleModal } = useUI();
     const { toast } = useToast();
 
     React.useEffect(() => {
@@ -76,6 +76,19 @@ const AccountSettingsScreen: React.FC = () => {
         }
     };
     
+    const handleDeleteAccount = async () => {
+        if (window.confirm("Are you sure you want to request account deletion? This is permanent and cannot be undone. An email will be sent to you to confirm.")) {
+            toast({ title: "Requesting Account Deletion..." });
+            try {
+                await agent.com.atproto.server.requestAccountDelete();
+                toast({ title: "Deletion Requested", description: "Please check your email to confirm account deletion." });
+            } catch (e) {
+                console.error("Failed to request account deletion", e);
+                toast({ title: "Error", description: "Could not request account deletion. Please try again later.", variant: "destructive" });
+            }
+        }
+    };
+    
     const emailValue = (
         <div className="flex items-center gap-1.5">
             <span>{session?.email}</span>
@@ -89,16 +102,16 @@ const AccountSettingsScreen: React.FC = () => {
             <div className="mt-4 space-y-6">
                 <div className="bg-surface-2 rounded-lg overflow-hidden divide-y divide-outline">
                     <SettingsListItem icon={Mail} label="Email" value={emailValue} />
-                    <SettingsListItem icon={Edit} label="Update email" href="https://bsky.app/settings/email" />
+                    <SettingsListItem icon={Edit} label="Update email" onClick={openUpdateEmailModal} />
                     <SettingsListItem icon={Lock} label="Password" href="https://bsky.app/settings/password" />
-                    <SettingsListItem icon={AtSign} label="Handle" href="https://bsky.app/settings/handle" />
+                    <SettingsListItem icon={AtSign} label="Handle" value={`@${session?.handle}`} onClick={openUpdateHandleModal} />
                     <SettingsListItem icon={Cake} label="Birthday" href="https://bsky.app/settings/birthday" />
                 </div>
 
                 <div className="bg-surface-2 rounded-lg overflow-hidden divide-y divide-outline">
                     <SettingsListItem icon={Download} label="Export my data" onClick={handleExportData} />
                     <SettingsListItem icon={Power} label="Deactivate account" onClick={handleDeactivate} isDestructive />
-                    <SettingsListItem icon={Trash2} label="Delete account" href="https://bsky.app/settings/delete-account" isDestructive />
+                    <SettingsListItem icon={Trash2} label="Delete account" onClick={handleDeleteAccount} isDestructive />
                 </div>
             </div>
         </div>
