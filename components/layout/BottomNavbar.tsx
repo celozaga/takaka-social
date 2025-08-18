@@ -51,7 +51,11 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
       <>
         <div className={`relative w-16 h-8 flex items-center justify-center rounded-full transition-colors ${item.activeCondition ? 'bg-primary-container' : 'group-hover:bg-surface-3'}`}>
           <item.icon size={24} className={item.activeCondition ? 'text-on-primary-container' : 'text-on-surface-variant group-hover:text-on-surface'}/>
-           {hasNotificationBadge && <div className="absolute top-1 right-3.5 w-2 h-2 bg-primary rounded-full"></div>}
+           {hasNotificationBadge && (
+             <div className="absolute top-0 right-1.5 bg-primary text-on-primary text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center">
+                {unreadCount > 99 ? '99+' : unreadCount}
+            </div>
+           )}
            {hasMessageBadge && (
              <div className="absolute top-0 right-1.5 bg-primary text-on-primary text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center">
                 {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
