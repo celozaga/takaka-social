@@ -302,7 +302,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
           {(mainPost.replyCount || 0) > 0 && (
             <div className="px-4 pt-4 pb-2">
               <h2 className="text-lg font-bold">
-                {mainPost.replyCount} {mainPost.replyCount === 1 ? 'Comment' : 'Comments'}
+                {mainPost.replyCount} {mainPost.replyCount === 1 ? 'Reply' : 'Replies'}
               </h2>
             </div>
           )}
