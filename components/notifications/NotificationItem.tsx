@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { 
@@ -10,7 +9,7 @@ import {
   AppBskyEmbedRecord, 
   AppBskyEmbedRecordWithMedia 
 } from '@atproto/api';
-import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } from 'lucide-react';
+import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck, Quote } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 
@@ -134,6 +133,15 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
     case 'mention':
         Icon = <AtSign className="w-6 h-6 text-primary" />;
         title = <p><AuthorLink /> mentioned you in a post</p>;
+        link = postLink;
+        if (AppBskyFeedPost.isRecord(record)) {
+          content = <PostPreview record={record} postUri={uri} />;
+        }
+        break;
+
+    case 'quote':
+        Icon = <Quote className="w-6 h-6 text-primary" />;
+        title = <p><AuthorLink /> quoted your post</p>;
         link = postLink;
         if (AppBskyFeedPost.isRecord(record)) {
           content = <PostPreview record={record} postUri={uri} />;

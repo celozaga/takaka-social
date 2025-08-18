@@ -22,11 +22,9 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
         setError('');
         setSuccess(false);
         try {
-            // Use the low-level `api.call` to ensure the request is formatted correctly,
-            // bypassing a potential issue with the generated SDK method.
-            const result = await agent.api.call('com.atproto.server.requestEmailUpdate', undefined, { email });
+            const { data } = await agent.com.atproto.server.requestEmailUpdate({ email });
 
-            if (result.data.tokenRequired) {
+            if (data.tokenRequired) {
                 setSuccess(true);
             } else {
                 toast({ title: "Email updated successfully!" });

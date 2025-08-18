@@ -5,8 +5,19 @@ import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import { useUI } from '../../context/UIContext';
 import NotificationsHeader from './NotificationsHeader';
+import { AtSign, MessageCircle, Repeat, UserPlus, Quote } from 'lucide-react';
 
-type NotificationFilter = 'all' | 'mentions';
+type NotificationFilter = 'all' | 'mentions' | 'replies' | 'reposts' | 'follows' | 'quotes';
+
+const filters: { id: NotificationFilter; label: string; icon: React.FC<any> | null }[] = [
+    { id: 'all', label: 'All', icon: null },
+    { id: 'mentions', label: 'Mentions', icon: AtSign },
+    { id: 'replies', label: 'Replies', icon: MessageCircle },
+    { id: 'reposts', label: 'Reposts', icon: Repeat },
+    { id: 'quotes', label: 'Quotes', icon: Quote },
+    { id: 'follows', label: 'Follows', icon: UserPlus },
+];
+
 
 const NotificationsScreen: React.FC = () => {
   const { agent, resetUnreadCount } = useAtp();
@@ -79,10 +90,22 @@ const NotificationsScreen: React.FC = () => {
   }, [agent, cursor, hasMore, isLoadingMore]);
   
   const filteredNotifications = useMemo(() => {
-    if (activeTab === 'mentions') {
-      return notifications.filter(n => n.reason === 'mention' || n.reason === 'reply');
+    switch (activeTab) {
+      case 'all':
+        return notifications;
+      case 'mentions':
+        return notifications.filter(n => n.reason === 'mention' || n.reason === 'reply');
+      case 'replies':
+        return notifications.filter(n => n.reason === 'reply');
+      case 'reposts':
+        return notifications.filter(n => n.reason === 'repost');
+      case 'follows':
+        return notifications.filter(n => n.reason === 'follow');
+      case 'quotes':
+        return notifications.filter(n => n.reason === 'quote');
+      default:
+        return notifications;
     }
-    return notifications;
   }, [notifications, activeTab]);
 
 
@@ -132,27 +155,23 @@ const NotificationsScreen: React.FC = () => {
     );
   };
   
-  const baseClasses = "px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap";
-  const activeClasses = "bg-primary-container text-on-primary-container";
-  const inactiveClasses = "text-on-surface-variant hover:bg-surface-3";
-
   return (
     <div>
       <NotificationsHeader />
       <div className="mt-4">
-        <div className="flex items-center gap-2 pb-2">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`${baseClasses} ${activeTab === 'all' ? activeClasses : inactiveClasses}`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setActiveTab('mentions')}
-            className={`${baseClasses} ${activeTab === 'mentions' ? activeClasses : inactiveClasses}`}
-          >
-            Mentions
-          </button>
+        <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
+          {filters.map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setActiveTab(filter.id)}
+              className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
+                  ${activeTab === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
+              `}
+            >
+              {filter.icon && <filter.icon size={16} />}
+              {filter.label}
+            </button>
+          ))}
         </div>
         <div className="mt-4">
             {renderContent()}
