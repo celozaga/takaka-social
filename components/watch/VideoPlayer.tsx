@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia, AppBskyActorDefs } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia, AppBskyActorDefs } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoActions from './VideoActions';
 import { Volume2, VolumeX, Play } from 'lucide-react';
@@ -21,30 +21,49 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
     const { post } = postView;
     const record = post.record as any;
 
+    let embedView: AppBskyEmbedVideo.View | undefined;
+    if (AppBskyEmbedVideo.isView(post.embed)) {
+        embedView = post.embed;
+    } else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) {
+        embedView = post.embed.media as AppBskyEmbedVideo.View;
+    }
+
+    if (!embedView) return null;
+
+    const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
+    const videoCid = embedView.cid;
+    if (!authorDid || !videoCid || !agent.service) return null;
+
+    const serviceUrl = agent.service.toString();
+    const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+    const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
+    
     useEffect(() => {
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
         if (isActive) {
-            // Attempt to play the video when the slide becomes active.
+            // Only set the source and play if the component is active.
+            // This prevents loading all videos at once.
+            if (videoElement.src !== videoUrl) {
+                videoElement.src = videoUrl;
+            }
+            
             const playPromise = videoElement.play();
             if (playPromise !== undefined) {
                 playPromise
-                    .then(() => {
-                        setIsPlaying(true);
-                    })
-                    .catch(() => {
-                        // Autoplay was prevented. User will need to tap to play.
-                        setIsPlaying(false);
-                    });
+                    .then(() => setIsPlaying(true))
+                    .catch(() => setIsPlaying(false)); // Autoplay failed
             }
         } else {
-            // When the slide is not active, pause it and reset its time.
+            // If the component is not active, pause and unload the video to save memory.
             videoElement.pause();
-            videoElement.currentTime = 0;
+            videoElement.removeAttribute('src');
+            videoElement.load();
             setIsPlaying(false);
         }
-    }, [isActive]);
+    }, [isActive, videoUrl]);
+
 
     const handleVideoClick = () => {
         if (videoRef.current) {
@@ -64,29 +83,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive }) => {
         e.stopPropagation();
         setIsMuted(prev => !prev);
     };
-
-    let embedView: AppBskyEmbedVideo.View | undefined;
-    if (AppBskyEmbedVideo.isView(post.embed)) {
-        embedView = post.embed;
-    } else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) {
-        embedView = post.embed.media as AppBskyEmbedVideo.View;
-    }
-
-    if (!embedView) return null;
-
-    const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
-    const videoCid = embedView.cid;
-    if (!authorDid || !videoCid || !agent.service) return null;
-
-    const serviceUrl = agent.service.toString();
-    const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-    const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
     
     return (
         <div className="relative w-full h-full bg-black snap-start" onClick={handleVideoClick}>
             <video
                 ref={videoRef}
-                src={videoUrl}
                 poster={embedView.thumbnail}
                 loop
                 playsInline
