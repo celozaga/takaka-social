@@ -12,6 +12,43 @@ type PostCardProps = {
     showAllMedia?: boolean;
 }
 
+const getResizedImage = (url: string, width: number): string => {
+  if (!url || !url.includes('cdn.bsky.app/img/')) {
+    return url;
+  }
+  try {
+    // URL can be malformed, so we wrap in try/catch
+    const urlObj = new URL(url);
+    const parts = urlObj.pathname.split('/');
+    
+    // Path: /img/{type}/plain/{...rest}
+    // We want: /img/{type}/rs:w:{width}/plain/{...rest}
+    const plainIndex = parts.indexOf('plain');
+    
+    // Ensure we have a `plain` segment and that it's not the first part of the path.
+    if (plainIndex > 1) {
+        // Avoid adding multiple resize parameters
+        if (parts[plainIndex - 1].startsWith('rs:')) {
+            return url;
+        }
+
+        const newParts = [
+            ...parts.slice(0, plainIndex),
+            `rs:w:${width}`,
+            ...parts.slice(plainIndex),
+        ];
+        urlObj.pathname = newParts.join('/');
+        return urlObj.toString();
+    }
+    
+    return url;
+  } catch (e) {
+    // Don't crash the app if URL parsing fails.
+    console.warn('Could not parse or resize image URL:', url, e);
+    return url;
+  }
+};
+
 const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
     const { post, reason, reply } = feedViewPost;
@@ -31,19 +68,22 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                 const gridCols = embed.images.length >= 2 ? 'grid-cols-2' : 'grid-cols-1';
                 return (
                     <div className={`grid ${gridCols} gap-1.5`}>
-                        {embed.images.map((image, index) => (
-                            <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 rounded-md overflow-hidden">
-                                <img
-                                    src={image.thumb}
-                                    alt={image.alt || `Post image ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                />
-                                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <ExternalLink className="text-white w-6 h-6" />
-                                </div>
-                            </a>
-                        ))}
+                        {embed.images.map((image, index) => {
+                            const resizedThumb = getResizedImage(image.thumb, 400);
+                            return (
+                                <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 rounded-md overflow-hidden">
+                                    <img
+                                        src={resizedThumb}
+                                        alt={image.alt || `Post image ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <ExternalLink className="text-white w-6 h-6" />
+                                    </div>
+                                </a>
+                            );
+                        })}
                     </div>
                 );
             }
@@ -51,10 +91,12 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const firstImage = embed.images[0];
             if (!firstImage) return null;
             
+            const resizedThumb = getResizedImage(firstImage.thumb, 400);
+
             return (
                 <div className="relative">
                     <img 
-                        src={firstImage.thumb} 
+                        src={resizedThumb} 
                         alt={firstImage.alt || 'Post image'} 
                         className="w-full h-auto object-cover" 
                         loading="lazy"
@@ -108,9 +150,11 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                  );
             }
             
+            const resizedPoster = getResizedImage(posterUrl, 400);
+            
             return (
                 <div className="relative">
-                    <img src={posterUrl} className="w-full h-auto object-cover bg-black" />
+                    <img src={resizedPoster} className="w-full h-auto object-cover bg-black" />
                     <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
                         <PlayCircle size={14}/>
                     </div>
