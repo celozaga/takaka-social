@@ -22,32 +22,41 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
     return posts.filter(item => {
-      const embed = item.post.embed;
-      if (!embed) {
+        const embed = item.post.embed;
+        if (!embed) {
+            return false;
+        }
+
+        // Direct media is always shown
+        if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) {
+            return true;
+        }
+        if (AppBskyEmbedVideo.isView(embed)) {
+            return true;
+        }
+
+        // Handle quote posts (recordWithMedia)
+        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+            // If it's a reply that quotes media, only show if it has text.
+            // This prevents confusing cards that look like the original post.
+            if (item.reply) {
+                const record = item.post.record as { text?: string };
+                if (!record.text || record.text.trim() === '') {
+                    return false;
+                }
+            }
+            
+            // Check if the embedded media is valid
+            const media = embed.media;
+            if (AppBskyEmbedImages.isView(media) && media.images.length > 0) {
+                return true;
+            }
+            if (AppBskyEmbedVideo.isView(media)) {
+                return true;
+            }
+        }
+        
         return false;
-      }
-
-      // Case 1: Standard image embed
-      if (AppBskyEmbedImages.isView(embed)) {
-        return embed.images.length > 0;
-      }
-
-      // Case 2: Direct video embed
-      if (AppBskyEmbedVideo.isView(embed)) {
-        return true;
-      }
-
-      // Case 3: Embed with media (could contain images or video)
-      if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        const media = embed.media;
-        if (AppBskyEmbedImages.isView(media)) {
-          return media.images.length > 0;
-        }
-        if (AppBskyEmbedVideo.isView(media)) {
-          return true;
-        }
-      }
-      return false;
     });
   };
   

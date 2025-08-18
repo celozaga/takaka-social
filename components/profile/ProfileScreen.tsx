@@ -44,15 +44,38 @@ const hasMedia = (post: AppBskyFeedDefs.PostView): boolean => {
 // --- End Filter Logic Helpers ---
 
 const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
+    // First, apply the base filter to remove confusing quote-replies
+    const baseFiltered = posts.filter(item => {
+        const embed = item.post.embed;
+        if (!embed) return false;
+
+        // Direct media is always a candidate
+        if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) return true;
+        if (AppBskyEmbedVideo.isView(embed)) return true;
+
+        // Handle quote posts (recordWithMedia)
+        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+            if (item.reply) {
+                const record = item.post.record as { text?: string };
+                if (!record.text || record.text.trim() === '') return false;
+            }
+            const media = embed.media;
+            if (AppBskyEmbedImages.isView(media) && media.images.length > 0) return true;
+            if (AppBskyEmbedVideo.isView(media)) return true;
+        }
+        return false;
+    });
+
+    // Then, apply the specific media type filter
     switch (filter) {
         case 'all':
-            return posts.filter(item => hasMedia(item.post));
+            return baseFiltered;
         case 'photos':
-            return posts.filter(item => hasPhotos(item.post));
+            return baseFiltered.filter(item => hasPhotos(item.post));
         case 'videos':
-            return posts.filter(item => hasVideos(item.post));
+            return baseFiltered.filter(item => hasVideos(item.post));
         default:
-            return posts.filter(item => hasMedia(item.post));
+            return baseFiltered;
     }
 };
 
