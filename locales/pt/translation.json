@@ -23,7 +23,9 @@
     "tryAgain": "Por favor, tente novamente.",
     "media": "mídia",
     "photos": "fotos",
-    "videos_noun": "vídeos"
+    "videos_noun": "vídeos",
+    "back": "Voltar",
+    "share": "Compartilhar"
   },
   "nav": {
     "home": "Início",
@@ -154,12 +156,12 @@
     "notFound": "Perfil não encontrado.",
     "blockedBy": "Você foi bloqueado por este usuário.",
     "blockedUser": "Você bloqueou @{{handle}}",
-    "blockedUserDescription": "Você не verá as publicações dele nem poderá segui-lo.",
+    "blockedUserDescription": "Você não verá as publicações dele nem poderá segui-lo.",
     "unblock": "Desbloquear",
     "mute": "Silenciar",
     "unmute": "Reativar som",
     "block": "Bloquear",
-    "confirmBlock": "Tem certeza de que deseja bloquear @{{handle}}? Eles не poderão ver suas publicações nem interagir com você.",
+    "confirmBlock": "Tem certeza de que deseja bloquear @{{handle}}? Eles não poderão ver suas publicações nem interagir com você.",
     "emptyFeed": "Este usuário ainda não publicou nenhuma {{mediaType}}.",
     "toast": {
       "followError": "Não foi possível seguir o usuário.",

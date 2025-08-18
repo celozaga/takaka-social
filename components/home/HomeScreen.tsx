@@ -62,15 +62,18 @@ const HomeScreen: React.FC = () => {
     fetchFeeds();
   }, [agent, session]);
   
-  // Effect to switch to 'following' when user logs in.
+  // Effect to switch feed only when session status changes (login/logout).
+  // Removed `selectedFeed` from dependencies to prevent it from resetting user selection.
   useEffect(() => {
     if (session) {
-      // Don't override if a custom feed is already selected,
-      // unless the previous state was the logged-out discover feed.
+      // Switch to 'following' only if the user was previously logged out
+      // and on the default discover feed. This avoids overriding their selection
+      // if they navigate away and back.
       if (selectedFeed === DISCOVER_FEED_URI) {
         setSelectedFeed('following');
       }
     } else {
+      // If user logs out, switch to the public discover feed.
       setSelectedFeed(DISCOVER_FEED_URI);
     }
   }, [session]);

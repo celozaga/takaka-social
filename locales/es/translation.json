@@ -23,7 +23,9 @@
     "tryAgain": "Por favor, inténtalo de nuevo.",
     "media": "contenido",
     "photos": "fotos",
-    "videos_noun": "vídeos"
+    "videos_noun": "vídeos",
+    "back": "Atrás",
+    "share": "Compartir"
   },
   "nav": {
     "home": "Inicio",

@@ -1,4 +1,5 @@
 
+
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
@@ -44,8 +45,8 @@ export const usePostActions = (post: PostActionable) => {
     if (!ensureSession('like') || isLiking) return;
     setIsLiking(true);
 
-    const originalLikeUri = post.viewer?.like;
-    const originalLikeCount = post.likeCount || 0;
+    const originalLikeUri = likeUri;
+    const originalLikeCount = likeCount;
 
     try {
       if (likeUri) {
@@ -75,8 +76,8 @@ export const usePostActions = (post: PostActionable) => {
     if (!ensureSession('repost') || isReposting) return;
     setIsReposting(true);
     
-    const originalRepostUri = post.viewer?.repost;
-    const originalRepostCount = post.repostCount || 0;
+    const originalRepostUri = repostUri;
+    const originalRepostCount = repostCount;
 
     try {
       if (repostUri) {

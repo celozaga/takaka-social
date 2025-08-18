@@ -22,17 +22,18 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
         setError('');
         setSuccess(false);
         try {
-            const { data } = await agent.com.atproto.server.updateEmail({ email });
-
-            if (data.tokenRequired) {
+            await agent.com.atproto.server.updateEmail({ email });
+            // If the call succeeds without throwing, the email was updated without needing verification.
+            toast({ title: "Email updated successfully!" });
+            onSuccess();
+        } catch (err: any) {
+            // If verification is required, the server throws a 'TokenRequired' error.
+            if (err.name === 'XRPCError' && err.error === 'TokenRequired') {
                 setSuccess(true);
             } else {
-                toast({ title: "Email updated successfully!" });
-                onSuccess();
+                console.error("Failed to update email", err);
+                setError(err.message || 'An error occurred.');
             }
-        } catch (err: any) {
-            console.error("Failed to update email", err);
-            setError(err.message || 'An error occurred.');
         } finally {
             setIsSaving(false);
         }
