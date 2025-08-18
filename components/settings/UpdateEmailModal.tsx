@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -24,12 +25,11 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
         try {
             const data = await agent.com.atproto.server.updateEmail({ email });
 
-            if (data.tokenRequired) {
+            if (data.data.tokenRequired) {
                 setSuccess(true);
             } else {
                 toast({ title: "Email updated successfully!" });
                 onSuccess();
-                window.location.reload(); // To refresh session data
             }
         } catch (err: any) {
             console.error("Failed to update email", err);

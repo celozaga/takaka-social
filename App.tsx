@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -22,16 +23,16 @@ const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'))
 const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const NotificationSettingsScreen = lazy(() => import('./components/settings/NotificationSettingsScreen'));
-const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSettingsScreen'));
 const LanguageSettingsScreen = lazy(() => import('./components/settings/LanguageSettingsScreen'));
+const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSettingsScreen'));
 const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
+const UpdateEmailModal = lazy(() => import('./components/settings/UpdateEmailModal'));
+const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleModal'));
 const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
 const MessagesScreen = lazy(() => import('./components/messages/MessagesScreen'));
 const ConvoScreen = lazy(() => import('./components/messages/ConvoScreen'));
-const UpdateEmailModal = lazy(() => import('./components/settings/UpdateEmailModal'));
-const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleModal'));
 
 
 const App: React.FC = () => {
@@ -146,11 +147,11 @@ const Main: React.FC = () => {
         if (parts[1] === 'notifications') {
           return <NotificationSettingsScreen />;
         }
-        if (parts[1] === 'account') {
-          return <AccountSettingsScreen />;
-        }
         if (parts[1] === 'language') {
             return <LanguageSettingsScreen />;
+        }
+        if (parts[1] === 'account') {
+            return <AccountSettingsScreen />;
         }
         return <SettingsScreen />;
       case 'more':
@@ -278,8 +279,11 @@ const Main: React.FC = () => {
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <UpdateEmailModal
-                    onClose={closeUpdateEmailModal}
-                    onSuccess={closeUpdateEmailModal}
+                  onClose={closeUpdateEmailModal}
+                  onSuccess={() => {
+                      closeUpdateEmailModal();
+                      window.location.reload();
+                  }}
                 />
             </Suspense>
           </div>
@@ -291,8 +295,8 @@ const Main: React.FC = () => {
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <UpdateHandleModal
-                    onClose={closeUpdateHandleModal}
-                    onSuccess={closeUpdateHandleModal}
+                  onClose={closeUpdateHandleModal}
+                  onSuccess={closeUpdateHandleModal}
                 />
             </Suspense>
           </div>

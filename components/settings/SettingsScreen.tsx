@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { Bell, UserCircle, ChevronRight, LogOut, Globe } from 'lucide-react';
+import { Bell, UserCircle, LogOut, Globe, ChevronRight } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
 import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';

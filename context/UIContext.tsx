@@ -78,10 +78,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   
   const openEditProfileModal = useCallback(() => setIsEditProfileModalOpen(true), []);
   const closeEditProfileModal = useCallback(() => setIsEditProfileModalOpen(false), []);
-  
+
   const openUpdateEmailModal = useCallback(() => setIsUpdateEmailModalOpen(true), []);
   const closeUpdateEmailModal = useCallback(() => setIsUpdateEmailModalOpen(false), []);
-  
+
   const openUpdateHandleModal = useCallback(() => setIsUpdateHandleModalOpen(true), []);
   const closeUpdateHandleModal = useCallback(() => setIsUpdateHandleModalOpen(false), []);
 
@@ -93,7 +93,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         isCustomFeedHeaderVisible, setCustomFeedHeaderVisible,
         isEditProfileModalOpen, openEditProfileModal, closeEditProfileModal,
         isUpdateEmailModalOpen, openUpdateEmailModal, closeUpdateEmailModal,
-        isUpdateHandleModalOpen, openUpdateHandleModal, closeUpdateHandleModal
+        isUpdateHandleModalOpen, openUpdateHandleModal, closeUpdateHandleModal,
     }}>
       {children}
     </UIContext.Provider>
