@@ -321,11 +321,21 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             )}
         </div>
         
-        {allReplies.length > 0 && (
-            <div className="mt-2">
+         <div className="border-t border-surface-3 mt-4">
+          {(mainPost.replyCount || 0) > 0 && (
+            <div className="px-4 pt-4 pb-2">
+              <h2 className="text-lg font-bold">
+                {mainPost.replyCount} {mainPost.replyCount === 1 ? 'Comment' : 'Comments'}
+              </h2>
+            </div>
+          )}
+
+          {allReplies.length > 0 && (
+            <div>
               <Reply reply={thread} isRoot={true} />
             </div>
-        )}
+          )}
+        </div>
       </div>
 
       <PostScreenActionBar post={mainPost} />
