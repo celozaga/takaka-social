@@ -23,6 +23,33 @@ interface SearchScreenProps {
   initialFilter?: string;
 }
 
+const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+
+    // Case 1: Direct media
+    if ((AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed)) {
+        return true;
+    }
+
+    // Case 2: Quote with own media
+    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+        const media = embed.media;
+        return (AppBskyEmbedImages.isView(media) && media.images.length > 0) || AppBskyEmbedVideo.isView(media);
+    }
+    
+    // Case 3: Quote of a media post
+    if (AppBskyEmbedRecord.isView(embed)) {
+        const quotedPost = embed.record;
+        if (AppBskyFeedDefs.isPostView(quotedPost)) {
+            // Recursively check if the quoted post is a media post
+            return isPostAMediaPost(quotedPost); 
+        }
+    }
+
+    return false;
+};
+
 const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
     if (!embed) return false;
@@ -117,38 +144,24 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
             } else { // All other filters are post searches
-                let allFetchedPosts: AppBskyFeedDefs.PostView[] = [];
-                let nextCursor: string | undefined = currentCursor;
-                let attempts = 0;
+                const response = await agent.app.bsky.feed.searchPosts({ 
+                    q: searchQuery, 
+                    limit: 50,
+                    cursor: currentCursor,
+                    sort: searchFilter === 'latest' ? 'latest' : 'top',
+                });
+                
+                let filteredPosts = response.data.posts.filter(isPostAMediaPost);
 
-                while (attempts < 5) {
-                    attempts++;
-                    const response = await agent.app.bsky.feed.searchPosts({ 
-                        q: searchQuery, 
-                        limit: 50,
-                        cursor: nextCursor,
-                        sort: searchFilter === 'latest' ? 'latest' : 'top',
-                    });
-                    
-                    allFetchedPosts = [...allFetchedPosts, ...response.data.posts];
-                    nextCursor = response.data.cursor;
-
-                    if (searchFilter === 'images' || searchFilter === 'videos') {
-                         const mediaFilterFn = searchFilter === 'images' ? hasPhotos : hasVideos;
-                         const mediaPosts = allFetchedPosts.filter(mediaFilterFn);
-                        
-                        if (mediaPosts.length >= 10 || !nextCursor) {
-                            allFetchedPosts = mediaPosts;
-                            break;
-                        }
-                    } else {
-                        break;
-                    }
+                if (searchFilter === 'images') {
+                    filteredPosts = filteredPosts.filter(hasPhotos);
+                } else if (searchFilter === 'videos') {
+                    filteredPosts = filteredPosts.filter(hasVideos);
                 }
                 
-                setResults(prev => currentCursor ? [...prev, ...allFetchedPosts] : allFetchedPosts);
-                setCursor(nextCursor);
-                setHasMore(!!nextCursor && allFetchedPosts.length > 0);
+                setResults(prev => currentCursor ? [...prev, ...filteredPosts] : filteredPosts);
+                setCursor(response.data.cursor);
+                setHasMore(!!response.data.cursor);
             }
         } catch (error) {
             console.error("Search failed:", error);

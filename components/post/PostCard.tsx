@@ -173,7 +173,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             );
         }
 
-        let recordEmbed: AppBskyEmbedRecord.ViewRecord | undefined;
+        let recordEmbed: AppBskyEmbedRecord.View['record'] | undefined;
 
         if (AppBskyEmbedRecord.isView(post.embed)) {
             recordEmbed = post.embed.record;
