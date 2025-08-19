@@ -1,14 +1,14 @@
 
 
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyFeedPost } from '@atproto/api';
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from '../ui/use-toast';
-import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, Loader2, ShieldAlert, Heart, Repeat, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useHeadManager } from '../../hooks/useHeadManager';
@@ -16,6 +16,7 @@ import Hls from 'hls.js';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
+import { usePostActions } from '../../hooks/usePostActions';
 
 
 const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined => {
@@ -87,6 +88,44 @@ const PostVideoPlayer: React.FC<{ hlsSrc?: string | null; blobSrc: string; poste
     );
 };
 
+const PostStats: React.FC<{ post: AppBskyFeedDefs.PostView }> = ({ post }) => {
+    const {
+        likeUri, likeCount, isLiking, handleLike,
+        repostUri, repostCount, isReposting, handleRepost
+    } = usePostActions(post);
+
+    const formatStat = (count: number) => {
+        if (count > 999999) return `${(count / 1000000).toFixed(1)}M`.replace('.0','');
+        if (count > 999) return `${(count / 1000).toFixed(1)}K`.replace('.0','');
+        return count.toString();
+    };
+
+    return (
+        <div className="flex items-center gap-2 mt-3 text-sm text-on-surface-variant">
+            <button
+                onClick={handleLike}
+                disabled={isLiking}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-colors ${likeUri ? 'bg-like/20 text-like' : 'bg-surface-3 hover:bg-surface-3/80'}`}
+            >
+                <Heart size={16} fill={likeUri ? 'currentColor' : 'none'} />
+                <span className="font-semibold">{formatStat(likeCount)}</span>
+            </button>
+            <button
+                onClick={handleRepost}
+                disabled={isReposting}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-colors ${repostUri ? 'bg-primary/20 text-primary' : 'bg-surface-3 hover:bg-surface-3/80'}`}
+            >
+                <Repeat size={16} />
+                <span className="font-semibold">{formatStat(repostCount)}</span>
+            </button>
+             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-3">
+                <MessageCircle size={16} />
+                <span className="font-semibold">{formatStat(post.replyCount || 0)}</span>
+            </div>
+        </div>
+    );
+};
+
 
 interface PostScreenProps {
   did: string;
@@ -94,9 +133,8 @@ interface PostScreenProps {
 }
 
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
-  const { agent, session } = useAtp();
-  const { openComposer, openMediaActionsModal } = useUI();
-  const { toast } = useToast();
+  const { agent } = useAtp();
+  const { openMediaActionsModal } = useUI();
   const { t } = useTranslation();
   const moderation = useModeration();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
@@ -324,39 +362,31 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const modDecision = moderatePost(mainPost, moderation);
   
   const PageHeader = () => (
-      <header className="bg-surface-1 z-40">
+      <header className="flex-shrink-0 bg-surface-1/80 backdrop-blur-sm z-10">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-                <a href="#" onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
-                    <ArrowLeft size={20} />
-                </a>
-                <a href={`#/profile/${postAuthor.handle}`} className="flex items-center gap-3 truncate">
-                    <img src={postAuthor.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={postAuthor.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
-                    <div className="font-bold truncate leading-tight flex items-center gap-1.5">
-                        <span className="truncate">{postAuthor.displayName || `@${postAuthor.handle}`}</span>
-                        {postAuthor.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                            <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
-                        )}
-                    </div>
-                </a>
-            </div>
-            <div className="flex items-center gap-2">
-                 <button onClick={() => openMediaActionsModal(mainPost)} className="p-2 rounded-full hover:bg-surface-3">
-                    <MoreHorizontal size={20} />
-                </button>
-            </div>
+            <a href="#" onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
+                <ArrowLeft size={20} />
+            </a>
+            <h1 className="text-lg font-bold">
+                {mainPost.replyCount || 0} {t(mainPost.replyCount === 1 ? 'common.reply' : 'common.replies')}
+            </h1>
+            <button onClick={() => openMediaActionsModal(mainPost)} className="p-2 -mr-2 rounded-full hover:bg-surface-3">
+                <MoreHorizontal size={20} />
+            </button>
         </div>
       </header>
   );
 
   if (modDecision.visibility === 'hide') {
     return (
-        <div>
+        <div className="flex flex-col h-screen bg-surface-1">
             <PageHeader />
-            <div className="text-center p-8 bg-surface-2 rounded-xl mt-4 mx-4">
-                <ShieldAlert size={40} className="mx-auto mb-4 opacity-50" />
-                <p className="font-semibold text-on-surface">Post hidden</p>
-                <p className="text-sm text-on-surface-variant mt-1">{modDecision.reason}</p>
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="text-center p-8 bg-surface-2 rounded-xl">
+                    <ShieldAlert size={40} className="mx-auto mb-4 opacity-50" />
+                    <p className="font-semibold text-on-surface">Post hidden</p>
+                    <p className="text-sm text-on-surface-variant mt-1">{modDecision.reason}</p>
+                </div>
             </div>
         </div>
     )
@@ -364,9 +394,9 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
 
   if (modDecision.visibility === 'warn' && !isContentVisible) {
     return (
-         <div>
+         <div className="flex flex-col h-screen bg-surface-1">
             <PageHeader />
-            <div className="p-4">
+            <div className="flex-1 flex items-center justify-center p-4">
                 <ContentWarning 
                     reason={modDecision.reason!}
                     onShow={() => setIsContentVisible(true)}
@@ -380,44 +410,48 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
   
   return (
-    <div>
+    <div className="flex flex-col h-screen bg-surface-1">
       <PageHeader />
       
-      <div>
-        <div className="p-4">
-             {renderMedia(mainPost)}
-             {currentRecord.text && (
+      <main className="flex-1 overflow-y-auto channel-bg">
+        {/* Main Post */}
+        <div className="bg-transparent px-2 pt-2 mb-2">
+            {renderMedia(mainPost)}
+            {currentRecord.text && (
                 <div className="my-3 text-on-surface whitespace-pre-wrap break-words">
                     <RichTextRenderer record={currentRecord} />
                 </div>
-             )}
-             <p className="text-sm text-on-surface-variant my-3">{format(new Date(currentRecord.createdAt), "h:mm a · MMM d, yyyy")}</p>
+            )}
+            <div className="flex items-center justify-between text-sm text-on-surface-variant">
+                <a href={`#/profile/${postAuthor.handle}`} className="font-bold text-primary hover:underline">@{postAuthor.handle}</a>
+                <span>{format(new Date(currentRecord.createdAt), "p")}</span>
+            </div>
+            <PostStats post={mainPost} />
         </div>
         
-        <PostScreenActionBar post={mainPost} />
-        
-        <div className="md:mt-4">
-          {(mainPost.replyCount || 0) > 0 ? (
+        {/* Separator & Replies */}
+        {(mainPost.replyCount || 0) > 0 ? (
             <>
-              <div className="px-4 pt-4 pb-2">
-                <h2 className="text-lg font-bold">
-                  {mainPost.replyCount} {t(mainPost.replyCount === 1 ? 'common.reply' : 'common.replies')}
-                </h2>
-              </div>
-              {allReplies.length > 0 && (
-                <div>
+                {allReplies.length > 0 && (
+                    <div className="flex justify-center my-4">
+                        <span className="text-xs text-on-surface-variant bg-surface-3/50 rounded-full px-3 py-1">
+                            Discussion started
+                        </span>
+                    </div>
+                )}
+                <div className="px-2 pb-4">
                   <Reply reply={thread} isRoot={true} />
                 </div>
-              )}
             </>
-          ) : (
-            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4 mx-4 md:mx-0">
+        ) : (
+            <div className="text-center text-on-surface-variant p-8 bg-surface-2/50 rounded-xl mt-4 mx-4">
                 <MessageSquareDashed size={40} className="mx-auto mb-4 opacity-50" />
                 <p className="font-semibold text-on-surface">{t('post.noReplies')}</p>
             </div>
-          )}
-        </div>
-      </div>
+        )}
+      </main>
+
+      <PostScreenActionBar post={mainPost} />
     </div>
   );
 };

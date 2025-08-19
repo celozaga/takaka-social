@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -62,7 +63,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
     if (!AppBskyFeedPost.isRecord(recordUnchecked)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = recordUnchecked as AppBskyFeedPost.Record;
+    const record = recordUnchecked;
 
     const renderMedia = () => {
         if (!post.embed) return null;
