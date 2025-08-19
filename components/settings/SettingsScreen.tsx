@@ -1,25 +1,16 @@
-
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { Bell, UserCircle, LogOut, Globe, Shield, ChevronRight } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
-import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
 import { useHeadManager } from '../../hooks/useHeadManager';
 
 const SettingsScreen: React.FC = () => {
     const { t, i18n } = useTranslation();
     const { logout } = useAtp();
-    const { setCustomFeedHeaderVisible } = useUI();
 
     useHeadManager({ title: t('settings.title') });
-
-    React.useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const handleLogout = () => {
         if (window.confirm(t('settings.signOutConfirm'))) {

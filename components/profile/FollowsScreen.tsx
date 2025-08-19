@@ -1,10 +1,6 @@
-
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } from '@atproto/api';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
@@ -18,7 +14,6 @@ interface FollowsScreenProps {
 const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     const { agent } = useAtp();
     const { t } = useTranslation();
-    const { setCustomFeedHeaderVisible } = useUI();
     const [list, setList] = useState<AppBskyActorDefs.ProfileView[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -29,11 +24,6 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
 
     const title = t(`common.${type}`);
     useHeadManager({ title });
-
-    useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const fetchList = useCallback(async (currentCursor?: string) => {
         const fetchFn = type === 'followers'

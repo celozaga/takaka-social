@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -121,8 +117,10 @@ const Main: React.FC = () => {
   const isSearchScreen = route.startsWith('#/search');
   const isNotificationsScreen = route.startsWith('#/notifications');
   const isMoreScreen = route.startsWith('#/more');
+  const isSettingsScreen = route.startsWith('#/settings');
+  const isFeedsScreen = route.startsWith('#/feeds');
   
-  const isSectionView = isSearchScreen || isNotificationsScreen || isMoreScreen;
+  const isSectionView = isSearchScreen || isNotificationsScreen || isMoreScreen || isSettingsScreen || isFeedsScreen;
   const isBottomNavHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen;
   const isTopNavHidden = isBottomNavHidden || isSectionView;
 
@@ -235,7 +233,7 @@ const Main: React.FC = () => {
     ? 'w-full h-screen bg-black'
     : isPostScreen
       ? 'w-full max-w-3xl transition-all duration-300 pb-8'
-      : `w-full max-w-3xl px-4 ${isBottomNavHidden ? 'pt-4' : isSectionView ? '' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+      : `w-full max-w-3xl px-4 ${isBottomNavHidden ? 'pt-4' : isSectionView ? 'pt-4' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
 
 
   return (
@@ -258,11 +256,11 @@ const Main: React.FC = () => {
 
       {isComposerOpen && session && (
         <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
           onClick={closeComposer}
         >
           <div 
-            className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-2xl bg-surface-1 rounded-t-2xl md:rounded-2xl flex flex-col shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
+            className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-2xl bg-surface-1 rounded-t-2xl md:rounded-2xl flex flex-col shadow-2xl animate-slide-in-from-bottom"
             onClick={e => e.stopPropagation()}
           >
              <Composer 
@@ -276,7 +274,7 @@ const Main: React.FC = () => {
       )}
 
       {isLoginModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeLoginModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeLoginModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-96 bg-surface-2 rounded-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <LoginScreen onSuccess={closeLoginModal} />
@@ -286,7 +284,7 @@ const Main: React.FC = () => {
       )}
       
       {isFeedModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeFeedModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeFeedModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <FeedHeaderModal />
@@ -296,7 +294,7 @@ const Main: React.FC = () => {
       )}
 
       {isEditProfileModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeEditProfileModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeEditProfileModal}>
           <div className="relative w-full max-w-xl" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-xl h-[500px] bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <EditProfileModal
@@ -315,7 +313,7 @@ const Main: React.FC = () => {
       )}
 
       {isUpdateEmailModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeUpdateEmailModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeUpdateEmailModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <UpdateEmailModal
@@ -331,7 +329,7 @@ const Main: React.FC = () => {
       )}
 
       {isUpdateHandleModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeUpdateHandleModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeUpdateHandleModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <UpdateHandleModal
@@ -345,11 +343,11 @@ const Main: React.FC = () => {
 
       {isMediaActionsModalOpen && mediaActionsModalPost && (
          <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
           onClick={closeMediaActionsModal}
         >
           <div 
-            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
             onClick={e => e.stopPropagation()}
           >
             <Suspense fallback={<div className="w-full h-96 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
@@ -364,11 +362,11 @@ const Main: React.FC = () => {
 
       {isRepostModalOpen && repostModalPost && (
          <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
           onClick={closeRepostModal}
         >
           <div 
-            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
             onClick={e => e.stopPropagation()}
           >
             <Suspense fallback={<div className="w-full h-48 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>

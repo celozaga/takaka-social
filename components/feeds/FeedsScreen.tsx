@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
@@ -8,7 +5,6 @@ import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { Pin, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import PopularFeeds from './PopularFeeds';
-import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import FeedAvatar from './FeedAvatar';
 import { useHeadManager } from '../../hooks/useHeadManager';
@@ -63,7 +59,6 @@ const EditableFeedItem: React.FC<{
 const FeedsScreen: React.FC = () => {
     const { session } = useAtp();
     const { t } = useTranslation();
-    const { setCustomFeedHeaderVisible } = useUI();
     const { 
         isLoading: isLoadingSavedFeeds, 
         feedViews, 
@@ -76,11 +71,6 @@ const FeedsScreen: React.FC = () => {
     const [isUpdating, setIsUpdating] = useState(false);
 
     useHeadManager({ title: t('feeds.title') });
-
-    useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const handleAction = async (action: () => Promise<void>) => {
         if (isUpdating) return;

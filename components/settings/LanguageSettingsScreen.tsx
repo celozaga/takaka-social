@@ -1,21 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
 import { useHeadManager } from '../../hooks/useHeadManager';
 
 const LanguageSettingsScreen: React.FC = () => {
-    const { setCustomFeedHeaderVisible } = useUI();
     const { t, i18n } = useTranslation();
 
     useHeadManager({ title: t('languageSettings.title') });
-
-    React.useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const changeLanguage = (langCode: string) => {
         i18n.changeLanguage(langCode);

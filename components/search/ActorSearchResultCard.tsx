@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';

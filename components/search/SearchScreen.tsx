@@ -1,20 +1,18 @@
-
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useAtp } from '../context/AtpContext';
-import { useHiddenPosts } from '../context/HiddenPostsContext';
+import { useAtp } from '../../context/AtpContext';
+import { useHiddenPosts } from '../../context/HiddenPostsContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
-import PostCard from './PostCard';
+import PostCard from '../post/PostCard';
 import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
-import PostCardSkeleton from './PostCardSkeleton';
+import PostCardSkeleton from '../post/PostCardSkeleton';
 import ActorSearchResultCard from './ActorSearchResultCard';
-import PopularFeeds from './PopularFeeds';
-import SuggestedFollows from './SuggestedFollows';
-import { useSavedFeeds } from '../hooks/useSavedFeeds';
-import FeedSearchResultCard from './FeedSearchResultCard';
-import { useUI } from '../context/UIContext';
-import SearchHeader from './SearchHeader';
+import PopularFeeds from '../feeds/PopularFeeds';
+import SuggestedFollows from '../profile/SuggestedFollows';
+import { useSavedFeeds } from '../../hooks/useSavedFeeds';
+import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
+import ScreenHeader from '../layout/ScreenHeader';
 
-type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
+type SearchResult = AppBskyFeedDefs.FeedViewPost | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
 
 interface SearchScreenProps {
@@ -34,7 +32,6 @@ const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
     const { hiddenPostUris } = useHiddenPosts();
-    const { setCustomFeedHeaderVisible } = useUI();
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -44,11 +41,6 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const activeFilter = (initialFilter as FilterType) || 'top';
     
@@ -88,7 +80,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
             } else { // All other filters are post searches
-                let allFetchedPosts: AppBskyFeedDefs.PostView[] = [];
+                let allFetchedPosts: AppBskyFeedDefs.FeedViewPost[] = [];
                 let nextCursor: string | undefined = currentCursor;
                 let attempts = 0;
 
@@ -101,13 +93,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         sort: searchFilter === 'latest' ? 'latest' : 'top',
                     });
                     
-                    const visiblePosts = response.data.posts.filter(p => !hiddenPostUris.has(p.uri));
+                    const visiblePosts = response.data.posts.map(p => ({ post: p } as AppBskyFeedDefs.FeedViewPost)).filter(p => !hiddenPostUris.has(p.post.uri));
                     allFetchedPosts = [...allFetchedPosts, ...visiblePosts];
                     nextCursor = response.data.cursor;
 
                     if (searchFilter === 'images' || searchFilter === 'videos') {
-                        const mediaPosts = allFetchedPosts.filter(post => {
-                            const embed = post.embed;
+                        const mediaPosts = allFetchedPosts.filter(postView => {
+                            const embed = postView.post.embed;
                             if (!embed) return false;
                             const targetType = searchFilter === 'images' ? 'app.bsky.embed.images#view' : 'app.bsky.embed.video#view';
                             if (embed.$type === targetType) return true;
@@ -186,12 +178,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         if (activeFilter === 'people' || activeFilter === 'feeds') {
             return [];
         }
-        return results as AppBskyFeedDefs.PostView[];
+        return results as AppBskyFeedDefs.FeedViewPost[];
     }, [activeFilter, results]);
 
     const { leftColumn, rightColumn } = useMemo(() => {
-        const left: AppBskyFeedDefs.PostView[] = [];
-        const right: AppBskyFeedDefs.PostView[] = [];
+        const left: AppBskyFeedDefs.FeedViewPost[] = [];
+        const right: AppBskyFeedDefs.FeedViewPost[] = [];
         postResults.forEach((item, index) => {
             if (index % 2 === 0) {
                 left.push(item);
@@ -201,7 +193,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         });
         return { leftColumn, rightColumn };
     }, [postResults]);
-    
+
     const renderResults = () => {
       if (activeFilter === 'people') {
         return (
@@ -231,13 +223,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
       return (
         <div className="flex gap-4 items-start">
             <div className="w-1/2 space-y-4">
-                {leftColumn.map(post => (
-                    <PostCard key={post.cid} post={post} />
+                {leftColumn.map(postView => (
+                    <PostCard key={postView.post.cid} feedViewPost={postView} />
                 ))}
             </div>
             <div className="w-1/2 space-y-4">
-                {rightColumn.map(post => (
-                    <PostCard key={post.cid} post={post} />
+                {rightColumn.map(postView => (
+                    <PostCard key={postView.post.cid} feedViewPost={postView} />
                 ))}
             </div>
         </div>
@@ -246,7 +238,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     
     return (
         <div>
-            <SearchHeader />
+            <ScreenHeader title="Search" />
             <div className="mt-4">
                 <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
                     <div className="relative flex-grow">

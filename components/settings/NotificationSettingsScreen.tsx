@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Quote, Bell, Loader2 } from 'lucide-react';
@@ -20,7 +19,6 @@ interface PushNotificationsPref {
 }
 
 const NotificationSettingsScreen: React.FC = () => {
-    const { setCustomFeedHeaderVisible } = useUI();
     const { agent } = useAtp();
     const { toast } = useToast();
     const { t } = useTranslation();
@@ -42,7 +40,6 @@ const NotificationSettingsScreen: React.FC = () => {
 
     // Load initial settings from preferences and browser permissions
     useEffect(() => {
-        setCustomFeedHeaderVisible(true);
         const loadSettings = async () => {
             setIsLoading(true);
             setPushEnabled(Notification.permission === 'granted');
@@ -70,8 +67,7 @@ const NotificationSettingsScreen: React.FC = () => {
             }
         };
         loadSettings();
-        return () => setCustomFeedHeaderVisible(false);
-    }, [agent, setCustomFeedHeaderVisible]);
+    }, [agent]);
 
     const saveSettings = useCallback(async (newSettings: typeof settings) => {
         setIsSaving(true);

@@ -1,19 +1,18 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useAtp } from '../context/AtpContext';
-import { useToast } from './ui/use-toast';
+import { useAtp } from '../../context/AtpContext';
+import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
-import PostCard from './PostCard';
-import PostCardSkeleton from './PostCardSkeleton';
+import PostCard from '../post/PostCard';
+import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft } from 'lucide-react';
-import RichTextRenderer from './RichTextRenderer';
-import { useUI } from '../context/UIContext';
-import { useHiddenPosts } from '../context/HiddenPostsContext';
+import RichTextRenderer from '../shared/RichTextRenderer';
+import { useUI } from '../../context/UIContext';
+import { useHiddenPosts } from '../../context/HiddenPostsContext';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
-    const { setCustomFeedHeaderVisible } = useUI();
+    const { setCustomFeedHeaderVisible, openEditProfileModal } = useUI();
     const { hiddenPostUris } = useHiddenPosts();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
@@ -161,6 +160,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
         return posts.filter(item => {
             if (hiddenPostUris.has(item.post.uri)) return false;
+            if (item.reply) return false;
             const embed = item.post.embed;
             if (!embed) return false;
             if (AppBskyEmbedImages.isView(embed) || embed.$type === 'app.bsky.embed.video#view') return true;
@@ -336,7 +336,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 <MoreHorizontal size={20} />
             </button>
             {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-surface-3 rounded-lg z-10 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-48 bg-surface-3 rounded-lg z-10 overflow-hidden shadow-lg">
                     <ul>
                         <li>
                             <button onClick={viewerState?.muted ? handleUnmute : handleMute} className="w-full text-left px-4 py-2 hover:bg-surface-2 flex items-center gap-3">
@@ -367,12 +367,19 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             </div>
             
             <div className="pt-20 px-4 pb-8">
-                 {session && !isMe && viewerState && (
+                 {session && !isMe && (
                     <div className="flex items-center gap-2 mb-4">
                         <FollowButton />
                         <ActionsMenu />
                     </div>
-                )}
+                 )}
+                 {session && isMe && (
+                    <div className="flex justify-end mb-4">
+                        <button onClick={openEditProfileModal} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80">
+                            Edit Profile
+                        </button>
+                    </div>
+                 )}
                 <h2 className="text-3xl font-bold flex items-center gap-2">
                     <span>{profile.displayName}</span>
                     {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
@@ -381,8 +388,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </h2>
                 <p className="text-on-surface-variant">@{profile.handle}</p>
                 <div className="flex items-center gap-4 text-on-surface-variant text-sm mt-2">
-                    <span><strong className="text-on-surface">{profile.followersCount}</strong> Followers</span>
-                    <span><strong className="text-on-surface">{profile.followsCount}</strong> Following</span>
+                    <a href={`#/profile/${profile.handle}/followers`} className="hover:underline"><strong className="text-on-surface">{profile.followersCount}</strong> Followers</a>
+                    <a href={`#/profile/${profile.handle}/following`} className="hover:underline"><strong className="text-on-surface">{profile.followsCount}</strong> Following</a>
                     <span><strong className="text-on-surface">{profile.postsCount}</strong> Posts</span>
                 </div>
                 {profile.description && (
@@ -412,13 +419,13 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     
                     <div className="flex gap-4 items-start">
                         <div className="w-1/2 space-y-4">
-                            {leftColumn.map(({ post }) => (
-                                <PostCard key={post.cid} post={post} />
+                            {leftColumn.map((postView) => (
+                                <PostCard key={postView.post.cid} feedViewPost={postView} />
                             ))}
                         </div>
                         <div className="w-1/2 space-y-4">
-                            {rightColumn.map(({ post }) => (
-                                <PostCard key={post.cid} post={post} />
+                            {rightColumn.map((postView) => (
+                                <PostCard key={postView.post.cid} feedViewPost={postView} />
                             ))}
                         </div>
                     </div>

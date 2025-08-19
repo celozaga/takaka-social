@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -53,17 +52,12 @@ const SettingsListItem: React.FC<SettingsListItemProps> = ({ icon: Icon, label, 
 
 const AccountSettingsScreen: React.FC = () => {
     const { session, agent, logout } = useAtp();
-    const { setCustomFeedHeaderVisible, openUpdateEmailModal, openUpdateHandleModal } = useUI();
+    const { openUpdateEmailModal, openUpdateHandleModal } = useUI();
     const { toast } = useToast();
     const { t } = useTranslation();
     const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
     useHeadManager({ title: t('accountSettings.title') });
-
-    React.useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const handleExportData = async () => {
         if (actionInProgress) return;

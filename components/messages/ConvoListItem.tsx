@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatBskyConvoDefs } from '@atproto/api';
@@ -66,4 +64,4 @@ const ConvoListItem: React.FC<ConvoListItemProps> = ({ convo }) => {
   );
 };
 
-export default ConvoListItem;
+export default React.memo(ConvoListItem);

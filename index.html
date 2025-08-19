@@ -42,6 +42,20 @@
             borderRadius: {
               'xl': '1rem', // 16px
               '2xl': '1.5rem', // 24px
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.3s ease-out forwards',
+              'slide-in-from-bottom': 'slideInFromBottom 0.3s ease-out forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: 0 },
+                '100%': { opacity: 1 },
+              },
+              slideInFromBottom: {
+                '0%': { transform: 'translateY(100%)', opacity: 0 },
+                '100%': { transform: 'translateY(0)', opacity: 1 },
+              },
             }
           }
         }
@@ -68,12 +82,34 @@
 }
 </script>
 <style>
+  :root {
+    --primary: #A8C7FA;
+    --on-primary: #003258;
+    --primary-container: #00497D;
+    --on-primary-container: #D4E3FF;
+    --surface-1: #111314;
+    --surface-2: #1E2021;
+    --surface-3: #292B2C;
+    --on-surface: #E2E2E6;
+    --on-surface-variant: #C1C7CE;
+    --outline: #44474E;
+    --error: #F2B8B5;
+    --on-error: #601410;
+  }
   body {
     font-family: 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Accessible focus state */
+  *:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 </style>
 </head>
-  <body class="bg-surface-1 text-on-surface antialiased">
+  <body class="bg-surface-1 text-on-surface">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <script>
