@@ -5,20 +5,10 @@ import { Heart, Repeat, MessageCircle } from 'lucide-react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { usePostActions } from '../hooks/usePostActions';
+import { AppBskyFeedDefs } from '@atproto/api';
 
 interface PostActionsProps {
-  post: {
-      uri: string;
-      cid: string;
-      author: { did: string; };
-      likeCount?: number;
-      repostCount?: number;
-      replyCount?: number;
-      viewer?: {
-          like?: string;
-          repost?: string;
-      }
-  };
+  post: AppBskyFeedDefs.PostView;
 }
 
 const PostActions: React.FC<PostActionsProps> = ({ post }) => {

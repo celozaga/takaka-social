@@ -126,14 +126,12 @@
     "empty": "Você não tem nenhuma notificação aqui.",
     "mentions": "Menções",
     "reposts": "Reposts",
-    "quotes": "Citações",
     "follows": "Seguidores",
     "likedYourPost": "<0>{{author}}</0> curtiu sua publicação",
     "repostedYourPost": "<0>{{author}}</0> repostou sua publicação",
     "followedYou": "<0>{{author}}</0> seguiu você",
     "repliedToYourPost": "<0>{{author}}</0> respondeu à sua publicação",
     "mentionedYou": "<0>{{author}}</0> mencionou você em uma publicação",
-    "quotedYourPost": "<0>{{author}}</0> citou sua publicação",
     "newNotification": "Nova notificação: {{reason}}",
     "quotedPost": "Citado de outra publicação."
   },
@@ -164,7 +162,6 @@
   },
   "repostModal": {
     "repost": "Repostar",
-    "quote": "Citar",
     "share": "Compartilhar via...",
     "repostSuccess": "Publicação repostada com sucesso!"
   },
@@ -249,6 +246,7 @@
     "actionFailed": "Ação falhou",
     "likeError": "Não foi possível atualizar o status de curtida.",
     "repostError": "Não foi possível repostar.",
+    "repostReplyError": "Respostas não podem ser repostadas.",
     "loadFeedsError": "Não foi possível carregar seus feeds.",
     "saveFeedsError": "Suas alterações não puderam ser salvas.",
     "signInToSave": "Faça o login",
@@ -268,7 +266,7 @@
   },
   "languageSettings": {
     "title": "Idioma do aplicativo",
-    "description": "Escolha o idioma para a interface do aplicativo."
+    "description": "Escolha o idioma para la interface do aplicativo."
   },
   "accountSettings": {
     "title": "Conta",

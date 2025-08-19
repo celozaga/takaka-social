@@ -10,35 +10,12 @@ interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
 }
 
-const isPostAMediaPost = (post: AppBskyFeedDefs.PostView, reply?: AppBskyFeedDefs.ReplyRef): boolean => {
+const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
     if (!embed) return false;
 
-    // Case 1: Direct media
-    if ((AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed)) {
-        return true;
-    }
-
-    // Case 2: Quote with own media
-    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        if (reply) { // Don't show replies that are just quotes w/ media but no text
-            const record = post.record as { text?: string };
-            if (!record.text || record.text.trim() === '') return false;
-        }
-        const media = embed.media;
-        return (AppBskyEmbedImages.isView(media) && media.images.length > 0) || AppBskyEmbedVideo.isView(media);
-    }
-    
-    // Case 3: Quote of a media post
-    if (AppBskyEmbedRecord.isView(embed)) {
-        const quotedPost = embed.record;
-        if (AppBskyFeedDefs.isPostView(quotedPost)) {
-            // Recursively check if the quoted post is a media post, but without the reply check
-            return isPostAMediaPost(quotedPost); 
-        }
-    }
-
-    return false;
+    // Only show posts with direct media.
+    return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
 };
 
 const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
@@ -54,7 +31,8 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
-    return posts.filter(item => isPostAMediaPost(item.post, item.reply));
+    // Filter out replies and posts without direct media.
+    return posts.filter(item => !item.reply && isPostAMediaPost(item.post));
   };
   
   const fetchPosts = useCallback(async (currentCursor?: string) => {

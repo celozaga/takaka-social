@@ -5,12 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../components/ui/use-toast';
+import { AppBskyFeedPost } from '@atproto/api';
 
 interface PostActionable {
   uri: string;
   cid: string;
   likeCount?: number;
   repostCount?: number;
+  record: unknown;
   viewer?: {
     like?: string;
     repost?: string;
@@ -74,6 +76,12 @@ export const usePostActions = (post: PostActionable) => {
     e?.stopPropagation();
     e?.preventDefault();
     if (!ensureSession('repost') || isReposting) return;
+
+    if (AppBskyFeedPost.isRecord(post.record) && (post.record as AppBskyFeedPost.Record).reply) {
+        toast({ title: t('hooks.repostReplyError'), variant: "destructive" });
+        return;
+    }
+
     setIsReposting(true);
     
     const originalRepostUri = repostUri;

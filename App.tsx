@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -57,7 +58,7 @@ const Main: React.FC = () => {
   const { session, isLoadingSession, chatSupported } = useAtp();
   const { 
     isLoginModalOpen, closeLoginModal, 
-    isComposerOpen, closeComposer, composerReplyTo, composerQuoteOf, composerInitialText, 
+    isComposerOpen, closeComposer, composerReplyTo, composerInitialText, 
     isCustomFeedHeaderVisible, 
     isFeedModalOpen, closeFeedModal,
     isEditProfileModalOpen, closeEditProfileModal,
@@ -251,7 +252,6 @@ const Main: React.FC = () => {
                 onPostSuccess={closeComposer}
                 onClose={closeComposer}
                 replyTo={composerReplyTo}
-                quoteOf={composerQuoteOf}
                 initialText={composerInitialText}
              />
           </div>

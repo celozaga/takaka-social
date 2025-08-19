@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { RichText, AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AtUri, AppBskyEmbedRecord } from '@atproto/api';
-import { ImageUp, Send, X, Video, BadgeCheck } from 'lucide-react';
+import { RichText, AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AtUri } from '@atproto/api';
+import { ImageUp, Send, X, Video } from 'lucide-react';
 import { useToast } from '../ui/use-toast';
 
 interface ComposerProps {
@@ -13,7 +13,6 @@ interface ComposerProps {
     uri: string;
     cid: string;
   };
-  quoteOf?: AppBskyFeedDefs.PostView;
   initialText?: string;
 }
 
@@ -110,28 +109,7 @@ const CharacterCount: React.FC<{ remainingChars: number; max: number }> = ({ rem
     );
 };
 
-const QuotedPostPreview: React.FC<{ post: AppBskyFeedDefs.PostView }> = ({ post }) => {
-    const record = post.record as any;
-    const firstImage = (AppBskyEmbedImages.isView(post.embed) && post.embed.images.length > 0)
-        ? post.embed.images[0]
-        : null;
-
-    return (
-        <div className="mt-2 border border-outline rounded-xl p-2">
-            <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                <img src={post.author.avatar} className="w-4 h-4 rounded-full" />
-                <span className="font-semibold">{post.author.displayName}</span>
-                <span className="truncate">@{post.author.handle}</span>
-            </div>
-            <p className="text-sm text-on-surface line-clamp-3 mt-1">{record.text}</p>
-            {firstImage && (
-                <img src={firstImage.thumb} className="mt-2 w-16 h-16 object-cover rounded-lg" />
-            )}
-        </div>
-    )
-}
-
-const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, quoteOf, initialText }) => {
+const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, initialText }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -210,7 +188,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, qu
   };
 
   const handlePost = async () => {
-    if ((!text.trim() && mediaFiles.length === 0 && !quoteOf) || (text.length > MAX_CHARS)) {
+    if ((!text.trim() && mediaFiles.length === 0) || (text.length > MAX_CHARS)) {
         toast({ title: text.length > MAX_CHARS ? "Post is too long." : t('composer.toast.emptyPost'), variant: "destructive" });
         return;
     }
@@ -265,23 +243,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, qu
                 images: imageEmbeds,
             };
         }
-      }
-      
-      if (quoteOf) {
-        const quoteEmbed: AppBskyEmbedRecord.Main = {
-            $type: 'app.bsky.embed.record',
-            record: { cid: quoteOf.cid, uri: quoteOf.uri },
-        };
-        if (mediaEmbed) {
-            postRecord.embed = {
-                $type: 'app.bsky.embed.recordWithMedia',
-                record: quoteEmbed,
-                media: mediaEmbed,
-            };
-        } else {
-            postRecord.embed = quoteEmbed;
-        }
-      } else if (mediaEmbed) {
         postRecord.embed = mediaEmbed;
       }
       
@@ -334,7 +295,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, qu
             </button>
             <button
                 onClick={handlePost}
-                disabled={isPosting || (!text.trim() && mediaFiles.length === 0 && !quoteOf) || text.length > MAX_CHARS}
+                disabled={isPosting || (!text.trim() && mediaFiles.length === 0) || text.length > MAX_CHARS}
                 className="bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-on-primary font-bold py-1.5 px-5 rounded-full transition duration-200 flex items-center gap-2 text-sm"
             >
                 {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
@@ -349,12 +310,10 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, qu
                     ref={textareaRef}
                     value={text}
                     onChange={handleTextChange}
-                    placeholder={replyTo ? t('composer.replyPlaceholder') : (quoteOf ? "Add a comment..." : t('composer.placeholder'))}
+                    placeholder={replyTo ? t('composer.replyPlaceholder') : t('composer.placeholder')}
                     className="w-full bg-transparent text-xl resize-none outline-none placeholder-on-surface-variant flex-1 min-h-[100px]"
                     autoFocus
                 />
-
-                {quoteOf && <QuotedPostPreview post={quoteOf} />}
 
                 {mediaFiles.length > 0 && (
                     <div className={`mt-4 grid gap-2 ${mediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>

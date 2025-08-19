@@ -5,7 +5,7 @@ import { useToast } from '../ui/use-toast';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useUI } from '../../context/UIContext';
 import { AppBskyFeedDefs, AtUri } from '@atproto/api';
-import { Repeat, Quote, Share2, Loader2 } from 'lucide-react';
+import { Repeat, Share2, Loader2 } from 'lucide-react';
 
 interface RepostModalProps {
   post: AppBskyFeedDefs.PostView;
@@ -35,7 +35,6 @@ const ActionListItem: React.FC<{
 const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
     const { toast } = useToast();
     const { t } = useTranslation();
-    const { openComposer } = useUI();
     const { repostUri, isReposting, handleRepost } = usePostActions(post);
 
     const [isLoading, setIsLoading] = useState(false);
@@ -52,11 +51,6 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const handleQuote = () => {
-        openComposer({ quoteOf: post });
-        onClose();
     };
 
     const handleShare = async () => {
@@ -94,11 +88,6 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
                         label={t('repostModal.repost')} 
                         onClick={handleDirectRepost}
                         disabled={!!repostUri || isReposting}
-                    />
-                    <ActionListItem 
-                        icon={Quote} 
-                        label={t('repostModal.quote')} 
-                        onClick={handleQuote} 
                     />
                     <ActionListItem 
                         icon={Share2} 

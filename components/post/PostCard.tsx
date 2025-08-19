@@ -3,7 +3,7 @@ import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { usePostActions } from '../../hooks/usePostActions';
-import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat, MessageCircle, Quote } from 'lucide-react';
+import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 
 type PostCardProps = {
@@ -14,7 +14,7 @@ type PostCardProps = {
 
 const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
-    const { post, reason, reply } = feedViewPost;
+    const { post, reason } = feedViewPost;
     const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
     const author = post.author as AppBskyActorDefs.ProfileViewBasic;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
@@ -26,22 +26,8 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     const getMediaInfo = (p: AppBskyFeedDefs.PostView): { mediaPost: AppBskyFeedDefs.PostView, mediaEmbed: (AppBskyEmbedImages.View | AppBskyEmbedVideo.View) } | null => {
         const embed = p.embed;
         if (!embed) return null;
-
-        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-            const media = embed.media;
-            if (AppBskyEmbedImages.isView(media) && media.images.length > 0) return { mediaPost: p, mediaEmbed: media };
-            if (AppBskyEmbedVideo.isView(media)) return { mediaPost: p, mediaEmbed: media };
-        }
-
         if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) return { mediaPost: p, mediaEmbed: embed };
         if (AppBskyEmbedVideo.isView(embed)) return { mediaPost: p, mediaEmbed: embed };
-
-        if (AppBskyEmbedRecord.isView(embed)) {
-            const quotedPost = embed.record;
-            if (AppBskyFeedDefs.isPostView(quotedPost)) {
-                return getMediaInfo(quotedPost);
-            }
-        }
         return null;
     }
     
@@ -188,35 +174,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             );
         }
     
-        if (reply && AppBskyFeedDefs.isPostView(reply.parent)) {
-            return (
-                <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
-                    <MessageCircle size={14} />
-                    <span className="truncate">
-                        Reply to <a href={`#/profile/${reply.parent.author.handle}`} className="hover:underline" onClick={e => e.stopPropagation()}>{reply.parent.author.displayName || `@${reply.parent.author.handle}`}</a>
-                    </span>
-                </div>
-            );
-        }
-
-        let recordEmbed:AppBskyEmbedRecord.View['record'] | undefined;
-
-        if (AppBskyEmbedRecord.isView(post.embed)) {
-            recordEmbed = post.embed.record;
-        } else if (AppBskyEmbedRecordWithMedia.isView(post.embed)) {
-            recordEmbed = post.embed.record.record;
-        }
-
-        if (recordEmbed && AppBskyEmbedRecord.isViewRecord(recordEmbed)) {
-             return (
-                <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
-                    <Quote size={14} />
-                    <span className="truncate">
-                        Quoting <a href={`#/profile/${recordEmbed.author.handle}`} className="hover:underline" onClick={e => e.stopPropagation()}>{recordEmbed.author.displayName || `@${recordEmbed.author.handle}`}</a>
-                    </span>
-                </div>
-            );
-        }
         return null;
     };
 

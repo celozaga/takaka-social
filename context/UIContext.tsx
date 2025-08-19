@@ -9,7 +9,6 @@ interface ReplyToProps {
 
 interface ComposerOptions {
   replyTo?: ReplyToProps;
-  quoteOf?: AppBskyFeedDefs.PostView;
   initialText?: string;
 }
 
@@ -19,7 +18,6 @@ interface UIContextType {
   closeLoginModal: () => void;
   isComposerOpen: boolean;
   composerReplyTo?: ReplyToProps;
-  composerQuoteOf?: AppBskyFeedDefs.PostView;
   composerInitialText?: string;
   openComposer: (options?: ComposerOptions) => void;
   closeComposer: () => void;
@@ -54,7 +52,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [composerReplyTo, setComposerReplyTo] = useState<ReplyToProps | undefined>(undefined);
-  const [composerQuoteOf, setComposerQuoteOf] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
   const [composerInitialText, setComposerInitialText] = useState<string | undefined>(undefined);
   const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
   const [feedModalUri, setFeedModalUri] = useState<string | undefined>(undefined);
@@ -73,7 +70,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const openComposer = useCallback((options?: ComposerOptions) => {
     setComposerReplyTo(options?.replyTo);
-    setComposerQuoteOf(options?.quoteOf);
     setComposerInitialText(options?.initialText);
     setIsComposerOpen(true);
   }, []);
@@ -81,7 +77,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const closeComposer = useCallback(() => {
     setIsComposerOpen(false);
     setComposerReplyTo(undefined);
-    setComposerQuoteOf(undefined);
     setComposerInitialText(undefined);
   }, []);
 
@@ -127,7 +122,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <UIContext.Provider value={{ 
         isLoginModalOpen, openLoginModal, closeLoginModal, 
-        isComposerOpen, openComposer, closeComposer, composerReplyTo, composerQuoteOf, composerInitialText,
+        isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
         isFeedModalOpen, feedModalUri, openFeedModal, closeFeedModal,
         isCustomFeedHeaderVisible, setCustomFeedHeaderVisible,
         isEditProfileModalOpen, openEditProfileModal, closeEditProfileModal,

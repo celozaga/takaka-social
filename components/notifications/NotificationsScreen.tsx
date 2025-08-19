@@ -9,13 +9,12 @@ import ScreenHeader from '../layout/ScreenHeader';
 import { Settings } from 'lucide-react';
 import { useHeadManager } from '../../hooks/useHeadManager';
 
-type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows' | 'quotes';
+type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows';
 
 const filters: { id: NotificationFilter; label: string }[] = [
     { id: 'all', label: 'All' },
     { id: 'mentions', label: 'Mentions' },
     { id: 'reposts', label: 'Reposts' },
-    { id: 'quotes', label: 'Quotes' },
     { id: 'follows', label: 'Follows' },
 ];
 
@@ -97,8 +96,6 @@ const NotificationsScreen: React.FC = () => {
         return notifications.filter(n => n.reason === 'repost');
       case 'follows':
         return notifications.filter(n => n.reason === 'follow');
-      case 'quotes':
-        return notifications.filter(n => n.reason === 'quote');
       default:
         return notifications;
     }

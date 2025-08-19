@@ -1,8 +1,9 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
-import Timeline from './Timeline';
+import Timeline from './shared/Timeline';
 import FeedViewHeader from './FeedViewHeader';
 import { ArrowLeft } from 'lucide-react';
 

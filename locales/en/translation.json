@@ -126,14 +126,12 @@
     "empty": "You don't have any notifications here.",
     "mentions": "Mentions",
     "reposts": "Reposts",
-    "quotes": "Quotes",
     "follows": "Follows",
     "likedYourPost": "<0>{{author}}</0> liked your post",
     "repostedYourPost": "<0>{{author}}</0> reposted your post",
     "followedYou": "<0>{{author}}</0> followed you",
     "repliedToYourPost": "<0>{{author}}</0> replied to your post",
     "mentionedYou": "<0>{{author}}</0> mentioned you in a post",
-    "quotedYourPost": "<0>{{author}}</0> quoted your post",
     "newNotification": "New notification: {{reason}}",
     "quotedPost": "Quoted from another post."
   },
@@ -164,7 +162,6 @@
   },
   "repostModal": {
     "repost": "Repost",
-    "quote": "Quote",
     "share": "Share via...",
     "repostSuccess": "Post reposted successfully!"
   },
@@ -249,6 +246,7 @@
     "actionFailed": "Action failed",
     "likeError": "Could not update like status.",
     "repostError": "Could not repost.",
+    "repostReplyError": "Replies cannot be reposted.",
     "loadFeedsError": "Could not load your feeds.",
     "saveFeedsError": "Your changes could not be saved.",
     "signInToSave": "Please sign in",

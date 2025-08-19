@@ -27,58 +27,20 @@ const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
     if (!embed) return false;
 
-    // Case 1: Direct media
-    if ((AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed)) {
-        return true;
-    }
-
-    // Case 2: Quote with own media
-    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        const media = embed.media;
-        return (AppBskyEmbedImages.isView(media) && media.images.length > 0) || AppBskyEmbedVideo.isView(media);
-    }
-    
-    // Case 3: Quote of a media post
-    if (AppBskyEmbedRecord.isView(embed)) {
-        const quotedPost = embed.record;
-        if (AppBskyFeedDefs.isPostView(quotedPost)) {
-            // Recursively check if the quoted post is a media post
-            return isPostAMediaPost(quotedPost); 
-        }
-    }
-
-    return false;
+    // Only show posts with direct media.
+    return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
 };
 
 const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
     if (!embed) return false;
-    if (AppBskyEmbedImages.isView(embed)) {
-        return embed.images.length > 0;
-    }
-    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        const media = embed.media;
-        if (AppBskyEmbedImages.isView(media)) {
-             return media.images.length > 0;
-        }
-    }
-    if (AppBskyEmbedRecord.isView(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
-        return hasPhotos(embed.record);
-    }
-    return false;
+    return AppBskyEmbedImages.isView(embed) && embed.images.length > 0;
 }
 
 const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
     if (!embed) return false;
-    if (AppBskyEmbedVideo.isView(embed)) return true;
-    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        return AppBskyEmbedVideo.isView(embed.media);
-    }
-    if (AppBskyEmbedRecord.isView(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
-        return hasVideos(embed.record);
-    }
-    return false;
+    return AppBskyEmbedVideo.isView(embed);
 }
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
@@ -151,7 +113,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                     sort: searchFilter === 'latest' ? 'latest' : 'top',
                 });
                 
-                let filteredPosts = response.data.posts.filter(isPostAMediaPost);
+                let filteredPosts = response.data.posts.filter(p => !(p.record as any).reply && isPostAMediaPost(p));
 
                 if (searchFilter === 'images') {
                     filteredPosts = filteredPosts.filter(hasPhotos);

@@ -126,14 +126,12 @@
     "empty": "No tienes ninguna notificación aquí.",
     "mentions": "Menciones",
     "reposts": "Reposts",
-    "quotes": "Citas",
     "follows": "Seguidores",
     "likedYourPost": "A <0>{{author}}</0> le gustó tu publicación",
     "repostedYourPost": "<0>{{author}}</0> ha reposteado tu publicación",
     "followedYou": "<0>{{author}}</0> te ha seguido",
     "repliedToYourPost": "<0>{{author}}</0> respondió a tu publicación",
     "mentionedYou": "<0>{{author}}</0> te mencionó en una publicación",
-    "quotedYourPost": "<0>{{author}}</0> citó tu publicación",
     "newNotification": "Nueva notificación: {{reason}}",
     "quotedPost": "Citado de otra publicación."
   },
@@ -164,7 +162,6 @@
   },
   "repostModal": {
     "repost": "Repostear",
-    "quote": "Citar",
     "share": "Compartir vía...",
     "repostSuccess": "¡Publicación reposteada con éxito!"
   },
@@ -249,6 +246,7 @@
     "actionFailed": "Acción fallida",
     "likeError": "No se pudo actualizar el estado de 'me gusta'.",
     "repostError": "No se pudo repostear.",
+    "repostReplyError": "No se pueden repostear las respuestas.",
     "loadFeedsError": "No se pudieron cargar tus feeds.",
     "saveFeedsError": "No se pudieron guardar tus cambios.",
     "signInToSave": "Por favor, inicia sesión",
