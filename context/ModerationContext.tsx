@@ -39,7 +39,7 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
             if (AppBskyActorDefs.isContentLabelPref(pref)) {
                 // Fix: Only accept valid visibility values for our app's type.
                 if (pref.visibility === 'show' || pref.visibility === 'warn' || pref.visibility === 'hide') {
-                    newLabelPrefs.set(pref.label, pref.visibility);
+                    newLabelPrefs.set(pref.label, pref.visibility as LabelVisibility);
                 }
             }
         }
@@ -80,7 +80,7 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
     
     const setAdultContentEnabled = async (enabled: boolean) => {
         const otherPrefs = preferences.filter(p => p.$type !== 'app.bsky.actor.defs#adultContentPref');
-        const newPref: AppBskyActorDefs.AdultContentPref = { $type: 'app.bsky.actor.defs#adultContentPref', enabled };
+        const newPref = { $type: 'app.bsky.actor.defs#adultContentPref', enabled };
         await savePreferences([...otherPrefs, newPref]);
     };
 
@@ -91,7 +91,7 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
 
         let newPrefs: Preferences = [...otherPrefs];
         if (visibility !== 'show') {
-            const newPref: AppBskyActorDefs.ContentLabelPref = {
+            const newPref = {
                 $type: 'app.bsky.actor.defs#contentLabelPref',
                 label,
                 visibility
