@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from '../components/ui/use-toast';
 import { useSavedFeeds } from './useSavedFeeds';
-import { AppBskyFeedDefs, AtUri } from '@atproto/api';
+import { AppBskyFeedDefs, AtUri, AppBskyActorDefs } from '@atproto/api';
 
 export const useFeedActions = (feedUri?: string) => {
     const { agent, session } = useAtp();

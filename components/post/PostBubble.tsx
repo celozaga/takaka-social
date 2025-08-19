@@ -65,7 +65,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
     const renderMedia = () => {
         if (!post.embed) return null;
         
-        const processImageEmbed = (embed: AppBskyEmbedImages.View) => {
+        const processImageEmbed = (embed:AppBskyEmbedImages.View) => {
             if (embed.images.length === 0) return null;
             const gridCols = embed.images.length >= 2 ? `grid-cols-2` : 'grid-cols-1';
             const gridRows = embed.images.length > 2 ? 'grid-rows-2' : 'grid-rows-1';

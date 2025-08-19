@@ -30,7 +30,7 @@
     "settings": "Settings"
   },
   "signIn": {
-    "title": "Sign In to 1 Story",
+    "title": "Sign In to Takaka",
     "description": "to interact and post",
     "handlePlaceholder": "your-handle.bsky.social",
     "appPasswordPlaceholder": "App Password",
@@ -40,7 +40,7 @@
     "loginFailed": "Login failed. Please check your handle and app password."
   },
   "loginPrompt": {
-    "title": "Experience the full 1 Story",
+    "title": "Experience the full Takaka",
     "description": "Sign in to like, post, and follow."
   },
   "composer": {

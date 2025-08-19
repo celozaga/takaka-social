@@ -1,5 +1,5 @@
 {
-  "name": "1 Story",
-  "description": "A Bluesky client inspired by unidirectional channels.",
+  "name": "Takaka",
+  "description": "A Bluesky client focused on a clean, chronological feed.",
   "requestFramePermissions": []
 }

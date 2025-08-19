@@ -162,10 +162,10 @@ const Main: React.FC = () => {
     }
   };
   
-  const mainContainerClasses = `w-full ${isFullScreen ? '' : 'md:pl-20'}`;
+  const mainContainerClasses = `w-full ${isFullScreen ? '' : 'md:pl-20'} ${!isFullScreen ? 'md:flex md:justify-center' : ''}`;
   const mainContentClasses = isFullScreen 
-    ? 'w-full h-screen' 
-    : `w-full max-w-3xl px-4 pt-20 transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+    ? 'w-full h-full' // Changed h-screen to h-full for better compatibility
+    : `w-full max-w-xl px-4 pt-20 transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
