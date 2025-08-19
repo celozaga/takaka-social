@@ -77,13 +77,19 @@ const ProfileFeed: React.FC<{ actor: string, isBlocked: boolean }> = ({ actor, i
 
     return (
         <div className="space-y-4">
-            {feed.map((feedViewPost) => (
-                <PostBubble 
-                    key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} 
-                    post={feedViewPost.post}
-                    reason={AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason : undefined}
-                />
-            ))}
+            {feed.map((feedViewPost) => {
+                const isRepost = AppBskyFeedDefs.isReasonRepost(feedViewPost.reason);
+                const reason = isRepost ? feedViewPost.reason : undefined;
+                return (
+                    <PostBubble 
+                        key={`${feedViewPost.post.cid}-${reason ? reason.by.did : ''}`} 
+                        post={feedViewPost.post}
+                        reason={reason}
+                        showAuthor={isRepost}
+                        profileOwnerActor={actor}
+                    />
+                );
+            })}
             <div ref={loaderRef} className="h-10">
                 {isLoadingMore && (
                     <div className="flex justify-center items-center">

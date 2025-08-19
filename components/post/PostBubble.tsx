@@ -22,6 +22,7 @@ interface PostBubbleProps {
     post: AppBskyFeedDefs.PostView;
     reason?: AppBskyFeedDefs.ReasonRepost;
     showAuthor?: boolean;
+    profileOwnerActor?: string;
 }
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
@@ -29,20 +30,18 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
         if (AppBskyFeedDefs.isPostView(embed.record)) {
             const postView = embed.record;
             const author = postView.author;
+            const postRecord = postView.record as AppBskyFeedPost.Record;
 
-            if (AppBskyFeedPost.isRecord(postView.record)) {
-                const postRecord = postView.record;
-                return (
-                    <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
-                        <div className="flex items-center gap-2 text-sm">
-                            <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
-                            <span className="font-semibold">{author.displayName}</span>
-                            <span className="text-on-surface-variant">@{author.handle}</span>
-                        </div>
-                        <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
-                    </a>
-                );
-            }
+            return (
+                <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
+                    <div className="flex items-center gap-2 text-sm">
+                        <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
+                        <span className="font-semibold">{author.displayName}</span>
+                        <span className="text-on-surface-variant">@{author.handle}</span>
+                    </div>
+                    <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
+                </a>
+            );
         }
     }
     
@@ -57,13 +56,13 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
     return null; // It's a valid record but not a post (e.g., a feed generator)
 };
 
-const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = false }) => {
+const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = false, profileOwnerActor }) => {
     const author = post.author;
     
     if (!AppBskyFeedPost.isRecord(post.record)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = post.record;
+    const record = post.record as AppBskyFeedPost.Record;
     const isReply = !!record.reply;
 
     const renderMedia = () => {
@@ -157,7 +156,10 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
                 <div className="flex items-center gap-2 text-sm text-on-surface-variant mb-2">
                     <Repeat size={14} />
                     <span className="truncate">
-                        Reposted by <a href={`#/profile/${reason.by.handle}`} className="hover:underline font-semibold" onClick={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</a>
+                        {profileOwnerActor && (reason.by.handle === profileOwnerActor || reason.by.did === profileOwnerActor)
+                            ? 'Reposted'
+                            : <>Reposted by <a href={`#/profile/${reason.by.handle}`} className="hover:underline font-semibold" onClick={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</a></>
+                        }
                     </span>
                 </div>
             )}
