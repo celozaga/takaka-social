@@ -8,7 +8,6 @@ interface AtpContextType {
   session: AtpSessionData | null;
   profile: AppBskyActorDefs.ProfileViewDetailed | null;
   isLoadingSession: boolean;
-  chatSupported: boolean | null;
   login: (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => Promise<any>;
   logout: () => Promise<void>;
   unreadCount: number;
@@ -22,7 +21,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [chatSupported, setChatSupported] = useState<boolean | null>(null);
 
   const agent = useMemo(() => new BskyAgent({
     service: PDS_URL,
@@ -65,9 +63,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const initialize = async () => {
       setIsLoadingSession(true);
       try {
-        const serverDesc = await agent.com.atproto.server.describeServer();
-        setChatSupported(serverDesc.data.chat?.available ?? false);
-
         const storedSessionString = localStorage.getItem('atp-session');
         if (storedSessionString) {
           const parsedSession = JSON.parse(storedSessionString);
@@ -109,8 +104,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setSession(agent.session);
         const profileRes = await agent.getProfile({ actor: agent.session.did });
         setProfile(profileRes.data);
-        const serverDesc = await agent.com.atproto.server.describeServer();
-        setChatSupported(serverDesc.data.chat?.available ?? false);
         await fetchUnreadCount();
     }
     return response;
@@ -121,12 +114,11 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSession(null);
     setProfile(null);
     setUnreadCount(0);
-    setChatSupported(null);
   };
 
   return (
     <AtpContext.Provider value={{ 
-        agent, session, profile, isLoadingSession, login, logout, chatSupported,
+        agent, session, profile, isLoadingSession, login, logout,
         unreadCount, resetUnreadCount,
     }}>
       {children}

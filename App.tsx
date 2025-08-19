@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -16,7 +17,7 @@ import { useHeadManager } from './hooks/useHeadManager';
 // Lazy load screen components
 const LoginScreen = lazy(() => import('./components/auth/LoginScreen'));
 const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
-const ChannelsScreen = lazy(() => import('./components/channels/ChannelsScreen'));
+const FollowingFeedScreen = lazy(() => import('./components/home/FollowingFeedScreen'));
 const ProfileScreen = lazy(() => import('./components/profile/ProfileScreen'));
 const PostScreen = lazy(() => import('./components/post/PostScreen'));
 const SearchScreen = lazy(() => import('./components/search/SearchScreen'));
@@ -34,6 +35,9 @@ const UpdateEmailModal = lazy(() => import('./components/settings/UpdateEmailMod
 const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleModal'));
 const MediaActionsModal = lazy(() => import('./components/shared/MediaActionsModal'));
 const RepostModal = lazy(() => import('./components/shared/RepostModal'));
+const FeedsScreen = lazy(() => import('./components/feeds/FeedsScreen'));
+const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
+const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'));
 
 
 const App: React.FC = () => {
@@ -57,12 +61,14 @@ const Main: React.FC = () => {
   const { session, isLoadingSession } = useAtp();
   const { 
     isLoginModalOpen, closeLoginModal, 
-    isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText, 
+    isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
+    isCustomFeedHeaderVisible, 
     isEditProfileModalOpen, closeEditProfileModal,
     isUpdateEmailModalOpen, closeUpdateEmailModal,
     isUpdateHandleModalOpen, closeUpdateHandleModal,
     isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
-    isRepostModalOpen, closeRepostModal, repostModalPost
+    isRepostModalOpen, closeRepostModal, repostModalPost,
+    isFeedModalOpen, closeFeedModal, feedModalUri
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
   const { i18n, t } = useTranslation();
@@ -92,11 +98,12 @@ const Main: React.FC = () => {
         closeUpdateHandleModal();
         closeMediaActionsModal();
         closeRepostModal();
+        closeFeedModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal, closeRepostModal]);
+  }, [closeComposer, closeLoginModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal, closeRepostModal, closeFeedModal]);
 
   if (isLoadingSession) {
     return <div className="min-h-screen bg-surface-1" />;
@@ -115,6 +122,9 @@ const Main: React.FC = () => {
 
     switch (parts[0]) {
       case 'profile':
+        if (parts.length > 3 && parts[2] === 'feed') {
+            return <FeedViewScreen handle={parts[1]} rkey={parts[3]} key={`${parts[1]}-${parts[3]}`} />;
+        }
         if (parts[2] === 'followers') {
             return <FollowsScreen actor={parts[1]} type="followers" key={`${parts[1]}-followers`} />;
         }
@@ -141,12 +151,14 @@ const Main: React.FC = () => {
         if (parts[1] === 'mod-service' && parts[2]) return <ModerationServiceScreen serviceDid={parts[2]} />;
         if (parts[1] === 'muted-words') return <MutedWordsScreen />;
         return <SettingsScreen />;
+      case 'feeds':
+        return <FeedsScreen />;
       case '':
       case 'home':
-      case 'channels':
-        return session ? <ChannelsScreen /> : <HomeScreen />;
+      case 'profiles':
+        return session ? <FollowingFeedScreen /> : <HomeScreen />;
       default:
-        return session ? <ChannelsScreen /> : <HomeScreen />;
+        return session ? <FollowingFeedScreen /> : <HomeScreen />;
     }
   };
   
@@ -157,7 +169,7 @@ const Main: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      {!isFullScreen && <Navbar />}
+      {!isFullScreen && !isCustomFeedHeaderVisible && <Navbar />}
       <BottomNavbar isHidden={isFullScreen} />
       
       <div className={mainContainerClasses}>
@@ -293,6 +305,22 @@ const Main: React.FC = () => {
                 post={repostModalPost}
                 onClose={closeRepostModal}
               />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      {isFeedModalOpen && feedModalUri && (
+         <div 
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
+          onClick={closeFeedModal}
+        >
+          <div 
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
+            onClick={e => e.stopPropagation()}
+          >
+            <Suspense fallback={<div className="w-full h-64 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+              <FeedHeaderModal />
             </Suspense>
           </div>
         </div>

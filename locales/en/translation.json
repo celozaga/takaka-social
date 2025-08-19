@@ -21,7 +21,7 @@
   },
   "nav": {
     "home": "Home",
-    "channels": "Channels",
+    "profiles": "Profiles",
     "search": "Search",
     "compose": "Compose",
     "notifications": "Notifications",
@@ -108,10 +108,10 @@
   },
   "search": {
     "title": "Search",
-    "placeholder": "Search channels and posts",
+    "placeholder": "Search profiles and posts",
     "top": "Top",
     "latest": "Latest",
-    "channels": "Channels",
+    "profiles": "Profiles",
     "empty": "No results found for \"{{query}}\"."
   },
   "timeline": {

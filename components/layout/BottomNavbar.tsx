@@ -41,7 +41,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   }, []);
 
   const loggedInNavItems: NavItem[] = [
-    { href: '#/', labelKey: 'nav.channels', icon: Users, activeCondition: currentHash === '#/' || currentHash === '' || currentHash.startsWith('#/channels') },
+    { href: '#/', labelKey: 'nav.profiles', icon: Users, activeCondition: currentHash === '#/' || currentHash === '' || currentHash.startsWith('#/profiles') },
     { href: '#/search', labelKey: 'nav.search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
     { href: '#/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
   ];

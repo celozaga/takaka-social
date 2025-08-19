@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
 
@@ -21,10 +22,6 @@ interface UIContextType {
   composerInitialText?: string;
   openComposer: (options?: ComposerOptions) => void;
   closeComposer: () => void;
-  isFeedModalOpen: boolean;
-  feedModalUri?: string;
-  openFeedModal: (uri: string) => void;
-  closeFeedModal: () => void;
   isCustomFeedHeaderVisible: boolean;
   setCustomFeedHeaderVisible: (visible: boolean) => void;
   isEditProfileModalOpen: boolean;
@@ -44,6 +41,10 @@ interface UIContextType {
   repostModalPost?: AppBskyFeedDefs.PostView;
   openRepostModal: (post: AppBskyFeedDefs.PostView) => void;
   closeRepostModal: () => void;
+  isFeedModalOpen: boolean;
+  feedModalUri?: string;
+  openFeedModal: (uri: string) => void;
+  closeFeedModal: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -53,8 +54,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [composerReplyTo, setComposerReplyTo] = useState<ReplyToProps | undefined>(undefined);
   const [composerInitialText, setComposerInitialText] = useState<string | undefined>(undefined);
-  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
-  const [feedModalUri, setFeedModalUri] = useState<string | undefined>(undefined);
   const [isCustomFeedHeaderVisible, setCustomFeedHeaderVisible] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isUpdateEmailModalOpen, setIsUpdateEmailModalOpen] = useState(false);
@@ -63,6 +62,8 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [mediaActionsModalPost, setMediaActionsModalPost] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostModalPost, setRepostModalPost] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
+  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
+  const [feedModalUri, setFeedModalUri] = useState<string | undefined>(undefined);
 
 
   const openLoginModal = useCallback(() => setIsLoginModalOpen(true), []);
@@ -80,16 +81,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setComposerInitialText(undefined);
   }, []);
 
-  const openFeedModal = useCallback((uri: string) => {
-    setFeedModalUri(uri);
-    setIsFeedModalOpen(true);
-  }, []);
-
-  const closeFeedModal = useCallback(() => {
-    setIsFeedModalOpen(false);
-    setFeedModalUri(undefined);
-  }, []);
-  
   const openEditProfileModal = useCallback(() => setIsEditProfileModalOpen(true), []);
   const closeEditProfileModal = useCallback(() => setIsEditProfileModalOpen(false), []);
 
@@ -119,17 +110,27 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setTimeout(() => setRepostModalPost(undefined), 300);
   }, []);
 
+  const openFeedModal = useCallback((uri: string) => {
+    setFeedModalUri(uri);
+    setIsFeedModalOpen(true);
+  }, []);
+
+  const closeFeedModal = useCallback(() => {
+    setIsFeedModalOpen(false);
+    setTimeout(() => setFeedModalUri(undefined), 300);
+  }, []);
+
   return (
     <UIContext.Provider value={{ 
         isLoginModalOpen, openLoginModal, closeLoginModal, 
         isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
-        isFeedModalOpen, feedModalUri, openFeedModal, closeFeedModal,
         isCustomFeedHeaderVisible, setCustomFeedHeaderVisible,
         isEditProfileModalOpen, openEditProfileModal, closeEditProfileModal,
         isUpdateEmailModalOpen, openUpdateEmailModal, closeUpdateEmailModal,
         isUpdateHandleModalOpen, openUpdateHandleModal, closeUpdateHandleModal,
         isMediaActionsModalOpen, mediaActionsModalPost, openMediaActionsModal, closeMediaActionsModal,
         isRepostModalOpen, repostModalPost, openRepostModal, closeRepostModal,
+        isFeedModalOpen, feedModalUri, openFeedModal, closeFeedModal,
     }}>
       {children}
     </UIContext.Provider>

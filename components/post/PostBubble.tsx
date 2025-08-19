@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -21,22 +22,24 @@ interface PostBubbleProps {
 }
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
-    if (AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
+    if (AppBskyEmbedRecord.isViewRecord(embed)) {
         const postView = embed.record;
-        const author = postView.author;
+        if (AppBskyFeedDefs.isPostView(postView)) {
+            const author = postView.author;
 
-        if (AppBskyFeedPost.isRecord(postView.record)) {
-            const postRecord = postView.record;
-            return (
-                <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
-                    <div className="flex items-center gap-2 text-sm">
-                        <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
-                        <span className="font-semibold">{author.displayName}</span>
-                        <span className="text-on-surface-variant">@{author.handle}</span>
-                    </div>
-                    <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
-                </a>
-            );
+            if (AppBskyFeedPost.isRecord(postView.record)) {
+                const postRecord = postView.record;
+                return (
+                    <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
+                        <div className="flex items-center gap-2 text-sm">
+                            <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
+                            <span className="font-semibold">{author.displayName}</span>
+                            <span className="text-on-surface-variant">@{author.handle}</span>
+                        </div>
+                        <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
+                    </a>
+                );
+            }
         }
     }
     
@@ -52,8 +55,12 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
 };
 
 const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => {
-    const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
     const author = post.author;
+    
+    if (!AppBskyFeedPost.isRecord(post.record)) {
+        return null; // This is not a standard post, maybe a list or something else.
+    }
+    const record = post.record;
 
     const renderMedia = () => {
         if (!post.embed) return null;

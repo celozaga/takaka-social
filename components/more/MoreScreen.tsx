@@ -1,46 +1,22 @@
+
+
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
+import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs } from '@atproto/api';
-import { 
-    Settings, ChevronRight, BadgeCheck, List, Search, 
-    Bell, Users, UserCheck, Clapperboard, MessageSquare
-} from 'lucide-react';
-import { useHeadManager } from '../../hooks/useHeadManager';
-import ScreenHeader from '../layout/ScreenHeader';
-
-const AppGridItem: React.FC<{
-    icon: React.ElementType,
-    label: string,
-    href?: string,
-    onClick?: () => void,
-    colorClass?: string
-}> = ({ icon: Icon, label, href, onClick, colorClass }) => {
-    const content = (
-        <>
-            <div className="w-16 h-16 bg-surface-2 rounded-2xl flex items-center justify-center group-hover:bg-surface-3 transition-colors">
-                <Icon size={32} className={colorClass || 'text-on-surface-variant'} />
-            </div>
-            <span className="text-xs text-center text-on-surface font-medium">{label}</span>
-        </>
-    );
-
-    const className = "flex flex-col items-center justify-start gap-2 group";
-
-    if (href) {
-        return <a href={href} className={className}>{content}</a>;
-    }
-    return <button onClick={onClick} className={className}>{content}</button>;
-};
-
+import { Settings, ChevronRight, BadgeCheck, List } from 'lucide-react';
+import MoreHeader from './MoreHeader';
 
 const MoreScreen: React.FC = () => {
-    const { agent, session, chatSupported } = useAtp();
-    const { t } = useTranslation();
+    const { agent, session } = useAtp();
+    const { setCustomFeedHeaderVisible } = useUI();
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    useHeadManager({ title: t('more.title') });
+    useEffect(() => {
+        setCustomFeedHeaderVisible(true);
+        return () => setCustomFeedHeaderVisible(false);
+    }, [setCustomFeedHeaderVisible]);
 
     useEffect(() => {
         if (session?.did) {
@@ -56,23 +32,10 @@ const MoreScreen: React.FC = () => {
     
     const profileLink = `#/profile/${session?.handle}`;
 
-    const baseAppGridItems = session ? [
-        { icon: List, label: t('more.myFeeds'), href: '#/feeds', colorClass: 'text-sky-400' },
-        { icon: MessageSquare, label: t('nav.messages'), href: '#/messages', colorClass: 'text-fuchsia-400' },
-        { icon: Clapperboard, label: t('more.watch'), href: '#/watch', colorClass: 'text-rose-400' },
-        { icon: Search, label: t('nav.search'), href: '#/search', colorClass: 'text-amber-400' },
-        { icon: Bell, label: t('nav.notifications'), href: '#/notifications', colorClass: 'text-indigo-400' },
-        { icon: Users, label: t('common.followers'), href: `#/profile/${session.handle}/followers`, colorClass: 'text-teal-400' },
-        { icon: UserCheck, label: t('common.following'), href: `#/profile/${session.handle}/following`, colorClass: 'text-cyan-400' },
-        { icon: Settings, label: t('nav.settings'), href: '#/settings', colorClass: 'text-slate-400' },
-    ] : [];
-    
-    const appGridItems = chatSupported ? baseAppGridItems : baseAppGridItems.filter(item => item.label !== t('nav.messages'));
-
     return (
         <div>
-            <ScreenHeader title={t('more.title')} />
-            <div className="mt-4 space-y-8">
+            <MoreHeader />
+            <div className="mt-4 space-y-4">
                 {isLoading ? (
                     <div className="bg-surface-2 rounded-lg p-4 animate-pulse">
                         <div className="flex items-center gap-4">
@@ -87,10 +50,10 @@ const MoreScreen: React.FC = () => {
                     <a href={profileLink} className="block bg-surface-2 rounded-lg p-4 hover:bg-surface-3 transition-colors">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <img src={profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
+                                <img src={profile.avatar} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
                                 <div>
                                     <p className="font-bold text-lg flex items-center gap-1.5">
-                                        <span>{profile.displayName || `@${profile.handle}`}</span>
+                                        <span>{profile.displayName}</span>
                                         {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                                             <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
                                         )}
@@ -103,16 +66,22 @@ const MoreScreen: React.FC = () => {
                     </a>
                 )}
 
-                {session && (
-                    <div>
-                        <h2 className="text-base font-bold text-on-surface-variant mb-4 px-1">{t('more.allApps')}</h2>
-                        <div className="grid grid-cols-4 gap-y-6 gap-x-2">
-                            {appGridItems.map(item => (
-                                <AppGridItem key={item.label} {...item} />
-                            ))}
+                <div className="space-y-2">
+                    <a href="#/feeds" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
+                        <div className="flex items-center gap-4">
+                            <List className="w-6 h-6 text-on-surface-variant" />
+                            <span className="font-semibold">My Feeds</span>
                         </div>
-                    </div>
-                )}
+                        <ChevronRight className="w-5 h-5 text-on-surface-variant" />
+                    </a>
+                    <a href="#/settings" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
+                        <div className="flex items-center gap-4">
+                            <Settings className="w-6 h-6 text-on-surface-variant" />
+                            <span className="font-semibold">Settings</span>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-on-surface-variant" />
+                    </a>
+                </div>
             </div>
         </div>
     );

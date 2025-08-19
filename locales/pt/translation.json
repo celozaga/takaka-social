@@ -21,7 +21,7 @@
   },
   "nav": {
     "home": "Início",
-    "channels": "Canais",
+    "profiles": "Perfis",
     "search": "Busca",
     "compose": "Compor",
     "notifications": "Notificações",
@@ -108,10 +108,10 @@
   },
   "search": {
     "title": "Busca",
-    "placeholder": "Buscar canais e publicações",
+    "placeholder": "Buscar perfis e publicações",
     "top": "Top",
     "latest": "Recentes",
-    "channels": "Canais",
+    "profiles": "Perfis",
     "empty": "Nenhum resultado encontrado para \"{{query}}\"."
   },
   "timeline": {

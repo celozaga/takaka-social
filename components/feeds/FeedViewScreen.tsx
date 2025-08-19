@@ -1,14 +1,11 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import Timeline from '../shared/Timeline';
 import FeedViewHeader from './FeedViewHeader';
 import { ArrowLeft } from 'lucide-react';
-import { useHeadManager } from '../../hooks/useHeadManager';
-import { useFeedActions } from '../../hooks/useFeedActions';
 
 interface FeedViewScreenProps {
     handle: string;
@@ -17,22 +14,15 @@ interface FeedViewScreenProps {
 
 const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     const { agent } = useAtp();
-    const { t } = useTranslation();
     const { setCustomFeedHeaderVisible } = useUI();
     const [feedUri, setFeedUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const { feedView } = useFeedActions(feedUri || undefined);
-
-    useHeadManager({
-        title: feedView ? `${t('common.feeds')}: ${feedView.displayName}` : t('common.feeds'),
-        description: feedView?.description,
-        imageUrl: feedView?.avatar,
-    });
-
     useEffect(() => {
+        // This screen uses the custom header, so we tell the main App component to hide the default navbar.
         setCustomFeedHeaderVisible(true);
+        // Clean up when the component unmounts
         return () => setCustomFeedHeaderVisible(false);
     }, [setCustomFeedHeaderVisible]);
 
@@ -46,18 +36,19 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
                 setFeedUri(uri);
             } catch (err) {
                 console.error("Failed to resolve handle to create feed URI:", err);
-                setError(t('feedView.notFound'));
+                setError("Could not find the specified feed.");
             } finally {
                 setIsLoading(false);
             }
         };
         resolveHandleAndSetUri();
-    }, [agent, handle, rkey, t]);
+    }, [agent, handle, rkey]);
     
+    // Show a loading skeleton for the header while we resolve the handle
     if (isLoading) {
         return (
-             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-sm z-30 animate-pulse">
-                <div className="flex items-center justify-between h-16">
+             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-md z-30 animate-pulse">
+                <div className="flex items-center justify-between h-16 border-b border-surface-3">
                     <div className="h-8 w-10 bg-surface-3 rounded-full"></div>
                     <div className="h-8 w-48 bg-surface-3 rounded-md"></div>
                     <div className="h-8 w-16 bg-surface-3 rounded-full"></div>
@@ -68,8 +59,8 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
 
     if (error || !feedUri) {
          return (
-             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-sm z-30">
-                <div className="flex items-center justify-between h-16">
+             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-md z-30">
+                <div className="flex items-center justify-between h-16 border-b border-surface-3">
                      <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
                         <ArrowLeft size={20} />
                     </button>

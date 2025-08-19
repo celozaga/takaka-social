@@ -20,7 +20,7 @@ interface SearchScreenProps {
 const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
     { id: 'top', label: 'Top', icon: TrendingUp },
     { id: 'latest', label: 'Latest', icon: Clock },
-    { id: 'people', label: 'Channels', icon: UserCircle },
+    { id: 'people', label: 'Profiles', icon: UserCircle },
 ];
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
@@ -150,7 +150,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             type="search"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search channels and posts"
+                            placeholder="Search profiles and posts"
                             className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
                         />
                     </div>
