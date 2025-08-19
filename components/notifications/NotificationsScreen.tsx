@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
-import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Settings } from 'lucide-react';
 import { useHeadManager } from '../../hooks/useHeadManager';
@@ -23,7 +22,6 @@ const filters: { id: NotificationFilter; label: string }[] = [
 
 const NotificationsScreen: React.FC = () => {
   const { agent, resetUnreadCount } = useAtp();
-  const { setCustomFeedHeaderVisible } = useUI();
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState<AppBskyNotificationListNotifications.Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,11 +34,6 @@ const NotificationsScreen: React.FC = () => {
   const loaderRef = useRef<HTMLDivElement>(null);
 
   useHeadManager({ title: t('notifications.title') });
-
-  useEffect(() => {
-    setCustomFeedHeaderVisible(true);
-    return () => setCustomFeedHeaderVisible(false);
-  }, [setCustomFeedHeaderVisible]);
 
   useEffect(() => {
     const fetchInitialNotifications = async () => {
@@ -159,13 +152,7 @@ const NotificationsScreen: React.FC = () => {
   };
   
   return (
-    <div>
-        <ScreenHeader title="Notifications">
-            <a href="#/settings" className="p-2 rounded-full hover:bg-surface-3" aria-label="Settings">
-                <Settings size={20} />
-            </a>
-        </ScreenHeader>
-      <div className="mt-4">
+    <div className="pt-4">
         <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
           {filters.map(filter => (
             <button
@@ -188,7 +175,6 @@ const NotificationsScreen: React.FC = () => {
         {!hasMore && notifications.length > 0 && (
             <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
         )}
-      </div>
     </div>
   );
 };

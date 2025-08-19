@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -13,7 +15,6 @@ import PopularFeeds from '../feeds/PopularFeeds';
 import SuggestedFollows from '../profile/SuggestedFollows';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
-import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import TrendingTopics from './TrendingTopics';
 import { useHeadManager } from '../../hooks/useHeadManager';
@@ -29,7 +30,6 @@ interface SearchScreenProps {
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
     const { t } = useTranslation();
-    const { setCustomFeedHeaderVisible } = useUI();
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -50,11 +50,6 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
       { id: 'people', label: t('common.people'), icon: UserCircle },
       { id: 'feeds', label: t('common.feeds'), icon: List },
     ];
-
-    useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     // Derive activeFilter directly from props, making the URL the single source of truth.
     const activeFilter = (initialFilter as FilterType) || 'top';
@@ -252,9 +247,8 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     
     return (
         <div>
-            <ScreenHeader title={t('search.title')} />
-            <div className="mt-4">
-                <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
+            <div className="sticky top-0 z-10 bg-surface-1 pt-4 pb-3">
+                <form onSubmit={handleFormSubmit} className="flex gap-2">
                     <div className="relative flex-grow">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
                         <input
@@ -266,9 +260,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         />
                     </div>
                 </form>
+            </div>
 
+            <div>
                 {showDiscoveryContent ? (
-                     <div className="space-y-8">
+                     <div className="space-y-8 mt-1">
                         <TrendingTopics />
                         <SuggestedFollows />
                         <PopularFeeds />

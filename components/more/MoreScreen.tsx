@@ -4,13 +4,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { 
     Settings, ChevronRight, BadgeCheck, List, Search, 
     Bell, Users, UserCheck, Clapperboard, MessageSquare
 } from 'lucide-react';
-import ScreenHeader from '../layout/ScreenHeader';
 import { useHeadManager } from '../../hooks/useHeadManager';
 
 const AppGridItem: React.FC<{
@@ -40,17 +38,11 @@ const AppGridItem: React.FC<{
 
 const MoreScreen: React.FC = () => {
     const { agent, session, chatSupported } = useAtp();
-    const { setCustomFeedHeaderVisible } = useUI();
     const { t } = useTranslation();
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useHeadManager({ title: t('more.title') });
-
-    useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     useEffect(() => {
         if (session?.did) {
@@ -80,9 +72,8 @@ const MoreScreen: React.FC = () => {
     const appGridItems = chatSupported ? baseAppGridItems : baseAppGridItems.filter(item => item.label !== t('nav.messages'));
 
     return (
-        <div>
-            <ScreenHeader title={t('more.title')} />
-            <div className="mt-4 space-y-8">
+        <div className="pt-4">
+            <div className="space-y-8">
                 {isLoading ? (
                     <div className="bg-surface-2 rounded-lg p-4 animate-pulse">
                         <div className="flex items-center gap-4">

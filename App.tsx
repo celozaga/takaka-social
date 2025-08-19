@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -97,10 +98,17 @@ const Main: React.FC = () => {
     return <div className="min-h-screen bg-surface-1" />;
   }
   
-  const isWatchScreen = route.startsWith('#/watch');
   const isPostScreen = route.startsWith('#/post/');
+  const isWatchScreen = route.startsWith('#/watch');
   const isConvoScreen = route.startsWith('#/messages/');
-  const isNavbarHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen;
+  const isSearchScreen = route.startsWith('#/search');
+  const isNotificationsScreen = route.startsWith('#/notifications');
+  const isMoreScreen = route.startsWith('#/more');
+  
+  const isSectionView = isSearchScreen || isNotificationsScreen || isMoreScreen;
+  const isBottomNavHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen;
+  const isTopNavHidden = isBottomNavHidden || isSectionView;
+
 
   const renderContent = () => {
     const pathWithQuery = route.replace(/^#\//, '');
@@ -201,13 +209,13 @@ const Main: React.FC = () => {
     ? 'w-full h-screen bg-black'
     : isPostScreen
       ? 'w-full max-w-3xl transition-all duration-300 pb-8'
-      : `w-full max-w-3xl px-4 ${isNavbarHidden ? 'pt-4' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+      : `w-full max-w-3xl px-4 ${isBottomNavHidden ? 'pt-4' : isSectionView ? '' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
 
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      <BottomNavbar isHidden={isNavbarHidden} />
-      {!isNavbarHidden && <Navbar />}
+      <BottomNavbar isHidden={isBottomNavHidden} />
+      {!isTopNavHidden && <Navbar />}
       <div className={mainContainerClasses}>
         <main className={mainContentClasses}>
           <Suspense fallback={
