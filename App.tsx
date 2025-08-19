@@ -21,9 +21,6 @@ const ProfileScreen = lazy(() => import('./components/profile/ProfileScreen'));
 const PostScreen = lazy(() => import('./components/post/PostScreen'));
 const SearchScreen = lazy(() => import('./components/search/SearchScreen'));
 const NotificationsScreen = lazy(() => import('./components/notifications/NotificationsScreen'));
-const FeedsScreen = lazy(() => import('./components/feeds/FeedsScreen'));
-const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'));
-const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const NotificationSettingsScreen = lazy(() => import('./components/settings/NotificationSettingsScreen'));
 const LanguageSettingsScreen = lazy(() => import('./components/settings/LanguageSettingsScreen'));
@@ -31,14 +28,10 @@ const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSe
 const ModerationSettingsScreen = lazy(() => import('./components/settings/ModerationSettingsScreen'));
 const ModerationServiceScreen = lazy(() => import('./components/settings/ModerationServiceScreen'));
 const MutedWordsScreen = lazy(() => import('./components/settings/MutedWordsScreen'));
-const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
 const UpdateEmailModal = lazy(() => import('./components/settings/UpdateEmailModal'));
 const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleModal'));
-const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
-const MessagesScreen = lazy(() => import('./components/messages/MessagesScreen'));
-const ConvoScreen = lazy(() => import('./components/messages/ConvoScreen'));
 const MediaActionsModal = lazy(() => import('./components/shared/MediaActionsModal'));
 const RepostModal = lazy(() => import('./components/shared/RepostModal'));
 
@@ -61,12 +54,10 @@ const App: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { session, isLoadingSession, chatSupported } = useAtp();
+  const { session, isLoadingSession } = useAtp();
   const { 
     isLoginModalOpen, closeLoginModal, 
     isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText, 
-    isCustomFeedHeaderVisible, 
-    isFeedModalOpen, closeFeedModal,
     isEditProfileModalOpen, closeEditProfileModal,
     isUpdateEmailModalOpen, closeUpdateEmailModal,
     isUpdateHandleModalOpen, closeUpdateHandleModal,
@@ -96,7 +87,6 @@ const Main: React.FC = () => {
       if (event.key === 'Escape') {
         closeComposer();
         closeLoginModal();
-        closeFeedModal();
         closeEditProfileModal();
         closeUpdateEmailModal();
         closeUpdateHandleModal();
@@ -106,27 +96,16 @@ const Main: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal, closeRepostModal]);
+  }, [closeComposer, closeLoginModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal, closeRepostModal]);
 
   if (isLoadingSession) {
-    // Show a minimal loading state while session is being restored
     return <div className="min-h-screen bg-surface-1" />;
   }
   
   const isProfileScreen = route.startsWith('#/profile/');
   const isPostScreen = route.startsWith('#/post/');
-  const isWatchScreen = route.startsWith('#/watch');
-  const isConvoScreen = route.startsWith('#/messages/');
-  const isSearchScreen = route.startsWith('#/search');
-  const isNotificationsScreen = route.startsWith('#/notifications');
-  const isMoreScreen = route.startsWith('#/more');
-  const isSettingsScreen = route.startsWith('#/settings');
-  const isFeedsScreen = route.startsWith('#/feeds');
-  
-  const isSectionView = isSearchScreen || isNotificationsScreen || isMoreScreen || isSettingsScreen || isFeedsScreen;
-  const isBottomNavHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen || isProfileScreen;
-  const isTopNavHidden = isBottomNavHidden || isSectionView;
 
+  const isFullScreen = isProfileScreen || isPostScreen;
 
   const renderContent = () => {
     const pathWithQuery = route.replace(/^#\//, '');
@@ -136,11 +115,6 @@ const Main: React.FC = () => {
 
     switch (parts[0]) {
       case 'profile':
-        if (parts[2] === 'feed' && parts[3]) {
-          const handle = parts[1];
-          const rkey = parts[3];
-          return <FeedViewScreen handle={handle} rkey={rkey} key={`${handle}-${rkey}`} />;
-        }
         if (parts[2] === 'followers') {
             return <FollowsScreen actor={parts[1]} type="followers" key={`${parts[1]}-followers`} />;
         }
@@ -149,109 +123,43 @@ const Main: React.FC = () => {
         }
         return <ProfileScreen actor={parts[1]} key={parts[1]} />;
       case 'post':
-        const did = parts[1];
-        const rkey = parts[2];
-        return <PostScreen did={did} rkey={rkey} key={`${did}-${rkey}`} />;
+        return <PostScreen did={parts[1]} rkey={parts[2]} key={`${parts[1]}-${parts[2]}`} />;
       case 'search':
         const params = new URLSearchParams(query);
         const q = params.get('q') || '';
         const filter = params.get('filter') || 'top';
         return <SearchScreen initialQuery={q} initialFilter={filter} key={`${q}-${filter}`} />;
       case 'notifications':
-        if (!session) {
-          window.location.hash = '#/';
-          return null;
-        }
+        if (!session) { window.location.hash = '#/'; return null; }
         return <NotificationsScreen />;
-      case 'channels':
-        if (!session) {
-          window.location.hash = '#/';
-          return null;
-        }
-        return <ChannelsScreen />;
-      case 'feeds':
-        return <FeedsScreen />;
       case 'settings':
-         if (!session) {
-          window.location.hash = '#/';
-          return null;
-        }
-        if (parts[1] === 'notifications') {
-          return <NotificationSettingsScreen />;
-        }
-        if (parts[1] === 'language') {
-            return <LanguageSettingsScreen />;
-        }
-        if (parts[1] === 'account') {
-            return <AccountSettingsScreen />;
-        }
-        if (parts[1] === 'moderation') {
-          return <ModerationSettingsScreen />;
-        }
-        if (parts[1] === 'mod-service' && parts[2]) {
-            return <ModerationServiceScreen serviceDid={parts[2]} />;
-        }
-        if (parts[1] === 'muted-words') {
-            return <MutedWordsScreen />;
-        }
+         if (!session) { window.location.hash = '#/'; return null; }
+        if (parts[1] === 'notifications') return <NotificationSettingsScreen />;
+        if (parts[1] === 'language') return <LanguageSettingsScreen />;
+        if (parts[1] === 'account') return <AccountSettingsScreen />;
+        if (parts[1] === 'moderation') return <ModerationSettingsScreen />;
+        if (parts[1] === 'mod-service' && parts[2]) return <ModerationServiceScreen serviceDid={parts[2]} />;
+        if (parts[1] === 'muted-words') return <MutedWordsScreen />;
         return <SettingsScreen />;
-      case 'more':
-         if (!session) {
-          window.location.hash = '#/';
-          return null;
-        }
-        return <MoreScreen />;
-      case 'watch':
-        if (!session) {
-          window.location.hash = '#/';
-          return null;
-        }
-        return <WatchScreen />;
-      case 'messages':
-        if (!session) {
-            window.location.hash = '#/';
-            return null;
-        }
-        if (chatSupported === undefined) {
-          return (
-            <div className="w-full flex justify-center items-center pt-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          );
-        }
-        if (chatSupported === false) {
-          return (
-            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">
-              <h2 className="font-bold text-lg text-on-surface">{t('app.messagingNotSupported')}</h2>
-              <p className="mt-1">{t('app.messagingNotSupportedDescription')}</p>
-            </div>
-          );
-        }
-        if (parts[1]) {
-            return <ConvoScreen peerDid={parts[1]} key={parts[1]} />;
-        }
-        return <MessagesScreen />;
       case '':
       case 'home':
+      case 'channels':
         return session ? <ChannelsScreen /> : <HomeScreen />;
       default:
         return session ? <ChannelsScreen /> : <HomeScreen />;
     }
   };
   
-  const mainContainerClasses = `w-full flex justify-center md:pl-20`;
-
-  const mainContentClasses = isWatchScreen || isConvoScreen || isProfileScreen
-    ? 'w-full h-screen'
-    : isPostScreen
-      ? 'w-full max-w-3xl transition-all duration-300 pb-8'
-      : `w-full max-w-3xl px-4 ${isBottomNavHidden ? 'pt-4' : isSectionView ? 'pt-4' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
-
+  const mainContainerClasses = `w-full ${isFullScreen ? '' : 'md:pl-20'}`;
+  const mainContentClasses = isFullScreen 
+    ? 'w-full h-screen' 
+    : `w-full max-w-3xl px-4 pt-20 transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      <BottomNavbar isHidden={isBottomNavHidden} />
-      {!isTopNavHidden && <Navbar />}
+      {!isFullScreen && <Navbar />}
+      <BottomNavbar isHidden={isFullScreen} />
+      
       <div className={mainContainerClasses}>
         <main className={mainContentClasses}>
           <Suspense fallback={
@@ -264,7 +172,7 @@ const Main: React.FC = () => {
         </main>
       </div>
       
-      {!session && !isPostScreen && !isWatchScreen && <LoginPrompt />}
+      {!session && !isFullScreen && <LoginPrompt />}
 
       {session && !isComposerOpen && (
         <button
@@ -305,16 +213,6 @@ const Main: React.FC = () => {
         </div>
       )}
       
-      {isFeedModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeFeedModal}>
-          <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
-                <FeedHeaderModal />
-            </Suspense>
-          </div>
-        </div>
-      )}
-
       {isEditProfileModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeEditProfileModal}>
           <div className="relative w-full max-w-xl" onClick={e => e.stopPropagation()}>
@@ -323,7 +221,6 @@ const Main: React.FC = () => {
                 onClose={closeEditProfileModal}
                 onSuccess={() => {
                     closeEditProfileModal();
-                    // Force a reload of the profile page if we are on it to see changes
                     if (window.location.hash === `#/profile/${session?.handle}` || window.location.hash === `#/profile/${session?.did}`) {
                         window.location.reload();
                     }

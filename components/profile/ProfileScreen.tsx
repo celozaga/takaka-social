@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
-import { MoreHorizontal, UserPlus, UserCheck, BadgeCheck, ArrowLeft, Loader2 } from 'lucide-react';
+import { UserPlus, UserCheck, BadgeCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 import PostBubble from '../post/PostBubble';
 

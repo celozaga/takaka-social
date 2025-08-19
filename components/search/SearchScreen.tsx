@@ -2,18 +2,15 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
-import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyFeedGetPosts } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
 import PostBubble from '../post/PostBubble';
-import { Search, UserCircle, TrendingUp, Clock, List } from 'lucide-react';
-import ActorSearchResultCard from './ActorSearchResultCard';
-import PopularFeeds from '../feeds/PopularFeeds';
+import { Search, UserCircle, TrendingUp, Clock } from 'lucide-react';
+import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import SuggestedFollows from '../profile/SuggestedFollows';
-import { useSavedFeeds } from '../../hooks/useSavedFeeds';
-import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
 
-type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
-type FilterType = 'top' | 'latest' | 'people' | 'feeds';
+type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView;
+type FilterType = 'top' | 'latest' | 'people';
 
 interface SearchScreenProps {
   initialQuery?: string;
@@ -24,7 +21,6 @@ const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
     { id: 'top', label: 'Top', icon: TrendingUp },
     { id: 'latest', label: 'Latest', icon: Clock },
     { id: 'people', label: 'Channels', icon: UserCircle },
-    { id: 'feeds', label: 'Feeds', icon: List },
 ];
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
@@ -36,14 +32,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [hasMore, setHasMore] = useState(true);
-    const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
 
     const activeFilter = (initialFilter as FilterType) || 'top';
     
     const showDiscoveryContent = !initialQuery.trim();
-    const isPostSearch = ['top', 'latest'].includes(activeFilter);
 
     const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
@@ -66,16 +60,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 setResults(prev => currentCursor ? [...prev, ...response.data.actors] : response.data.actors);
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
-            } else if (searchFilter === 'feeds') {
-                const response = await (agent.api.app.bsky.unspecced as any).getPopularFeedGenerators({
-                    query: searchQuery,
-                    limit: 25,
-                    cursor: currentCursor
-                });
-                setResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
-                setCursor(response.data.cursor);
-                setHasMore(!!response.data.cursor);
-            } else {
+            } else { // 'top' or 'latest'
                 const response = await agent.app.bsky.feed.searchPosts({ 
                     q: searchQuery, 
                     limit: 50,
@@ -142,32 +127,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
           </div>
         );
       }
-
-      if (activeFilter === 'feeds') {
-        return (
-          <div className="space-y-3">
-            {(results as AppBskyFeedDefs.GeneratorView[]).map(feed => (
-                <FeedSearchResultCard
-                    key={feed.uri} 
-                    feed={feed}
-                    isPinned={pinnedUris.has(feed.uri)}
-                    onTogglePin={() => {
-                        const isPinned = pinnedUris.has(feed.uri);
-                        if (isPinned) togglePin(feed.uri);
-                        else addFeed(feed, true);
-                    }}
-                />
-            ))}
-          </div>
-        );
-      }
       
       const postResults = results as AppBskyFeedDefs.PostView[];
-      const feedViewPosts: AppBskyFeedDefs.FeedViewPost[] = postResults.map(post => ({ post }));
-
+      
       return (
         <div className="space-y-4">
-          {feedViewPosts.map(({ post }) => (
+          {postResults.map((post) => (
             <PostBubble key={post.cid} post={post} showAuthor />
           ))}
         </div>
@@ -185,7 +150,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             type="search"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder={`Search posts, users, and feeds`}
+                            placeholder="Search channels and posts"
                             className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
                         />
                     </div>
@@ -194,7 +159,6 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 {showDiscoveryContent ? (
                      <div className="space-y-8">
                         <SuggestedFollows />
-                        <PopularFeeds />
                     </div>
                 ) : (
                     <>

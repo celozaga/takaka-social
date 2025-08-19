@@ -1,11 +1,12 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
+import { BskyAgent, AtpSessionData, AtpSessionEvent, AppBskyActorDefs } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
 
 interface AtpContextType {
   agent: BskyAgent;
   session: AtpSessionData | null;
+  profile: AppBskyActorDefs.ProfileViewDetailed | null;
   isLoadingSession: boolean;
   login: (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => Promise<any>;
   logout: () => Promise<void>;
@@ -20,6 +21,7 @@ const AtpContext = createContext<AtpContextType | undefined>(undefined);
 
 export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<AtpSessionData | null>(null);
+  const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
@@ -38,6 +40,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             // If sess is undefined, the session has been cleared.
             localStorage.removeItem('atp-session');
             setSession(null);
+            setProfile(null);
           }
           break;
       }
@@ -94,22 +97,25 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
           setSession(parsedSession);
+          
+          if (agent.session) {
+              const profileRes = await agent.getProfile({ actor: agent.session.did });
+              setProfile(profileRes.data);
+          }
+
           // Run checks sequentially to ensure chat support is known before starting polls.
           await fetchUnreadCount();
           await fetchChatUnreadCount();
 
           pollInterval = window.setInterval(() => {
             fetchUnreadCount();
-            // We need a way to check chatSupported without causing a dependency loop.
-            // A simple approach is to let fetchChatUnreadCount handle its own logic.
-            // A better way would be a ref, but to keep changes minimal, we accept
-            // that this might poll an unsupported endpoint, which `fetchChatUnreadCount` now handles gracefully.
             fetchChatUnreadCount();
           }, 30000);
         } catch (error) {
           console.error("Failed to resume session:", error);
           localStorage.removeItem('atp-session');
           setSession(null);
+          setProfile(null);
           setChatSupported(false);
         }
       } else {
@@ -131,6 +137,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });
     if(agent.session) {
         setSession(agent.session);
+        const profileRes = await agent.getProfile({ actor: agent.session.did });
+        setProfile(profileRes.data);
         setChatSupported(undefined); // Reset on new login to re-check
         await fetchUnreadCount();
         await fetchChatUnreadCount();
@@ -141,6 +149,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const logout = async () => {
     await agent.logout();
     setSession(null);
+    setProfile(null);
     setUnreadCount(0);
     setChatUnreadCount(0);
     setChatSupported(false);
@@ -148,7 +157,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AtpContext.Provider value={{ 
-        agent, session, isLoadingSession, login, logout, 
+        agent, session, profile, isLoadingSession, login, logout, 
         unreadCount, resetUnreadCount,
         chatUnreadCount, resetChatUnreadCount,
         chatSupported

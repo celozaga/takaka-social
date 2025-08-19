@@ -11,7 +11,7 @@ import {
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useAtp } from '../../context/AtpContext';
 import PostActions from './PostActions';
-import { BadgeCheck, Repeat, ExternalLink, PlayCircle, MessageCircle } from 'lucide-react';
+import { BadgeCheck, ExternalLink, PlayCircle } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 
 interface PostBubbleProps {
@@ -20,6 +20,23 @@ interface PostBubbleProps {
 }
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
+    if (AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
+        const record = embed.record;
+        const author = record.author;
+        const postRecord = record.record as { text: string };
+
+        return (
+            <a href={`#/post/${author.did}/${record.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
+                <div className="flex items-center gap-2 text-sm">
+                    <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
+                    <span className="font-semibold">{author.displayName}</span>
+                    <span className="text-on-surface-variant">@{author.handle}</span>
+                </div>
+                <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
+            </a>
+        );
+    }
+    
     if (AppBskyEmbedRecord.isViewNotFound(embed)) {
         return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Quoted post not found.</div>;
     }
@@ -28,27 +45,10 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
         return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Content from a blocked user.</div>;
     }
 
-    if (!AppBskyFeedDefs.isPostView(embed.record)) {
-        return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Unsupported quoted content.</div>;
-    }
-    
-    const author = embed.record.author;
-    const record = embed.record.record as { text: string };
-
-    return (
-        <a href={`#/post/${author.did}/${embed.record.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
-            <div className="flex items-center gap-2 text-sm">
-                <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
-                <span className="font-semibold">{author.displayName}</span>
-                <span className="text-on-surface-variant">@{author.handle}</span>
-            </div>
-            <p className="text-sm mt-1 line-clamp-4">{record.text}</p>
-        </a>
-    )
-}
+    return null; // It's a valid record but not a post (e.g., a feed generator)
+};
 
 const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => {
-    const { agent } = useAtp();
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
     const author = post.author;
 
@@ -57,9 +57,11 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
         
         const processImageEmbed = (embed: AppBskyEmbedImages.View) => {
             if (embed.images.length === 0) return null;
-            const gridCols = embed.images.length >= 2 ? 'grid-cols-2' : 'grid-cols-1';
+            const gridCols = embed.images.length >= 2 ? `grid-cols-2` : 'grid-cols-1';
+            const gridRows = embed.images.length > 2 ? 'grid-rows-2' : 'grid-rows-1';
+
             return (
-                <div className={`mt-2 grid ${gridCols} gap-1.5 rounded-xl overflow-hidden`}>
+                <div className={`mt-2 grid ${gridCols} ${gridRows} gap-1.5 rounded-xl overflow-hidden`}>
                     {embed.images.map((image, index) => (
                         <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 aspect-square">
                             <img src={image.thumb} alt={image.alt || `Post image ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
@@ -88,7 +90,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
         if (AppBskyEmbedVideo.isView(embed)) return processVideoEmbed(embed);
         if (AppBskyEmbedRecordWithMedia.isView(embed)) {
             const media = embed.media;
-            if (AppBskyEmbedImages.isView(media)) return processImageEmbed(media);
+            if (AppBskyEmbedImages.isView(media)) return processImageEmbed(media as AppBskyEmbedImages.View);
             if (AppBskyEmbedVideo.isView(media)) return processVideoEmbed(media);
         }
         return null;
@@ -136,7 +138,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
             {renderEmbed()}
             <div className="flex justify-end items-center gap-4 text-on-surface-variant text-xs mt-2">
                 <PostActions post={post} />
-                <span>{timeAgo}</span>
+                <a href={`#/post/${author.did}/${post.uri.split('/').pop()}`} className="hover:underline">{timeAgo}</a>
             </div>
         </div>
     );
