@@ -162,6 +162,12 @@
     "muteUser": "Silenciar a @{{handle}}",
     "unmuteUser": "Dejar de silenciar a @{{handle}}"
   },
+  "repostModal": {
+    "repost": "Repostear",
+    "quote": "Citar",
+    "share": "Compartir vía...",
+    "repostSuccess": "¡Publicación reposteada con éxito!"
+  },
   "postActions": {
     "share": "Compartir Publicación",
     "translate": "Traducir",

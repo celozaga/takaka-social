@@ -162,6 +162,12 @@
     "muteUser": "Mute @{{handle}}",
     "unmuteUser": "Unmute @{{handle}}"
   },
+  "repostModal": {
+    "repost": "Repost",
+    "quote": "Quote",
+    "share": "Share via...",
+    "repostSuccess": "Post reposted successfully!"
+  },
   "postActions": {
     "share": "Share Post",
     "translate": "Translate",

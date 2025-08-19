@@ -1,21 +1,13 @@
+
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
 import { MessageSquare, Heart, Repeat } from 'lucide-react';
+import { AppBskyFeedDefs } from '@atproto/api';
 
 interface PostScreenActionBarProps {
-    post: {
-        uri: string;
-        cid: string;
-        likeCount?: number;
-        repostCount?: number;
-        replyCount?: number;
-        viewer?: {
-            like?: string;
-            repost?: string;
-        };
-    };
+    post: AppBskyFeedDefs.PostView;
 }
 
 const formatCount = (count: number): string => {
@@ -27,10 +19,10 @@ const formatCount = (count: number): string => {
 
 const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
     const { session } = useAtp();
-    const { openComposer } = useUI();
+    const { openComposer, openRepostModal } = useUI();
     const {
         likeUri, likeCount, isLiking, handleLike,
-        repostUri, repostCount, isReposting, handleRepost
+        repostUri, repostCount, isReposting
     } = usePostActions(post);
 
     if (!session) return null;
@@ -53,7 +45,7 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
                     <span className="font-semibold text-sm">{formatCount(likeCount)}</span>
                 </button>
                  <button
-                    onClick={handleRepost}
+                    onClick={() => openRepostModal(post)}
                     disabled={isReposting}
                     className={`flex items-center gap-1.5 ${repostUri ? 'text-primary' : 'text-on-surface-variant'}`}
                 >

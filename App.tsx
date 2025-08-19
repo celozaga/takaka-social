@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -38,6 +40,7 @@ const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
 const MessagesScreen = lazy(() => import('./components/messages/MessagesScreen'));
 const ConvoScreen = lazy(() => import('./components/messages/ConvoScreen'));
 const MediaActionsModal = lazy(() => import('./components/shared/MediaActionsModal'));
+const RepostModal = lazy(() => import('./components/shared/RepostModal'));
 
 
 const App: React.FC = () => {
@@ -59,13 +62,14 @@ const Main: React.FC = () => {
   const { session, isLoadingSession, chatSupported } = useAtp();
   const { 
     isLoginModalOpen, closeLoginModal, 
-    isComposerOpen, closeComposer, composerReplyTo, composerInitialText, 
+    isComposerOpen, closeComposer, composerReplyTo, composerQuoteOf, composerInitialText, 
     isCustomFeedHeaderVisible, 
     isFeedModalOpen, closeFeedModal,
     isEditProfileModalOpen, closeEditProfileModal,
     isUpdateEmailModalOpen, closeUpdateEmailModal,
     isUpdateHandleModalOpen, closeUpdateHandleModal,
-    isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost
+    isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
+    isRepostModalOpen, closeRepostModal, repostModalPost
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
   const { i18n, t } = useTranslation();
@@ -95,11 +99,12 @@ const Main: React.FC = () => {
         closeUpdateEmailModal();
         closeUpdateHandleModal();
         closeMediaActionsModal();
+        closeRepostModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal]);
+  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal, closeRepostModal]);
 
   if (isLoadingSession) {
     // Show a minimal loading state while session is being restored
@@ -251,6 +256,7 @@ const Main: React.FC = () => {
                 onPostSuccess={closeComposer}
                 onClose={closeComposer}
                 replyTo={composerReplyTo}
+                quoteOf={composerQuoteOf}
                 initialText={composerInitialText}
              />
           </div>
@@ -338,6 +344,25 @@ const Main: React.FC = () => {
               <MediaActionsModal
                 post={mediaActionsModalPost}
                 onClose={closeMediaActionsModal}
+              />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      {isRepostModalOpen && repostModalPost && (
+         <div 
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end justify-center animate-in fade-in-0 duration-300"
+          onClick={closeRepostModal}
+        >
+          <div 
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom-full duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <Suspense fallback={<div className="w-full h-48 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+              <RepostModal
+                post={repostModalPost}
+                onClose={closeRepostModal}
               />
             </Suspense>
           </div>
