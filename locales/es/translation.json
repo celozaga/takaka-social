@@ -154,23 +154,13 @@
   },
   "mediaActions": {
     "title": "Más",
-    "shareVia": "Compartir vía...",
-    "translate": "Traducir",
-    "copyLink": "Copiar enlace",
-    "downloadPhoto": "Descargar foto",
-    "downloadVideo": "Descargar vídeo",
     "notInterested": "No me interesa",
     "blockUser": "Bloquear a @{{handle}}",
     "unblockUser": "Desbloquear a @{{handle}}",
     "reportPost": "Denunciar publicación",
     "deletePost": "Eliminar publicación",
     "muteUser": "Silenciar a @{{handle}}",
-    "unmuteUser": "Dejar de silenciar a @{{handle}}",
-    "toast": {
-        "linkCopied": "Enlace copiado al portapapeles",
-        "downloadStarting": "Iniciando descarga...",
-        "downloadError": "No se pudo descargar el archivo."
-    }
+    "unmuteUser": "Dejar de silenciar a @{{handle}}"
   },
   "postActions": {
     "share": "Compartir Publicación",

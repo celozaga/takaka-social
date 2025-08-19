@@ -154,23 +154,13 @@
   },
   "mediaActions": {
     "title": "More",
-    "shareVia": "Share via...",
-    "translate": "Translate",
-    "copyLink": "Copy link",
-    "downloadPhoto": "Download photo",
-    "downloadVideo": "Download video",
     "notInterested": "Not interested",
     "blockUser": "Block @{{handle}}",
     "unblockUser": "Unblock @{{handle}}",
     "reportPost": "Report post",
     "deletePost": "Delete post",
     "muteUser": "Mute @{{handle}}",
-    "unmuteUser": "Unmute @{{handle}}",
-    "toast": {
-        "linkCopied": "Link copied to clipboard",
-        "downloadStarting": "Download starting...",
-        "downloadError": "Could not download file."
-    }
+    "unmuteUser": "Unmute @{{handle}}"
   },
   "postActions": {
     "share": "Share Post",
