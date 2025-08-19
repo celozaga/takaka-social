@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -36,6 +37,7 @@ const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleM
 const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
 const MessagesScreen = lazy(() => import('./components/messages/MessagesScreen'));
 const ConvoScreen = lazy(() => import('./components/messages/ConvoScreen'));
+const MediaActionsModal = lazy(() => import('./components/shared/MediaActionsModal'));
 
 
 const App: React.FC = () => {
@@ -63,6 +65,7 @@ const Main: React.FC = () => {
     isEditProfileModalOpen, closeEditProfileModal,
     isUpdateEmailModalOpen, closeUpdateEmailModal,
     isUpdateHandleModalOpen, closeUpdateHandleModal,
+    isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
   const { i18n, t } = useTranslation();
@@ -91,11 +94,12 @@ const Main: React.FC = () => {
         closeEditProfileModal();
         closeUpdateEmailModal();
         closeUpdateHandleModal();
+        closeMediaActionsModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal]);
+  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal]);
 
   if (isLoadingSession) {
     // Show a minimal loading state while session is being restored
@@ -316,6 +320,25 @@ const Main: React.FC = () => {
                   onClose={closeUpdateHandleModal}
                   onSuccess={closeUpdateHandleModal}
                 />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      {isMediaActionsModalOpen && mediaActionsModalPost && (
+         <div 
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end justify-center animate-in fade-in-0 duration-300"
+          onClick={closeMediaActionsModal}
+        >
+          <div 
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom-full duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <Suspense fallback={<div className="w-full h-96 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+              <MediaActionsModal
+                post={mediaActionsModalPost}
+                onClose={closeMediaActionsModal}
+              />
             </Suspense>
           </div>
         </div>

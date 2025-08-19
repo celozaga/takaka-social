@@ -152,6 +152,41 @@
     "repostedBy": "Repostado por <1>{{user}}</1>",
     "replyTo": "Em resposta a <1>{{user}}</1>"
   },
+  "mediaActions": {
+    "title": "Mais",
+    "shareVia": "Compartilhar via...",
+    "copyLink": "Copiar link",
+    "downloadPhoto": "Baixar foto",
+    "downloadVideo": "Baixar vídeo",
+    "notInterested": "Não tenho interesse",
+    "blockUser": "Bloquear @{{handle}}",
+    "unblockUser": "Desbloquear @{{handle}}",
+    "reportPost": "Denunciar publicação",
+    "deletePost": "Excluir publicação",
+    "muteUser": "Silenciar @{{handle}}",
+    "unmuteUser": "Reativar som de @{{handle}}",
+    "toast": {
+        "linkCopied": "Link copiado para a área de transferência",
+        "downloadStarting": "Iniciando o download...",
+        "downloadError": "Não foi possível baixar o arquivo."
+    }
+  },
+  "postActions": {
+    "share": "Compartilhar Publicação",
+    "translate": "Traduzir",
+    "copyText": "Copiar Texto da Publicação",
+    "hide": "Ocultar publicação para mim",
+    "report": "Denunciar Publicação",
+    "delete": "Excluir Publicação",
+    "confirmDelete": "Tem certeza que deseja excluir esta publicação? Esta ação não pode ser desfeita.",
+    "toast": {
+      "textCopied": "Texto Copiado!",
+      "postHidden": "Publicação Oculta",
+      "postHiddenDescription": "Esta publicação não será mais exibida para você.",
+      "deleteSuccess": "Publicação Excluída",
+      "deleteError": "Não foi possível excluir a publicação."
+    }
+  },
   "profile": {
     "title": "Perfil",
     "loadingError": "Não foi possível carregar o perfil.",

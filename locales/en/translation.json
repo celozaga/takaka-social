@@ -152,6 +152,41 @@
     "repostedBy": "Reposted by <1>{{user}}</1>",
     "replyTo": "Reply to <1>{{user}}</1>"
   },
+  "mediaActions": {
+    "title": "More",
+    "shareVia": "Share via...",
+    "copyLink": "Copy link",
+    "downloadPhoto": "Download photo",
+    "downloadVideo": "Download video",
+    "notInterested": "Not interested",
+    "blockUser": "Block @{{handle}}",
+    "unblockUser": "Unblock @{{handle}}",
+    "reportPost": "Report post",
+    "deletePost": "Delete post",
+    "muteUser": "Mute @{{handle}}",
+    "unmuteUser": "Unmute @{{handle}}",
+    "toast": {
+        "linkCopied": "Link copied to clipboard",
+        "downloadStarting": "Download starting...",
+        "downloadError": "Could not download file."
+    }
+  },
+  "postActions": {
+    "share": "Share Post",
+    "translate": "Translate",
+    "copyText": "Copy Post Text",
+    "hide": "Hide post for me",
+    "report": "Report Post",
+    "delete": "Delete Post",
+    "confirmDelete": "Are you sure you want to delete this post? This cannot be undone.",
+    "toast": {
+      "textCopied": "Text Copied!",
+      "postHidden": "Post Hidden",
+      "postHiddenDescription": "This post will no longer be shown to you.",
+      "deleteSuccess": "Post Deleted",
+      "deleteError": "Could not delete post."
+    }
+  },
   "profile": {
     "title": "Profile",
     "loadingError": "Could not load profile.",

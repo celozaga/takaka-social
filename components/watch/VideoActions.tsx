@@ -1,7 +1,9 @@
 
 
+
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Repeat, Share2, BadgeCheck, Plus, Check } from 'lucide-react';
+import { Heart, MessageCircle, Repeat, Share2, BadgeCheck, Plus, Check, MoreHorizontal } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useUI } from '../../context/UIContext';
 import { useAtp } from '../../context/AtpContext';
@@ -19,7 +21,7 @@ const formatCount = (count: number): string => {
 };
 
 const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
-    const { openComposer } = useUI();
+    const { openComposer, openMediaActionsModal } = useUI();
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { likeUri, likeCount, isLiking, handleLike, repostUri, repostCount, isReposting, handleRepost } = usePostActions(post);
@@ -83,6 +85,11 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
         e.stopPropagation();
         handleRepost();
     }, [handleRepost]);
+    
+    const handleMoreClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        openMediaActionsModal(post);
+    }, [openMediaActionsModal, post]);
 
     return (
         <div className="absolute bottom-24 right-2 flex flex-col items-center gap-5 text-white">
@@ -124,6 +131,9 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
             <button onClick={handleRepostClick} disabled={isReposting} className="flex flex-col items-center gap-1.5">
                 <Repeat size={32} className={`transition-colors transform active:scale-110 ${repostUri ? 'text-primary' : 'text-white'}`} />
                 <span className="text-sm font-semibold drop-shadow">{formatCount(repostCount)}</span>
+            </button>
+            <button onClick={handleMoreClick} className="flex flex-col items-center gap-1.5">
+                <MoreHorizontal size={32} className="transform active:scale-110" />
             </button>
         </div>
     );

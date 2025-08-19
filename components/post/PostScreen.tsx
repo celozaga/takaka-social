@@ -2,7 +2,11 @@
 
 
 
-import React, { useState, useEffect, useRef } from 'react';
+
+
+
+
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -10,7 +14,7 @@ import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBsk
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from '../ui/use-toast';
-import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useHeadManager } from '../../hooks/useHeadManager';
@@ -93,14 +97,13 @@ interface PostScreenProps {
 
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { agent, session } = useAtp();
-  const { openComposer } = useUI();
+  const { openComposer, openMediaActionsModal } = useUI();
   const { toast } = useToast();
   const { t } = useTranslation();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState(false);
-  const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewBasic | null>(null);
+  const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const touchStartXRef = useRef(0);
   const [hlsUrl, setHlsUrl] = useState<string | null>(null);
@@ -125,7 +128,8 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
         if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
           setThread(data.thread);
-          setPostAuthor(data.thread.post.author);
+          const profileRes = await agent.getProfile({ actor: data.thread.post.author.did });
+          setPostAuthor(profileRes.data);
         } else {
           throw new Error(t('post.notFound'));
         }
@@ -167,46 +171,6 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         fetchUrl();
     }
   }, [thread, agent]);
-
-  const handleFollow = async () => {
-      if (!postAuthor || isActionLoading || !session) return;
-      setIsActionLoading(true);
-      const oldAuthor = postAuthor;
-      setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: 'temp-uri' } } : null);
-      try {
-          const { uri } = await agent.follow(postAuthor.did);
-          setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: uri } } : null);
-      } catch (e) {
-          console.error("Failed to follow:", e);
-          toast({ title: t('common.error'), description: t('profile.toast.followError'), variant: "destructive" });
-          setPostAuthor(oldAuthor);
-      } finally {
-          setIsActionLoading(false);
-      }
-  };
-
-  const handleUnfollow = async () => {
-      if (!postAuthor || !postAuthor.viewer?.following || isActionLoading) return;
-      setIsActionLoading(true);
-      const oldAuthor = postAuthor;
-      setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: undefined } } : null);
-      try {
-          await agent.deleteFollow(postAuthor.viewer.following);
-      } catch (e) {
-          console.error("Failed to unfollow:", e);
-          toast({ title: t('common.error'), description: t('profile.toast.unfollowError'), variant: "destructive" });
-          setPostAuthor(oldAuthor);
-      } finally {
-          setIsActionLoading(false);
-      }
-  };
-
-  const handleShare = () => {
-    const url = `${window.location.origin}/#/post/${did}/${rkey}`;
-    navigator.clipboard.writeText(url);
-    toast({ title: t('post.linkCopied'), description: t('post.linkCopiedDescription') });
-  };
-
 
   const renderMedia = (post: AppBskyFeedDefs.PostView) => {
         if (!post.embed) return null;
@@ -359,26 +323,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const mainPost = thread.post;
   const currentRecord = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
   const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
-  const isMe = session?.did === postAuthor.did;
-
-  const FollowButton = () => {
-    if (!session || isMe) return null;
-    return (
-        <button
-            onClick={postAuthor.viewer?.following ? handleUnfollow : handleFollow}
-            disabled={isActionLoading}
-            className={`font-semibold text-sm py-1.5 px-4 rounded-full transition-colors duration-200
-                ${postAuthor.viewer?.following 
-                    ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' 
-                    : 'bg-primary text-on-primary hover:bg-primary/90'
-                }
-                disabled:opacity-50`}
-        >
-            {postAuthor.viewer?.following ? t('common.following') : t('common.follow')}
-        </button>
-    );
-  };
-
+  
   return (
     <div>
       <header className="bg-surface-1 z-40">
@@ -398,9 +343,8 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                 </a>
             </div>
             <div className="flex items-center gap-2">
-                <FollowButton />
-                <button onClick={handleShare} className="p-2 rounded-full hover:bg-surface-3">
-                    <Share2 size={20} />
+                 <button onClick={() => openMediaActionsModal(mainPost)} className="p-2 rounded-full hover:bg-surface-3">
+                    <MoreHorizontal size={20} />
                 </button>
             </div>
         </div>

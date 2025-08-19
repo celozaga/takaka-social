@@ -1,5 +1,7 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import { AppBskyFeedDefs } from '@atproto/api';
 
 interface ReplyToProps {
   uri: string;
@@ -35,6 +37,10 @@ interface UIContextType {
   isUpdateHandleModalOpen: boolean;
   openUpdateHandleModal: () => void;
   closeUpdateHandleModal: () => void;
+  isMediaActionsModalOpen: boolean;
+  mediaActionsModalPost?: AppBskyFeedDefs.PostView;
+  openMediaActionsModal: (post: AppBskyFeedDefs.PostView) => void;
+  closeMediaActionsModal: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -50,6 +56,8 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isUpdateEmailModalOpen, setIsUpdateEmailModalOpen] = useState(false);
   const [isUpdateHandleModalOpen, setIsUpdateHandleModalOpen] = useState(false);
+  const [isMediaActionsModalOpen, setIsMediaActionsModalOpen] = useState(false);
+  const [mediaActionsModalPost, setMediaActionsModalPost] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
 
   const openLoginModal = useCallback(() => setIsLoginModalOpen(true), []);
   const closeLoginModal = useCallback(() => setIsLoginModalOpen(false), []);
@@ -84,6 +92,16 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const openUpdateHandleModal = useCallback(() => setIsUpdateHandleModalOpen(true), []);
   const closeUpdateHandleModal = useCallback(() => setIsUpdateHandleModalOpen(false), []);
+  
+  const openMediaActionsModal = useCallback((post: AppBskyFeedDefs.PostView) => {
+    setMediaActionsModalPost(post);
+    setIsMediaActionsModalOpen(true);
+  }, []);
+  
+  const closeMediaActionsModal = useCallback(() => {
+    setIsMediaActionsModalOpen(false);
+    setTimeout(() => setMediaActionsModalPost(undefined), 300); // Delay clear for animation
+  }, []);
 
   return (
     <UIContext.Provider value={{ 
@@ -94,6 +112,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         isEditProfileModalOpen, openEditProfileModal, closeEditProfileModal,
         isUpdateEmailModalOpen, openUpdateEmailModal, closeUpdateEmailModal,
         isUpdateHandleModalOpen, openUpdateHandleModal, closeUpdateHandleModal,
+        isMediaActionsModalOpen, mediaActionsModalPost, openMediaActionsModal, closeMediaActionsModal,
     }}>
       {children}
     </UIContext.Provider>
