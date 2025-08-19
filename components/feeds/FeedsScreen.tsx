@@ -4,10 +4,10 @@ import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { Pin, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react';
-import PopularFeeds from '../feeds/PopularFeeds';
+import PopularFeeds from './PopularFeeds';
 import { useUI } from '../../context/UIContext';
-import FeedsHeader from './FeedsHeader';
-import FeedAvatar from './FeedAvatar';
+import FeedsHeader from '../FeedsHeader';
+import FeedAvatar from '../FeedAvatar';
 
 const EditableFeedItem: React.FC<{
     feed: AppBskyFeedDefs.GeneratorView;

@@ -3,7 +3,7 @@ import React from 'react';
 import { useUI } from '../../context/UIContext';
 import { useFeedActions } from '../../hooks/useFeedActions';
 import { Heart, Pin, Share2, AlertCircle, X } from 'lucide-react';
-import FeedAvatar from './FeedAvatar';
+import FeedAvatar from '../FeedAvatar';
 
 const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();

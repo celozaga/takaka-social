@@ -28,7 +28,7 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
             const author = postView.author;
 
             if (AppBskyFeedPost.isRecord(postView.record)) {
-                const postRecord = postView.record;
+                const postRecord = postView.record as AppBskyFeedPost.Record;
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
                         <div className="flex items-center gap-2 text-sm">
@@ -60,7 +60,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
     if (!AppBskyFeedPost.isRecord(post.record)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = post.record;
+    const record = post.record as AppBskyFeedPost.Record;
 
     const renderMedia = () => {
         if (!post.embed) return null;
@@ -84,7 +84,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
             );
         };
         
-        const processVideoEmbed = (embedView: AppBskyEmbedVideo.View) => {
+        const processVideoEmbed = (embedView:AppBskyEmbedVideo.View) => {
             return (
                  <a href={`#/post/${author.did}/${post.uri.split('/').pop()}`} className="block relative group bg-black rounded-xl overflow-hidden mt-2">
                     <img src={embedView.thumbnail} className="w-full h-auto object-cover" />

@@ -5,7 +5,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { Settings, ChevronRight, BadgeCheck, List } from 'lucide-react';
-import MoreHeader from './MoreHeader';
+import MoreHeader from '../MoreHeader';
 
 const MoreScreen: React.FC = () => {
     const { agent, session } = useAtp();

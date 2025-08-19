@@ -78,7 +78,7 @@ export const useFeedActions = (feedUri?: string) => {
         // If the feed is not yet saved, 'togglePin' should add and pin it.
         const { data: { preferences } } = await agent.app.bsky.actor.getPreferences();
         const currentItems = preferences
-            .find(p => p.$type === 'app.bsky.actor.defs#savedFeedsPref') as AppBskyActorDefs.SavedFeedsPref | undefined;
+            .find(p => p.$type === 'app.bsky.actor.defs#savedFeedsPref') as { items: { value: string }[] } | undefined;
         const isSaved = currentItems?.items.some(item => item.value === feedView.uri);
         
         if (!isSaved) {

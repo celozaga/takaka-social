@@ -3,7 +3,7 @@ import React from 'react';
 import { useUI } from '../../context/UIContext';
 import { useFeedActions } from '../../hooks/useFeedActions';
 import { ArrowLeft, MoreHorizontal, Heart } from 'lucide-react';
-import FeedAvatar from './FeedAvatar';
+import FeedAvatar from '../FeedAvatar';
 
 interface FeedViewHeaderProps {
     feedUri: string;
