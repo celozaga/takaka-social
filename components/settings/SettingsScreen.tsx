@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { Bell, UserCircle, LogOut, Globe, ChevronRight } from 'lucide-react';
+import { Bell, UserCircle, LogOut, Globe, Shield, ChevronRight } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
 import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
@@ -34,6 +34,13 @@ const SettingsScreen: React.FC = () => {
         <div>
             <ScreenHeader title={t('settings.title')} />
             <div className="mt-4 space-y-2">
+                 <a href="#/settings/moderation" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
+                    <div className="flex items-center gap-4">
+                        <Shield className="w-6 h-6 text-on-surface-variant" />
+                        <span className="font-semibold">Moderation</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-on-surface-variant" />
+                </a>
                 <a href="#/settings/language" className="flex items-center justify-between p-4 bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors">
                     <div className="flex items-center gap-4">
                         <Globe className="w-6 h-6 text-on-surface-variant" />

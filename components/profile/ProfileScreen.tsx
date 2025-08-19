@@ -1,15 +1,18 @@
 
+
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs,AtUri,RichText,AppBskyEmbedImages,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyEmbedRecord } from '@atproto/api';
+import { AppBskyActorDefs, AppBskyFeedDefs,AtUri,RichText,AppBskyEmbedImages,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyEmbedRecord, ComAtprotoLabelDefs } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import { useHeadManager } from '../../hooks/useHeadManager';
+import Label from '../shared/Label';
 
 type FeedFilter = 'all' | 'photos' | 'videos';
 
@@ -394,7 +397,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                             <BadgeCheck className="w-5 h-5 text-primary" fill="currentColor" />
                         )}
                     </h2>
-                    {profile.description && (
+                     {profile.description && (
                         <div className="mt-1 text-on-surface whitespace-pre-wrap text-sm">
                             {descriptionWithFacets ? (
                                 <RichTextRenderer record={descriptionWithFacets} />
@@ -404,6 +407,15 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         </div>
                     )}
                 </div>
+
+                {profile.labels && ComAtprotoLabelDefs.isLabel(profile.labels[0]) && profile.labels.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                        {profile.labels.map((label) => (
+                           <Label key={label.val} label={label} />
+                        ))}
+                    </div>
+                )}
+
 
                 <div className="mt-4 flex items-center gap-2">
                     {isMe ? (

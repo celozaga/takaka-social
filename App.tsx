@@ -1,10 +1,12 @@
 
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
 import { UIProvider, useUI } from './context/UIContext';
 import { HiddenPostsProvider } from './context/HiddenPostsContext';
+import { ModerationProvider } from './context/ModerationContext';
 import { Toaster, ToastProvider } from './components/ui/Toaster';
 import Navbar from './components/layout/Navbar';
 import BottomNavbar from './components/layout/BottomNavbar';
@@ -27,6 +29,8 @@ const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen')
 const NotificationSettingsScreen = lazy(() => import('./components/settings/NotificationSettingsScreen'));
 const LanguageSettingsScreen = lazy(() => import('./components/settings/LanguageSettingsScreen'));
 const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSettingsScreen'));
+const ModerationSettingsScreen = lazy(() => import('./components/settings/ModerationSettingsScreen'));
+const ModerationServiceScreen = lazy(() => import('./components/settings/ModerationServiceScreen'));
 const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
@@ -42,14 +46,16 @@ const RepostModal = lazy(() => import('./components/shared/RepostModal'));
 const App: React.FC = () => {
   return (
     <AtpProvider>
-      <UIProvider>
-        <HiddenPostsProvider>
-          <ToastProvider>
-            <Main />
-            <Toaster />
-          </ToastProvider>
-        </HiddenPostsProvider>
-      </UIProvider>
+      <ModerationProvider>
+        <UIProvider>
+          <HiddenPostsProvider>
+            <ToastProvider>
+              <Main />
+              <Toaster />
+            </ToastProvider>
+          </HiddenPostsProvider>
+        </UIProvider>
+      </ModerationProvider>
     </AtpProvider>
   );
 };
@@ -169,6 +175,12 @@ const Main: React.FC = () => {
         }
         if (parts[1] === 'account') {
             return <AccountSettingsScreen />;
+        }
+        if (parts[1] === 'moderation') {
+          return <ModerationSettingsScreen />;
+        }
+        if (parts[1] === 'mod-service' && parts[2]) {
+            return <ModerationServiceScreen serviceDid={parts[2]} />;
         }
         return <SettingsScreen />;
       case 'more':
