@@ -9,6 +9,7 @@ import { BadgeCheck } from 'lucide-react';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
+import ReplyPostPreview from './ReplyPostPreview';
 
 
 interface ReplyProps {
@@ -21,7 +22,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const moderation = useModeration();
   const [isContentVisible, setIsContentVisible] = useState(false);
   
-  const { post, replies } = reply;
+  const { post, replies, parent } = reply;
   const modDecision = moderation.isReady ? moderatePost(post, moderation) : null;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
@@ -84,6 +85,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
                         )}
                     </a>
                 </div>
+                {AppBskyFeedDefs.isThreadViewPost(parent) && <ReplyPostPreview post={parent.post} />}
                 <div className="text-on-surface whitespace-pre-wrap mt-0.5 text-sm break-words">
                     <RichTextRenderer record={record} />
                 </div>

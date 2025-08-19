@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -148,7 +149,12 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   return (
     <div className="space-y-4">
       {moderatedFeed.map((feedViewPost) => (
-        <PostBubble key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} post={feedViewPost.post} showAuthor />
+        <PostBubble 
+          key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} 
+          post={feedViewPost.post} 
+          reason={AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason : undefined}
+          showAuthor 
+        />
       ))}
 
       <div ref={loaderRef} className="h-10">

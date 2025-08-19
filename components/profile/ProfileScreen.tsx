@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -75,8 +77,12 @@ const ProfileFeed: React.FC<{ actor: string, isBlocked: boolean }> = ({ actor, i
 
     return (
         <div className="space-y-4">
-            {feed.map(({ post }) => (
-                <PostBubble key={post.cid} post={post} />
+            {feed.map((feedViewPost) => (
+                <PostBubble 
+                    key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} 
+                    post={feedViewPost.post}
+                    reason={AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason : undefined}
+                />
             ))}
             <div ref={loaderRef} className="h-10">
                 {isLoadingMore && (

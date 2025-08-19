@@ -12,25 +12,26 @@ import {
     AppBskyEmbedExternal
 } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { useAtp } from '../../context/AtpContext';
 import PostActions from './PostActions';
-import { BadgeCheck, ExternalLink, PlayCircle } from 'lucide-react';
+import { BadgeCheck, ExternalLink, PlayCircle, Repeat } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import ExternalLinkEmbed from './ExternalLinkEmbed';
+import ReplyParentPreview from './ReplyParentPreview';
 
 interface PostBubbleProps {
     post: AppBskyFeedDefs.PostView;
+    reason?: AppBskyFeedDefs.ReasonRepost;
     showAuthor?: boolean;
 }
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
     if (AppBskyEmbedRecord.isViewRecord(embed)) {
-        const postView = embed.record as AppBskyFeedDefs.PostView;
-        if (postView?.$type === 'app.bsky.feed.defs#postView') {
+        if (AppBskyFeedDefs.isPostView(embed.record)) {
+            const postView = embed.record;
             const author = postView.author;
 
-            const postRecord = postView.record as AppBskyFeedPost.Record;
-            if (postRecord?.$type === 'app.bsky.feed.post') {
+            if (AppBskyFeedPost.isRecord(postView.record)) {
+                const postRecord = postView.record;
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
                         <div className="flex items-center gap-2 text-sm">
@@ -56,14 +57,14 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
     return null; // It's a valid record but not a post (e.g., a feed generator)
 };
 
-const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => {
+const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = false }) => {
     const author = post.author;
     
-    const recordUnchecked = post.record;
-    if (!AppBskyFeedPost.isRecord(recordUnchecked)) {
+    if (!AppBskyFeedPost.isRecord(post.record)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = recordUnchecked;
+    const record = post.record;
+    const isReply = !!record.reply;
 
     const renderMedia = () => {
         if (!post.embed) return null;
@@ -152,6 +153,14 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
 
     return (
         <div className="bg-surface-2 p-3 rounded-2xl rounded-bl-md shadow-sm">
+            {reason && (
+                <div className="flex items-center gap-2 text-sm text-on-surface-variant mb-2">
+                    <Repeat size={14} />
+                    <span className="truncate">
+                        Reposted by <a href={`#/profile/${reason.by.handle}`} className="hover:underline font-semibold" onClick={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</a>
+                    </span>
+                </div>
+            )}
             {showAuthor && (
                  <div className="flex items-center gap-2 mb-2">
                      <a href={`#/profile/${author.handle}`}>
@@ -168,10 +177,11 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
                     </div>
                  </div>
             )}
+            {isReply && <ReplyParentPreview parentUri={record.reply!.parent.uri} />}
             {record.text && (
-                <p className="text-on-surface whitespace-pre-wrap break-words">
+                <div className="text-on-surface whitespace-pre-wrap break-words">
                     <RichTextRenderer record={record} />
-                </p>
+                </div>
             )}
             {renderMedia()}
             {renderEmbed()}
