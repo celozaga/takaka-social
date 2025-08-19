@@ -1,15 +1,45 @@
 
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 
 interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
 }
+
+const isPostAMediaPost = (post: AppBskyFeedDefs.PostView, reply?: AppBskyFeedDefs.ReplyRef): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+
+    // Case 1: Direct media
+    if ((AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed)) {
+        return true;
+    }
+
+    // Case 2: Quote with own media
+    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+        if (reply) { // Don't show replies that are just quotes w/ media but no text
+            const record = post.record as { text?: string };
+            if (!record.text || record.text.trim() === '') return false;
+        }
+        const media = embed.media;
+        return (AppBskyEmbedImages.isView(media) && media.images.length > 0) || AppBskyEmbedVideo.isView(media);
+    }
+    
+    // Case 3: Quote of a media post
+    if (AppBskyEmbedRecord.isView(embed)) {
+        const quotedPost = embed.record;
+        if (AppBskyFeedDefs.isPostView(quotedPost)) {
+            // Recursively check if the quoted post is a media post, but without the reply check
+            return isPostAMediaPost(quotedPost); 
+        }
+    }
+
+    return false;
+};
 
 const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const { agent } = useAtp();
@@ -24,43 +54,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
-    return posts.filter(item => {
-        const embed = item.post.embed;
-        if (!embed) {
-            return false;
-        }
-
-        // Direct media is always shown
-        if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) {
-            return true;
-        }
-        if (AppBskyEmbedVideo.isView(embed)) {
-            return true;
-        }
-
-        // Handle quote posts (recordWithMedia)
-        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-            // If it's a reply that quotes media, only show if it has text.
-            // This prevents confusing cards that look like the original post.
-            if (item.reply) {
-                const record = item.post.record as { text?: string };
-                if (!record.text || record.text.trim() === '') {
-                    return false;
-                }
-            }
-            
-            // Check if the embedded media is valid
-            const media = embed.media;
-            if (AppBskyEmbedImages.isView(media) && media.images.length > 0) {
-                return true;
-            }
-            if (AppBskyEmbedVideo.isView(media)) {
-                return true;
-            }
-        }
-        
-        return false;
-    });
+    return posts.filter(item => isPostAMediaPost(item.post, item.reply));
   };
   
   const fetchPosts = useCallback(async (currentCursor?: string) => {

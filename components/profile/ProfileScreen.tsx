@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { AppBskyActorDefs, AppBskyFeedDefs,AtUri,RichText,AppBskyEmbedImages,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyEmbedRecord } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
@@ -11,6 +12,38 @@ import { useUI } from '../../context/UIContext';
 import { useHeadManager } from '../../hooks/useHeadManager';
 
 type FeedFilter = 'all' | 'photos' | 'videos';
+
+const isPostAMediaPost = (post: AppBskyFeedDefs.PostView, reply?: AppBskyFeedDefs.ReplyRef): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+
+    // Case 1: Direct media
+    if ((AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed)) {
+        return true;
+    }
+
+    // Case 2: Quote with own media
+    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+        if (reply) { // Don't show replies that are just quotes w/ media but no text
+            const record = post.record as { text?: string };
+            if (!record.text || record.text.trim() === '') return false;
+        }
+        const media = embed.media;
+        return (AppBskyEmbedImages.isView(media) && media.images.length > 0) || AppBskyEmbedVideo.isView(media);
+    }
+    
+    // Case 3: Quote of a media post
+    if (AppBskyEmbedRecord.isView(embed)) {
+        const quotedPost = embed.record;
+        if (AppBskyFeedDefs.isPostView(quotedPost)) {
+            // Recursively check if the quoted post is a media post, but without the reply check
+            return isPostAMediaPost(quotedPost); 
+        }
+    }
+
+    return false;
+};
+
 
 // --- Start Filter Logic Helpers ---
 const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
@@ -25,6 +58,9 @@ const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
              return media.images.length > 0;
         }
     }
+    if (AppBskyEmbedRecord.isView(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
+        return hasPhotos(embed.record);
+    }
     return false;
 }
 
@@ -35,36 +71,16 @@ const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
     if (AppBskyEmbedRecordWithMedia.isView(embed)) {
         return AppBskyEmbedVideo.isView(embed.media);
     }
+    if (AppBskyEmbedRecord.isView(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
+        return hasVideos(embed.record);
+    }
     return false;
-}
-
-const hasMedia = (post: AppBskyFeedDefs.PostView): boolean => {
-    return hasPhotos(post) || hasVideos(post);
 }
 // --- End Filter Logic Helpers ---
 
 const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
-    // First, apply the base filter to remove confusing quote-replies
-    const baseFiltered = posts.filter(item => {
-        const embed = item.post.embed;
-        if (!embed) return false;
-
-        // Direct media is always a candidate
-        if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) return true;
-        if (AppBskyEmbedVideo.isView(embed)) return true;
-
-        // Handle quote posts (recordWithMedia)
-        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-            if (item.reply) {
-                const record = item.post.record as { text?: string };
-                if (!record.text || record.text.trim() === '') return false;
-            }
-            const media = embed.media;
-            if (AppBskyEmbedImages.isView(media) && media.images.length > 0) return true;
-            if (AppBskyEmbedVideo.isView(media)) return true;
-        }
-        return false;
-    });
+    // First, apply the base filter to identify all potential media posts
+    const baseFiltered = posts.filter(item => isPostAMediaPost(item.post, item.reply));
 
     // Then, apply the specific media type filter
     switch (filter) {

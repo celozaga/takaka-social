@@ -1,10 +1,8 @@
 
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { RichText, AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AtUri } from '@atproto/api';
+import { RichText, AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AtUri, AppBskyEmbedRecord } from '@atproto/api';
 import { ImageUp, Send, X, Video, BadgeCheck } from 'lucide-react';
 import { useToast } from '../ui/use-toast';
 
@@ -270,7 +268,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, qu
       }
       
       if (quoteOf) {
-        const quoteEmbed = {
+        const quoteEmbed: AppBskyEmbedRecord.Main = {
             $type: 'app.bsky.embed.record',
             record: { cid: quoteOf.cid, uri: quoteOf.uri },
         };

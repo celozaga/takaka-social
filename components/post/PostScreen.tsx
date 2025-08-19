@@ -1,16 +1,9 @@
 
-
-
-
-
-
-
-
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from '../ui/use-toast';
@@ -19,6 +12,7 @@ import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useHeadManager } from '../../hooks/useHeadManager';
 import Hls from 'hls.js';
+import QuotedPost from './QuotedPost';
 
 const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined => {
     if (!post.embed) return undefined;
@@ -306,6 +300,25 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         return null;
   };
 
+  const renderQuotedPost = (post: AppBskyFeedDefs.PostView) => {
+    const embed = post.embed;
+    if (!embed) return null;
+
+    let recordToQuote: AppBskyFeedDefs.PostView | undefined;
+
+    if (AppBskyEmbedRecord.isView(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
+        recordToQuote = embed.record;
+    } else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyFeedDefs.isPostView(embed.record.record)) {
+        recordToQuote = embed.record.record;
+    }
+
+    if (recordToQuote) {
+        return <div className="my-3"><QuotedPost post={recordToQuote} /></div>;
+    }
+    
+    return null;
+  };
+
   if (isLoading) {
     return (
         <div className="pt-16 px-4">
@@ -358,6 +371,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                     <RichTextRenderer record={currentRecord} />
                 </div>
              )}
+             {renderQuotedPost(mainPost)}
              <p className="text-sm text-on-surface-variant my-3">{format(new Date(currentRecord.createdAt), "h:mm a · MMM d, yyyy")}</p>
         </div>
         

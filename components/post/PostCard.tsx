@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { usePostActions } from '../../hooks/usePostActions';
-import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat, MessageCircle } from 'lucide-react';
+import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat, MessageCircle, Quote } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 
 type PostCardProps = {
@@ -23,10 +23,37 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     const postLink = `#/post/${author.did}/${rkey}`;
     const profileLink = `#/profile/${author.handle}`;
 
-    const renderMedia = () => {
-        if (!post.embed) return null;
+    const getMediaInfo = (p: AppBskyFeedDefs.PostView): { mediaPost: AppBskyFeedDefs.PostView, mediaEmbed: (AppBskyEmbedImages.View | AppBskyEmbedVideo.View) } | null => {
+        const embed = p.embed;
+        if (!embed) return null;
 
-        const processImageEmbed = (embed: AppBskyEmbedImages.View) => {
+        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+            const media = embed.media;
+            if (AppBskyEmbedImages.isView(media) && media.images.length > 0) return { mediaPost: p, mediaEmbed: media };
+            if (AppBskyEmbedVideo.isView(media)) return { mediaPost: p, mediaEmbed: media };
+        }
+
+        if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) return { mediaPost: p, mediaEmbed: embed };
+        if (AppBskyEmbedVideo.isView(embed)) return { mediaPost: p, mediaEmbed: embed };
+
+        if (AppBskyEmbedRecord.isView(embed)) {
+            const quotedPost = embed.record;
+            if (AppBskyFeedDefs.isPostView(quotedPost)) {
+                return getMediaInfo(quotedPost);
+            }
+        }
+        return null;
+    }
+    
+    const mediaInfo = getMediaInfo(post);
+
+    const renderMedia = () => {
+        if (!mediaInfo) return null;
+        
+        const { mediaPost, mediaEmbed } = mediaInfo;
+
+        if (AppBskyEmbedImages.isView(mediaEmbed)) {
+            const embed = mediaEmbed;
             if (showAllMedia && embed.images.length > 0) {
                 const gridCols = embed.images.length >= 2 ? 'grid-cols-2' : 'grid-cols-1';
                 return (
@@ -69,10 +96,11 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                     )}
                 </div>
             );
-        };
-        
-        const processVideoEmbed = (embedView: AppBskyEmbedVideo.View) => {
-            const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
+        }
+
+        if (AppBskyEmbedVideo.isView(mediaEmbed)) {
+            const embedView = mediaEmbed;
+            const authorDid = (mediaPost.author as AppBskyActorDefs.ProfileViewBasic).did;
             const videoCid = embedView.cid;
             const posterUrl = embedView.thumbnail;
             
@@ -98,7 +126,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                  )
             }
 
-            // Timeline view: Show thumbnail with play icon
             if (!posterUrl) {
                  return (
                     <div className="relative w-full aspect-video bg-black flex items-center justify-center text-on-surface-variant">
@@ -120,25 +147,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             );
         }
 
-        const embed = post.embed;
-
-        if (AppBskyEmbedImages.isView(embed)) {
-            return processImageEmbed(embed);
-        }
-
-        if (AppBskyEmbedVideo.isView(embed)) {
-            return processVideoEmbed(embed);
-        }
-
-        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-            const media = embed.media;
-            if (AppBskyEmbedImages.isView(media)) {
-                return processImageEmbed(media as AppBskyEmbedImages.View);
-            }
-            if (AppBskyEmbedVideo.isView(media)) {
-                return processVideoEmbed(media as AppBskyEmbedVideo.View);
-            }
-        }
         return null;
     };
 
@@ -160,6 +168,25 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                     <MessageCircle size={14} />
                     <span className="truncate">
                         Reply to <a href={`#/profile/${reply.parent.author.handle}`} className="hover:underline" onClick={e => e.stopPropagation()}>{reply.parent.author.displayName || `@${reply.parent.author.handle}`}</a>
+                    </span>
+                </div>
+            );
+        }
+
+        let recordEmbed: AppBskyEmbedRecord.ViewRecord | undefined;
+
+        if (AppBskyEmbedRecord.isView(post.embed)) {
+            recordEmbed = post.embed.record;
+        } else if (AppBskyEmbedRecordWithMedia.isView(post.embed)) {
+            recordEmbed = post.embed.record.record;
+        }
+
+        if (recordEmbed && AppBskyFeedDefs.isPostView(recordEmbed) && recordEmbed.author) {
+             return (
+                <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
+                    <Quote size={14} />
+                    <span className="truncate">
+                        Quoting <a href={`#/profile/${recordEmbed.author.handle}`} className="hover:underline" onClick={e => e.stopPropagation()}>{recordEmbed.author.displayName || `@${recordEmbed.author.handle}`}</a>
                     </span>
                 </div>
             );
