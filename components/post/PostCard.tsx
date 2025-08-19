@@ -1,10 +1,15 @@
 
+
 import React from 'react';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { usePostActions } from '../../hooks/usePostActions';
 import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
+import { useModeration } from '../../context/ModerationContext';
+import { moderatePost } from '../../lib/moderation';
+import ContentWarning from '../shared/ContentWarning';
+import PostCardSkeleton from './PostCardSkeleton';
 
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -14,7 +19,13 @@ type PostCardProps = {
 
 const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
+    const moderation = useModeration();
+    const [isContentVisible, setIsContentVisible] = React.useState(false);
+    
     const { post, reason } = feedViewPost;
+    
+    const modDecision = moderation.isReady ? moderatePost(post, moderation) : null;
+
     const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
     const author = post.author as AppBskyActorDefs.ProfileViewBasic;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
@@ -176,6 +187,26 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     
         return null;
     };
+    
+    if (!modDecision) {
+        return <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>;
+    }
+    
+    if (modDecision.visibility === 'hide') {
+        return null;
+    }
+    
+    if (modDecision.visibility === 'warn' && !isContentVisible) {
+        return (
+             <article className="bg-surface-2 rounded-xl overflow-hidden flex flex-col">
+                <ContentWarning 
+                    reason={modDecision.reason!} 
+                    onShow={() => setIsContentVisible(true)} 
+                />
+            </article>
+        );
+    }
+
 
     const mediaElement = renderMedia();
     if (!mediaElement) return null;

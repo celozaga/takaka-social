@@ -2,13 +2,17 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppBskyFeedDefs, RichText } from '@atproto/api';
+import {AppBskyFeedDefs, RichText } from '@atproto/api';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Loader2, Heart } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
+import { useModeration } from '../../context/ModerationContext';
+import { moderatePost } from '../../lib/moderation';
+import ContentWarning from '../shared/ContentWarning';
+
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -24,7 +28,11 @@ const formatCount = (count: number): string => {
 
 const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const { t } = useTranslation();
+  const moderation = useModeration();
+  const [isContentVisible, setIsContentVisible] = useState(false);
+  
   const { post, replies } = reply;
+  const modDecision = moderation.isReady ? moderatePost(post, moderation) : null;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
@@ -32,7 +40,12 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const { openLoginModal, openComposer } = useUI();
   const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
   
-  const allSubReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
+  const allSubReplies = (replies || []).filter(r => {
+      if (!AppBskyFeedDefs.isThreadViewPost(r)) return false;
+      if (!moderation.isReady) return true; // Show all while loading
+      const decision = moderatePost(r.post, moderation);
+      return decision.visibility !== 'hide';
+    }) as AppBskyFeedDefs.ThreadViewPost[];
   const hasSubReplies = allSubReplies.length > 0;
 
   const [isExpanded, setIsExpanded] = useState(isRoot);
@@ -130,6 +143,26 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         <ReplyList />
       </div>
     )
+  }
+
+  if (!modDecision || modDecision.visibility === 'hide') {
+      return null;
+  }
+  
+  if (modDecision.visibility === 'warn' && !isContentVisible) {
+      return (
+          <div className="relative flex gap-3 py-2 px-4">
+              <div className="flex flex-col items-center flex-shrink-0">
+                  <a href={`#/profile/${author.handle}`} className="block">
+                      <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
+                  </a>
+                  {(hasSubReplies && isExpanded) && <div className="w-0.5 flex-1 grow my-2 bg-surface-3 rounded-full"></div>}
+              </div>
+              <div className="flex-1 min-w-0 pt-1">
+                  <ContentWarning reason={modDecision.reason!} onShow={() => setIsContentVisible(true)} />
+              </div>
+          </div>
+      )
   }
 
   return (

@@ -1,10 +1,9 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useAtp } from './AtpContext';
-import { AppBskyActorDefs } from '@atproto/api';
+import { AppBskyActorDefs, ComAtprotoLabelDefs } from '@atproto/api';
 
-// Replaced local type with SDK type to support all preference types.
 type Preferences = AppBskyActorDefs.Preferences;
-
+type MutedWord = AppBskyActorDefs.MutedWord;
 type LabelVisibility = 'show' | 'warn' | 'hide';
 type LabelPreferenceMap = Map<string, LabelVisibility>;
 
@@ -12,8 +11,11 @@ interface ModerationContextType {
     isReady: boolean;
     adultContentEnabled: boolean;
     labelPreferences: LabelPreferenceMap;
+    mutedWords: MutedWord[];
     setAdultContentEnabled: (enabled: boolean) => Promise<void>;
     setLabelPreference: (label: string, visibility: LabelVisibility) => Promise<void>;
+    addMutedWord: (word: string) => Promise<void>;
+    removeMutedWord: (word: string) => Promise<void>;
 }
 
 const ModerationContext = createContext<ModerationContextType | undefined>(undefined);
@@ -24,8 +26,10 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
     const [preferences, setPreferences] = useState<Preferences>([]);
     const [adultContentEnabled, setAdultContentEnabledState] = useState(false);
     const [labelPreferences, setLabelPreferences] = useState<LabelPreferenceMap>(new Map());
+    const [mutedWords, setMutedWords] = useState<MutedWord[]>([]);
 
     const parsePreferences = useCallback((prefs: Preferences) => {
+        // Adult Content
         const adultContentPref = prefs.find(p => p.$type === 'app.bsky.actor.defs#adultContentPref');
         if (AppBskyActorDefs.isAdultContentPref(adultContentPref)) {
             setAdultContentEnabledState(adultContentPref.enabled);
@@ -33,17 +37,26 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
             setAdultContentEnabledState(false);
         }
 
+        // Label Preferences
         const newLabelPrefs = new Map<string, LabelVisibility>();
         const contentLabelPrefs = prefs.filter(p => p.$type === 'app.bsky.actor.defs#contentLabelPref');
         for (const pref of contentLabelPrefs) {
             if (AppBskyActorDefs.isContentLabelPref(pref)) {
-                // Fix: Only accept valid visibility values for our app's type.
-                if (pref.visibility === 'show' || pref.visibility === 'warn' || pref.visibility === 'hide') {
+                if (['show', 'warn', 'hide'].includes(pref.visibility)) {
                     newLabelPrefs.set(pref.label, pref.visibility as LabelVisibility);
                 }
             }
         }
         setLabelPreferences(newLabelPrefs);
+        
+        // Muted Words
+        const mutedWordsPref = prefs.find(p => p.$type === 'app.bsky.actor.defs#mutedWordsPref');
+        if (AppBskyActorDefs.isMutedWordsPref(mutedWordsPref) && Array.isArray(mutedWordsPref.items)) {
+            setMutedWords(mutedWordsPref.items);
+        } else {
+            setMutedWords([]);
+        }
+
     }, []);
 
     const fetchPreferences = useCallback(async () => {
@@ -73,8 +86,7 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
             parsePreferences(newPrefs);
         } catch (error) {
             console.error("Failed to save moderation preferences:", error);
-            // Revert on failure
-            parsePreferences(preferences);
+            parsePreferences(preferences); // Revert on failure
         }
     };
     
@@ -90,24 +102,50 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
         );
 
         let newPrefs: Preferences = [...otherPrefs];
-        if (visibility !== 'show') {
-            const newPref = {
-                $type: 'app.bsky.actor.defs#contentLabelPref',
-                label,
-                visibility
-            };
+        if (visibility !== 'show') { // 'show' is the default, so we remove the pref
+            const newPref = { $type: 'app.bsky.actor.defs#contentLabelPref', label, visibility };
             newPrefs.push(newPref);
         }
         
         await savePreferences(newPrefs);
     };
 
+    const addMutedWord = async (word: string) => {
+        const newWord: MutedWord = { value: word, targets: ['content'] }; // Default target
+        const currentMutedPref = preferences.find(p => p.$type === 'app.bsky.actor.defs#mutedWordsPref');
+        const otherPrefs = preferences.filter(p => p.$type !== 'app.bsky.actor.defs#mutedWordsPref');
+        
+        let updatedItems: MutedWord[] = [];
+        if (AppBskyActorDefs.isMutedWordsPref(currentMutedPref)) {
+            updatedItems = [...currentMutedPref.items, newWord];
+        } else {
+            updatedItems = [newWord];
+        }
+
+        const newPref = { $type: 'app.bsky.actor.defs#mutedWordsPref', items: updatedItems };
+        await savePreferences([...otherPrefs, newPref]);
+    };
+
+    const removeMutedWord = async (word: string) => {
+        const currentMutedPref = preferences.find(p => p.$type === 'app.bsky.actor.defs#mutedWordsPref');
+        if (!AppBskyActorDefs.isMutedWordsPref(currentMutedPref)) return;
+
+        const otherPrefs = preferences.filter(p => p.$type !== 'app.bsky.actor.defs#mutedWordsPref');
+        const updatedItems = currentMutedPref.items.filter(item => item.value !== word);
+        
+        const newPref = { $type: 'app.bsky.actor.defs#mutedWordsPref', items: updatedItems };
+        await savePreferences([...otherPrefs, newPref]);
+    };
+
     const value = {
         isReady,
         adultContentEnabled,
         labelPreferences,
+        mutedWords,
         setAdultContentEnabled,
         setLabelPreference,
+        addMutedWord,
+        removeMutedWord,
     };
 
     return (

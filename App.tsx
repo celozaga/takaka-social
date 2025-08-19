@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -31,6 +32,7 @@ const LanguageSettingsScreen = lazy(() => import('./components/settings/Language
 const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSettingsScreen'));
 const ModerationSettingsScreen = lazy(() => import('./components/settings/ModerationSettingsScreen'));
 const ModerationServiceScreen = lazy(() => import('./components/settings/ModerationServiceScreen'));
+const MutedWordsScreen = lazy(() => import('./components/settings/MutedWordsScreen'));
 const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
@@ -181,6 +183,9 @@ const Main: React.FC = () => {
         }
         if (parts[1] === 'mod-service' && parts[2]) {
             return <ModerationServiceScreen serviceDid={parts[2]} />;
+        }
+        if (parts[1] === 'muted-words') {
+            return <MutedWordsScreen />;
         }
         return <SettingsScreen />;
       case 'more':

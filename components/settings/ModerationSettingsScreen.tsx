@@ -41,7 +41,7 @@ const ModerationSettingsScreen: React.FC = () => {
             <ScreenHeader title="Moderation" />
             <div className="mt-4 space-y-6">
                 <div className="bg-surface-2 rounded-lg overflow-hidden">
-                    <SettingsItem icon={Filter} title="Muted words & tags" href="#" disabled />
+                    <SettingsItem icon={Filter} title="Muted words & tags" href="#/settings/muted-words" />
                     <SettingsItem icon={Users} title="Moderation lists" href="#" disabled />
                     <SettingsItem icon={MessageSquare} title="Muted accounts" href="#" disabled />
                     <SettingsItem icon={UserX} title="Blocked accounts" href="#" disabled />

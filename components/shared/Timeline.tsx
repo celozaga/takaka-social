@@ -1,10 +1,13 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
+import { useModeration } from '../../context/ModerationContext';
+import { moderatePost } from '../../lib/moderation';
 
 interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
@@ -21,6 +24,7 @@ const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
 const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const { agent } = useAtp();
   const { t } = useTranslation();
+  const moderation = useModeration();
   const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +112,17 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
     fetchInitialTimeline();
   }, [fetchPosts, t]);
+  
+  const moderatedFeed = useMemo(() => {
+    if (!moderation.isReady) {
+        return [];
+    }
+    return feed.filter(item => {
+        const decision = moderatePost(item.post, moderation);
+        return decision.visibility !== 'hide';
+    });
+  }, [feed, moderation]);
+
 
   // Effect for IntersectionObserver
   useEffect(() => {
@@ -148,14 +163,14 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     return <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error}</div>;
   }
   
-  if (feed.length === 0) {
+  if (moderatedFeed.length === 0 && !isLoading && !hasMore) {
     return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('timeline.empty')}</div>;
   }
 
   return (
     <div>
       <div className="columns-2 gap-4">
-        {feed.map((feedViewPost) => (
+        {moderatedFeed.map((feedViewPost) => (
           <div key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} className="break-inside-avoid mb-4">
             <PostCard feedViewPost={feedViewPost} />
           </div>
@@ -175,7 +190,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
         )}
       </div>
 
-      {!hasMore && feed.length > 0 && (
+      {!hasMore && moderatedFeed.length > 0 && (
         <div className="text-center text-on-surface-variant py-8">{t('common.endOfList')}</div>
       )}
     </div>

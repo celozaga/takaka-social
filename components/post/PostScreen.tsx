@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -7,11 +8,15 @@ import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBsk
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from '../ui/use-toast';
-import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, Loader2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, Loader2, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useHeadManager } from '../../hooks/useHeadManager';
 import Hls from 'hls.js';
+import { useModeration } from '../../context/ModerationContext';
+import { moderatePost } from '../../lib/moderation';
+import ContentWarning from '../shared/ContentWarning';
+
 
 const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined => {
     if (!post.embed) return undefined;
@@ -93,6 +98,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { openComposer, openMediaActionsModal } = useUI();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const moderation = useModeration();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +106,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const touchStartXRef = useRef(0);
   const [hlsUrl, setHlsUrl] = useState<string | null>(null);
+  const [isContentVisible, setIsContentVisible] = useState(false);
  
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
@@ -299,7 +306,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         return null;
   };
 
-  if (isLoading) {
+  if (isLoading || !moderation.isReady) {
     return (
         <div className="pt-16 px-4">
              <div className="w-full aspect-square bg-surface-2 rounded-xl animate-pulse mb-4"></div>
@@ -314,11 +321,9 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   }
 
   const mainPost = thread.post;
-  const currentRecord = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
-  const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
+  const modDecision = moderatePost(mainPost, moderation);
   
-  return (
-    <div>
+  const PageHeader = () => (
       <header className="bg-surface-1 z-40">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -342,6 +347,41 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             </div>
         </div>
       </header>
+  );
+
+  if (modDecision.visibility === 'hide') {
+    return (
+        <div>
+            <PageHeader />
+            <div className="text-center p-8 bg-surface-2 rounded-xl mt-4 mx-4">
+                <ShieldAlert size={40} className="mx-auto mb-4 opacity-50" />
+                <p className="font-semibold text-on-surface">Post hidden</p>
+                <p className="text-sm text-on-surface-variant mt-1">{modDecision.reason}</p>
+            </div>
+        </div>
+    )
+  }
+
+  if (modDecision.visibility === 'warn' && !isContentVisible) {
+    return (
+         <div>
+            <PageHeader />
+            <div className="p-4">
+                <ContentWarning 
+                    reason={modDecision.reason!}
+                    onShow={() => setIsContentVisible(true)}
+                />
+            </div>
+        </div>
+    )
+  }
+
+  const currentRecord = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
+  const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
+  
+  return (
+    <div>
+      <PageHeader />
       
       <div>
         <div className="p-4">
