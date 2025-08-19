@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -8,13 +7,15 @@ import {
     AppBskyEmbedVideo, 
     AppBskyEmbedRecord, 
     AppBskyEmbedRecordWithMedia,
-    AppBskyFeedPost
+    AppBskyFeedPost,
+    AppBskyEmbedExternal
 } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useAtp } from '../../context/AtpContext';
 import PostActions from './PostActions';
 import { BadgeCheck, ExternalLink, PlayCircle } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
+import ExternalLinkEmbed from './ExternalLinkEmbed';
 
 interface PostBubbleProps {
     post: AppBskyFeedDefs.PostView;
@@ -24,11 +25,11 @@ interface PostBubbleProps {
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
     if (AppBskyEmbedRecord.isViewRecord(embed)) {
         if (AppBskyFeedDefs.isPostView(embed.record)) {
-            const postView = embed.record;
+            const postView = embed.record as AppBskyFeedDefs.PostView;
             const author = postView.author;
 
             if (AppBskyFeedPost.isRecord(postView.record)) {
-                const postRecord = postView.record;
+                const postRecord = postView.record as AppBskyFeedPost.Record;
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
                         <div className="flex items-center gap-2 text-sm">
@@ -57,29 +58,52 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
 const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => {
     const author = post.author;
     
-    const record = post.record;
-    if (!AppBskyFeedPost.isRecord(record)) {
+    const recordUnchecked = post.record;
+    if (!AppBskyFeedPost.isRecord(recordUnchecked)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
+    const record = recordUnchecked as AppBskyFeedPost.Record;
 
     const renderMedia = () => {
         if (!post.embed) return null;
         
         const processImageEmbed = (embed:AppBskyEmbedImages.View) => {
             if (embed.images.length === 0) return null;
-            const gridCols = embed.images.length >= 2 ? `grid-cols-2` : 'grid-cols-1';
-            const gridRows = embed.images.length > 2 ? 'grid-rows-2' : 'grid-rows-1';
+            
+            const imageCount = embed.images.length;
+            let containerClasses = 'mt-2 grid gap-1.5 rounded-xl overflow-hidden';
+            
+            const baseImageComponent = (image:AppBskyEmbedImages.ViewImage, index: number, className: string = "block relative group bg-surface-3 aspect-square") => (
+                 <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className={className}>
+                    <img src={image.thumb} alt={image.alt || `Post image ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <ExternalLink className="text-white w-6 h-6" />
+                    </div>
+                </a>
+            );
+
+            let imageComponents = embed.images.map((img, i) => baseImageComponent(img, i));
+
+            switch(imageCount) {
+                case 2:
+                    containerClasses += ' grid-cols-2';
+                    break;
+                case 3:
+                    containerClasses += ' grid-cols-2 grid-rows-2';
+                    imageComponents = [
+                        baseImageComponent(embed.images[0], 0, "block relative group bg-surface-3 aspect-square row-span-2"),
+                        baseImageComponent(embed.images[1], 1),
+                        baseImageComponent(embed.images[2], 2),
+                    ];
+                    break;
+                case 4:
+                    containerClasses += ' grid-cols-2 grid-rows-2';
+                    break;
+            }
 
             return (
-                <div className={`mt-2 grid ${gridCols} ${gridRows} gap-1.5 rounded-xl overflow-hidden`}>
-                    {embed.images.map((image, index) => (
-                        <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 aspect-square">
-                            <img src={image.thumb} alt={image.alt || `Post image ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <ExternalLink className="text-white w-6 h-6" />
-                            </div>
-                        </a>
-                    ))}
+                <div className={containerClasses} style={{gridTemplateRows: (imageCount > 2) ? 'repeat(2, minmax(0, 1fr))' : 'none'}}>
+                    {imageComponents}
                 </div>
             );
         };
@@ -108,6 +132,10 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
     
     const renderEmbed = () => {
         if (!post.embed) return null;
+        
+        if (AppBskyEmbedExternal.isView(post.embed)) {
+            return <ExternalLinkEmbed embed={post.embed} />;
+        }
         if (AppBskyEmbedRecord.isView(post.embed)) {
             return <QuotedPost embed={post.embed} />;
         }
