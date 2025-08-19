@@ -6,14 +6,13 @@ import { useToast } from '../ui/use-toast';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
 import { 
   AtUri, 
-  AppBskyActorDefs, 
   AppBskyFeedDefs, 
   AppBskyEmbedImages, 
   AppBskyEmbedRecordWithMedia, 
   AppBskyEmbedVideo 
 } from '@atproto/api';
 import {
-  Share2, Link as LinkIcon, Download, EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, Loader2, ShieldOff, MessageCircle, Facebook, Mail
+  Share2, Download, EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, Loader2, ShieldOff, Languages
 } from 'lucide-react';
 
 interface MediaActionsModalProps {
@@ -44,26 +43,11 @@ const ActionListItem: React.FC<{
     );
 };
 
-const ShareAction: React.FC<{
-    icon: React.ElementType;
-    label: string;
-    onClick: () => void;
-    colorClass?: string;
-}> = ({ icon: Icon, label, onClick, colorClass }) => (
-    <div className="text-center flex-shrink-0 w-20">
-        <button onClick={onClick} className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-1 transition-colors ${colorClass || 'bg-surface-3 hover:bg-surface-3/80'}`}>
-            <Icon size={28} />
-        </button>
-        <span className="text-xs text-on-surface-variant">{label}</span>
-    </div>
-);
-
-
 const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { hidePost } = useHiddenPosts();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [viewerState, setViewerState] = useState(post.author.viewer);
@@ -105,27 +89,38 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
         return null;
     }, [post, agent.service]);
 
-
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(postUrl);
+        toast({ title: t('mediaActions.toast.linkCopied') });
+    };
+    
     const handleShare = async () => {
+        const text = (post.record as any)?.text;
         if (navigator.share) {
             try {
                 await navigator.share({
                     title: t('post.byline', { user: `@${post.author.handle}` }),
-                    text: (post.record as any)?.text,
+                    text: text,
                     url: postUrl,
                 });
             } catch (error) {
-                console.info('Web Share API canceled or failed.', error);
+                console.info('Web Share API canceled or failed, falling back to copy.', error);
+                handleCopyLink();
             }
         } else {
-            // Fallback for browsers that don't support Web Share API
             handleCopyLink();
         }
+        onClose();
     };
-    
-    const handleCopyLink = () => {
-        navigator.clipboard.writeText(postUrl);
-        toast({ title: t('mediaActions.toast.linkCopied') });
+
+    const handleTranslate = () => {
+        const textToTranslate = (post.record as any)?.text;
+        if (textToTranslate) {
+            const lang = i18n.language.split('-')[0];
+            const url = `https://translate.google.com/?sl=auto&tl=${lang}&text=${encodeURIComponent(textToTranslate)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+        onClose();
     };
     
     const handleDownload = async () => {
@@ -217,7 +212,6 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
             await agent.deletePost(post.uri);
             toast({ title: t('postActions.toast.deleteSuccess') });
             onClose();
-            // Go back if on the post screen, otherwise just let the UI update
             if (window.location.hash.includes(`/post/${post.author.did}`)) {
                 setTimeout(() => window.history.back(), 200);
             }
@@ -228,10 +222,11 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
         }
     };
     
+    const hasText = !!(post.record as any)?.text?.trim();
     const mediaInfo = getMediaInfo();
 
     return (
-        <div className="pb-4">
+        <div className="bg-surface-2 rounded-t-xl">
             <header className="flex items-center justify-between p-4">
                 <h2 className="font-bold text-lg">{t('mediaActions.title')}</h2>
                 <button onClick={onClose} className="p-2 -mr-2 rounded-full hover:bg-surface-3">
@@ -239,17 +234,12 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
                 </button>
             </header>
 
-            <div className="relative">
+            <div className="relative max-h-[70vh] overflow-y-auto">
                 {isLoading && <div className="absolute inset-0 bg-surface-2/50 flex items-center justify-center z-10"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
                 
-                <div className="no-scrollbar flex items-center gap-4 px-4 pb-4 overflow-x-auto border-b border-surface-3">
-                    <ShareAction icon={MessageCircle} label={t('nav.messages')} onClick={handleShare} colorClass="bg-green-500 text-white" />
-                    <ShareAction icon={LinkIcon} label={t('mediaActions.copyLink')} onClick={handleCopyLink} />
-                    <ShareAction icon={Facebook} label="Facebook" onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank')} colorClass="bg-blue-600 text-white" />
-                    <ShareAction icon={Mail} label="Email" onClick={() => window.location.href = `mailto:?subject=${encodeURIComponent('Check out this post')}&body=${encodeURIComponent(postUrl)}`} colorClass="bg-sky-500 text-white" />
-                </div>
-                
-                <ul className="pt-2">
+                <ul className="divide-y divide-surface-3">
+                    <ActionListItem icon={Share2} label={t('mediaActions.shareVia')} onClick={handleShare} />
+                    {hasText && <ActionListItem icon={Languages} label={t('mediaActions.translate')} onClick={handleTranslate} />}
                     {mediaInfo && <ActionListItem icon={Download} label={mediaInfo.type === 'image' ? t('mediaActions.downloadPhoto') : t('mediaActions.downloadVideo')} onClick={handleDownload} />}
                     <ActionListItem icon={EyeOff} label={t('mediaActions.notInterested')} onClick={handleHide} />
                     {!isMe && (
