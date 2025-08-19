@@ -1,16 +1,20 @@
 
 
 
-import React, { useState, useEffect } from 'react';
+
+
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import { useToast } from './ui/use-toast';
-import { ArrowLeft, ExternalLink, Share2, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, ExternalLink, MoreHorizontal, BadgeCheck, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from './RichTextRenderer';
+
+const PostActionsModal = lazy(() => import('./PostActionsModal'));
 
 interface PostScreenProps {
   did: string;
@@ -25,8 +29,8 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState(false);
-  const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewBasic | null>(null);
+  const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
+  const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
  
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
@@ -38,7 +42,9 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
         if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
           setThread(data.thread);
-          setPostAuthor(data.thread.post.author);
+          // Fetch full profile to get detailed viewer state
+          const profileRes = await agent.getProfile({ actor: data.thread.post.author.did });
+          setPostAuthor(profileRes.data);
         } else {
           throw new Error("Post not found or is not a valid thread root.");
         }
@@ -61,46 +67,6 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       setCurrentUserProfile(null);
     }
   }, [agent, session?.did]);
-
-  const handleFollow = async () => {
-      if (!postAuthor || isActionLoading || !session) return;
-      setIsActionLoading(true);
-      const oldAuthor = postAuthor;
-      setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: 'temp-uri' } } : null);
-      try {
-          const { uri } = await agent.follow(postAuthor.did);
-          setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: uri } } : null);
-      } catch (e) {
-          console.error("Failed to follow:", e);
-          toast({ title: "Error", description: "Could not follow user.", variant: "destructive" });
-          setPostAuthor(oldAuthor);
-      } finally {
-          setIsActionLoading(false);
-      }
-  };
-
-  const handleUnfollow = async () => {
-      if (!postAuthor || !postAuthor.viewer?.following || isActionLoading) return;
-      setIsActionLoading(true);
-      const oldAuthor = postAuthor;
-      setPostAuthor(prev => prev ? { ...prev, viewer: { ...(prev.viewer || {}), following: undefined } } : null);
-      try {
-          await agent.deleteFollow(postAuthor.viewer.following);
-      } catch (e) {
-          console.error("Failed to unfollow:", e);
-          toast({ title: "Error", description: "Could not unfollow user.", variant: "destructive" });
-          setPostAuthor(oldAuthor);
-      } finally {
-          setIsActionLoading(false);
-      }
-  };
-
-  const handleShare = () => {
-    const url = `${window.location.origin}/#/post/${did}/${rkey}`;
-    navigator.clipboard.writeText(url);
-    toast({ title: "Link Copied!", description: "Post URL has been copied to your clipboard." });
-  };
-
 
   const renderMedia = (post: AppBskyFeedDefs.PostView) => {
         if (!post.embed) return null;
@@ -163,25 +129,10 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const mainPost = thread.post;
   const record = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
   const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
-  const isMe = session?.did === postAuthor.did;
-
-  const FollowButton = () => {
-    if (!session || isMe) return null;
-    return (
-        <button
-            onClick={postAuthor.viewer?.following ? handleUnfollow : handleFollow}
-            disabled={isActionLoading}
-            className={`font-semibold text-sm py-1.5 px-4 rounded-full transition-colors duration-200
-                ${postAuthor.viewer?.following 
-                    ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' 
-                    : 'bg-primary text-on-primary hover:bg-primary/90'
-                }
-                disabled:opacity-50`}
-        >
-            {postAuthor.viewer?.following ? 'Following' : 'Follow'}
-        </button>
-    );
-  };
+  
+  const handleViewerStateChange = (newViewerState: AppBskyActorDefs.ViewerState) => {
+    setPostAuthor(prev => prev ? { ...prev, viewer: newViewerState } : null);
+  }
 
   return (
     <div>
@@ -202,9 +153,8 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
                 </a>
             </div>
             <div className="flex items-center gap-2">
-                <FollowButton />
-                <button onClick={handleShare} className="p-2 rounded-full hover:bg-surface-3">
-                    <Share2 size={20} />
+                <button onClick={() => setIsActionsModalOpen(true)} className="p-2 rounded-full hover:bg-surface-3">
+                    <MoreHorizontal size={20} />
                 </button>
             </div>
         </div>
@@ -243,6 +193,27 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       </div>
 
       <PostScreenActionBar post={mainPost} />
+      
+      {isActionsModalOpen && (
+         <div 
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end justify-center animate-in fade-in-0 duration-300"
+          onClick={() => setIsActionsModalOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom-full duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <Suspense fallback={<div className="w-full h-96 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+              <PostActionsModal
+                post={mainPost}
+                author={postAuthor}
+                onClose={() => setIsActionsModalOpen(false)}
+                onViewerStateChange={handleViewerStateChange}
+              />
+            </Suspense>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

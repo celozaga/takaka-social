@@ -2,7 +2,8 @@
 
 
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAtp } from '../context/AtpContext';
 import { useToast } from './ui/use-toast';
 import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
@@ -11,11 +12,13 @@ import PostCardSkeleton from './PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft } from 'lucide-react';
 import RichTextRenderer from './RichTextRenderer';
 import { useUI } from '../context/UIContext';
+import { useHiddenPosts } from '../context/HiddenPostsContext';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { setCustomFeedHeaderVisible } = useUI();
+    const { hiddenPostUris } = useHiddenPosts();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
@@ -161,6 +164,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
         return posts.filter(item => {
+            if (hiddenPostUris.has(item.post.uri)) return false;
             const embed = item.post.embed;
             if (!embed) return false;
             if (AppBskyEmbedImages.isView(embed) || embed.$type === 'app.bsky.embed.video#view') return true;
@@ -211,7 +215,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         };
 
         fetchProfileAndFeed();
-    }, [agent, actor]);
+    }, [agent, actor, hiddenPostUris]);
     
     useEffect(() => {
         if (profile?.description) {
@@ -248,7 +252,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         } finally {
           setIsLoadingMore(false);
         }
-    }, [agent, actor, cursor, hasMore, isLoadingMore]);
+    }, [agent, actor, cursor, hasMore, isLoadingMore, hiddenPostUris]);
     
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -275,6 +279,10 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
     }, [hasMore, isLoading, isLoadingMore, loadMorePosts]);
+    
+    const displayedFeed = useMemo(() => {
+        return feed.filter(p => !hiddenPostUris.has(p.post.uri));
+    }, [feed, hiddenPostUris]);
 
     if (isLoading) {
         return (
@@ -388,12 +396,12 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </div>
             ) : (
                 <>
-                    {feed.length === 0 && !isLoadingMore && (
+                    {displayedFeed.length === 0 && !isLoadingMore && (
                         <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
                     )}
                     
                     <div className="columns-2 gap-4">
-                        {feed.map(({ post }) => (
+                        {displayedFeed.map(({ post }) => (
                             <div key={post.cid} className="break-inside-avoid mb-4">
                                 <PostCard post={post} />
                             </div>
@@ -413,7 +421,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         )}
                     </div>
 
-                    {!hasMore && feed.length > 0 && (
+                    {!hasMore && displayedFeed.length > 0 && (
                         <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
                     )}
                 </>

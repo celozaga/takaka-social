@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../context/AtpContext';
+import { useHiddenPosts } from '../context/HiddenPostsContext';
 import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
@@ -10,6 +11,7 @@ interface TimelineProps {
 
 const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const { agent } = useAtp();
+  const { hiddenPostUris } = useHiddenPosts();
   const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,43 +21,36 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
-    return posts.filter(item => {
-      const embed = item.post.embed;
-      if (!embed) {
+  const filterAndSetPosts = (posts: AppBskyFeedDefs.FeedViewPost[], append = false) => {
+    const mediaPosts = posts.filter(item => {
+        const embed = item.post.embed;
+        if (!embed) return false;
+        if (AppBskyEmbedImages.isView(embed)) return true;
+        if (AppBskyEmbedVideo.isView(embed)) return true;
+        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+            const media = embed.media;
+            if (AppBskyEmbedImages.isView(media)) return true;
+            if (AppBskyEmbedVideo.isView(media)) return true;
+        }
         return false;
-      }
-
-      // Case 1: Standard image embed
-      if (AppBskyEmbedImages.isView(embed)) {
-        return true;
-      }
-
-      // Case 2: Direct video embed
-      if (AppBskyEmbedVideo.isView(embed)) {
-        return true;
-      }
-
-      // Case 3: Embed with media (could contain images or video)
-      if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        const media = embed.media;
-        if (AppBskyEmbedImages.isView(media)) {
-          return true;
-        }
-        if (AppBskyEmbedVideo.isView(media)) {
-          return true;
-        }
-      }
-      return false;
     });
+
+    const visiblePosts = mediaPosts.filter(p => !hiddenPostUris.has(p.post.uri));
+    
+    if (append) {
+        setFeed(prevFeed => {
+            const existingCids = new Set(prevFeed.map(p => p.post.cid));
+            const uniqueNewPosts = visiblePosts.filter(p => !existingCids.has(p.post.cid));
+            return [...prevFeed, ...uniqueNewPosts];
+        });
+    } else {
+        setFeed(visiblePosts);
+    }
   };
   
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     if (feedUri === 'following') {
-      // UPDATED GUARD: Rely only on the agent's state, which is mutated synchronously on logout,
-      // avoiding potential race conditions with React's async state updates.
       if (!agent.hasSession) {
-        // Gracefully handle logout race condition
         return Promise.resolve({
             success: true,
             data: { feed: [], cursor: undefined }
@@ -75,13 +70,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
       const response = await fetchPosts(cursor);
 
       if (response.data.feed.length > 0) {
-        const newMediaPosts = filterMediaPosts(response.data.feed);
-        // Avoid adding duplicate posts
-        setFeed(prevFeed => {
-            const existingCids = new Set(prevFeed.map(p => p.post.cid));
-            const uniqueNewPosts = newMediaPosts.filter(p => !existingCids.has(p.post.cid));
-            return [...prevFeed, ...uniqueNewPosts];
-        });
+        filterAndSetPosts(response.data.feed, true);
 
         if (response.data.cursor) {
           setCursor(response.data.cursor);
@@ -96,7 +85,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [cursor, hasMore, isLoadingMore, fetchPosts]);
+  }, [cursor, hasMore, isLoadingMore, fetchPosts, hiddenPostUris]);
 
   // Effect for initial data load
   useEffect(() => {
@@ -109,8 +98,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
       try {
         const response = await fetchPosts();
-        const mediaPosts = filterMediaPosts(response.data.feed);
-        setFeed(mediaPosts);
+        filterAndSetPosts(response.data.feed);
         
         if (response.data.cursor && response.data.feed.length > 0) {
           setCursor(response.data.cursor);
@@ -126,7 +114,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     };
 
     fetchInitialTimeline();
-  }, [fetchPosts]);
+  }, [fetchPosts, hiddenPostUris]);
 
   // Effect for IntersectionObserver
   useEffect(() => {

@@ -1,12 +1,15 @@
 
 
 
+
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from './RichTextRenderer';
 import PostActions from './PostActions';
 import { BadgeCheck } from 'lucide-react';
+import { useHiddenPosts } from '../context/HiddenPostsContext';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -19,8 +22,12 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const { post, replies } = reply;
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
+  const { hiddenPostUris } = useHiddenPosts();
   
-  const allSubReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
+  const allSubReplies = (replies || []).filter(r => 
+      AppBskyFeedDefs.isThreadViewPost(r) && !hiddenPostUris.has(r.post.uri)
+  ) as AppBskyFeedDefs.ThreadViewPost[];
+
   const hasSubReplies = allSubReplies.length > 0;
 
   const [isExpanded, setIsExpanded] = useState(false);

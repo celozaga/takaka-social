@@ -2,8 +2,11 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../context/AtpContext';
+import { useHiddenPosts } from '../context/HiddenPostsContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from './PostCard';
 import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
@@ -35,6 +38,7 @@ const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
+    const { hiddenPostUris } = useHiddenPosts();
     const { setCustomFeedHeaderVisible } = useUI();
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -103,7 +107,8 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         sort: searchFilter === 'latest' ? 'latest' : 'top',
                     });
                     
-                    allFetchedPosts = [...allFetchedPosts, ...response.data.posts];
+                    const visiblePosts = response.data.posts.filter(p => !hiddenPostUris.has(p.uri));
+                    allFetchedPosts = [...allFetchedPosts, ...visiblePosts];
                     nextCursor = response.data.cursor;
 
                     if (searchFilter === 'images' || searchFilter === 'videos') {
@@ -137,7 +142,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent]);
+    }, [agent, hiddenPostUris]);
     
     useEffect(() => {
         if (!showDiscoveryContent) {

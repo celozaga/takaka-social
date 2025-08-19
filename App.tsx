@@ -1,9 +1,11 @@
 
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
 import { UIProvider, useUI } from './context/UIContext';
+import { HiddenPostsProvider } from './context/HiddenPostsContext';
 import { Toaster, ToastProvider } from './components/ui/Toaster';
 import Navbar from './components/layout/Navbar';
 import BottomNavbar from './components/layout/BottomNavbar';
@@ -40,10 +42,12 @@ const App: React.FC = () => {
   return (
     <AtpProvider>
       <UIProvider>
-        <ToastProvider>
-          <Main />
-          <Toaster />
-        </ToastProvider>
+        <HiddenPostsProvider>
+          <ToastProvider>
+            <Main />
+            <Toaster />
+          </ToastProvider>
+        </HiddenPostsProvider>
       </UIProvider>
     </AtpProvider>
   );
