@@ -188,9 +188,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
     return (
         <div className="h-full w-full flex flex-col bg-surface-1 channel-bg">
-            <header className="sticky top-0 bg-surface-2/80 backdrop-blur-sm z-10 flex-shrink-0">
+            <header className="sticky top-0 bg-surface-2/80 backdrop-blur-sm z-10 flex-shrink-0 border-b border-outline">
                 <div className="flex items-center gap-4 h-16 px-4">
-                    <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
+                    <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3 md:hidden">
                         <ArrowLeft size={20} />
                     </button>
                     <a href={`#/profile/${profile.handle}`} className="flex-1 min-w-0 flex items-center gap-3">

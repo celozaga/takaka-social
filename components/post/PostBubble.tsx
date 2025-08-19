@@ -25,12 +25,12 @@ interface PostBubbleProps {
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
     if (AppBskyEmbedRecord.isViewRecord(embed)) {
-        if (AppBskyFeedDefs.isPostView(embed.record)) {
-            const postView = embed.record;
+        const postView = embed.record as AppBskyFeedDefs.PostView;
+        if (postView?.$type === 'app.bsky.feed.defs#postView') {
             const author = postView.author;
 
-            if (AppBskyFeedPost.isRecord(postView.record)) {
-                const postRecord = postView.record;
+            const postRecord = postView.record as AppBskyFeedPost.Record;
+            if (postRecord?.$type === 'app.bsky.feed.post') {
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
                         <div className="flex items-center gap-2 text-sm">

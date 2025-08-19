@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
@@ -51,12 +50,13 @@ const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost | null): React.
     return <span className="text-on-surface-variant">New post</span>;
 }
 
-const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed }> = ({ profileFeed }) => {
+const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string }> = ({ profileFeed, currentHash }) => {
     const { profile, latestPost, isUnread } = profileFeed;
+    const isActive = `#/profile/${profile.handle}` === currentHash;
 
     return (
         <li>
-            <a href={`#/profile/${profile.handle}`} className="flex items-start gap-3 p-3 hover:bg-surface-2 transition-colors">
+            <a href={`#/profile/${profile.handle}`} className={`flex items-start gap-3 p-3 transition-colors ${isActive ? 'bg-surface-2' : 'hover:bg-surface-2'}`}>
                 <img src={profile.avatar} alt={profile.displayName} className="w-14 h-14 rounded-full bg-surface-3 flex-shrink-0" />
                 <div className="flex-1 min-w-0 border-b border-surface-3 pb-3">
                     <div className="flex justify-between items-center">
@@ -82,6 +82,13 @@ const FollowingFeedScreen: React.FC = () => {
     const [profileFeeds, setProfileFeeds] = useState<ProfileFeed[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentHash, setCurrentHash] = React.useState(window.location.hash);
+
+    React.useEffect(() => {
+        const handler = () => setCurrentHash(window.location.hash);
+        window.addEventListener('hashchange', handler);
+        return () => window.removeEventListener('hashchange', handler);
+    }, []);
 
     useEffect(() => {
         if (!session) return;
@@ -169,7 +176,7 @@ const FollowingFeedScreen: React.FC = () => {
         <div>
             <ul>
                 {profileFeeds.map(feed => (
-                    <ProfileFeedItem key={feed.profile.did} profileFeed={feed} />
+                    <ProfileFeedItem key={feed.profile.did} profileFeed={feed} currentHash={currentHash} />
                 ))}
             </ul>
         </div>

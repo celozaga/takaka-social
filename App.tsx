@@ -5,11 +5,10 @@ import { UIProvider, useUI } from './context/UIContext';
 import { HiddenPostsProvider } from './context/HiddenPostsContext';
 import { ModerationProvider } from './context/ModerationContext';
 import { Toaster, ToastProvider } from './components/ui/Toaster';
-import Navbar from './components/layout/Navbar';
 import BottomNavbar from './components/layout/BottomNavbar';
 import Composer from './components/composer/Composer';
 import LoginPrompt from './components/auth/LoginPrompt';
-import { Loader2, Pencil } from 'lucide-react';
+import { Loader2, Pencil, Send } from 'lucide-react';
 import { useHeadManager } from './hooks/useHeadManager';
 
 // Lazy load screen components
@@ -58,7 +57,6 @@ const Main: React.FC = () => {
   const { 
     isLoginModalOpen, closeLoginModal, 
     isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
-    isCustomFeedHeaderVisible, 
     isEditProfileModalOpen, closeEditProfileModal,
     isUpdateEmailModalOpen, closeUpdateEmailModal,
     isUpdateHandleModalOpen, closeUpdateHandleModal,
@@ -104,11 +102,6 @@ const Main: React.FC = () => {
   if (isLoadingSession) {
     return <div className="min-h-screen bg-surface-1" />;
   }
-  
-  const isProfileScreen = route.startsWith('#/profile/');
-  const isPostScreen = route.startsWith('#/post/');
-
-  const isFullScreen = isProfileScreen || isPostScreen;
 
   const renderContent = () => {
     const pathWithQuery = route.replace(/^#\//, '');
@@ -147,36 +140,71 @@ const Main: React.FC = () => {
       case '':
       case 'home':
       case 'profiles':
-        return session ? <FollowingFeedScreen /> : <HomeScreen />;
+        if (session) {
+          return (
+            <>
+              <div className="hidden md:flex h-full w-full items-center justify-center text-on-surface-variant p-8 text-center">
+                <div>
+                  <h2 className="text-xl font-bold">Welcome back</h2>
+                  <p>Select a profile from the left to view their posts.</p>
+                </div>
+              </div>
+              <div className="md:hidden px-4 pt-16 pb-24">
+                <FollowingFeedScreen />
+              </div>
+            </>
+          );
+        }
+        return (
+          <div className="px-4 pt-16 pb-24">
+            <HomeScreen />
+          </div>
+        );
       default:
         return session ? <FollowingFeedScreen /> : <HomeScreen />;
     }
   };
   
-  const mainContainerClasses = `w-full ${isFullScreen ? '' : 'md:pl-20'} ${!isFullScreen ? 'md:flex md:justify-center' : ''}`;
-  const mainContentClasses = isFullScreen 
-    ? 'w-full h-full' // Changed h-screen to h-full for better compatibility
-    : `w-full max-w-xl px-4 pt-20 transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+  const mainContent = (
+    <Suspense fallback={
+      <div className="w-full flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      {renderContent()}
+    </Suspense>
+  );
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      {!isFullScreen && !isCustomFeedHeaderVisible && <Navbar />}
-      <BottomNavbar isHidden={isFullScreen} />
+      <BottomNavbar />
       
-      <div className={mainContainerClasses}>
-        <main className={mainContentClasses}>
-          <Suspense fallback={
-            <div className="w-full flex justify-center items-center pt-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          }>
-            {renderContent()}
-          </Suspense>
-        </main>
+      <div className="w-full md:pl-20">
+        {!session ? (
+           <div className="flex justify-center">
+             <main className="w-full max-w-xl">
+               {mainContent}
+               <LoginPrompt />
+             </main>
+           </div>
+        ) : (
+          <div className="md:flex h-screen">
+            <aside className="w-96 border-r border-outline flex-col hidden md:flex shrink-0">
+               <header className="flex-shrink-0 flex items-center gap-3 p-4 h-16 border-b border-outline">
+                <Send size={28} className="text-primary" />
+                <h1 className="text-xl font-bold">Takaka</h1>
+              </header>
+              <div className="flex-1 overflow-y-auto">
+                <FollowingFeedScreen />
+              </div>
+            </aside>
+            <main className="w-full md:flex-1 md:overflow-y-auto">
+              {mainContent}
+            </main>
+          </div>
+        )}
       </div>
       
-      {!session && !isFullScreen && <LoginPrompt />}
-
       {session && (
         <button
           onClick={() => openComposer()}
