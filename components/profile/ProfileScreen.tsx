@@ -1,62 +1,20 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs,AtUri,RichText,AppBskyEmbedImages,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyEmbedRecord, ComAtprotoLabelDefs } from '@atproto/api';
-import PostCard from '../post/PostCard';
-import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
-import RichTextRenderer from '../shared/RichTextRenderer';
-import { useUI } from '../../context/UIContext';
-import { useHeadManager } from '../../hooks/useHeadManager';
-import Label from '../shared/Label';
-
-type FeedFilter = 'all' | 'photos' | 'videos';
-
-const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
-    const embed = post.embed;
-    if (!embed) return false;
-    // Only show posts with direct media.
-    return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
-};
-
-// --- Start Filter Logic Helpers ---
-const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
-    const embed = post.embed;
-    if (!embed) return false;
-    return AppBskyEmbedImages.isView(embed) && embed.images.length > 0;
-}
-
-const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
-    const embed = post.embed;
-    if (!embed) return false;
-    return AppBskyEmbedVideo.isView(embed);
-}
-// --- End Filter Logic Helpers ---
-
-const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
-    // First, filter out replies and posts that are not direct media posts
-    const baseFiltered = posts.filter(item => !item.reply && isPostAMediaPost(item.post));
-
-    // Then, apply the specific media type filter
-    switch (filter) {
-        case 'all':
-            return baseFiltered;
-        case 'photos':
-            return baseFiltered.filter(item => hasPhotos(item.post));
-        case 'videos':
-            return baseFiltered.filter(item => hasVideos(item.post));
-        default:
-            return baseFiltered;
-    }
-};
+import { useAtp } from '../context/AtpContext';
+import { useToast } from './ui/use-toast';
+import { AppBskyActorDefs, AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AtUri, RichText } from '@atproto/api';
+import PostCard from './PostCard';
+import PostCardSkeleton from './PostCardSkeleton';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft } from 'lucide-react';
+import RichTextRenderer from './RichTextRenderer';
+import { useUI } from '../context/UIContext';
+import { useHiddenPosts } from '../context/HiddenPostsContext';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
-    const { agent, session, chatSupported } = useAtp();
-    const { t } = useTranslation();
+    const { agent, session } = useAtp();
     const { toast } = useToast();
-    const { openEditProfileModal, setCustomFeedHeaderVisible } = useUI();
+    const { setCustomFeedHeaderVisible } = useUI();
+    const { hiddenPostUris } = useHiddenPosts();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
@@ -69,14 +27,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
-    const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
 
-    useHeadManager({
-        title: profile ? `${profile.displayName || profile.handle}` : t('profile.title'),
-        description: profile?.description,
-        imageUrl: profile?.avatar,
-        type: 'profile'
-    });
 
     const loaderRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -169,7 +120,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         if (!window.confirm(`Are you sure you want to block @${profile.handle}? They will not be able to see your posts or interact with you.`)) return;
         setIsActionLoading(true);
         const oldViewerState = viewerState;
-        setViewerState(prev => prev ? { ...prev, blocking: 'temp-uri', following: undefined } : undefined);
+        setViewerState(prev => prev ? { ...prev, blocking: 'temp-uri', following: undefined } : undefined); // Block also unfollows
         try {
             const { uri } = await agent.app.bsky.graph.block.create(
                 { repo: session.did }, 
@@ -206,20 +157,27 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             setIsActionLoading(false);
         }
     };
+    
+    const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
+        return posts.filter(item => {
+            if (hiddenPostUris.has(item.post.uri)) return false;
+            const embed = item.post.embed;
+            if (!embed) return false;
+            if (AppBskyEmbedImages.isView(embed) || embed.$type === 'app.bsky.embed.video#view') return true;
+            if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                const media = embed.media;
+                if (AppBskyEmbedImages.isView(media) || media?.$type === 'app.bsky.embed.video#view') return true;
+            }
+            return false;
+        });
+    };
 
-    const fetchProfileAndFeed = useCallback(async (currentCursor?: string) => {
-        if (!currentCursor) {
+    useEffect(() => {
+        const fetchProfileAndFeed = async () => {
             setIsLoading(true);
             setError(null);
-            setFeed([]);
-            setCursor(undefined);
             setHasMore(true);
-        } else {
-            setIsLoadingMore(true);
-        }
-
-        try {
-            if (!currentCursor) {
+            try {
                 const profileRes = await agent.getProfile({ actor });
                 setProfile(profileRes.data);
                 setViewerState(profileRes.data.viewer);
@@ -229,33 +187,31 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     setIsLoading(false);
                     return;
                 }
-            }
 
-            const feedRes = await agent.getAuthorFeed({ actor, limit: 30, cursor: currentCursor });
-            setFeed(prevFeed => [...prevFeed, ...feedRes.data.feed]);
-            
-            if (feedRes.data.cursor && feedRes.data.feed.length > 0) {
-                setCursor(feedRes.data.cursor);
-                setHasMore(true);
-            } else {
-                setHasMore(false);
-            }
-        } catch (err: any) {
-            console.error("Failed to fetch profile data:", err);
-            if (err.error === 'BlockedByActor') {
-                setError("You are blocked by this user.");
-            } else {
-                setError(err.message || "Could not load profile.");
-            }
-        } finally {
-            setIsLoading(false);
-            setIsLoadingMore(false);
-        }
-    }, [agent, actor]);
+                const feedRes = await agent.getAuthorFeed({ actor, limit: 30 });
+                const mediaPosts = filterMediaPosts(feedRes.data.feed);
+                setFeed(mediaPosts);
+                
+                if (feedRes.data.cursor && feedRes.data.feed.length > 0) {
+                    setCursor(feedRes.data.cursor);
+                } else {
+                    setHasMore(false);
+                }
 
-    useEffect(() => {
+            } catch (err: any) {
+                console.error("Failed to fetch profile data:", err);
+                if (err.error === 'BlockedByActor') {
+                    setError("You are blocked by this user.");
+                } else {
+                    setError(err.message || "Could not load profile.");
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         fetchProfileAndFeed();
-    }, [fetchProfileAndFeed]);
+    }, [agent, actor, hiddenPostUris]);
     
     useEffect(() => {
         if (profile?.description) {
@@ -270,6 +226,30 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [profile?.description, agent]);
 
+
+    const loadMorePosts = useCallback(async () => {
+        if (isLoadingMore || !cursor || !hasMore) return;
+        setIsLoadingMore(true);
+        try {
+          const response = await agent.getAuthorFeed({ actor, cursor, limit: 30 });
+          if (response.data.feed.length > 0) {
+            const newMediaPosts = filterMediaPosts(response.data.feed);
+            setFeed(prevFeed => [...prevFeed, ...newMediaPosts]);
+            if (response.data.cursor) {
+              setCursor(response.data.cursor);
+            } else {
+              setHasMore(false);
+            }
+          } else {
+            setHasMore(false);
+          }
+        } catch (err) {
+          console.error('Failed to fetch more posts:', err);
+        } finally {
+          setIsLoadingMore(false);
+        }
+    }, [agent, actor, cursor, hasMore, isLoadingMore, hiddenPostUris]);
+    
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -284,7 +264,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         const observer = new IntersectionObserver(
           (entries) => {
             if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-              fetchProfileAndFeed(cursor);
+              loadMorePosts();
             }
           },
           { rootMargin: '400px' }
@@ -294,9 +274,11 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [hasMore, isLoading, isLoadingMore, fetchProfileAndFeed, cursor]);
+    }, [hasMore, isLoading, isLoadingMore, loadMorePosts]);
     
-    const displayedFeed = useMemo(() => filterPosts(feed, activeFilter), [feed, activeFilter]);
+    const displayedFeed = useMemo(() => {
+        return feed.filter(p => !hiddenPostUris.has(p.post.uri));
+    }, [feed, hiddenPostUris]);
     
     const { leftColumn, rightColumn } = useMemo(() => {
         const left: AppBskyFeedDefs.FeedViewPost[] = [];
@@ -308,32 +290,38 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 right.push(item);
             }
         });
-        return { leftColumn: left, rightColumn: right };
+        return { leftColumn, rightColumn };
     }, [displayedFeed]);
 
-    if (isLoading && feed.length === 0) {
+    if (isLoading) {
         return (
-            <div className="h-[80vh] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+             <div className="flex gap-4">
+                <div className="w-1/2 space-y-4">
+                    {[...Array(3)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+                </div>
+                <div className="w-1/2 space-y-4">
+                    {[...Array(3)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
+                </div>
             </div>
         );
     }
-    
+
     if (error || !profile) {
-        return <div className="text-center text-error p-8 bg-surface-2 rounded-xl mt-20">{error || "Profile not found."}</div>;
+        return <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error || "Profile not found."}</div>;
     }
 
     const FollowButton = () => (
         <button
             onClick={viewerState?.following ? handleUnfollow : handleFollow}
             disabled={isActionLoading}
-            className={`font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 flex-grow justify-center
+            className={`font-bold py-2 px-6 rounded-full transition duration-200 flex items-center gap-2 flex-grow justify-center
                 ${viewerState?.following 
                     ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' 
-                    : 'bg-accent text-on-accent hover:bg-accent/90'
+                    : 'bg-primary text-on-primary hover:bg-primary/90'
                 }
                 disabled:opacity-50`}
         >
+            {viewerState?.following ? <UserCheck size={18} /> : <UserPlus size={18} />}
             <span>{viewerState?.following ? 'Following' : 'Follow'}</span>
         </button>
     );
@@ -342,13 +330,13 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         <div className="relative" ref={menuRef}>
             <button
                 onClick={() => setIsMenuOpen(prev => !prev)}
-                className="p-2 rounded-full hover:bg-surface-3"
+                className="p-2 rounded-full bg-surface-3 hover:bg-surface-3/80"
                 aria-label="More actions"
             >
                 <MoreHorizontal size={20} />
             </button>
             {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-surface-3 rounded-lg z-10 overflow-hidden shadow-lg">
+                <div className="absolute right-0 mt-2 w-48 bg-surface-3 rounded-lg z-10 overflow-hidden">
                     <ul>
                         <li>
                             <button onClick={viewerState?.muted ? handleUnmute : handleMute} className="w-full text-left px-4 py-2 hover:bg-surface-2 flex items-center gap-3">
@@ -368,87 +356,49 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     return (
         <div>
-             <div className="sticky top-0 bg-surface-1/80 backdrop-blur-sm z-30 -mx-4 px-4">
-                <div className="flex items-center justify-between h-16">
-                    <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
-                        <ArrowLeft size={20} />
-                    </button>
-                    <h1 className="font-bold text-center truncate">@{profile.handle}</h1>
-                    <div className="w-8 flex justify-end">
-                        {!isMe && session && viewerState && <ActionsMenu />}
-                    </div>
-                </div>
-            </div>
-
-            <div className="px-4 pb-4">
-                <div className="flex items-center gap-4 mt-4">
-                    <img src={profile.avatar} alt="Avatar" className="w-24 h-24 rounded-full bg-surface-3" loading="lazy"/>
-                    <div className="flex-1 flex items-center justify-around">
-                        <a href={`#/profile/${actor}/following`} className="text-center hover:opacity-80">
-                            <strong className="block text-lg font-bold">{profile.followsCount}</strong>
-                            <span className="text-sm text-on-surface-variant">Following</span>
-                        </a>
-                        <div className="w-px h-10 bg-outline"></div>
-                        <a href={`#/profile/${actor}/followers`} className="text-center hover:opacity-80">
-                            <strong className="block text-lg font-bold">{profile.followersCount}</strong>
-                            <span className="text-sm text-on-surface-variant">Followers</span>
-                        </a>
-                        <div className="w-px h-10 bg-outline"></div>
-                        <div className="text-center">
-                            <strong className="block text-lg font-bold">{profile.postsCount}</strong>
-                            <span className="text-sm text-on-surface-variant">Posts</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="mt-3">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                        <span>{profile.displayName || `@${profile.handle}`}</span>
-                        {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                            <BadgeCheck className="w-5 h-5 text-primary" fill="currentColor" />
-                        )}
-                    </h2>
-                     {profile.description && (
-                        <div className="mt-1 text-on-surface whitespace-pre-wrap text-sm">
-                            {descriptionWithFacets ? (
-                                <RichTextRenderer record={descriptionWithFacets} />
-                            ) : (
-                                <>{profile.description}</>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {profile.labels && ComAtprotoLabelDefs.isLabel(profile.labels[0]) && profile.labels.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                        {profile.labels.map((label) => (
-                           <Label key={label.val} label={label} />
-                        ))}
-                    </div>
-                )}
-
-
-                <div className="mt-4 flex items-center gap-2">
-                    {isMe ? (
-                        <button onClick={openEditProfileModal} className="w-full font-bold py-2.5 px-6 rounded-lg transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80">
-                            Edit Profile
-                        </button>
-                    ) : session && viewerState && (
-                        <>
-                            <FollowButton />
-                            {chatSupported && (
-                                <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
-                                    <MessageSquare size={20} />
-                                </a>
-                            )}
-                        </>
-                    )}
+            <div className="h-48 bg-surface-3 rounded-t-lg -mx-4 -mt-4 relative">
+                {profile.banner && <img src={profile.banner} alt="Banner" className="w-full h-full object-cover rounded-t-lg" loading="lazy"/>}
+                <button onClick={() => window.history.back()} className="absolute top-4 left-4 p-2 rounded-full bg-black/50 hover:bg-black/75 text-white transition-colors z-10" aria-label="Go back">
+                    <ArrowLeft size={20} />
+                </button>
+                <div className="absolute -bottom-16 left-8">
+                    <img src={profile.avatar} alt="Avatar" className="w-32 h-32 rounded-full border-4 border-surface-1 bg-surface-3" loading="lazy"/>
                 </div>
             </div>
             
+            <div className="pt-20 px-4 pb-8">
+                 {session && !isMe && viewerState && (
+                    <div className="flex items-center gap-2 mb-4">
+                        <FollowButton />
+                        <ActionsMenu />
+                    </div>
+                )}
+                <h2 className="text-3xl font-bold flex items-center gap-2">
+                    <span>{profile.displayName}</span>
+                    {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                        <BadgeCheck className="w-6 h-6 text-primary" fill="currentColor" />
+                    )}
+                </h2>
+                <p className="text-on-surface-variant">@{profile.handle}</p>
+                <div className="flex items-center gap-4 text-on-surface-variant text-sm mt-2">
+                    <span><strong className="text-on-surface">{profile.followersCount}</strong> Followers</span>
+                    <span><strong className="text-on-surface">{profile.followsCount}</strong> Following</span>
+                    <span><strong className="text-on-surface">{profile.postsCount}</strong> Posts</span>
+                </div>
+                {profile.description && (
+                    <div className="mt-4 text-on-surface whitespace-pre-wrap">
+                        {descriptionWithFacets ? (
+                            <RichTextRenderer record={descriptionWithFacets} />
+                        ) : (
+                            <>{profile.description}</>
+                        )}
+                    </div>
+                )}
+            </div>
+
             {viewerState?.blocking ? (
                 <div className="text-center p-8 bg-surface-2 rounded-xl">
-                    <p className="font-bold text-lg">You have blocked @${profile.handle}</p>
+                    <p className="font-bold text-lg">You have blocked @{profile.handle}</p>
                     <p className="text-on-surface-variant text-sm mb-4">You won't see their posts or be able to follow them.</p>
                     <button onClick={handleUnblock} disabled={isActionLoading} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 disabled:opacity-50">
                         Unblock
@@ -456,49 +406,39 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </div>
             ) : (
                 <>
-                    <div className="flex items-center justify-around border-b border-surface-3">
-                        <button onClick={() => setActiveFilter('all')} className={`w-full p-4 flex justify-center ${activeFilter === 'all' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><Grid size={22} /></button>
-                        <button onClick={() => setActiveFilter('photos')} className={`w-full p-4 flex justify-center ${activeFilter === 'photos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><ImageIcon size={22} /></button>
-                        <button onClick={() => setActiveFilter('videos')} className={`w-full p-4 flex justify-center ${activeFilter === 'videos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><VideoIcon size={22} /></button>
+                    {displayedFeed.length === 0 && !isLoadingMore && (
+                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">This user has not posted any media yet.</div>
+                    )}
+                    
+                    <div className="flex gap-4 items-start">
+                        <div className="w-1/2 space-y-4">
+                            {leftColumn.map(({ post }) => (
+                                <PostCard key={post.cid} post={post} />
+                            ))}
+                        </div>
+                        <div className="w-1/2 space-y-4">
+                            {rightColumn.map(({ post }) => (
+                                <PostCard key={post.cid} post={post} />
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="pt-1">
-                        {displayedFeed.length === 0 && !hasMore && (
-                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">
-                                This user has not posted any {activeFilter !== 'all' ? `${activeFilter.slice(0,-1)}s` : 'media'} yet.
-                            </div>
-                        )}
-                        
-                        <div className="flex gap-4 mt-4">
+                    <div ref={loaderRef} className="h-10">
+                        {isLoadingMore && (
+                          <div className="flex gap-4 mt-4">
                             <div className="w-1/2 space-y-4">
-                                {leftColumn.map((feedViewPost) => (
-                                    <PostCard key={feedViewPost.post.cid} feedViewPost={feedViewPost} />
-                                ))}
+                               <PostCardSkeleton />
                             </div>
-                             <div className="w-1/2 space-y-4">
-                                {rightColumn.map((feedViewPost) => (
-                                    <PostCard key={feedViewPost.post.cid} feedViewPost={feedViewPost} />
-                                ))}
+                            <div className="w-1/2 space-y-4">
+                               <PostCardSkeleton />
                             </div>
-                        </div>
-
-                        <div ref={loaderRef} className="h-10">
-                            {isLoadingMore && (
-                            <div className="flex gap-4 mt-4">
-                                <div className="w-1/2 space-y-4">
-                                    <PostCardSkeleton />
-                                </div>
-                                <div className="w-1/2 space-y-4">
-                                    <PostCardSkeleton />
-                                </div>
-                            </div>
-                            )}
-                        </div>
-
-                        {!hasMore && displayedFeed.length > 0 && (
-                            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+                          </div>
                         )}
                     </div>
+
+                    {!hasMore && displayedFeed.length > 0 && (
+                        <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+                    )}
                 </>
             )}
         </div>

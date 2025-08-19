@@ -44,7 +44,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri, cache }) => {
   const [hasMore, setHasMore] = useState(initialState?.hasMore ?? true);
 
   const loaderRef = useRef<HTMLDivElement>(null);
-  const stateRef = useRef<Omit<TimelineCache, 'scrollPosition'>>();
+  const stateRef = useRef<Omit<TimelineCache, 'scrollPosition'> | undefined>(undefined);
   
   useEffect(() => {
     stateRef.current = { feed, cursor, hasMore };

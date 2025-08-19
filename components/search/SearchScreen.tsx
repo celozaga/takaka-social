@@ -1,19 +1,18 @@
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedRecord, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
-import PostCard from '../post/PostCard';
+import { useAtp } from '../context/AtpContext';
+import { useHiddenPosts } from '../context/HiddenPostsContext';
+import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
+import PostCard from './PostCard';
 import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
-import PostCardSkeleton from '../post/PostCardSkeleton';
+import PostCardSkeleton from './PostCardSkeleton';
 import ActorSearchResultCard from './ActorSearchResultCard';
-import PopularFeeds from '../feeds/PopularFeeds';
-import SuggestedFollows from '../profile/SuggestedFollows';
-import { useSavedFeeds } from '../../hooks/useSavedFeeds';
-import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
-import ScreenHeader from '../layout/ScreenHeader';
-import TrendingTopics from './TrendingTopics';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import PopularFeeds from './PopularFeeds';
+import SuggestedFollows from './SuggestedFollows';
+import { useSavedFeeds } from '../hooks/useSavedFeeds';
+import FeedSearchResultCard from './FeedSearchResultCard';
+import { useUI } from '../context/UIContext';
+import SearchHeader from './SearchHeader';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -23,29 +22,19 @@ interface SearchScreenProps {
   initialFilter?: string;
 }
 
-const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
-    const embed = post.embed;
-    if (!embed) return false;
-
-    // Only show posts with direct media.
-    return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
-};
-
-const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
-    const embed = post.embed;
-    if (!embed) return false;
-    return AppBskyEmbedImages.isView(embed) && embed.images.length > 0;
-}
-
-const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
-    const embed = post.embed;
-    if (!embed) return false;
-    return AppBskyEmbedVideo.isView(embed);
-}
+const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
+    { id: 'top', label: 'Top', icon: TrendingUp },
+    { id: 'latest', label: 'Latest', icon: Clock },
+    { id: 'images', label: 'Images', icon: ImageIcon },
+    { id: 'videos', label: 'Videos', icon: Video },
+    { id: 'people', label: 'People', icon: UserCircle },
+    { id: 'feeds', label: 'Feeds', icon: List },
+];
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent } = useAtp();
-    const { t } = useTranslation();
+    const { hiddenPostUris } = useHiddenPosts();
+    const { setCustomFeedHeaderVisible } = useUI();
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -56,18 +45,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     
     const loaderRef = useRef<HTMLDivElement>(null);
 
-    useHeadManager({ title: t('search.title') });
+    useEffect(() => {
+        setCustomFeedHeaderVisible(true);
+        return () => setCustomFeedHeaderVisible(false);
+    }, [setCustomFeedHeaderVisible]);
 
-    const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
-      { id: 'top', label: t('search.top'), icon: TrendingUp },
-      { id: 'latest', label: t('search.latest'), icon: Clock },
-      { id: 'images', label: t('common.images'), icon: ImageIcon },
-      { id: 'videos', label: t('common.videos'), icon: Video },
-      { id: 'people', label: t('common.people'), icon: UserCircle },
-      { id: 'feeds', label: t('common.feeds'), icon: List },
-    ];
-
-    // Derive activeFilter directly from props, making the URL the single source of truth.
     const activeFilter = (initialFilter as FilterType) || 'top';
     
     const showDiscoveryContent = !initialQuery.trim();
@@ -106,24 +88,47 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
             } else { // All other filters are post searches
-                const response = await agent.app.bsky.feed.searchPosts({ 
-                    q: searchQuery, 
-                    limit: 50,
-                    cursor: currentCursor,
-                    sort: searchFilter === 'latest' ? 'latest' : 'top',
-                });
-                
-                let filteredPosts = response.data.posts.filter(p => !(p.record as any).reply && isPostAMediaPost(p));
+                let allFetchedPosts: AppBskyFeedDefs.PostView[] = [];
+                let nextCursor: string | undefined = currentCursor;
+                let attempts = 0;
 
-                if (searchFilter === 'images') {
-                    filteredPosts = filteredPosts.filter(hasPhotos);
-                } else if (searchFilter === 'videos') {
-                    filteredPosts = filteredPosts.filter(hasVideos);
+                while (attempts < 5) {
+                    attempts++;
+                    const response = await agent.app.bsky.feed.searchPosts({ 
+                        q: searchQuery, 
+                        limit: 50,
+                        cursor: nextCursor,
+                        sort: searchFilter === 'latest' ? 'latest' : 'top',
+                    });
+                    
+                    const visiblePosts = response.data.posts.filter(p => !hiddenPostUris.has(p.uri));
+                    allFetchedPosts = [...allFetchedPosts, ...visiblePosts];
+                    nextCursor = response.data.cursor;
+
+                    if (searchFilter === 'images' || searchFilter === 'videos') {
+                        const mediaPosts = allFetchedPosts.filter(post => {
+                            const embed = post.embed;
+                            if (!embed) return false;
+                            const targetType = searchFilter === 'images' ? 'app.bsky.embed.images#view' : 'app.bsky.embed.video#view';
+                            if (embed.$type === targetType) return true;
+                            if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                                if (embed.media?.$type === targetType) return true;
+                            }
+                            return false;
+                        });
+                        
+                        if (mediaPosts.length >= 10 || !nextCursor) {
+                            allFetchedPosts = mediaPosts;
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
                 }
                 
-                setResults(prev => currentCursor ? [...prev, ...filteredPosts] : filteredPosts);
-                setCursor(response.data.cursor);
-                setHasMore(!!response.data.cursor);
+                setResults(prev => currentCursor ? [...prev, ...allFetchedPosts] : allFetchedPosts);
+                setCursor(nextCursor);
+                setHasMore(!!nextCursor && allFetchedPosts.length > 0);
             }
         } catch (error) {
             console.error("Search failed:", error);
@@ -131,7 +136,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent]);
+    }, [agent, hiddenPostUris]);
     
     useEffect(() => {
         if (!showDiscoveryContent) {
@@ -148,21 +153,19 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     
     const handleFilterChange = (filter: FilterType) => {
         if (query.trim()) {
-            // Simply update the URL. The component will be re-mounted with new props.
             window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${filter}`;
         }
     };
     
-    const handlePinToggle = useCallback((feed:AppBskyFeedDefs.GeneratorView) => {
+    const handlePinToggle = (feed:AppBskyFeedDefs.GeneratorView) => {
         const isPinned = pinnedUris.has(feed.uri);
         if (isPinned) {
             togglePin(feed.uri);
         } else {
             addFeed(feed, true);
         }
-    }, [pinnedUris, togglePin, addFeed]);
+    }
     
-     // Effect for IntersectionObserver
     useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
@@ -179,6 +182,26 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         };
     }, [hasMore, isLoading, isLoadingMore, fetchResults, initialQuery, activeFilter, cursor, supportsInfiniteScroll]);
 
+    const postResults = useMemo(() => {
+        if (activeFilter === 'people' || activeFilter === 'feeds') {
+            return [];
+        }
+        return results as AppBskyFeedDefs.PostView[];
+    }, [activeFilter, results]);
+
+    const { leftColumn, rightColumn } = useMemo(() => {
+        const left: AppBskyFeedDefs.PostView[] = [];
+        const right: AppBskyFeedDefs.PostView[] = [];
+        postResults.forEach((item, index) => {
+            if (index % 2 === 0) {
+                left.push(item);
+            } else {
+                right.push(item);
+            }
+        });
+        return { leftColumn, rightColumn };
+    }, [postResults]);
+    
     const renderResults = () => {
       if (activeFilter === 'people') {
         return (
@@ -205,53 +228,41 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         );
       }
       
-      const postResults = results as AppBskyFeedDefs.PostView[];
-      const { leftColumn, rightColumn } = useMemo(() => {
-        const left: AppBskyFeedDefs.PostView[] = [];
-        const right: AppBskyFeedDefs.PostView[] = [];
-        postResults.forEach((item, index) => {
-            if (index % 2 === 0) {
-            left.push(item);
-            } else {
-            right.push(item);
-            }
-        });
-        return { leftColumn: left, rightColumn: right };
-      }, [postResults]);
-
       return (
         <div className="flex gap-4 items-start">
-          <div className="w-1/2 space-y-4">
-            {leftColumn.map(post => <PostCard key={post.cid} feedViewPost={{ post }} />)}
-          </div>
-          <div className="w-1/2 space-y-4">
-            {rightColumn.map(post => <PostCard key={post.cid} feedViewPost={{ post }} />)}
-          </div>
+            <div className="w-1/2 space-y-4">
+                {leftColumn.map(post => (
+                    <PostCard key={post.cid} post={post} />
+                ))}
+            </div>
+            <div className="w-1/2 space-y-4">
+                {rightColumn.map(post => (
+                    <PostCard key={post.cid} post={post} />
+                ))}
+            </div>
         </div>
       );
     }
     
     return (
         <div>
-            <div className="sticky top-0 z-10 bg-surface-1 pt-4 pb-3">
-                <form onSubmit={handleFormSubmit} className="flex gap-2">
+            <SearchHeader />
+            <div className="mt-4">
+                <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
                     <div className="relative flex-grow">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
                         <input
                             type="search"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t('search.placeholder')}
+                            placeholder={`Search posts, users, and feeds`}
                             className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
                         />
                     </div>
                 </form>
-            </div>
 
-            <div>
                 {showDiscoveryContent ? (
-                     <div className="space-y-8 mt-1">
-                        <TrendingTopics />
+                     <div className="space-y-8">
                         <SuggestedFollows />
                         <PopularFeeds />
                     </div>
@@ -293,11 +304,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         {!isLoading && results.length > 0 && renderResults()}
                         
                         {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && (
-                            <div className="text-center text-on-surface-variant py-8">{t('common.endOfList')}</div>
+                            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
                         )}
                         
                         {!isLoading && results.length === 0 && (
-                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('search.empty', { query: initialQuery })}</div>
+                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">No results found for "{initialQuery}".</div>
                         )}
                         
                         <div ref={loaderRef} className="h-10">
