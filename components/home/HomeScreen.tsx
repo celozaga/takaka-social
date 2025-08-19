@@ -3,11 +3,26 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
-import Timeline from '../shared/Timeline';
+import Timeline, { TimelineCache } from '../shared/Timeline';
 import FeedSelector from '../feeds/FeedSelector';
 import { useHeadManager } from '../../hooks/useHeadManager';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
+
+// Simple in-memory cache for the home timeline state.
+const homeTimelineCacheStore: TimelineCache = {
+  feed: [],
+  scrollPosition: 0,
+  hasMore: true,
+};
+
+const homeTimelineCache = {
+  get: () => homeTimelineCacheStore,
+  set: (state: TimelineCache) => {
+    Object.assign(homeTimelineCacheStore, state);
+  },
+};
+
 
 const HomeScreen: React.FC = () => {
   const { agent, session } = useAtp();
@@ -23,6 +38,13 @@ const HomeScreen: React.FC = () => {
       setSelectedFeed(DISCOVER_FEED_URI);
       setIsLoadingFeeds(false);
       setFeeds([]);
+      // Clear cache on logout
+      homeTimelineCache.set({
+        feed: [],
+        scrollPosition: 0,
+        hasMore: true,
+        cursor: undefined,
+      });
       return;
     }
 
@@ -68,17 +90,12 @@ const HomeScreen: React.FC = () => {
   }, [agent, session]);
   
   // Effect to switch feed only when session status changes (login/logout).
-  // Removed `selectedFeed` from dependencies to prevent it from resetting user selection.
   useEffect(() => {
     if (session) {
-      // Switch to 'following' only if the user was previously logged out
-      // and on the default discover feed. This avoids overriding their selection
-      // if they navigate away and back.
       if (selectedFeed === DISCOVER_FEED_URI) {
         setSelectedFeed('following');
       }
     } else {
-      // If user logs out, switch to the public discover feed.
       setSelectedFeed(DISCOVER_FEED_URI);
     }
   }, [session]);
@@ -92,7 +109,15 @@ const HomeScreen: React.FC = () => {
         isLoading={isLoadingFeeds}
       />
       <div className="mt-4">
-        <Timeline key={selectedFeed} feedUri={selectedFeed} />
+        {session && selectedFeed === 'following' ? (
+          <Timeline
+            key="following-timeline" // Static key to prevent remounting
+            feedUri="following"
+            cache={homeTimelineCache}
+          />
+        ) : (
+          <Timeline key={selectedFeed} feedUri={selectedFeed} />
+        )}
       </div>
     </div>
   );

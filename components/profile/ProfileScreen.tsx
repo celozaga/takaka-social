@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -300,6 +298,19 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     const displayedFeed = useMemo(() => filterPosts(feed, activeFilter), [feed, activeFilter]);
     
+    const { leftColumn, rightColumn } = useMemo(() => {
+        const left: AppBskyFeedDefs.FeedViewPost[] = [];
+        const right: AppBskyFeedDefs.FeedViewPost[] = [];
+        displayedFeed.forEach((item, index) => {
+            if (index % 2 === 0) {
+                left.push(item);
+            } else {
+                right.push(item);
+            }
+        });
+        return { leftColumn: left, rightColumn: right };
+    }, [displayedFeed]);
+
     if (isLoading && feed.length === 0) {
         return (
             <div className="h-[80vh] flex items-center justify-center">
@@ -458,22 +469,27 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                             </div>
                         )}
                         
-                        <div className="columns-2 gap-4 mt-4">
-                            {displayedFeed.map((feedViewPost) => (
-                                <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
-                                    <PostCard feedViewPost={feedViewPost} />
-                                </div>
-                            ))}
+                        <div className="flex gap-4 mt-4">
+                            <div className="w-1/2 space-y-4">
+                                {leftColumn.map((feedViewPost) => (
+                                    <PostCard key={feedViewPost.post.cid} feedViewPost={feedViewPost} />
+                                ))}
+                            </div>
+                             <div className="w-1/2 space-y-4">
+                                {rightColumn.map((feedViewPost) => (
+                                    <PostCard key={feedViewPost.post.cid} feedViewPost={feedViewPost} />
+                                ))}
+                            </div>
                         </div>
 
                         <div ref={loaderRef} className="h-10">
                             {isLoadingMore && (
-                            <div className="columns-2 gap-4 mt-4">
-                                <div className="break-inside-avoid mb-4">
-                                <PostCardSkeleton />
+                            <div className="flex gap-4 mt-4">
+                                <div className="w-1/2 space-y-4">
+                                    <PostCardSkeleton />
                                 </div>
-                                <div className="break-inside-avoid mb-4">
-                                <PostCardSkeleton />
+                                <div className="w-1/2 space-y-4">
+                                    <PostCardSkeleton />
                                 </div>
                             </div>
                             )}

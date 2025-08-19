@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -11,6 +10,17 @@ import { moderatePost } from '../../lib/moderation';
 
 interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
+  cache?: {
+    get: () => TimelineCache,
+    set: (state: TimelineCache) => void,
+  }
+}
+
+export interface TimelineCache {
+  feed: AppBskyFeedDefs.FeedViewPost[];
+  cursor?: string;
+  scrollPosition: number;
+  hasMore: boolean;
 }
 
 const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
@@ -21,18 +31,24 @@ const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
     return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
 };
 
-const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
+const Timeline: React.FC<TimelineProps> = ({ feedUri, cache }) => {
+  const initialState = cache?.get();
   const { agent } = useAtp();
   const { t } = useTranslation();
   const moderation = useModeration();
-  const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>(initialState?.feed || []);
+  const [isLoading, setIsLoading] = useState(!initialState?.feed || initialState.feed.length === 0);
   const [error, setError] = useState<string | null>(null);
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [cursor, setCursor] = useState<string | undefined>(initialState?.cursor);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(initialState?.hasMore ?? true);
 
   const loaderRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef<Omit<TimelineCache, 'scrollPosition'>>();
+  
+  useEffect(() => {
+    stateRef.current = { feed, cursor, hasMore };
+  });
 
   const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
     // Filter out replies and posts without direct media.
@@ -44,13 +60,39 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
       if (!agent.hasSession) {
         return Promise.resolve({
             success: true,
-            data: { feed: [], cursor: undefined }
+            headers: {},
+            data: { feed: [] }
         } as AppBskyFeedGetTimeline.Response);
       }
       return agent.getTimeline({ cursor: currentCursor, limit: 25 });
     }
     return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 25 });
   }, [agent, feedUri]);
+
+  const fetchInitialTimeline = useCallback(async () => {
+      setIsLoading(true);
+      setError(null);
+      setFeed([]);
+      setCursor(undefined);
+      setHasMore(true);
+
+      try {
+        const response = await fetchPosts();
+        const mediaPosts = filterMediaPosts(response.data.feed);
+        setFeed(mediaPosts);
+        
+        if (response.data.cursor && response.data.feed.length > 0) {
+          setCursor(response.data.cursor);
+        } else {
+          setHasMore(false);
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch timeline:', err);
+        setError(t('timeline.loadingError'));
+      } finally {
+        setIsLoading(false);
+      }
+  }, [fetchPosts, t]);
 
 
   const loadMorePosts = useCallback(async () => {
@@ -83,35 +125,30 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     }
   }, [cursor, hasMore, isLoadingMore, fetchPosts]);
 
-  // Effect for initial data load
+  // Effect for initial data load or cache restoration
   useEffect(() => {
-    const fetchInitialTimeline = async () => {
-      setIsLoading(true);
-      setError(null);
-      setFeed([]);
-      setCursor(undefined);
-      setHasMore(true);
+    if (!initialState || initialState.feed.length === 0) {
+      fetchInitialTimeline();
+    }
+  }, [fetchInitialTimeline, initialState]);
+  
+  // Effect for saving state on unmount and restoring scroll
+  useEffect(() => {
+    if (initialState?.scrollPosition) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: initialState.scrollPosition, behavior: 'auto' });
+      });
+    }
 
-      try {
-        const response = await fetchPosts();
-        const mediaPosts = filterMediaPosts(response.data.feed);
-        setFeed(mediaPosts);
-        
-        if (response.data.cursor && response.data.feed.length > 0) {
-          setCursor(response.data.cursor);
-        } else {
-          setHasMore(false);
-        }
-      } catch (err: any) {
-        console.error('Failed to fetch timeline:', err);
-        setError(t('timeline.loadingError'));
-      } finally {
-        setIsLoading(false);
+    return () => {
+      if (cache && stateRef.current) {
+        cache.set({
+          ...stateRef.current,
+          scrollPosition: window.scrollY,
+        });
       }
     };
-
-    fetchInitialTimeline();
-  }, [fetchPosts, t]);
+  }, [cache]);
   
   const moderatedFeed = useMemo(() => {
     if (!moderation.isReady) {
@@ -123,6 +160,19 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     });
   }, [feed, moderation]);
 
+  const { leftColumn, rightColumn } = useMemo(() => {
+    const left: AppBskyFeedDefs.FeedViewPost[] = [];
+    const right: AppBskyFeedDefs.FeedViewPost[] = [];
+    moderatedFeed.forEach((item, index) => {
+      if (index % 2 === 0) {
+        left.push(item);
+      } else {
+        right.push(item);
+      }
+    });
+    return { leftColumn: left, rightColumn: right };
+  }, [moderatedFeed]);
+
 
   // Effect for IntersectionObserver
   useEffect(() => {
@@ -132,7 +182,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
           loadMorePosts();
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '400px' }
     );
 
     const currentLoader = loaderRef.current;
@@ -149,12 +199,13 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   if (isLoading) {
     return (
-      <div className="columns-2 gap-4">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="break-inside-avoid mb-4">
-            <PostCardSkeleton />
-          </div>
-        ))}
+      <div className="flex gap-4">
+        <div className="w-1/2 space-y-4">
+            {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+        </div>
+        <div className="w-1/2 space-y-4">
+            {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
+        </div>
       </div>
     );
   }
@@ -169,23 +220,28 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   return (
     <div>
-      <div className="columns-2 gap-4">
-        {moderatedFeed.map((feedViewPost) => (
-          <div key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} className="break-inside-avoid mb-4">
-            <PostCard feedViewPost={feedViewPost} />
-          </div>
-        ))}
+      <div className="flex gap-4 items-start">
+        <div className="w-1/2 space-y-4">
+          {leftColumn.map((feedViewPost) => (
+            <PostCard key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} feedViewPost={feedViewPost} />
+          ))}
+        </div>
+        <div className="w-1/2 space-y-4">
+          {rightColumn.map((feedViewPost) => (
+            <PostCard key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} feedViewPost={feedViewPost} />
+          ))}
+        </div>
       </div>
 
-      <div ref={loaderRef} className="h-10"> {/* Sentinel element */}
+      <div ref={loaderRef} className="h-10">
         {isLoadingMore && (
-          <div className="columns-2 gap-4 mt-4">
-            <div className="break-inside-avoid mb-4">
-              <PostCardSkeleton />
-            </div>
-            <div className="break-inside-avoid mb-4">
-              <PostCardSkeleton />
-            </div>
+          <div className="flex gap-4 mt-4">
+             <div className="w-1/2 space-y-4">
+                <PostCardSkeleton />
+             </div>
+             <div className="w-1/2 space-y-4">
+                <PostCardSkeleton />
+             </div>
           </div>
         )}
       </div>

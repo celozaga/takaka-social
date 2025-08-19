@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useAtp } from './AtpContext';
 import { AppBskyActorDefs, ComAtprotoLabelDefs } from '@atproto/api';
@@ -111,7 +112,7 @@ export const ModerationProvider: React.FC<{ children: ReactNode }> = ({ children
     };
 
     const addMutedWord = async (word: string) => {
-        const newWord: MutedWord = { value: word, targets: ['content'] }; // Default target
+        const newWord: MutedWord = { value: word, targets: ['content'], actorTarget: 'all' }; // Default target
         const currentMutedPref = preferences.find(p => p.$type === 'app.bsky.actor.defs#mutedWordsPref');
         const otherPrefs = preferences.filter(p => p.$type !== 'app.bsky.actor.defs#mutedWordsPref');
         

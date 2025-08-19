@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedRecord, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
@@ -206,13 +206,27 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
       }
       
       const postResults = results as AppBskyFeedDefs.PostView[];
+      const { leftColumn, rightColumn } = useMemo(() => {
+        const left: AppBskyFeedDefs.PostView[] = [];
+        const right: AppBskyFeedDefs.PostView[] = [];
+        postResults.forEach((item, index) => {
+            if (index % 2 === 0) {
+            left.push(item);
+            } else {
+            right.push(item);
+            }
+        });
+        return { leftColumn: left, rightColumn: right };
+      }, [postResults]);
+
       return (
-        <div className="columns-2 gap-4">
-          {postResults.map(post => (
-            <div key={post.cid} className="break-inside-avoid mb-4">
-              <PostCard feedViewPost={{ post }} />
-            </div>
-          ))}
+        <div className="flex gap-4 items-start">
+          <div className="w-1/2 space-y-4">
+            {leftColumn.map(post => <PostCard key={post.cid} feedViewPost={{ post }} />)}
+          </div>
+          <div className="w-1/2 space-y-4">
+            {rightColumn.map(post => <PostCard key={post.cid} feedViewPost={{ post }} />)}
+          </div>
         </div>
       );
     }
@@ -266,12 +280,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                                     ))}
                                 </div>
                             ) : (
-                                <div className="columns-2 gap-4">
-                                    {[...Array(6)].map((_, i) => (
-                                        <div key={i} className="break-inside-avoid mb-4">
-                                            <PostCardSkeleton />
-                                        </div>
-                                    ))}
+                                <div className="flex gap-4">
+                                    <div className="w-1/2 space-y-4">
+                                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+                                    </div>
+                                    <div className="w-1/2 space-y-4">
+                                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
+                                    </div>
                                 </div>
                             )
                         )}
@@ -292,9 +307,9 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                                        <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
                                    </div>
                                 ) : (
-                                    <div className="columns-2 gap-4 mt-4">
-                                        <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
-                                        <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                    <div className="flex gap-4 mt-4">
+                                        <div className="w-1/2 space-y-4"><PostCardSkeleton /></div>
+                                        <div className="w-1/2 space-y-4"><PostCardSkeleton /></div>
                                     </div>
                                 )
                             )}
