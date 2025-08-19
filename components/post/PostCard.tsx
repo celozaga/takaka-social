@@ -51,6 +51,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
         if (!mediaInfo) return null;
         
         const { mediaPost, mediaEmbed } = mediaInfo;
+        const isRepost = reason && AppBskyFeedDefs.isReasonRepost(reason);
 
         if (AppBskyEmbedImages.isView(mediaEmbed)) {
             const embed = mediaEmbed;
@@ -80,6 +81,8 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const firstImage = embed.images[0];
             if (!firstImage) return null;
             
+            const hasMultipleImages = embed.images.length > 1;
+            
             return (
                 <div className="relative">
                     <img 
@@ -88,10 +91,19 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                         className="w-full h-auto object-cover" 
                         loading="lazy"
                     />
-                    {embed.images.length > 1 && (
-                         <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold py-1 px-1.5 rounded-full flex items-center gap-1 backdrop-blur-sm border border-white/20">
-                            <Images size={14} />
-                            <span>{embed.images.length}</span>
+                    {(hasMultipleImages || isRepost) && (
+                         <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                            {isRepost && (
+                                <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                                    <Repeat size={14} />
+                                </div>
+                            )}
+                            {hasMultipleImages && (
+                                <div className="bg-black/70 text-white text-xs font-bold py-1 px-1.5 rounded-full flex items-center gap-1 backdrop-blur-sm border border-white/20">
+                                    <Images size={14} />
+                                    <span>{embed.images.length}</span>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -130,8 +142,15 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                  return (
                     <div className="relative w-full aspect-video bg-black flex items-center justify-center text-on-surface-variant">
                         <PlayCircle size={32} className="text-white/50" />
-                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
-                           <PlayCircle size={14}/>
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                           {isRepost && (
+                                <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                                   <Repeat size={14}/>
+                               </div>
+                           )}
+                           <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                              <PlayCircle size={14}/>
+                           </div>
                         </div>
                     </div>
                  );
@@ -140,8 +159,15 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             return (
                 <div className="relative">
                     <img src={posterUrl} className="w-full h-auto object-cover bg-black" />
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
-                        <PlayCircle size={14}/>
+                    <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                        {isRepost && (
+                            <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                                <Repeat size={14}/>
+                            </div>
+                        )}
+                        <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                            <PlayCircle size={14}/>
+                        </div>
                     </div>
                 </div>
             );
@@ -173,7 +199,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             );
         }
 
-        let recordEmbed: AppBskyEmbedRecord.View['record'] | undefined;
+        let recordEmbed:AppBskyEmbedRecord.View['record'] | undefined;
 
         if (AppBskyEmbedRecord.isView(post.embed)) {
             recordEmbed = post.embed.record;
@@ -181,7 +207,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             recordEmbed = post.embed.record.record;
         }
 
-        if (recordEmbed && AppBskyFeedDefs.isPostView(recordEmbed) && recordEmbed.author) {
+        if (recordEmbed && AppBskyEmbedRecord.isViewRecord(recordEmbed)) {
              return (
                 <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
                     <Quote size={14} />
