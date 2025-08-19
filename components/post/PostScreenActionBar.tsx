@@ -40,7 +40,7 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
                 <button
                     onClick={handleLike}
                     disabled={isLiking}
-                    className={`flex items-center gap-1.5 ${likeUri ? 'text-pink-500' : 'text-on-surface-variant'}`}
+                    className={`flex items-center gap-1.5 transition-colors ${likeUri ? 'text-like' : 'text-on-surface-variant hover:text-like'}`}
                 >
                     <Heart size={22} fill={likeUri ? 'currentColor' : 'none'} />
                     <span className="font-semibold text-sm">{formatCount(likeCount)}</span>

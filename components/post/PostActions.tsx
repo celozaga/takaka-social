@@ -52,7 +52,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
       <button 
         onClick={handleLike} 
         disabled={isLiking}
-        className={`flex items-center gap-1 transition-colors ${likeUri ? 'text-pink-500' : 'hover:text-pink-500'}`}
+        className={`flex items-center gap-1 transition-colors ${likeUri ? 'text-like' : 'hover:text-like'}`}
         aria-label="Like"
       >
         <Heart size={18} fill={likeUri ? 'currentColor' : 'none'} />

@@ -25,20 +25,20 @@
         theme: {
           extend: {
             colors: {
-              'primary': '#A8C7FA',
-              'on-primary': '#003258',
-              'primary-container': '#00497D',
-              'on-primary-container': '#D4E3FF',
-              'surface-1': '#111314', // Page background
-              'surface-2': '#1E2021', // Card background
-              'surface-3': '#292B2C', // Interactive component background
-              'on-surface': '#E2E2E6',
-              'on-surface-variant': '#C1C7CE',
-              'outline': '#44474E',
-              'error': '#F2B8B5',
-              'on-error': '#601410',
-              'accent': '#FDE047', // yellow-400
-              'on-accent': '#111827' // gray-900
+              'primary': '#33A1FF',
+              'on-primary': '#001935',
+              'primary-container': '#004A7F',
+              'on-primary-container': '#D1E4FF',
+              'surface-1': '#001935',
+              'surface-2': '#00254D',
+              'surface-3': '#003366',
+              'on-surface': '#E0E0E0',
+              'on-surface-variant': '#8A9AAF',
+              'outline': '#2E4F71',
+              'error': '#FFB4AB',
+              'on-error': '#690005',
+              'like': '#F472B6',
+              'accent': '#FFD700',
             },
             borderRadius: {
               'xl': '1rem', // 16px
@@ -84,18 +84,20 @@
 </script>
 <style>
   :root {
-    --primary: #A8C7FA;
-    --on-primary: #003258;
-    --primary-container: #00497D;
-    --on-primary-container: #D4E3FF;
-    --surface-1: #111314;
-    --surface-2: #1E2021;
-    --surface-3: #292B2C;
-    --on-surface: #E2E2E6;
-    --on-surface-variant: #C1C7CE;
-    --outline: #44474E;
-    --error: #F2B8B5;
-    --on-error: #601410;
+    --primary: #33A1FF;
+    --on-primary: #001935;
+    --primary-container: #004A7F;
+    --on-primary-container: #D1E4FF;
+    --surface-1: #001935;
+    --surface-2: #00254D;
+    --surface-3: #003366;
+    --on-surface: #E0E0E0;
+    --on-surface-variant: #8A9AAF;
+    --outline: #2E4F71;
+    --error: #FFB4AB;
+    --on-error: #690005;
+    --like: #F472B6;
+    --accent: #FFD700;
   }
   body {
     font-family: 'Roboto', sans-serif;
@@ -109,7 +111,9 @@
     border-radius: 4px;
   }
   .channel-bg {
-    background-image: url('data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%231E2021" fill-opacity="0.4" fill-rule="evenodd"%3E%3Cpath d="M0 40L40 0H20L0 20M40 40V20L20 40"/%3E%3C/g%3E%3C/svg%3E');
+    background-color: var(--surface-1);
+    background-image: radial-gradient(var(--surface-2) 1px, transparent 1px);
+    background-size: 16px 16px;
   }
 </style>
 </head>

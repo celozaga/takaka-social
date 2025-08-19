@@ -51,7 +51,7 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({ feedUri, onBack }) => {
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="flex items-center gap-1 text-on-surface-variant text-sm">
-                        <Heart size={16} className="text-pink-500" />
+                        <Heart size={16} className="text-like" />
                         <span>{likeCount}</span>
                     </div>
                     <button onClick={() => openFeedModal(feedUri)} className="p-2 rounded-full hover:bg-surface-3">

@@ -23,8 +23,8 @@ interface PostBubbleProps {
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
     if (AppBskyEmbedRecord.isViewRecord(embed)) {
-        const postView = embed.record;
-        if (AppBskyFeedDefs.isPostView(postView)) {
+        if (AppBskyFeedDefs.isPostView(embed.record)) {
+            const postView = embed.record;
             const author = postView.author;
 
             if (AppBskyFeedPost.isRecord(postView.record)) {
@@ -57,10 +57,10 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
 const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => {
     const author = post.author;
     
-    if (!AppBskyFeedPost.isRecord(post.record)) {
+    const record = post.record;
+    if (!AppBskyFeedPost.isRecord(record)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = post.record;
 
     const renderMedia = () => {
         if (!post.embed) return null;
