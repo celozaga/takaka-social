@@ -1,10 +1,10 @@
+
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
-import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
-import PostCard from '../post/PostCard';
+import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
+import PostBubble from '../post/PostBubble';
 import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
-import PostCardSkeleton from '../post/PostCardSkeleton';
 import ActorSearchResultCard from './ActorSearchResultCard';
 import PopularFeeds from '../feeds/PopularFeeds';
 import SuggestedFollows from '../profile/SuggestedFollows';
@@ -12,8 +12,8 @@ import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
 
-type SearchResult = AppBskyFeedDefs.FeedViewPost | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
-type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
+type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
+type FilterType = 'top' | 'latest' | 'posts' | 'people' | 'feeds';
 
 interface SearchScreenProps {
   initialQuery?: string;
@@ -23,9 +23,7 @@ interface SearchScreenProps {
 const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
     { id: 'top', label: 'Top', icon: TrendingUp },
     { id: 'latest', label: 'Latest', icon: Clock },
-    { id: 'images', label: 'Images', icon: ImageIcon },
-    { id: 'videos', label: 'Videos', icon: Video },
-    { id: 'people', label: 'People', icon: UserCircle },
+    { id: 'people', label: 'Channels', icon: UserCircle },
     { id: 'feeds', label: 'Feeds', icon: List },
 ];
 
@@ -45,9 +43,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const activeFilter = (initialFilter as FilterType) || 'top';
     
     const showDiscoveryContent = !initialQuery.trim();
-    const supportsInfiniteScroll = activeFilter !== 'people';
-    const isListView = activeFilter === 'people' || activeFilter === 'feeds';
-
+    const isPostSearch = ['top', 'latest', 'posts'].includes(activeFilter);
 
     const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
@@ -79,51 +75,19 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 setResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
-            } else { // All other filters are post searches
-                let allFetchedPosts: AppBskyFeedDefs.FeedViewPost[] = [];
-                let nextCursor: string | undefined = currentCursor;
-                let attempts = 0;
-
-                while (attempts < 5) {
-                    attempts++;
-                    const response = await agent.app.bsky.feed.searchPosts({ 
-                        q: searchQuery, 
-                        limit: 50,
-                        cursor: nextCursor,
-                        sort: searchFilter === 'latest' ? 'latest' : 'top',
-                    });
-                    
-                    const visiblePosts = response.data.posts
-                        .filter(p => !hiddenPostUris.has(p.uri))
-                        .map(p => ({ post: p } as AppBskyFeedDefs.FeedViewPost));
-
-                    allFetchedPosts = [...allFetchedPosts, ...visiblePosts];
-                    nextCursor = response.data.cursor;
-
-                    if (searchFilter === 'images' || searchFilter === 'videos') {
-                        const mediaPosts = allFetchedPosts.filter(postView => {
-                            const embed = postView.post.embed;
-                            if (!embed) return false;
-                            const targetType = searchFilter === 'images' ? 'app.bsky.embed.images#view' : 'app.bsky.embed.video#view';
-                            if (embed.$type === targetType) return true;
-                            if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                                if (embed.media?.$type === targetType) return true;
-                            }
-                            return false;
-                        });
-                        
-                        if (mediaPosts.length >= 10 || !nextCursor) {
-                            allFetchedPosts = mediaPosts;
-                            break;
-                        }
-                    } else {
-                        break;
-                    }
-                }
+            } else {
+                const response = await agent.app.bsky.feed.searchPosts({ 
+                    q: searchQuery, 
+                    limit: 50,
+                    cursor: currentCursor,
+                    sort: searchFilter === 'latest' ? 'latest' : 'top',
+                });
                 
-                setResults(prev => currentCursor ? [...prev, ...allFetchedPosts] : allFetchedPosts);
-                setCursor(nextCursor);
-                setHasMore(!!nextCursor && allFetchedPosts.length > 0);
+                const visiblePosts = response.data.posts.filter(p => !hiddenPostUris.has(p.uri));
+
+                setResults(prev => currentCursor ? [...prev, ...visiblePosts] : visiblePosts);
+                setCursor(response.data.cursor);
+                setHasMore(!!response.data.cursor && response.data.posts.length > 0);
             }
         } catch (error) {
             console.error("Search failed:", error);
@@ -152,19 +116,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         }
     };
     
-    const handlePinToggle = (feed:AppBskyFeedDefs.GeneratorView) => {
-        const isPinned = pinnedUris.has(feed.uri);
-        if (isPinned) {
-            togglePin(feed.uri);
-        } else {
-            addFeed(feed, true);
-        }
-    }
-    
     useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
-            if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore && supportsInfiniteScroll) {
+            if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
               fetchResults(initialQuery, activeFilter, cursor);
             }
           },
@@ -175,27 +130,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [hasMore, isLoading, isLoadingMore, fetchResults, initialQuery, activeFilter, cursor, supportsInfiniteScroll]);
-
-    const postResults = useMemo(() => {
-        if (activeFilter === 'people' || activeFilter === 'feeds') {
-            return [];
-        }
-        return results as AppBskyFeedDefs.FeedViewPost[];
-    }, [activeFilter, results]);
-
-    const { leftColumn, rightColumn } = useMemo(() => {
-        const left: AppBskyFeedDefs.FeedViewPost[] = [];
-        const right: AppBskyFeedDefs.FeedViewPost[] = [];
-        postResults.forEach((item, index) => {
-            if (index % 2 === 0) {
-                left.push(item);
-            } else {
-                right.push(item);
-            }
-        });
-        return { leftColumn, rightColumn };
-    }, [postResults]);
+    }, [hasMore, isLoading, isLoadingMore, fetchResults, initialQuery, activeFilter, cursor]);
 
     const renderResults = () => {
       if (activeFilter === 'people') {
@@ -216,7 +151,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                     key={feed.uri} 
                     feed={feed}
                     isPinned={pinnedUris.has(feed.uri)}
-                    onTogglePin={() => handlePinToggle(feed)}
+                    onTogglePin={() => {
+                        const isPinned = pinnedUris.has(feed.uri);
+                        if (isPinned) togglePin(feed.uri);
+                        else addFeed(feed, true);
+                    }}
                 />
             ))}
           </div>
@@ -224,17 +163,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
       }
       
       return (
-        <div className="flex gap-4 items-start">
-            <div className="w-1/2 space-y-4">
-                {leftColumn.map(postView => (
-                    <PostCard key={postView.post.cid} feedViewPost={postView} />
-                ))}
-            </div>
-            <div className="w-1/2 space-y-4">
-                {rightColumn.map(postView => (
-                    <PostCard key={postView.post.cid} feedViewPost={postView} />
-                ))}
-            </div>
+        <div className="space-y-4">
+          {(results as AppBskyFeedDefs.PostView[]).map(post => (
+            <PostBubble key={post.cid} post={post} showAuthor />
+          ))}
         </div>
       );
     }
@@ -279,22 +211,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         </div>
 
                         {isLoading && (
-                            isListView ? (
-                                <div className="space-y-3">
-                                    {[...Array(5)].map((_, i) => (
-                                         <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex gap-4">
-                                    <div className="w-1/2 space-y-4">
-                                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
-                                    </div>
-                                    <div className="w-1/2 space-y-4">
-                                        {[...Array(3)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
-                                    </div>
-                                </div>
-                            )
+                            <div className="space-y-3">
+                                {[...Array(5)].map((_, i) => (
+                                     <div key={i} className="bg-surface-2 rounded-xl p-3 h-24 animate-pulse"></div>
+                                ))}
+                            </div>
                         )}
                         {!isLoading && results.length > 0 && renderResults()}
                         
@@ -307,17 +228,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         )}
                         
                         <div ref={loaderRef} className="h-10">
-                            {isLoadingMore && supportsInfiniteScroll && (
-                                isListView ? (
-                                   <div className="space-y-3 mt-4">
-                                       <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                                   </div>
-                                ) : (
-                                    <div className="flex gap-4 mt-4">
-                                        <div className="w-1/2 space-y-4"><PostCardSkeleton /></div>
-                                        <div className="w-1/2 space-y-4"><PostCardSkeleton /></div>
-                                    </div>
-                                )
+                            {isLoadingMore && (
+                               <div className="space-y-3 mt-4">
+                                   <div className="bg-surface-2 rounded-xl p-3 h-24 animate-pulse"></div>
+                               </div>
                             )}
                         </div>
                     </>

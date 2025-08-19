@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -9,12 +10,13 @@ import Navbar from './components/layout/Navbar';
 import BottomNavbar from './components/layout/BottomNavbar';
 import Composer from './components/composer/Composer';
 import LoginPrompt from './components/auth/LoginPrompt';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Edit3 } from 'lucide-react';
 import { useHeadManager } from './hooks/useHeadManager';
 
 // Lazy load screen components
 const LoginScreen = lazy(() => import('./components/auth/LoginScreen'));
 const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
+const ChannelsScreen = lazy(() => import('./components/channels/ChannelsScreen'));
 const ProfileScreen = lazy(() => import('./components/profile/ProfileScreen'));
 const PostScreen = lazy(() => import('./components/post/PostScreen'));
 const SearchScreen = lazy(() => import('./components/search/SearchScreen'));
@@ -62,7 +64,7 @@ const Main: React.FC = () => {
   const { session, isLoadingSession, chatSupported } = useAtp();
   const { 
     isLoginModalOpen, closeLoginModal, 
-    isComposerOpen, closeComposer, composerReplyTo, composerInitialText, 
+    isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText, 
     isCustomFeedHeaderVisible, 
     isFeedModalOpen, closeFeedModal,
     isEditProfileModalOpen, closeEditProfileModal,
@@ -111,6 +113,7 @@ const Main: React.FC = () => {
     return <div className="min-h-screen bg-surface-1" />;
   }
   
+  const isProfileScreen = route.startsWith('#/profile/');
   const isPostScreen = route.startsWith('#/post/');
   const isWatchScreen = route.startsWith('#/watch');
   const isConvoScreen = route.startsWith('#/messages/');
@@ -121,7 +124,7 @@ const Main: React.FC = () => {
   const isFeedsScreen = route.startsWith('#/feeds');
   
   const isSectionView = isSearchScreen || isNotificationsScreen || isMoreScreen || isSettingsScreen || isFeedsScreen;
-  const isBottomNavHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen;
+  const isBottomNavHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen || isProfileScreen;
   const isTopNavHidden = isBottomNavHidden || isSectionView;
 
 
@@ -160,6 +163,12 @@ const Main: React.FC = () => {
           return null;
         }
         return <NotificationsScreen />;
+      case 'channels':
+        if (!session) {
+          window.location.hash = '#/';
+          return null;
+        }
+        return <ChannelsScreen />;
       case 'feeds':
         return <FeedsScreen />;
       case 'settings':
@@ -223,14 +232,14 @@ const Main: React.FC = () => {
         }
         return <MessagesScreen />;
       default:
-        return <HomeScreen />;
+        return session ? <ChannelsScreen /> : <HomeScreen />;
     }
   };
   
   const mainContainerClasses = `w-full flex justify-center md:pl-20`;
 
-  const mainContentClasses = isWatchScreen || isConvoScreen
-    ? 'w-full h-screen bg-black'
+  const mainContentClasses = isWatchScreen || isConvoScreen || isProfileScreen
+    ? 'w-full h-screen'
     : isPostScreen
       ? 'w-full max-w-3xl transition-all duration-300 pb-8'
       : `w-full max-w-3xl px-4 ${isBottomNavHidden ? 'pt-4' : isSectionView ? 'pt-4' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
@@ -253,6 +262,16 @@ const Main: React.FC = () => {
       </div>
       
       {!session && !isPostScreen && !isWatchScreen && <LoginPrompt />}
+
+      {session && !isComposerOpen && !isBottomNavHidden && (
+        <button
+          onClick={() => openComposer()}
+          className="fixed bottom-24 right-4 md:bottom-6 md:right-6 bg-primary text-on-primary rounded-2xl w-14 h-14 flex items-center justify-center shadow-lg z-50 hover:bg-primary/90 transition-colors"
+          aria-label={t('nav.compose')}
+        >
+          <Edit3 size={24} />
+        </button>
+      )}
 
       {isComposerOpen && session && (
         <div 
