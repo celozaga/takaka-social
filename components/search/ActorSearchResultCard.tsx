@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Loader2 } from 'lucide-react';
 
 interface ActorSearchResultCardProps {
   actor: AppBskyActorDefs.ProfileView | AppBskyActorDefs.ProfileViewDetailed;
@@ -61,14 +61,18 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
       <button
         onClick={viewerState?.following ? handleUnfollow : handleFollow}
         disabled={isActionLoading}
-        className={`font-semibold text-sm py-1.5 px-4 rounded-full transition-colors duration-200 flex-shrink-0
+        className={`font-semibold text-sm py-1.5 px-4 rounded-full transition-colors duration-200 flex-shrink-0 flex items-center justify-center w-24
             ${viewerState?.following
               ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80'
               : 'bg-primary text-on-primary hover:bg-primary/90'
             }
             disabled:opacity-50`}
       >
-        {viewerState?.following ? 'Following' : 'Follow'}
+        {isActionLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <span>{viewerState?.following ? 'Following' : 'Follow'}</span>
+        )}
       </button>
     );
   };
