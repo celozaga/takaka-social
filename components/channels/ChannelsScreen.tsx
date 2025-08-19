@@ -1,70 +1,151 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyActorDefs } from '@atproto/api';
-import { Loader2, BadgeCheck } from 'lucide-react';
+import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
+import RichTextRenderer from '../shared/RichTextRenderer';
+import { format, isToday, isYesterday } from 'date-fns';
 
-const ChannelItem: React.FC<{ profile: AppBskyActorDefs.ProfileView }> = ({ profile }) => {
+type Channel = {
+  profile: AppBskyActorDefs.ProfileView;
+  latestPost: AppBskyFeedDefs.FeedViewPost | null;
+  isUnread: boolean;
+};
+
+const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) {
+        return format(date, 'p'); // e.g., 4:30 PM
+    }
+    if (isYesterday(date)) {
+        return 'Yesterday';
+    }
+    return format(date, 'MMM d'); // e.g., Jun 12
+};
+
+
+const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost | null): React.ReactNode => {
+    if (!latestPost) return <span className="text-on-surface-variant italic">No posts yet.</span>;
+    
+    if (AppBskyFeedDefs.isReasonRepost(latestPost.reason)) {
+        const originalAuthor = latestPost.post.author;
+        return (
+            <span className="text-on-surface-variant">
+                <span className="font-semibold text-on-surface">{latestPost.reason.by.displayName || `@${latestPost.reason.by.handle}`}</span> reposted
+            </span>
+        );
+    }
+    
+    const record = latestPost.post.record as any;
+
+    if (record.text) {
+        return <RichTextRenderer record={record} />;
+    }
+  
+    if (AppBskyEmbedImages.isView(latestPost.post.embed)) {
+        return <span className="text-on-surface-variant">[Photo]</span>;
+    }
+    if (AppBskyEmbedVideo.isView(latestPost.post.embed)) {
+        return <span className="text-on-surface-variant">[Video]</span>;
+    }
+  
+    return <span className="text-on-surface-variant">New post</span>;
+}
+
+const ChannelItem: React.FC<{ channel: Channel }> = ({ channel }) => {
+    const { profile, latestPost, isUnread } = channel;
+
     return (
         <li>
-            <a href={`#/profile/${profile.handle}`} className="flex items-center gap-4 p-3 hover:bg-surface-2 rounded-lg transition-colors">
-                <img src={profile.avatar} alt={profile.displayName} className="w-14 h-14 rounded-full bg-surface-3" />
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
+            <a href={`#/profile/${profile.handle}`} className="flex items-start gap-3 p-3 hover:bg-surface-2 transition-colors">
+                <img src={profile.avatar} alt={profile.displayName} className="w-14 h-14 rounded-full bg-surface-3 flex-shrink-0" />
+                <div className="flex-1 min-w-0 border-b border-surface-3 pb-3">
+                    <div className="flex justify-between items-center">
                         <h2 className="font-bold text-lg truncate">{profile.displayName || profile.handle}</h2>
-                        {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                            <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
+                        {latestPost && <p className="text-sm text-on-surface-variant flex-shrink-0 ml-2">{formatTimestamp(latestPost.post.indexedAt)}</p>}
+                    </div>
+                    <div className="flex justify-between items-start mt-0.5">
+                        <div className="text-on-surface-variant text-sm line-clamp-2 break-words pr-2">
+                           {getPreviewText(latestPost)}
+                        </div>
+                        {isUnread && (
+                            <div className="mt-1 w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
                         )}
                     </div>
-                    <p className="text-on-surface-variant truncate">@{profile.handle}</p>
                 </div>
             </a>
         </li>
     );
 };
 
-
 const ChannelsScreen: React.FC = () => {
     const { agent, session } = useAtp();
-    const [following, setFollowing] = useState<AppBskyActorDefs.ProfileView[]>([]);
+    const [channels, setChannels] = useState<Channel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!session) return;
         
-        const fetchFollowing = async () => {
+        const fetchChannels = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                // In a real app with many follows, this would need pagination.
-                // For this concept, we fetch up to 100.
-                const { data } = await agent.getFollows({ actor: session.did, limit: 100 });
-                setFollowing(data.follows);
+                const { data: followsData } = await agent.getFollows({ actor: session.did, limit: 100 });
+                const profiles = followsData.follows;
+
+                const latestPostsPromises = profiles.map(profile =>
+                    agent.getAuthorFeed({ actor: profile.did, limit: 1 })
+                        .then(res => res.data.feed[0] || null)
+                        .catch(() => null)
+                );
+                const latestPosts = await Promise.all(latestPostsPromises);
+
+                const combinedChannels: Channel[] = profiles.map((profile, index) => {
+                    const latestPost = latestPosts[index];
+                    let isUnread = false;
+                    if (latestPost) {
+                        const lastViewed = localStorage.getItem(`channel-last-viewed:${profile.did}`);
+                        if (!lastViewed || new Date(latestPost.post.indexedAt) > new Date(lastViewed)) {
+                            isUnread = true;
+                        }
+                    }
+                    return { profile, latestPost, isUnread };
+                });
+
+                combinedChannels.sort((a, b) => {
+                    if (!a.latestPost) return 1;
+                    if (!b.latestPost) return -1;
+                    return new Date(b.latestPost.post.indexedAt).getTime() - new Date(a.latestPost.post.indexedAt).getTime();
+                });
+                
+                setChannels(combinedChannels);
             } catch (e) {
-                console.error("Failed to fetch following list", e);
+                console.error("Failed to fetch channels", e);
                 setError("Could not load your channels.");
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchFollowing();
+        fetchChannels();
     }, [agent, session]);
 
     if (isLoading) {
         return (
-            <div className="space-y-2 mt-4">
-                {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 p-3 animate-pulse">
-                        <div className="w-14 h-14 rounded-full bg-surface-3"></div>
-                        <div className="flex-1 space-y-2">
-                            <div className="h-5 w-3/4 bg-surface-3 rounded"></div>
-                            <div className="h-4 w-1/2 bg-surface-3 rounded"></div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <div className="mt-2">
+                 {[...Array(8)].map((_, i) => (
+                     <div key={i} className="flex items-start gap-3 p-3 animate-pulse">
+                         <div className="w-14 h-14 rounded-full bg-surface-3 flex-shrink-0"></div>
+                         <div className="flex-1 min-w-0 border-b border-surface-3 pb-3">
+                             <div className="flex justify-between items-center">
+                                 <div className="h-5 w-1/2 bg-surface-3 rounded"></div>
+                                 <div className="h-4 w-1/6 bg-surface-3 rounded"></div>
+                             </div>
+                             <div className="mt-2 h-4 w-3/4 bg-surface-3 rounded"></div>
+                         </div>
+                     </div>
+                 ))}
+             </div>
         );
     }
 
@@ -72,9 +153,9 @@ const ChannelsScreen: React.FC = () => {
         return <div className="text-center text-error p-8 bg-surface-2 rounded-xl mt-4">{error}</div>;
     }
     
-    if (following.length === 0) {
+    if (channels.length === 0) {
         return (
-            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">
+            <div className="text-center text-on-surface-variant p-8 mt-4">
                 <h2 className="text-xl font-bold text-on-surface">Your inbox is empty</h2>
                 <p>Follow some channels to see them here.</p>
                 <a href="#/search" className="mt-4 inline-block bg-primary text-on-primary font-bold py-2 px-6 rounded-full">
@@ -87,8 +168,8 @@ const ChannelsScreen: React.FC = () => {
     return (
         <div>
             <ul>
-                {following.map(profile => (
-                    <ChannelItem key={profile.did} profile={profile} />
+                {channels.map(channel => (
+                    <ChannelItem key={channel.profile.did} channel={channel} />
                 ))}
             </ul>
         </div>

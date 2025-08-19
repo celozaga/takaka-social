@@ -6,7 +6,8 @@ import {
     AppBskyEmbedImages, 
     AppBskyEmbedVideo, 
     AppBskyEmbedRecord, 
-    AppBskyEmbedRecordWithMedia 
+    AppBskyEmbedRecordWithMedia,
+    AppBskyFeedPost
 } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useAtp } from '../../context/AtpContext';
@@ -21,20 +22,22 @@ interface PostBubbleProps {
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
     if (AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
-        const record = embed.record;
-        const author = record.author;
-        const postRecord = record.record as { text: string };
+        const postView = embed.record;
+        const author = postView.author;
 
-        return (
-            <a href={`#/post/${author.did}/${record.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
-                <div className="flex items-center gap-2 text-sm">
-                    <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
-                    <span className="font-semibold">{author.displayName}</span>
-                    <span className="text-on-surface-variant">@{author.handle}</span>
-                </div>
-                <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
-            </a>
-        );
+        if (AppBskyFeedPost.isRecord(postView.record)) {
+            const postRecord = postView.record;
+            return (
+                <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
+                    <div className="flex items-center gap-2 text-sm">
+                        <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
+                        <span className="font-semibold">{author.displayName}</span>
+                        <span className="text-on-surface-variant">@{author.handle}</span>
+                    </div>
+                    <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
+                </a>
+            );
+        }
     }
     
     if (AppBskyEmbedRecord.isViewNotFound(embed)) {

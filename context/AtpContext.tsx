@@ -8,13 +8,11 @@ interface AtpContextType {
   session: AtpSessionData | null;
   profile: AppBskyActorDefs.ProfileViewDetailed | null;
   isLoadingSession: boolean;
+  chatSupported: boolean | null;
   login: (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => Promise<any>;
   logout: () => Promise<void>;
   unreadCount: number;
-  chatUnreadCount: number;
   resetUnreadCount: () => void;
-  resetChatUnreadCount: () => void;
-  chatSupported: boolean | undefined;
 }
 
 const AtpContext = createContext<AtpContextType | undefined>(undefined);
@@ -24,8 +22,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [chatUnreadCount, setChatUnreadCount] = useState(0);
-  const [chatSupported, setChatSupported] = useState<boolean | undefined>(undefined);
+  const [chatSupported, setChatSupported] = useState<boolean | null>(null);
 
   const agent = useMemo(() => new BskyAgent({
     service: PDS_URL,
@@ -61,39 +58,18 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUnreadCount(0);
   }, []);
 
-  const fetchChatUnreadCount = useCallback(async () => {
-    if (!agent.hasSession) {
-      return;
-    }
-
-    try {
-        const { data } = await agent.chat.bsky.convo.listConvos();
-        const totalUnread = data.convos.reduce((acc, convo) => acc + convo.unreadCount, 0);
-        setChatUnreadCount(totalUnread);
-        setChatSupported(true);
-    } catch (error: any) {
-        if (error.name === 'XRPCNotSupported') {
-            console.warn("Chat feature not supported by this PDS.");
-            setChatSupported(false);
-            setChatUnreadCount(0);
-        } else {
-            console.error("Failed to fetch chat unread count:", error);
-        }
-    }
-  }, [agent]);
-
-  const resetChatUnreadCount = useCallback(() => {
-    setChatUnreadCount(0);
-  }, []);
 
   useEffect(() => {
     let pollInterval: number;
 
     const initialize = async () => {
       setIsLoadingSession(true);
-      const storedSessionString = localStorage.getItem('atp-session');
-      if (storedSessionString) {
-        try {
+      try {
+        const serverDesc = await agent.com.atproto.server.describeServer();
+        setChatSupported(serverDesc.data.chat?.available ?? false);
+
+        const storedSessionString = localStorage.getItem('atp-session');
+        if (storedSessionString) {
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
           setSession(parsedSession);
@@ -103,23 +79,17 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               setProfile(profileRes.data);
           }
 
-          // Run checks sequentially to ensure chat support is known before starting polls.
           await fetchUnreadCount();
-          await fetchChatUnreadCount();
-
+          
           pollInterval = window.setInterval(() => {
             fetchUnreadCount();
-            fetchChatUnreadCount();
           }, 30000);
-        } catch (error) {
-          console.error("Failed to resume session:", error);
-          localStorage.removeItem('atp-session');
-          setSession(null);
-          setProfile(null);
-          setChatSupported(false);
         }
-      } else {
-        setChatSupported(false);
+      } catch (error) {
+        console.error("Failed to initialize session:", error);
+        localStorage.removeItem('atp-session');
+        setSession(null);
+        setProfile(null);
       }
       setIsLoadingSession(false);
     };
@@ -131,7 +101,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             clearInterval(pollInterval);
         }
     };
-  }, [agent, fetchUnreadCount, fetchChatUnreadCount]);
+  }, [agent, fetchUnreadCount]);
 
   const login = async (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => {
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });
@@ -139,9 +109,9 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setSession(agent.session);
         const profileRes = await agent.getProfile({ actor: agent.session.did });
         setProfile(profileRes.data);
-        setChatSupported(undefined); // Reset on new login to re-check
+        const serverDesc = await agent.com.atproto.server.describeServer();
+        setChatSupported(serverDesc.data.chat?.available ?? false);
         await fetchUnreadCount();
-        await fetchChatUnreadCount();
     }
     return response;
   };
@@ -151,16 +121,13 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSession(null);
     setProfile(null);
     setUnreadCount(0);
-    setChatUnreadCount(0);
-    setChatSupported(false);
+    setChatSupported(null);
   };
 
   return (
     <AtpContext.Provider value={{ 
-        agent, session, profile, isLoadingSession, login, logout, 
+        agent, session, profile, isLoadingSession, login, logout, chatSupported,
         unreadCount, resetUnreadCount,
-        chatUnreadCount, resetChatUnreadCount,
-        chatSupported
     }}>
       {children}
     </AtpContext.Provider>

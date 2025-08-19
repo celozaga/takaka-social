@@ -174,7 +174,7 @@ const Main: React.FC = () => {
       
       {!session && !isFullScreen && <LoginPrompt />}
 
-      {session && !isComposerOpen && (
+      {session && (
         <button
           onClick={() => openComposer()}
           className="fixed bottom-24 right-4 md:bottom-6 md:right-6 bg-primary text-on-primary rounded-2xl w-14 h-14 flex items-center justify-center shadow-lg z-50 hover:bg-primary/90 transition-colors"

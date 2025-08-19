@@ -65,6 +65,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             try {
                 const profileRes = await agent.getProfile({ actor });
                 setProfile(profileRes.data);
+                
+                // Set last viewed timestamp for unread indicator
+                localStorage.setItem(`channel-last-viewed:${profileRes.data.did}`, new Date().toISOString());
 
                 if (profileRes.data.viewer?.blocking || profileRes.data.viewer?.blockedBy) {
                     setHasMore(false);
