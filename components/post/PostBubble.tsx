@@ -16,7 +16,7 @@ import PostActions from './PostActions';
 import { BadgeCheck, ExternalLink, PlayCircle, Repeat } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import ExternalLinkEmbed from './ExternalLinkEmbed';
-import ReplyParentPreview from './ReplyParentPreview';
+import PostContextIndicator from './PostContextIndicator';
 
 interface PostBubbleProps {
     post: AppBskyFeedDefs.PostView;
@@ -30,7 +30,7 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
         if (AppBskyFeedDefs.isPostView(embed.record)) {
             const postView = embed.record;
             const author = postView.author;
-            const postRecord = postView.record as AppBskyFeedPost.Record;
+            const postRecord = postView.record as unknown as AppBskyFeedPost.Record;
 
             return (
                 <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
@@ -62,8 +62,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
     if (!AppBskyFeedPost.isRecord(post.record)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = post.record as AppBskyFeedPost.Record;
-    const isReply = !!record.reply;
+    const record = post.record as unknown as AppBskyFeedPost.Record;
 
     const renderMedia = () => {
         if (!post.embed) return null;
@@ -163,6 +162,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
                     </span>
                 </div>
             )}
+            {!reason && <PostContextIndicator post={post} />}
             {showAuthor && (
                  <div className="flex items-center gap-2 mb-2">
                      <a href={`#/profile/${author.handle}`}>
@@ -179,7 +179,6 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
                     </div>
                  </div>
             )}
-            {isReply && <ReplyParentPreview parentUri={record.reply!.parent.uri} />}
             {record.text && (
                 <div className="text-on-surface whitespace-pre-wrap break-words">
                     <RichTextRenderer record={record} />

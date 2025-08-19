@@ -80,9 +80,10 @@ const ProfileFeed: React.FC<{ actor: string, isBlocked: boolean }> = ({ actor, i
             {feed.map((feedViewPost) => {
                 const isRepost = AppBskyFeedDefs.isReasonRepost(feedViewPost.reason);
                 const reason = isRepost ? feedViewPost.reason : undefined;
+                const repostAuthorDid = reason ? reason.by.did : '';
                 return (
                     <PostBubble 
-                        key={`${feedViewPost.post.cid}-${reason ? reason.by.did : ''}`} 
+                        key={`${feedViewPost.post.cid}-${repostAuthorDid}`} 
                         post={feedViewPost.post}
                         reason={reason}
                         showAuthor={isRepost}
