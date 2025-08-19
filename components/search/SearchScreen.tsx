@@ -93,7 +93,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         sort: searchFilter === 'latest' ? 'latest' : 'top',
                     });
                     
-                    const visiblePosts = response.data.posts.map(p => ({ post: p } as AppBskyFeedDefs.FeedViewPost)).filter(p => !hiddenPostUris.has(p.post.uri));
+                    const visiblePosts = response.data.posts
+                        .filter(p => !hiddenPostUris.has(p.uri))
+                        .map(p => ({ post: p } as AppBskyFeedDefs.FeedViewPost));
+
                     allFetchedPosts = [...allFetchedPosts, ...visiblePosts];
                     nextCursor = response.data.cursor;
 
