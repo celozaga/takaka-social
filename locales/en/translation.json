@@ -73,7 +73,9 @@
       "emptyPost": "Cannot create an empty post.",
       "replySuccess": "Reply sent!",
       "postSuccess": "Post published successfully!",
-      "postFailed": "Failed to publish post."
+      "postFailed": "Failed to publish post.",
+      "mediaRequired": "A post must include media.",
+      "postTooLong": "Post is too long."
     }
   },
   "feedModal": {
@@ -162,8 +164,10 @@
   },
   "repostModal": {
     "repost": "Repost",
+    "undoRepost": "Undo Repost",
     "share": "Share via...",
-    "repostSuccess": "Post reposted successfully!"
+    "repostSuccess": "Post reposted successfully!",
+    "undoSuccess": "Repost undone."
   },
   "postActions": {
     "share": "Share Post",

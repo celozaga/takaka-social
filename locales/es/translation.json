@@ -73,7 +73,9 @@
       "emptyPost": "No se puede crear una publicación vacía.",
       "replySuccess": "¡Respuesta enviada!",
       "postSuccess": "¡Publicación realizada con éxito!",
-      "postFailed": "Error al publicar."
+      "postFailed": "Error al publicar.",
+      "mediaRequired": "Una publicación debe incluir medios.",
+      "postTooLong": "La publicación es demasiado larga."
     }
   },
   "feedModal": {
@@ -162,8 +164,10 @@
   },
   "repostModal": {
     "repost": "Repostear",
+    "undoRepost": "Deshacer Repost",
     "share": "Compartir vía...",
-    "repostSuccess": "¡Publicación reposteada con éxito!"
+    "repostSuccess": "¡Publicación reposteada con éxito!",
+    "undoSuccess": "Repost deshecho."
   },
   "postActions": {
     "share": "Compartir Publicación",

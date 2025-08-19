@@ -5,19 +5,10 @@ import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { usePostActions } from '../hooks/usePostActions';
 import { MessageSquare, Heart, Repeat } from 'lucide-react';
+import { AppBskyFeedDefs } from '@atproto/api';
 
 interface PostScreenActionBarProps {
-    post: {
-        uri: string;
-        cid: string;
-        likeCount?: number;
-        repostCount?: number;
-        replyCount?: number;
-        viewer?: {
-            like?: string;
-            repost?: string;
-        };
-    };
+    post: AppBskyFeedDefs.PostView;
 }
 
 const formatCount = (count: number): string => {

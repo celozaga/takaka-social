@@ -188,8 +188,16 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   };
 
   const handlePost = async () => {
-    if ((!text.trim() && mediaFiles.length === 0) || (text.length > MAX_CHARS)) {
-        toast({ title: text.length > MAX_CHARS ? "Post is too long." : t('composer.toast.emptyPost'), variant: "destructive" });
+    if (mediaFiles.length === 0 && !replyTo) {
+        toast({ title: t('composer.toast.mediaRequired'), variant: "destructive" });
+        return;
+    }
+    if (text.length > MAX_CHARS) {
+        toast({ title: t('composer.toast.postTooLong'), variant: "destructive" });
+        return;
+    }
+    if (!text.trim() && mediaFiles.length === 0 && replyTo) {
+        toast({ title: t('composer.toast.emptyPost'), variant: "destructive" });
         return;
     }
     setIsPosting(true);
@@ -286,6 +294,10 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const filteredLangs = LANGUAGES.filter(lang => lang.name.toLowerCase().includes(langSearchTerm.toLowerCase()));
   const remainingChars = MAX_CHARS - text.length;
   const hasVideoOrGif = mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif');
+  const isPostButtonDisabled = isPosting ||
+    (replyTo ? (!text.trim() && mediaFiles.length === 0) : mediaFiles.length === 0) ||
+    text.length > MAX_CHARS;
+
 
   return (
     <div className="flex flex-col h-full w-full bg-surface-1">
@@ -295,7 +307,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
             </button>
             <button
                 onClick={handlePost}
-                disabled={isPosting || (!text.trim() && mediaFiles.length === 0) || text.length > MAX_CHARS}
+                disabled={isPostButtonDisabled}
                 className="bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-on-primary font-bold py-1.5 px-5 rounded-full transition duration-200 flex items-center gap-2 text-sm"
             >
                 {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
