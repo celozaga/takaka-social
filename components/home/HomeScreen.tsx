@@ -1,19 +1,19 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import Timeline from '../shared/Timeline';
 import { useHeadManager } from '../../hooks/useHeadManager';
-
-const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
+import TrendingTopics from '../search/TrendingTopics';
 
 const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
   useHeadManager({ title: t('nav.home') });
 
   return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Discover</h1>
-      <Timeline key="discover-timeline" feedUri={DISCOVER_FEED_URI} />
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold">Welcome to Takaka</h1>
+        <p className="text-on-surface-variant">A clean, channel-focused client for Bluesky.</p>
+      </div>
+      <TrendingTopics />
     </div>
   );
 };

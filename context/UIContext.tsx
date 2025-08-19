@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
 
@@ -114,10 +112,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setFeedModalUri(uri);
     setIsFeedModalOpen(true);
   }, []);
-
+  
   const closeFeedModal = useCallback(() => {
     setIsFeedModalOpen(false);
-    setTimeout(() => setFeedModalUri(undefined), 300);
+    setTimeout(() => setFeedModalUri(undefined), 300); // Delay clear for animation
   }, []);
 
   return (

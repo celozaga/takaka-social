@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -35,8 +33,6 @@ const UpdateEmailModal = lazy(() => import('./components/settings/UpdateEmailMod
 const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleModal'));
 const MediaActionsModal = lazy(() => import('./components/shared/MediaActionsModal'));
 const RepostModal = lazy(() => import('./components/shared/RepostModal'));
-const FeedsScreen = lazy(() => import('./components/feeds/FeedsScreen'));
-const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
 const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'));
 
 
@@ -68,7 +64,7 @@ const Main: React.FC = () => {
     isUpdateHandleModalOpen, closeUpdateHandleModal,
     isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
     isRepostModalOpen, closeRepostModal, repostModalPost,
-    isFeedModalOpen, closeFeedModal, feedModalUri
+    isFeedModalOpen, closeFeedModal, feedModalUri,
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
   const { i18n, t } = useTranslation();
@@ -122,9 +118,6 @@ const Main: React.FC = () => {
 
     switch (parts[0]) {
       case 'profile':
-        if (parts.length > 3 && parts[2] === 'feed') {
-            return <FeedViewScreen handle={parts[1]} rkey={parts[3]} key={`${parts[1]}-${parts[3]}`} />;
-        }
         if (parts[2] === 'followers') {
             return <FollowsScreen actor={parts[1]} type="followers" key={`${parts[1]}-followers`} />;
         }
@@ -151,8 +144,6 @@ const Main: React.FC = () => {
         if (parts[1] === 'mod-service' && parts[2]) return <ModerationServiceScreen serviceDid={parts[2]} />;
         if (parts[1] === 'muted-words') return <MutedWordsScreen />;
         return <SettingsScreen />;
-      case 'feeds':
-        return <FeedsScreen />;
       case '':
       case 'home':
       case 'profiles':
@@ -309,17 +300,17 @@ const Main: React.FC = () => {
           </div>
         </div>
       )}
-
+      
       {isFeedModalOpen && feedModalUri && (
-         <div 
+        <div 
           className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
           onClick={closeFeedModal}
         >
           <div 
-            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
+            className="relative w-full max-w-lg bg-transparent rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
             onClick={e => e.stopPropagation()}
           >
-            <Suspense fallback={<div className="w-full h-64 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="w-full h-96 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
               <FeedHeaderModal />
             </Suspense>
           </div>

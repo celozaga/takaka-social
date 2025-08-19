@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { TrendingUp } from 'lucide-react';

@@ -28,7 +28,7 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
             const author = postView.author;
 
             if (AppBskyFeedPost.isRecord(postView.record)) {
-                const postRecord = postView.record as AppBskyFeedPost.Record;
+                const postRecord = postView.record;
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
                         <div className="flex items-center gap-2 text-sm">
@@ -60,7 +60,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, showAuthor = false }) => 
     if (!AppBskyFeedPost.isRecord(post.record)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = post.record as AppBskyFeedPost.Record;
+    const record = post.record;
 
     const renderMedia = () => {
         if (!post.embed) return null;

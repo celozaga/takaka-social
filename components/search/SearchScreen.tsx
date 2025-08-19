@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
@@ -8,6 +7,7 @@ import { Search, UserCircle, TrendingUp, Clock } from 'lucide-react';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import SuggestedFollows from '../profile/SuggestedFollows';
 import ScreenHeader from '../layout/ScreenHeader';
+import TrendingTopics from './TrendingTopics';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView;
 type FilterType = 'top' | 'latest' | 'people';
@@ -158,6 +158,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
 
                 {showDiscoveryContent ? (
                      <div className="space-y-8">
+                        <TrendingTopics />
                         <SuggestedFollows />
                     </div>
                 ) : (
