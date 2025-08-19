@@ -1,10 +1,10 @@
 
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
-import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyFeedGetPosts } from '@atproto/api';
 import PostBubble from '../post/PostBubble';
-import { Search, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
+import { Search, UserCircle, TrendingUp, Clock, List } from 'lucide-react';
 import ActorSearchResultCard from './ActorSearchResultCard';
 import PopularFeeds from '../feeds/PopularFeeds';
 import SuggestedFollows from '../profile/SuggestedFollows';
@@ -13,7 +13,7 @@ import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
-type FilterType = 'top' | 'latest' | 'posts' | 'people' | 'feeds';
+type FilterType = 'top' | 'latest' | 'people' | 'feeds';
 
 interface SearchScreenProps {
   initialQuery?: string;
@@ -43,7 +43,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const activeFilter = (initialFilter as FilterType) || 'top';
     
     const showDiscoveryContent = !initialQuery.trim();
-    const isPostSearch = ['top', 'latest', 'posts'].includes(activeFilter);
+    const isPostSearch = ['top', 'latest'].includes(activeFilter);
 
     const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
@@ -162,9 +162,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         );
       }
       
+      const postResults = results as AppBskyFeedDefs.PostView[];
+      const feedViewPosts: AppBskyFeedDefs.FeedViewPost[] = postResults.map(post => ({ post }));
+
       return (
         <div className="space-y-4">
-          {(results as AppBskyFeedDefs.PostView[]).map(post => (
+          {feedViewPosts.map(({ post }) => (
             <PostBubble key={post.cid} post={post} showAuthor />
           ))}
         </div>

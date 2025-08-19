@@ -1,10 +1,9 @@
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, RichText } from '@atproto/api';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, Loader2 } from 'lucide-react';
-import RichTextRenderer from '../shared/RichTextRenderer';
+import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
+import { MoreHorizontal, UserPlus, UserCheck, BadgeCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 import PostBubble from '../post/PostBubble';
 
@@ -20,12 +19,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
-    const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
 
-    const loaderRef = useRef<HTMLDivElement>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
     const mainContentRef = useRef<HTMLDivElement>(null);
     
     const isMe = session?.did === profile?.did;
@@ -138,7 +133,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     : 'bg-primary text-on-primary hover:bg-primary/90'
                 } disabled:opacity-50`}
         >
-            {profile.viewer?.following ? 'Following' : 'Follow'}
+            {profile.viewer?.following ? <UserCheck size={18} /> : <UserPlus size={18} />}
+            <span>{profile.viewer?.following ? 'Following' : 'Follow'}</span>
         </button>
     );
 
@@ -149,17 +145,27 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
                         <ArrowLeft size={20} />
                     </button>
-                    <div className="flex-1 min-w-0">
-                        <h1 className="font-bold text-lg truncate">{profile.displayName || profile.handle}</h1>
-                        <p className="text-sm text-on-surface-variant">{profile.followersCount} followers</p>
+                    <a href={`#/profile/${profile.handle}`} className="flex-1 min-w-0 flex items-center gap-3">
+                        <img src={profile.avatar} alt={profile.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
+                        <div className="truncate">
+                           <h1 className="font-bold text-lg truncate flex items-center gap-1.5">
+                                <span>{profile.displayName || profile.handle}</span>
+                                {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                                    <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
+                                )}
+                            </h1>
+                            <p className="text-sm text-on-surface-variant">{profile.followersCount} followers</p>
+                        </div>
+                    </a>
+                    <div className="flex-shrink-0">
+                      {session && (isMe ? (
+                          <button onClick={openEditProfileModal} className="font-bold py-1 px-4 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 text-sm">
+                              Edit
+                          </button>
+                      ) : (
+                          <FollowButton />
+                      ))}
                     </div>
-                    {session && (isMe ? (
-                         <button onClick={openEditProfileModal} className="font-bold py-1 px-4 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 text-sm">
-                            Edit
-                        </button>
-                    ) : (
-                        <FollowButton />
-                    ))}
                 </div>
             </header>
             

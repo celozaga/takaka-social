@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -43,10 +44,10 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   }, []);
 
   const loggedInNavItems: NavItem[] = [
-    { href: '#/', labelKey: 'nav.home', icon: Users, activeCondition: currentHash === '#/' || currentHash === '' || currentHash.startsWith('#/channels') },
+    { href: '#/channels', labelKey: 'nav.home', icon: Users, activeCondition: currentHash === '#/' || currentHash === '' || currentHash.startsWith('#/channels') },
     { href: '#/search', labelKey: 'nav.search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
     { href: '#/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
-    { href: '#/more', labelKey: 'nav.more', icon: MessageSquareText, activeCondition: currentHash.startsWith('#/more') || currentHash.startsWith('#/messages') },
+    { href: '#/messages', labelKey: 'nav.messages', icon: MessageSquareText, activeCondition: currentHash.startsWith('#/messages') },
   ];
 
   const guestNavItems: NavItem[] = [
@@ -59,7 +60,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
 
   const renderNavItem = (item: NavItem) => {
     const isNotifications = item.labelKey === 'nav.notifications';
-    const isMessages = item.labelKey === 'nav.more'; // Group messages under 'more' visually
+    const isMessages = item.labelKey === 'nav.messages';
     const hasNotificationBadge = isNotifications && unreadCount > 0;
     const hasMessageBadge = isMessages && chatUnreadCount > 0;
     

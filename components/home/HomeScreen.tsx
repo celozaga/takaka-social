@@ -12,6 +12,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <div>
+      <h1 className="text-xl font-bold mb-4">Discover</h1>
       <Timeline key="discover-timeline" feedUri={DISCOVER_FEED_URI} />
     </div>
   );

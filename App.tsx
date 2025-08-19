@@ -10,7 +10,7 @@ import Navbar from './components/layout/Navbar';
 import BottomNavbar from './components/layout/BottomNavbar';
 import Composer from './components/composer/Composer';
 import LoginPrompt from './components/auth/LoginPrompt';
-import { Loader2, Edit3 } from 'lucide-react';
+import { Loader2, Pencil } from 'lucide-react';
 import { useHeadManager } from './hooks/useHeadManager';
 
 // Lazy load screen components
@@ -231,6 +231,9 @@ const Main: React.FC = () => {
             return <ConvoScreen peerDid={parts[1]} key={parts[1]} />;
         }
         return <MessagesScreen />;
+      case '':
+      case 'home':
+        return session ? <ChannelsScreen /> : <HomeScreen />;
       default:
         return session ? <ChannelsScreen /> : <HomeScreen />;
     }
@@ -263,13 +266,13 @@ const Main: React.FC = () => {
       
       {!session && !isPostScreen && !isWatchScreen && <LoginPrompt />}
 
-      {session && !isComposerOpen && !isBottomNavHidden && (
+      {session && !isComposerOpen && (
         <button
           onClick={() => openComposer()}
           className="fixed bottom-24 right-4 md:bottom-6 md:right-6 bg-primary text-on-primary rounded-2xl w-14 h-14 flex items-center justify-center shadow-lg z-50 hover:bg-primary/90 transition-colors"
           aria-label={t('nav.compose')}
         >
-          <Edit3 size={24} />
+          <Pencil size={24} />
         </button>
       )}
 
