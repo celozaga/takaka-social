@@ -1,10 +1,11 @@
 
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../ui/use-toast';
 import { usePostActions } from '../../hooks/usePostActions';
 import { AppBskyFeedDefs, AtUri } from '@atproto/api';
-import { Repeat, Share2, Loader2 } from 'lucide-react';
+import { Repeat, Share2, Loader2, X } from 'lucide-react';
 
 interface RepostModalProps {
   post: AppBskyFeedDefs.PostView;
@@ -26,7 +27,7 @@ const ActionListItem: React.FC<{
             <button 
                 onClick={onClick}
                 disabled={disabled}
-                className={`w-full flex items-center gap-4 p-4 text-left transition-colors ${hoverClass} disabled:opacity-50`}
+                className={`w-full flex items-center gap-4 px-4 py-3 text-left transition-colors rounded-lg ${hoverClass} disabled:opacity-50`}
             >
                 <Icon className={`w-6 h-6 ${isDestructive ? 'text-error' : 'text-on-surface-variant'}`} />
                 <span className={`font-semibold ${textClass}`}>{label}</span>
@@ -74,13 +75,18 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
     };
 
     return (
-        <div className="bg-surface-2 rounded-t-xl">
-            <div className="w-10 h-1.5 bg-outline mx-auto my-3 rounded-full" />
+        <div>
+            <header className="flex items-center justify-between p-4">
+                <h2 className="font-bold text-lg">{t('common.share')}</h2>
+                <button onClick={onClose} className="p-2 -mr-2 rounded-full hover:bg-surface-3">
+                    <X />
+                </button>
+            </header>
             
-            <div className="relative">
+            <div className="relative p-2">
                 {isReposting && <div className="absolute inset-0 bg-surface-2/50 flex items-center justify-center z-10"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
                 
-                <ul className="divide-y divide-surface-3">
+                <ul className="space-y-1">
                     <ActionListItem 
                         icon={Repeat} 
                         label={repostUri ? t('repostModal.undoRepost') : t('repostModal.repost')} 

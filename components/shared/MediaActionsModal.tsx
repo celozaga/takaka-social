@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -31,7 +32,7 @@ const ActionListItem: React.FC<{
             <button 
                 onClick={onClick}
                 disabled={disabled}
-                className={`w-full flex items-center gap-4 p-4 text-left transition-colors ${hoverClass} disabled:opacity-50`}
+                className={`w-full flex items-center gap-4 px-4 py-3 text-left transition-colors rounded-lg ${hoverClass} disabled:opacity-50`}
             >
                 <Icon className={`w-6 h-6 ${isDestructive ? 'text-error' : 'text-on-surface-variant'}`} />
                 <span className={`font-semibold ${textClass}`}>{label}</span>
@@ -125,7 +126,7 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
     };
     
     return (
-        <div className="bg-surface-2 rounded-t-xl">
+        <div>
             <header className="flex items-center justify-between p-4">
                 <h2 className="font-bold text-lg">{t('mediaActions.title')}</h2>
                 <button onClick={onClose} className="p-2 -mr-2 rounded-full hover:bg-surface-3">
@@ -133,10 +134,10 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
                 </button>
             </header>
 
-            <div className="relative max-h-[70vh] overflow-y-auto">
+            <div className="relative max-h-[70vh] overflow-y-auto p-2">
                 {isLoading && <div className="absolute inset-0 bg-surface-2/50 flex items-center justify-center z-10"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
                 
-                <ul className="divide-y divide-surface-3">
+                <ul className="space-y-1">
                     <ActionListItem icon={EyeOff} label={t('mediaActions.notInterested')} onClick={handleHide} />
                     {!isMe && (
                         <>

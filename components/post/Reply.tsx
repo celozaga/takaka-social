@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
@@ -114,8 +115,10 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
           </div>
         )}
       </div>
-      {!hasMore && isExpanded && hasSubReplies && !isRoot && (
-         <div className="text-center text-on-surface-variant text-xs py-4">{t('post.endOfThread')}</div>
+      {hasSubReplies && !isRoot && (
+        <button onClick={() => setIsExpanded(false)} className="text-sm font-semibold text-primary hover:underline mb-2 -mt-4">
+          Hide replies
+        </button>
       )}
     </>
   );
@@ -135,7 +138,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         <a href={`#/profile/${author.handle}`} className="block">
           <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
         </a>
-        {(hasSubReplies || isExpanded) && <div className="w-0.5 flex-1 grow my-2 bg-surface-3 rounded-full"></div>}
+        {(hasSubReplies && isExpanded) && <div className="w-0.5 flex-1 grow my-2 bg-surface-3 rounded-full"></div>}
       </div>
 
       <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
@@ -160,13 +163,13 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
           </div>
 
           {hasSubReplies && !isExpanded && (
-              <button onClick={() => setIsExpanded(true)} className="text-sm font-semibold text-primary hover:underline mt-2">
-                  {t('post.viewReplies', { count: allSubReplies.length })}
+              <button onClick={() => setIsExpanded(true)} className="text-sm font-semibold text-on-surface-variant hover:underline mt-2">
+                  View {allSubReplies.length} {allSubReplies.length === 1 ? 'reply' : 'replies'}
               </button>
           )}
           
           {isExpanded && hasSubReplies && (
-            <div className="mt-2 -ml-14">
+            <div className="mt-2 -ml-[52px]">
               <ReplyList />
             </div>
           )}
@@ -176,6 +179,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
             <button 
                 onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleLike(e); }}
                 disabled={isLiking}
+                className="p-1"
             >
                 <Heart size={20} className={`transition-colors ${likeUri ? 'text-pink-500' : 'text-on-surface-variant hover:text-pink-500'}`} fill={likeUri ? 'currentColor' : 'none'} />
             </button>

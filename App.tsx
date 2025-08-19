@@ -328,11 +328,11 @@ const Main: React.FC = () => {
 
       {isMediaActionsModalOpen && mediaActionsModalPost && (
          <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end justify-center animate-in fade-in-0 duration-300"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
           onClick={closeMediaActionsModal}
         >
           <div 
-            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom-full duration-300"
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
             onClick={e => e.stopPropagation()}
           >
             <Suspense fallback={<div className="w-full h-96 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
@@ -347,11 +347,11 @@ const Main: React.FC = () => {
 
       {isRepostModalOpen && repostModalPost && (
          <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end justify-center animate-in fade-in-0 duration-300"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
           onClick={closeRepostModal}
         >
           <div 
-            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom-full duration-300"
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
             onClick={e => e.stopPropagation()}
           >
             <Suspense fallback={<div className="w-full h-48 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
