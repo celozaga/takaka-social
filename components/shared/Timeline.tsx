@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -10,7 +11,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-nativ
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 
-interface TimelineProps {
+interface FeedProps {
   feedUri: string; // 'following', at:// URI, or actor handle/did
   mediaFilter?: MediaFilter;
   ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null;
@@ -30,7 +31,7 @@ const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
 }
 
 
-const Timeline: React.FC<TimelineProps> = ({ feedUri, mediaFilter = 'all', ListHeaderComponent }) => {
+const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderComponent }) => {
   const { agent, session } = useAtp();
   const { t } = useTranslation();
   const moderation = useModeration();
@@ -90,7 +91,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri, mediaFilter = 'all', ListH
         setCursor(response.data.cursor);
         setHasMore(!!response.data.cursor && response.data.feed.length > 0);
     } catch (err: any) {
-        setError(t('timeline.loadingError'));
+        setError(t('feed.loadingError'));
     } finally {
         setIsLoading(false);
     }
@@ -129,7 +130,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri, mediaFilter = 'all', ListH
 
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
   
-  const renderItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => (
+  const renderItem = ({ item }: { item:AppBskyFeedDefs.FeedViewPost }) => (
     <PostCard feedViewPost={item} />
   );
 
@@ -168,7 +169,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri, mediaFilter = 'all', ListH
         }}
         ListEmptyComponent={() => {
             if (error) return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
-            if (!isLoading && moderatedFeed.length === 0) return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('timeline.empty')}</Text></View>;
+            if (!isLoading && moderatedFeed.length === 0) return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>;
             return null;
         }}
     />
@@ -186,4 +187,4 @@ const styles = StyleSheet.create({
     endOfList: { textAlign: 'center', color: '#C3C6CF', padding: 32 },
 });
 
-export default Timeline;
+export default Feed;

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import Timeline from '../shared/Timeline';
+import Feed from '../shared/Timeline';
 import FeedViewHeader from './FeedViewHeader';
 import Head from '../shared/Head';
 import { useFeedActions } from '../../hooks/useFeedActions';
@@ -78,8 +78,8 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
                     feedUri={feedUri}
                     onBack={() => router.back()}
                 />
-                <View style={styles.timelineContainer}>
-                    <Timeline key={feedUri} feedUri={feedUri} />
+                <View style={styles.feedContainer}>
+                    <Feed key={feedUri} feedUri={feedUri} />
                 </View>
             </View>
         </>
@@ -96,9 +96,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#F2B8B5',
     },
-    timelineContainer: {
-        marginTop: 16,
-        paddingHorizontal: 16,
+    feedContainer: {
+        flex: 1,
     }
 });
 

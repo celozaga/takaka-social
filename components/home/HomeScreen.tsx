@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
-import Timeline from '../shared/Timeline';
+import Feed from '../shared/Timeline';
 import FeedSelector from '../feeds/FeedSelector';
 import Head from '../shared/Head';
 import { View, StyleSheet } from 'react-native';
@@ -85,8 +86,8 @@ const HomeScreen: React.FC = () => {
           onSelectFeed={setSelectedFeed}
           isLoading={isLoadingFeeds}
         />
-        <View style={styles.timelineContainer}>
-          <Timeline key={selectedFeed} feedUri={selectedFeed} />
+        <View style={styles.feedContainer}>
+          <Feed key={selectedFeed} feedUri={selectedFeed} />
         </View>
       </View>
     </>
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  timelineContainer: {
+  feedContainer: {
     flex: 1,
   }
 });

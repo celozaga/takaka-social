@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -6,7 +7,7 @@ import { useProfileCache } from '../../context/ProfileCacheContext';
 import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Link } from 'expo-router';
 import { AppBskyActorDefs, RichText, ComAtprotoLabelDefs } from '@atproto/api';
-import Timeline from '../shared/Timeline';
+import Feed from '../shared/Timeline';
 import { BadgeCheck, Grid, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
@@ -113,8 +114,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         <>
             <Head><title>{profile.displayName || profile.handle}</title></Head>
             <ProfileHeader handle={profile.handle} onMoreClick={() => setIsMenuOpen(true)} />
-            <Timeline 
-                // Using a key ensures the timeline re-fetches when the actor or filter changes
+            <Feed
+                // Using a key ensures the feed re-fetches when the actor or filter changes
                 key={`${actor}-${activeFilter}`}
                 feedUri={actor} 
                 mediaFilter={activeFilter}

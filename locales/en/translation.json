@@ -225,7 +225,7 @@
     "suggestedFollows": "Suggested Follows",
     "popularFeeds": "Popular Feeds"
   },
-  "timeline": {
+  "feed": {
     "loadingError": "Could not load this feed. Please try again later.",
     "empty": "No visual posts found in this feed."
   },

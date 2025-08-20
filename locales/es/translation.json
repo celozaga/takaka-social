@@ -225,7 +225,7 @@
     "suggestedFollows": "Sugerencias para seguir",
     "popularFeeds": "Feeds populares"
   },
-  "timeline": {
+  "feed": {
     "loadingError": "No se pudo cargar este feed. Por favor, inténtalo de nuevo más tarde.",
     "empty": "No se encontraron publicaciones visuales en este feed."
   },
