@@ -4,6 +4,8 @@
 
 
 
+
+
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -38,8 +40,8 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
         return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Content from a blocked user.</div>;
     }
 
-    if (AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
-        const postView = embed.record;
+    if (AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record as any)) {
+        const postView = embed.record as AppBskyFeedDefs.PostView;
         const author = postView.author;
         const postViewRecord = postView.record as unknown;
 

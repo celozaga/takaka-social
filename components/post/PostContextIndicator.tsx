@@ -4,6 +4,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedRecord, AppBskyFeedPost, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -46,12 +48,12 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
         // Then check for quote
         let quotedPost: AppBskyFeedDefs.PostView | undefined;
 
-        if (embed && AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
-            quotedPost = embed.record;
+        if (embed && AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record as any)) {
+            quotedPost = embed.record as AppBskyFeedDefs.PostView;
         } else if (embed && AppBskyEmbedRecordWithMedia.isView(embed)) {
             const embedRecordView = embed.record;
-            if (AppBskyEmbedRecord.isViewRecord(embedRecordView) && AppBskyFeedDefs.isPostView(embedRecordView.record)) {
-                quotedPost = embedRecordView.record;
+            if (AppBskyEmbedRecord.isViewRecord(embedRecordView) && AppBskyFeedDefs.isPostView(embedRecordView.record as any)) {
+                quotedPost = embedRecordView.record as AppBskyFeedDefs.PostView;
             }
         }
 
