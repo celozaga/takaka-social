@@ -5,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } from '@atproto/api';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 interface FollowsScreenProps {
     actor: string;

@@ -7,7 +7,7 @@ import {
     Settings, ChevronRight, BadgeCheck, List, Search, 
     Bell, Users, UserCheck, Clapperboard, MessageSquare
 } from 'lucide-react';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const AppGridItem: React.FC<{
     icon: React.ElementType,

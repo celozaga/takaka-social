@@ -10,7 +10,7 @@ import { useToast } from '../ui/use-toast';
 import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, Loader2, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 import { useModeration } from '../../context/ModerationContext';
 import ContentWarning from '../shared/ContentWarning';
 import SharedVideoPlayer from '../shared/VideoPlayer';
@@ -375,7 +375,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             ) : (
               <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4 mx-4 md:mx-0">
                   <MessageSquareDashed size={40} className="mx-auto mb-4 opacity-50" />
-                  <p className="font-semibold text-on-surface">{t('post.noReplies')}</p>
+                  <p className="font-semibold">{t('post.noReplies')}</p>
               </div>
             )}
           </div>

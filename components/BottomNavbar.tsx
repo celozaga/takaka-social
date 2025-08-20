@@ -20,7 +20,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   }, []);
 
   const loggedInNavItems = [
-    { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
+    { href: '#/home', label: 'Home', icon: Home, activeCondition: ['#/home', '#/', ''].includes(currentHash) },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
     { isAction: true, action: () => openComposer(), label: 'Compose', icon: Edit3, activeCondition: false },
     { href: '#/notifications', label: 'Notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
@@ -28,7 +28,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   ];
 
   const guestNavItems = [
-    { href: '#/', label: 'Home', icon: Home, activeCondition: currentHash === '#/' || currentHash === '' },
+    { href: '#/home', label: 'Home', icon: Home, activeCondition: ['#/home', '#/', ''].includes(currentHash) },
     { href: '#/search', label: 'Search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
     { isAction: true, action: openLoginModal, label: 'Sign In', icon: LogIn, activeCondition: false },
   ];

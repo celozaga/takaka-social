@@ -6,7 +6,7 @@ import { ChatBskyConvoDefs } from '@atproto/api';
 import { Loader2 } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
 import ConvoListItem from './ConvoListItem';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const MessagesScreen: React.FC = () => {
   const { agent, chatSupported } = useAtp();

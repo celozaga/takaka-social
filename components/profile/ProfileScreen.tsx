@@ -9,7 +9,7 @@ import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 import Label from '../shared/Label';
 
 type FeedFilter = 'all' | 'photos' | 'videos';

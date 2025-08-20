@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import ConvoHeader from './ConvoHeader';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const { agent, session, chatSupported } = useAtp();

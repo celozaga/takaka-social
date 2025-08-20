@@ -5,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import Timeline from '../shared/Timeline';
 import FeedViewHeader from './FeedViewHeader';
 import { ArrowLeft } from 'lucide-react';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 import { useFeedActions } from '../../hooks/useFeedActions';
 
 interface FeedViewScreenProps {

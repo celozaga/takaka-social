@@ -4,7 +4,7 @@ import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const LanguageSettingsScreen: React.FC = () => {
     const { setCustomFeedHeaderVisible } = useUI();

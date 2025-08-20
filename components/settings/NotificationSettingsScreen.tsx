@@ -5,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Quote, Bell, Loader2 } from 'lucide-react';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';

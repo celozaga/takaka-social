@@ -5,7 +5,7 @@ import { Bell, UserCircle, LogOut, Globe, Shield, ChevronRight } from 'lucide-re
 import ScreenHeader from '../layout/ScreenHeader';
 import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const SettingsScreen: React.FC = () => {
     const { t, i18n } = useTranslation();

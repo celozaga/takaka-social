@@ -4,7 +4,7 @@ import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
 import Timeline from '../shared/Timeline';
 import FeedSelector from '../feeds/FeedSelector';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 

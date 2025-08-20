@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Mousewheel, Virtual } from 'swiper/modules';
 import type { Swiper as SwiperCore } from 'swiper';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 

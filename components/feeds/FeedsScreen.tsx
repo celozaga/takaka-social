@@ -8,7 +8,7 @@ import PopularFeeds from './PopularFeeds';
 import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import FeedAvatar from './FeedAvatar';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 const EditableFeedItem: React.FC<{
     feed: AppBskyFeedDefs.GeneratorView;

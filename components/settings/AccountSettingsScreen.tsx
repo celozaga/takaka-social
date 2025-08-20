@@ -5,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ChevronRight, ShieldCheck, Loader2 } from 'lucide-react';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 interface SettingsListItemProps {
     icon: React.ElementType;

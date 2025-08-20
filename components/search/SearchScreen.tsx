@@ -11,7 +11,7 @@ import SuggestedFollows from '../profile/SuggestedFollows';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import TrendingTopics from './TrendingTopics';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 import { useDebounce } from '../../hooks/useDebounce';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;

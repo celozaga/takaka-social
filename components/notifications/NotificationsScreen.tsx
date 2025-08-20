@@ -5,7 +5,7 @@ import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Settings } from 'lucide-react';
-import { Head } from 'expo-router';
+import Head from '../shared/Head';
 
 type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows';
 
