@@ -34,7 +34,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   };
 
   return (
-    <div className="flex items-center gap-1 -ml-2">
+    <div className="flex items-center gap-1">
       <button 
         onClick={handleLike} 
         disabled={isLiking}

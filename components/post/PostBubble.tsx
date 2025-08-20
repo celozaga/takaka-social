@@ -1,4 +1,6 @@
 
+
+
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -25,11 +27,19 @@ interface PostBubbleProps {
 }
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
+    if (AppBskyEmbedRecord.isViewNotFound(embed)) {
+        return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Quoted post not found.</div>;
+    }
+
+    if (AppBskyEmbedRecord.isViewBlocked(embed)) {
+        return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Content from a blocked user.</div>;
+    }
+
     if (AppBskyEmbedRecord.isViewRecord(embed)) {
         if (AppBskyFeedDefs.isPostView(embed.record)) {
             const postView = embed.record;
             const author = postView.author;
-            const postViewRecord = postView.record;
+            const postViewRecord = postView.record as unknown;
 
             if (AppBskyFeedPost.isRecord(postViewRecord)) {
                 const postRecord = postViewRecord;
@@ -48,14 +58,6 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
         }
     }
     
-    if (AppBskyEmbedRecord.isViewNotFound(embed)) {
-        return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Quoted post not found.</div>;
-    }
-
-    if (AppBskyEmbedRecord.isViewBlocked(embed)) {
-        return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Content from a blocked user.</div>;
-    }
-
     return null; // It's a valid record but not a post (e.g., a feed generator)
 };
 
@@ -144,8 +146,9 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
             return <QuotedPost embed={post.embed} />;
         }
          if (AppBskyEmbedRecordWithMedia.isView(post.embed)) {
-            if (AppBskyEmbedRecord.isView(post.embed.record)) {
-                return <QuotedPost embed={post.embed.record} />;
+            const embedRecordView = post.embed.record.record;
+            if (AppBskyEmbedRecord.isView(embedRecordView)) {
+                return <QuotedPost embed={embedRecordView} />;
             }
         }
         return null;

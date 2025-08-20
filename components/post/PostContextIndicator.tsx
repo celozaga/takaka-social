@@ -50,9 +50,12 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
             }
         } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
             // It's a record with media.
-            const recordEmbed = embed.record;
-            if (AppBskyEmbedRecord.isViewRecord(recordEmbed) && AppBskyFeedDefs.isPostView(recordEmbed.record)) {
-                quotedPost = recordEmbed.record;
+            const recordWithMediaViewRecord = embed.record;
+            const embedRecordViewRecord = recordWithMediaViewRecord.record;
+            if (AppBskyEmbedRecord.isViewRecord(embedRecordViewRecord)) {
+                if (AppBskyFeedDefs.isPostView(embedRecordViewRecord.record)) {
+                    quotedPost = embedRecordViewRecord.record;
+                }
             }
         }
 
