@@ -1,27 +1,37 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo, AtUri } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+
+type MediaFilter = 'all' | 'photos' | 'videos';
 
 interface TimelineProps {
-  feedUri: string; // 'following' or a feed URI
+  feedUri: string; // 'following', at:// URI, or actor handle/did
+  mediaFilter?: MediaFilter;
+  ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null;
 }
 
 const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
     if (!embed) return false;
-
-    // Only show posts with direct media.
     return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
 };
 
-const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
-  const { agent } = useAtp();
+const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
+    return post.embed?.$type === 'app.bsky.embed.images#view' && (post.embed as AppBskyEmbedImages.View).images.length > 0;
+}
+const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
+    return post.embed?.$type === 'app.bsky.embed.video#view';
+}
+
+
+const Timeline: React.FC<TimelineProps> = ({ feedUri, mediaFilter = 'all', ListHeaderComponent }) => {
+  const { agent, session } = useAtp();
   const { t } = useTranslation();
   const moderation = useModeration();
   const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
@@ -32,194 +42,148 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const [hasMore, setHasMore] = useState(true);
   const columns = 2;
 
-
-  const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
-    // Filter out replies and posts without direct media.
-    return posts.filter(item => !item.reply && isPostAMediaPost(item.post));
-  };
-  
   const fetchPosts = useCallback(async (currentCursor?: string) => {
-    if (feedUri === 'following') {
-      if (!agent.hasSession) {
-        return Promise.resolve({
-            success: true,
-            data: { feed: [], cursor: undefined }
-        } as AppBskyFeedGetTimeline.Response);
-      }
-      return agent.getTimeline({ cursor: currentCursor, limit: 25 });
+    try {
+        if (feedUri === 'following') {
+            if (!session) return { data: { feed: [], cursor: undefined } };
+            return agent.getTimeline({ cursor: currentCursor, limit: 30 });
+        }
+        if (feedUri.startsWith('at://')) {
+            return agent.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+        }
+        // Assume it's an actor handle/did for getAuthorFeed
+        return agent.getAuthorFeed({ actor: feedUri, cursor: currentCursor, limit: 30 });
+    } catch (e: any) {
+        // If getAuthorFeed fails for a URI that looked like a handle, it might be a feed URI from a custom domain.
+        if (!feedUri.startsWith('at://') && feedUri.includes('/')) {
+            try {
+                return agent.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+            } catch (e2) {
+                console.error("Failed to fetch feed as both author and feed URI:", e2);
+                throw e2; // throw original error
+            }
+        }
+        throw e;
     }
-    return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 25 });
-  }, [agent, feedUri]);
+  }, [agent, feedUri, session]);
 
+  const applyMediaFilter = useCallback((posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
+    const baseFiltered = posts.filter(item => !item.reply && isPostAMediaPost(item.post));
+     switch (mediaFilter) {
+        case 'all': return baseFiltered;
+        case 'photos': return baseFiltered.filter(item => hasPhotos(item.post));
+        case 'videos': return baseFiltered.filter(item => hasVideos(item.post));
+        default: return baseFiltered;
+    }
+  }, [mediaFilter]);
+
+  const loadInitialPosts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setFeed([]);
+    setCursor(undefined);
+    setHasMore(true);
+    try {
+        const response = await fetchPosts();
+        const mediaPosts = applyMediaFilter(response.data.feed);
+        setFeed(mediaPosts);
+        setCursor(response.data.cursor);
+        setHasMore(!!response.data.cursor && response.data.feed.length > 0);
+    } catch (err: any) {
+        setError(t('timeline.loadingError'));
+    } finally {
+        setIsLoading(false);
+    }
+  }, [fetchPosts, applyMediaFilter, t]);
+
+  useEffect(() => {
+    loadInitialPosts();
+  }, [loadInitialPosts]);
 
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || !cursor || !hasMore) return;
-
     setIsLoadingMore(true);
     try {
       const response = await fetchPosts(cursor);
-
       if (response.data.feed.length > 0) {
-        const newMediaPosts = filterMediaPosts(response.data.feed);
+        const newMediaPosts = applyMediaFilter(response.data.feed);
         setFeed(prevFeed => {
             const existingCids = new Set(prevFeed.map(p => p.post.cid));
             const uniqueNewPosts = newMediaPosts.filter(p => !existingCids.has(p.post.cid));
             return [...prevFeed, ...uniqueNewPosts];
         });
-
-        if (response.data.cursor) {
-          setCursor(response.data.cursor);
-        } else {
-          setHasMore(false);
-        }
+        setCursor(response.data.cursor);
+        setHasMore(!!response.data.cursor);
       } else {
         setHasMore(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch more posts:', err);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [cursor, hasMore, isLoadingMore, fetchPosts]);
-
-  // Effect for initial data load
-  useEffect(() => {
-    const fetchInitialTimeline = async () => {
-      setIsLoading(true);
-      setError(null);
-      setFeed([]);
-      setCursor(undefined);
-      setHasMore(true);
-
-      try {
-        const response = await fetchPosts();
-        const mediaPosts = filterMediaPosts(response.data.feed);
-        setFeed(mediaPosts);
-        
-        if (response.data.cursor && response.data.feed.length > 0) {
-          setCursor(response.data.cursor);
-        } else {
-          setHasMore(false);
-        }
-      } catch (err: any) {
-        console.error('Failed to fetch timeline:', err);
-        setError(t('timeline.loadingError'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchInitialTimeline();
-  }, [fetchPosts, t]);
+  }, [cursor, hasMore, isLoadingMore, fetchPosts, applyMediaFilter]);
   
   const moderatedFeed = useMemo(() => {
-    if (!moderation.isReady) {
-        return [];
-    }
-    return feed.filter(item => {
-        const decision = moderatePost(item.post, moderation);
-        return decision.visibility !== 'hide';
-    });
+    if (!moderation.isReady) return [];
+    return feed.filter(item => moderatePost(item.post, moderation).visibility !== 'hide');
   }, [feed, moderation]);
 
-  const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
+  const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${item.reason?.$type === 'app.bsky.feed.defs#reasonRepost' ? item.reason.by.did : ''}`;
   
   const renderItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => (
-    <View style={{ flex: 1 }}>
-      <PostCard feedViewPost={item} />
-    </View>
+    <PostCard feedViewPost={item} />
   );
 
   if (isLoading) {
     return (
         <View style={styles.grid}>
-            {[...Array(columns)].map((_, colIndex) => (
-              <View key={colIndex} style={styles.gridItem}>
-                {[...Array(4)].map((_, i) => <PostCardSkeleton key={i} />)}
-              </View>
-            ))}
+            {ListHeaderComponent}
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+                <View style={styles.gridColumn}>
+                    {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+                </View>
+                <View style={styles.gridColumn}>
+                    {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
+                </View>
+            </View>
         </View>
     );
-  }
-
-  if (error) {
-    return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
   }
 
   return (
     <FlatList
         data={moderatedFeed}
-        key={columns} // Change key on column change to re-render
+        key={columns}
         numColumns={columns}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         onEndReached={loadMorePosts}
-        onEndReachedThreshold={0.5}
+        onEndReachedThreshold={0.8}
+        ListHeaderComponent={ListHeaderComponent}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.contentContainer}
-        ListFooterComponent={() => (
-            <>
-            {isLoadingMore && (
-                <View style={styles.grid}>
-                    {[...Array(columns)].map((_, i) => <View key={i} style={styles.gridItem}><PostCardSkeleton /></View>)}
-                </View>
-            )}
-            {!hasMore && moderatedFeed.length > 0 && (
-                <View style={styles.endMessageContainer}>
-                    <Text style={styles.infoText}>{t('common.endOfList')}</Text>
-                </View>
-            )}
-            </>
-        )}
-        ListEmptyComponent={
-            !isLoading && !hasMore ? (
-                <View style={styles.messageContainer}>
-                    <Text style={styles.infoText}>{t('timeline.empty')}</Text>
-                </View>
-            ) : null
-        }
+        ListFooterComponent={() => {
+            if (isLoadingMore) return <ActivityIndicator size="large" style={{ marginVertical: 20 }} />;
+            if (!hasMore && moderatedFeed.length > 0) return <Text style={styles.endOfList}>{t('common.endOfList')}</Text>;
+            return null;
+        }}
+        ListEmptyComponent={() => {
+            if (error) return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
+            if (!isLoading && moderatedFeed.length === 0) return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('timeline.empty')}</Text></View>;
+            return null;
+        }}
     />
   );
 };
 
 const styles = StyleSheet.create({
-    grid: {
-        flexDirection: 'row',
-        gap: 16,
-        paddingTop: 16,
-        paddingHorizontal: 16,
-    },
-    gridItem: {
-        flex: 1,
-        gap: 16,
-    },
-    columnWrapper: {
-      gap: 16,
-    },
-    contentContainer: {
-      paddingTop: 16,
-      paddingHorizontal: 16,
-    },
-    messageContainer: {
-        padding: 32,
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 16,
-    },
-    errorText: {
-        color: '#F2B8B5',
-        textAlign: 'center',
-    },
-    infoText: {
-        color: '#C3C6CF',
-        textAlign: 'center',
-    },
-    endMessageContainer: {
-        paddingVertical: 32,
-        alignItems: 'center',
-    }
+    grid: { paddingHorizontal: 16 },
+    gridColumn: { flex: 1, gap: 16 },
+    columnWrapper: { gap: 16 },
+    contentContainer: { paddingHorizontal: 16, paddingTop: 16 },
+    messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16, marginHorizontal: 16, },
+    errorText: { color: '#F2B8B5', textAlign: 'center' },
+    infoText: { color: '#C3C6CF', textAlign: 'center' },
+    endOfList: { textAlign: 'center', color: '#C3C6CF', padding: 32 },
 });
 
 export default Timeline;

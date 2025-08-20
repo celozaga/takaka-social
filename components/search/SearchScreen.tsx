@@ -1,6 +1,5 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
@@ -15,7 +14,7 @@ import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import TrendingTopics from './TrendingTopics';
 import Head from '../shared/Head';
 import { useDebounce } from '../../hooks/useDebounce';
-import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, Pressable, Platform } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, Pressable, Platform, FlatList } from 'react-native';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -54,7 +53,6 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [hasMore, setHasMore] = useState(true);
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
-    const scrollViewRef = useRef<ScrollView>(null);
     const [activeFilter, setActiveFilter] = useState<FilterType>((initialFilter as FilterType) || 'top');
 
     const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
@@ -67,7 +65,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     ];
     
     const showDiscoveryContent = !debouncedQuery.trim() && !initialQuery.trim();
-    const isListView = activeFilter === 'people' || activeFilter === 'feeds';
+    const isPostGrid = ['top', 'latest', 'images', 'videos'].includes(activeFilter);
 
     const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
@@ -128,7 +126,6 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         const effectiveQuery = debouncedQuery || initialQuery;
         if (effectiveQuery.trim()) {
             fetchResults(effectiveQuery, activeFilter);
-            scrollViewRef.current?.scrollTo({ y: 0, animated: false });
         } else {
             setResults([]);
             setIsLoading(false);
@@ -140,49 +137,50 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         if (isPinned) togglePin(feed.uri);
         else addFeed(feed, true);
     }, [pinnedUris, togglePin, addFeed]);
-    
-    const handleScroll = ({ nativeEvent }: any) => {
-        if (isLoadingMore || !hasMore) return;
-        const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-        const isEnd = layoutMeasurement.height + contentOffset.y >= contentSize.height - 400;
-        if (isEnd) {
-            fetchResults(debouncedQuery || initialQuery, activeFilter, cursor);
-        }
+
+    const handleLoadMore = () => {
+        fetchResults(debouncedQuery || initialQuery, activeFilter, cursor);
     };
 
     const renderResults = () => {
-      if (isListView) {
-        return (
-          <View style={{ gap: 12 }}>
+      if (isPostGrid) {
+          return (
+              <FlatList
+                  data={results as AppBskyFeedDefs.PostView[]}
+                  numColumns={2}
+                  renderItem={({ item }) => <PostCard feedViewPost={{ post: item }} />}
+                  keyExtractor={item => item.cid}
+                  columnWrapperStyle={styles.columnWrapper}
+                  contentContainerStyle={styles.contentContainer}
+                  onEndReached={handleLoadMore}
+                  onEndReachedThreshold={0.5}
+                  ListFooterComponent={() => {
+                      if (isLoadingMore) return <ActivityIndicator size="large" style={{ marginVertical: 32 }} />;
+                      if (!isLoading && !hasMore && results.length > 0) return <Text style={styles.endText}>{t('common.endOfList')}</Text>;
+                      return null;
+                  }}
+              />
+          );
+      }
+      return (
+        <ScrollView onScroll={({ nativeEvent }) => { if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) handleLoadMore(); }} scrollEventThrottle={16}>
+          <View style={[styles.contentContainer, { gap: 12 }]}>
             {results.map(item => {
                 if (activeFilter === 'people') return <ActorSearchResultCard key={(item as any).did} actor={item as any} />;
                 if (activeFilter === 'feeds') return <FeedSearchResultCard key={(item as any).uri} feed={item as any} isPinned={pinnedUris.has((item as any).uri)} onTogglePin={() => handlePinToggle(item as any)} />;
                 return null;
             })}
+             {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 32 }} />}
+             {!isLoading && !hasMore && results.length > 0 && <Text style={styles.endText}>{t('common.endOfList')}</Text>}
           </View>
-        );
-      }
-      
-      const postResults = results as AppBskyFeedDefs.PostView[];
-      const columns = 2;
-      const columnData: AppBskyFeedDefs.PostView[][] = Array.from({ length: columns }, () => []);
-      postResults.forEach((item, index) => columnData[index % columns].push(item));
-
-      return (
-        <View style={{ flexDirection: 'row', gap: 16 }}>
-          {columnData.map((column, colIndex) => (
-            <View key={colIndex} style={{ flex: 1, gap: 16 }}>
-              {column.map(post => <PostCard key={post.cid} feedViewPost={{ post }} />)}
-            </View>
-          ))}
-        </View>
+        </ScrollView>
       );
     }
     
     return (
         <>
             <Head><title>{t('search.title')}</title></Head>
-            <ScrollView style={styles.container} ref={scrollViewRef} onScroll={handleScroll} scrollEventThrottle={16}>
+            <View style={styles.container}>
                 <View style={styles.stickyHeader}>
                     <View style={styles.inputContainer}>
                         <SearchIcon style={styles.searchIcon} color="#C3C6CF" size={20} />
@@ -196,68 +194,62 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                     </View>
                 </View>
 
-                <View style={styles.content}>
-                    {showDiscoveryContent ? (
-                         <View style={styles.discoveryContainer}>
-                            <TrendingTopics />
-                            <SuggestedFollows />
-                            <PopularFeeds />
-                        </View>
-                    ) : (
-                        <>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
-                                {filters.map(filter => (
-                                    <Pressable key={filter.id} onPress={() => setActiveFilter(filter.id)} style={[styles.filterButton, activeFilter === filter.id && styles.activeFilterButton]}>
-                                        <filter.icon size={16} color={activeFilter === filter.id ? '#001D35' : '#E2E2E6'} />
-                                        <Text style={[styles.filterText, activeFilter === filter.id && styles.activeFilterText]}>{filter.label}</Text>
-                                    </Pressable>
-                                ))}
-                            </ScrollView>
-
-                            {isLoading && (
-                                isListView ? (
-                                    <View style={{ gap: 12 }}>
-                                        {[...Array(5)].map((_, i) => <View key={i} style={styles.skeletonItemListView} />)}
-                                    </View>
-                                ) : (
-                                    <View style={{ flexDirection: 'row', gap: 16 }}>
-                                        <View style={{ flex: 1, gap: 16 }}>{[...Array(3)].map((_, i) => <PostCardSkeleton key={i} />)}</View>
-                                        <View style={{ flex: 1, gap: 16 }}>{[...Array(3)].map((_, i) => <PostCardSkeleton key={i} />)}</View>
-                                    </View>
-                                )
-                            )}
-                            {!isLoading && results.length > 0 && renderResults()}
-                            
-                            {!isLoading && results.length === 0 && (
-                                <View style={styles.emptyContainer}><Text style={styles.emptyText}>{t('search.empty', { query: debouncedQuery || initialQuery })}</Text></View>
-                            )}
-                            
-                            {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 32 }} />}
-                            {!isLoading && !hasMore && results.length > 0 && <View style={{ paddingVertical: 32 }}><Text style={styles.emptyText}>{t('common.endOfList')}</Text></View>}
-                        </>
-                    )}
-                </View>
-            </ScrollView>
+                {showDiscoveryContent ? (
+                    <ScrollView contentContainerStyle={styles.discoveryContainer}>
+                        <TrendingTopics />
+                        <SuggestedFollows />
+                        <PopularFeeds />
+                    </ScrollView>
+                ) : (
+                    <View style={{ flex: 1 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
+                            {filters.map(filter => (
+                                <Pressable key={filter.id} onPress={() => setActiveFilter(filter.id)} style={[styles.filterButton, activeFilter === filter.id && styles.activeFilterButton]}>
+                                    <filter.icon size={16} color={activeFilter === filter.id ? '#001D35' : '#E2E2E6'} />
+                                    <Text style={[styles.filterText, activeFilter === filter.id && styles.activeFilterText]}>{filter.label}</Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                        
+                        {isLoading && (
+                            isPostGrid ? (
+                                <View style={{ flexDirection: 'row', gap: 16, paddingHorizontal: 16 }}>
+                                    <View style={{ flex: 1, gap: 16 }}><PostCardSkeleton /><PostCardSkeleton /></View>
+                                    <View style={{ flex: 1, gap: 16 }}><PostCardSkeleton /><PostCardSkeleton /></View>
+                                </View>
+                            ) : (
+                                <View style={{ gap: 12, paddingHorizontal: 16 }}>
+                                    {[...Array(5)].map((_, i) => <View key={i} style={styles.skeletonItemListView} />)}
+                                </View>
+                            )
+                        )}
+                        {!isLoading && results.length > 0 && renderResults()}
+                        {!isLoading && results.length === 0 && <View style={styles.emptyContainer}><Text style={styles.emptyText}>{t('search.empty', { query: debouncedQuery || initialQuery })}</Text></View>}
+                    </View>
+                )}
+            </View>
         </>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    stickyHeader: { paddingTop: 16, paddingBottom: 12, backgroundColor: '#111314' },
+    stickyHeader: { padding: 16, backgroundColor: '#111314' },
     inputContainer: { position: 'relative', justifyContent: 'center' },
     searchIcon: { position: 'absolute', left: 16, zIndex: 1 },
     input: { width: '100%', paddingLeft: 48, paddingRight: 16, paddingVertical: 12, backgroundColor: '#1E2021', borderRadius: 8, color: '#E2E2E6', fontSize: 16 },
-    content: { paddingBottom: 16 },
-    discoveryContainer: { paddingTop: 4, gap: 32 },
-    filterContainer: { paddingHorizontal: 0, gap: 8, paddingBottom: 16, marginBottom: 16 },
+    discoveryContainer: { padding: 16, gap: 32 },
+    filterContainer: { paddingHorizontal: 16, gap: 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#2b2d2e' },
     filterButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: '#2b2d2e' },
     activeFilterButton: { backgroundColor: '#D1E4FF' },
     filterText: { fontSize: 14, fontWeight: '600', color: '#E2E2E6' },
     activeFilterText: { color: '#001D35' },
+    columnWrapper: { gap: 16 },
+    contentContainer: { paddingTop: 16, paddingHorizontal: 16 },
     skeletonItemListView: { backgroundColor: '#1E2021', borderRadius: 12, height: 88, opacity: 0.5 },
-    emptyContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12 },
+    emptyContainer: { padding: 32, marginHorizontal: 16, backgroundColor: '#1E2021', borderRadius: 12 },
     emptyText: { color: '#C3C6CF', textAlign: 'center' },
+    endText: { textAlign: 'center', color: '#C3C6CF', padding: 32 },
 });
 
 
