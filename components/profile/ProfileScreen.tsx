@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -11,7 +12,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { openEditProfileModal } = useUI();
-    const { markChannelReadUpTo } = useChannelState();
+    const { getLastViewedAt, markChannelReadUpTo } = useChannelState();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +26,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [hasMore, setHasMore] = useState(true);
     const [initialFeedLoad, setInitialFeedLoad] = useState(true);
     const loaderRef = useRef<HTMLDivElement>(null);
+    const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const [hasScrolledToLastRead, setHasScrolledToLastRead] = useState(false);
 
     const isMe = session?.did === profile?.did;
     const isBlocked = !!(profile?.viewer?.blocking || profile?.viewer?.blockedBy);
@@ -110,6 +113,54 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         if (currentLoader) observer.observe(currentLoader);
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
     }, [hasMore, initialFeedLoad, isLoadingMore, cursor, fetchFeed]);
+
+    // Effect to scroll to last read post
+    useEffect(() => {
+        if (feed.length > 0 && !initialFeedLoad && !hasScrolledToLastRead) {
+            const lastViewedISO = getLastViewedAt(actor);
+
+            if (lastViewedISO) {
+                const lastViewedDate = new Date(lastViewedISO);
+                let targetPost: AppBskyFeedDefs.FeedViewPost | undefined;
+
+                // Find the first post that is older than or equal to our last viewed timestamp.
+                // This is the last post the user has seen.
+                for (const item of feed) {
+                    const postDate = new Date(
+                        (item.post as any)?.indexedAt ||
+                        (item.post?.record as any)?.createdAt
+                    );
+                    if (postDate <= lastViewedDate) {
+                        targetPost = item;
+                        break;
+                    }
+                }
+
+                if (targetPost) {
+                    const targetCid = targetPost.post.cid;
+                    const targetElement = postRefs.current.get(targetCid);
+                    if (targetElement) {
+                        // Delay scroll to allow DOM to settle
+                        setTimeout(() => {
+                            targetElement.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center'
+                            });
+                            // Highlight the post temporarily
+                            targetElement.style.transition = 'background-color 0.5s ease-in-out';
+                            targetElement.style.backgroundColor = 'var(--primary-container)';
+                            setTimeout(() => {
+                                if (targetElement) {
+                                    targetElement.style.backgroundColor = '';
+                                }
+                            }, 2000);
+                        }, 100);
+                    }
+                }
+            }
+            setHasScrolledToLastRead(true);
+        }
+    }, [feed, initialFeedLoad, hasScrolledToLastRead, actor, getLastViewedAt]);
 
 
     const handleFollow = async () => {
@@ -197,6 +248,13 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                             reason={isRepost ? reason : undefined}
                             showAuthor={isRepost}
                             profileOwnerActor={actor}
+                            ref={(el: HTMLDivElement | null) => {
+                                if (el) {
+                                    postRefs.current.set(feedViewPost.post.cid, el);
+                                } else {
+                                    postRefs.current.delete(feedViewPost.post.cid);
+                                }
+                            }}
                         />
                     );
                 })}

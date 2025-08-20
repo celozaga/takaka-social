@@ -57,7 +57,7 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
     return null; // It's a valid record but not a post (e.g., a feed generator)
 };
 
-const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = false, profileOwnerActor }) => {
+const PostBubble = React.forwardRef<HTMLDivElement, PostBubbleProps>(({ post, reason, showAuthor = false, profileOwnerActor }, ref) => {
     const { record: unknownRecord } = post;
     if (!AppBskyFeedPost.isRecord(unknownRecord)) {
         return null; // This is not a standard post, maybe a list or something else.
@@ -159,7 +159,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
         .replace(' day', 'd');
 
     return (
-        <div className="bg-surface-2 p-3 rounded-2xl rounded-bl-md shadow-sm">
+        <div ref={ref} className="bg-surface-2 p-3 rounded-2xl rounded-bl-md shadow-sm">
             {reason && (
                 <div className="flex items-center gap-2 text-sm text-on-surface-variant mb-2">
                     <Repeat size={14} />
@@ -204,6 +204,6 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
             </div>
         </div>
     );
-};
+});
 
-export default PostBubble;
+export default React.memo(PostBubble);

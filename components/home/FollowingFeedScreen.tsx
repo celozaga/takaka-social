@@ -12,7 +12,7 @@ import { useChannelState } from '../../context/ChannelStateContext';
 type ProfileFeed = {
   profile: AppBskyActorDefs.ProfileView;
   latestPost?: AppBskyFeedDefs.FeedViewPost;
-  unreadCount: number;
+  hasUnread: boolean;
   lastActivity: string; // ISO string for sorting
 };
 
@@ -49,9 +49,8 @@ const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost): React.ReactNo
 
 
 const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string }> = React.memo(({ profileFeed, currentHash }) => {
-    const { profile, latestPost, unreadCount } = profileFeed;
+    const { profile, latestPost, hasUnread } = profileFeed;
     const isActive = `#/profile/${profile.handle}` === currentHash || `#/profile/${profile.did}` === currentHash;
-    const hasUnread = unreadCount > 0;
 
     const previewNode = latestPost
         ? getPreviewText(latestPost)
@@ -71,9 +70,7 @@ const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string 
                            {previewNode}
                         </div>
                         {hasUnread && (
-                            <div className="mt-1 bg-primary text-on-primary text-xs font-bold rounded-full h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center flex-shrink-0">
-                                <span>{unreadCount > 99 ? '99+' : unreadCount}</span>
-                            </div>
+                            <div className="mt-2 bg-primary rounded-full h-2.5 w-2.5 flex-shrink-0" title="Unread posts"></div>
                         )}
                     </div>
                 </div>
@@ -131,7 +128,7 @@ const FollowingFeedScreen: React.FC = () => {
 
                 const initialFeedData: ProfileFeed[] = followedProfiles.map(p => ({
                     profile: p,
-                    unreadCount: 0,
+                    hasUnread: false,
                     lastActivity: p.indexedAt || new Date(0).toISOString(),
                 }));
                 setProfileFeeds(initialFeedData);
@@ -147,20 +144,20 @@ const FollowingFeedScreen: React.FC = () => {
                             const lastViewedString = lastViewedTimestamps.get(profile.did);
                             const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
 
-                            const feedRes = await agent.getAuthorFeed({ actor: profile.did, limit: 30 });
+                            const feedRes = await agent.getAuthorFeed({ actor: profile.did, limit: 1 });
                             const posts = feedRes.data.feed;
                             
-                            const unreadCount = posts.filter(item => {
+                            const hasUnread = posts.some(item => {
                                 const eventDate = new Date(AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt);
                                 return eventDate > lastViewedDate;
-                            }).length;
+                            });
 
                             const latestPost = posts[0];
                             const lastActivity = latestPost
                                 ? (AppBskyFeedDefs.isReasonRepost(latestPost.reason) ? latestPost.reason.indexedAt : latestPost.post.indexedAt)
                                 : profile.indexedAt || new Date(0).toISOString();
 
-                            return { profile, latestPost, unreadCount, lastActivity };
+                            return { profile, latestPost, hasUnread, lastActivity };
                         } catch (e) {
                              if (!(e instanceof Error && e.message.includes('RateLimitExceeded'))) {
                                 console.warn(`Failed to get feed for ${profile.handle}`, e);
@@ -168,7 +165,7 @@ const FollowingFeedScreen: React.FC = () => {
                             return {
                                 profile,
                                 latestPost: undefined,
-                                unreadCount: 0,
+                                hasUnread: false,
                                 lastActivity: profile.indexedAt || new Date(0).toISOString(),
                             };
                         }
