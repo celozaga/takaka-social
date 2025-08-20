@@ -1,17 +1,24 @@
+import { ENABLE_IMAGE_RESIZING } from './config';
 
 const RESIZE_PROXY = 'https://images.weserv.nl/';
 
 /**
  * Resizes an image URL using the images.weserv.nl proxy.
  * This helps in optimizing image loading times and reducing data usage.
+ * This feature can be toggled via the `ENABLE_IMAGE_RESIZING` flag in config.ts.
  * @param url The original image URL.
  * @param width The target width in pixels.
- * @returns The new proxied and resized image URL.
+ * @returns The new proxied and resized image URL, or the original if resizing is disabled.
  */
 export const resizeImage = (url: string, width: number): string => {
   // Return empty string if URL is not provided to avoid errors.
   if (!url) {
     return '';
+  }
+
+  // If the feature is disabled via the config flag, return the original URL.
+  if (!ENABLE_IMAGE_RESIZING) {
+    return url;
   }
 
   try {
