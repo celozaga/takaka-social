@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { Link } from 'expo-router';
 import { RichText } from '@atproto/api';
 
 interface RichTextRendererProps {
@@ -33,25 +33,25 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
       );
     } else if (segment.isMention()) {
       segments.push(
-        <a
+        <Link
           key={segments.length}
-          href={`#/profile/${segment.mention!.did}`}
+          href={`/profile/${segment.mention!.did}` as any}
           className="text-primary hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {segment.text}
-        </a>
+        </Link>
       );
     } else if (segment.isTag()) {
       segments.push(
-        <a
+        <Link
           key={segments.length}
-          href={`#/search?q=${encodeURIComponent(segment.tag!.tag)}&filter=top`}
+          href={`/(tabs)/search?q=${encodeURIComponent(segment.tag!.tag)}&filter=top` as any}
           className="text-primary hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {segment.text}
-        </a>
+        </Link>
       );
     } else {
       segments.push(<span key={segments.length}>{segment.text}</span>);

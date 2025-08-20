@@ -1,6 +1,5 @@
-
-
 import React from 'react';
+import { Link } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { 
   AppBskyNotificationListNotifications, 
@@ -83,16 +82,16 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   let content: React.ReactNode = null;
 
   const postUri = new AtUri(uri);
-  const profileLink = `#/profile/${author.handle}`;
-  const postLink = `#/post/${postUri.hostname}/${postUri.rkey}`;
+  const profileLink = `/profile/${author.handle}`;
+  const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
 
   const AuthorLink = () => (
-    <a href={profileLink} className="font-bold hover:underline inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
+    <Link href={profileLink as any} className="font-bold hover:underline inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
       <span>{author.displayName || `@${author.handle}`}</span>
       {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
         <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
       )}
-    </a>
+    </Link>
   );
 
   switch (reason) {
@@ -148,13 +147,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
 
   return (
     <li className="py-2">
-        <a href={link} className={`block p-4 rounded-xl transition-colors ${!isRead ? 'bg-primary/10' : 'bg-surface-2'} hover:bg-surface-3`}>
+        <Link href={link as any} className={`block p-4 rounded-xl transition-colors ${!isRead ? 'bg-primary/10' : 'bg-surface-2'} hover:bg-surface-3`}>
           <div className="flex gap-4">
             <div className="flex-shrink-0">{Icon}</div>
             <div className="flex-1">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName} className="w-8 h-8 rounded-full bg-surface-3" loading="lazy" />
+                        <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName || author.handle} className="w-8 h-8 rounded-full bg-surface-3" loading="lazy" />
                         <div className="text-sm">{title}</div>
                     </div>
                     <span className="text-xs text-on-surface-variant flex-shrink-0 ml-2 pt-1">{timeAgo}</span>
@@ -162,7 +161,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
                 {content && <div className="mt-1">{content}</div>}
             </div>
           </div>
-        </a>
+        </Link>
     </li>
   );
 };

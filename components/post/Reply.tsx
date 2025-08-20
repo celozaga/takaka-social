@@ -1,6 +1,5 @@
-
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {AppBskyFeedDefs, RichText } from '@atproto/api';
 import { format } from 'date-fns';
@@ -153,9 +152,9 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
       return (
           <div className="relative flex gap-3 py-2 px-4">
               <div className="flex flex-col items-center flex-shrink-0">
-                  <a href={`#/profile/${author.handle}`} className="block">
-                      <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
-                  </a>
+                  <Link href={`/profile/${author.handle}` as any} className="block">
+                      <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName || author.handle} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
+                  </Link>
                   {(hasSubReplies && isExpanded) && <div className="w-0.5 flex-1 grow my-2 bg-surface-3 rounded-full"></div>}
               </div>
               <div className="flex-1 min-w-0 pt-1">
@@ -168,26 +167,26 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   return (
     <div className="relative flex gap-3 py-2 px-4">
       <div className="flex flex-col items-center flex-shrink-0">
-        <a href={`#/profile/${author.handle}`} className="block">
-          <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
-        </a>
+        <Link href={`/profile/${author.handle}` as any} className="block">
+          <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName || author.handle} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
+        </Link>
         {(hasSubReplies && isExpanded) && <div className="w-0.5 flex-1 grow my-2 bg-surface-3 rounded-full"></div>}
       </div>
 
       <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0 pt-1">
-          <a href={`#/profile/${author.handle}`} className="font-bold hover:underline leading-tight text-sm inline-flex items-center gap-1">
+          <Link href={`/profile/${author.handle}` as any} className="font-bold hover:underline leading-tight text-sm inline-flex items-center gap-1">
               <span>{author.displayName || `@${author.handle}`}</span>
               {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                   <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
               )}
-          </a>
+          </Link>
           
-          <a href={`#/post/${post.author.did}/${post.uri.split('/').pop()}`} className="block">
+          <Link href={`/post/${post.author.did}/${post.uri.split('/').pop()}` as any} className="block">
               <div className="text-on-surface whitespace-pre-wrap mt-0.5 text-sm break-words">
                   <RichTextRenderer record={record} />
               </div>
-          </a>
+          </Link>
           <div className="mt-2 flex items-center gap-4 text-on-surface-variant">
             <span className="text-xs">{date}</span>
             <button onClick={handleReplyClick} className="font-semibold text-xs hover:underline">

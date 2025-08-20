@@ -1,8 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link, usePathname } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid, MessageSquare } from 'lucide-react';
+import { View, Pressable, Text, StyleSheet } from 'react-native';
+
 
 interface BottomNavbarProps {
   isHidden?: boolean;
@@ -11,22 +14,16 @@ interface BottomNavbarProps {
 const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const { session, logout, unreadCount, chatUnreadCount, chatSupported } = useAtp();
   const { openLoginModal, openComposer } = useUI();
-  const [currentHash, setCurrentHash] = React.useState(window.location.hash || '#/');
+  const pathname = usePathname();
   const { t } = useTranslation();
 
-  React.useEffect(() => {
-    const handler = () => setCurrentHash(window.location.hash || '#/');
-    window.addEventListener('hashchange', handler);
-    return () => window.removeEventListener('hashchange', handler);
-  }, []);
-
   const baseLoggedInNavItems = [
-    { href: '#/home', labelKey: 'nav.home', icon: Home, activeCondition: ['#/home', '#/', ''].includes(currentHash) },
-    { href: '#/search', labelKey: 'nav.search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
+    { href: '/(tabs)/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/(tabs)/home' || pathname === '/' },
+    { href: '/(tabs)/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/(tabs)/search') },
     { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
-    { href: '#/messages', labelKey: 'nav.messages', icon: MessageSquare, activeCondition: currentHash.startsWith('#/messages') },
-    { href: '#/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
-    { href: '#/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: currentHash.startsWith('#/more') },
+    { href: '/(tabs)/messages', labelKey: 'nav.messages', icon: MessageSquare, activeCondition: pathname.startsWith('/(tabs)/messages') },
+    { href: '/(tabs)/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/(tabs)/notifications') },
+    { href: '/(tabs)/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: pathname.startsWith('/(tabs)/more') || pathname.startsWith('/(tabs)/settings') },
   ];
 
   const loggedInNavItems = chatSupported 
@@ -35,8 +32,8 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
 
 
   const guestNavItems = [
-    { href: '#/home', labelKey: 'nav.home', icon: Home, activeCondition: ['#/home', '#/', ''].includes(currentHash) },
-    { href: '#/search', labelKey: 'nav.search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
+    { href: '/(tabs)/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/(tabs)/home' || pathname === '/' },
+    { href: '/(tabs)/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/(tabs)/search') },
     { isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false },
   ];
 
@@ -49,71 +46,163 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
     const hasMessageBadge = isMessages && chatUnreadCount > 0;
 
     const content = (
-      <>
-        <div className={`relative w-16 h-8 flex items-center justify-center rounded-full transition-colors ${item.activeCondition ? 'bg-primary-container' : 'group-hover:bg-surface-3'}`}>
-          <item.icon size={24} className={item.activeCondition ? 'text-on-primary-container' : 'text-on-surface-variant group-hover:text-on-surface'}/>
+      <View style={styles.navItemContainer}>
+        <View style={[styles.iconWrapper, item.activeCondition && styles.iconWrapperActive]}>
+          <item.icon size={24} color={item.activeCondition ? '#001D35' : '#8A9199'} />
            {hasNotificationBadge && (
-             <div className="absolute top-0 right-1.5 bg-primary text-on-primary text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center">
-                {unreadCount > 99 ? '99+' : unreadCount}
-            </div>
+             <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+            </View>
            )}
            {hasMessageBadge && (
-             <div className="absolute top-0 right-1.5 bg-primary text-on-primary text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center">
-                {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
-            </div>
+             <View style={styles.badge}>
+                <Text style={styles.badgeText}>{chatUnreadCount > 99 ? '99+' : chatUnreadCount}</Text>
+            </View>
            )}
-        </div>
-        <span className={`text-xs font-medium ${item.activeCondition ? 'text-on-surface' : 'text-on-surface-variant'}`}>{t(item.labelKey)}</span>
-      </>
+        </View>
+        <Text style={[styles.labelText, item.activeCondition && styles.labelTextActive]}>{t(item.labelKey)}</Text>
+      </View>
     );
-    
-    const commonClasses = "flex flex-col items-center justify-center gap-1 w-full h-full md:py-3 group transition-colors";
 
     if (item.isAction) {
       return (
-        <button key={item.labelKey} onClick={item.action} className={commonClasses} aria-label={t(item.labelKey)}>
+        <Pressable key={item.labelKey} onPress={item.action} style={styles.navItemPressable}>
           {content}
-        </button>
+        </Pressable>
       );
     }
     return (
-      <a key={item.href} href={item.href} className={commonClasses} aria-label={t(item.labelKey)}>
-        {content}
-      </a>
+      <Link key={item.href} href={item.href as any} asChild>
+        <Pressable style={styles.navItemPressable}>
+            {content}
+        </Pressable>
+      </Link>
     );
   };
   
   return (
     <>
       {/* Mobile Bottom Bar */}
-      <nav className={`${isHidden ? 'hidden' : 'grid'} md:hidden fixed bottom-0 left-0 right-0 bg-surface-2 h-20 grid-cols-${navItems.length} items-center justify-around z-50`}>
-        {navItems.map(item => renderNavItem(item))}
-      </nav>
-
+      <View style={[styles.mobileNav, { display: isHidden ? 'none' : 'flex' }]}>
+        {navItems.map(item => <View key={item.labelKey} style={{flex: 1}}>{renderNavItem(item)}</View>)}
+      </View>
+      
       {/* Desktop Navigation Rail */}
-      <nav className="hidden md:flex fixed top-0 left-0 h-full w-20 bg-surface-2 flex-col items-center justify-between py-6 z-50">
-        <div className="flex flex-col items-center gap-4 w-full">
+      <View style={styles.desktopNav}>
+        <View style={styles.desktopNavSection}>
             {loggedInNavItems.filter(item => item.labelKey !== 'nav.more' && item.labelKey !== 'nav.logout').map(item => renderNavItem(item))}
-        </div>
+        </View>
         {session && (
-          <div className="flex flex-col items-center gap-4 w-full">
+          <View style={styles.desktopNavSection}>
               {renderNavItem(loggedInNavItems.find(i => i.labelKey === 'nav.more')!)}
-              <button onClick={logout} title={t('nav.logout')} className="flex flex-col items-center justify-center gap-1 w-full group transition-colors">
-                  <div className="w-16 h-8 flex items-center justify-center rounded-full transition-colors group-hover:bg-surface-3">
-                      <LogOut size={22} className="text-on-surface-variant group-hover:text-on-surface"/>
-                  </div>
-                  <span className="text-xs font-medium text-on-surface-variant">{t('nav.logout')}</span>
-              </button>
-          </div>
+              <Pressable onPress={logout} style={styles.navItemPressable}>
+                  <View style={styles.navItemContainer}>
+                      <View style={styles.iconWrapper}>
+                          <LogOut size={22} color="#8A9199"/>
+                      </div>
+                      <Text style={styles.labelText}>{t('nav.logout')}</Text>
+                  </View>
+              </Pressable>
+          </View>
         )}
         {!session && (
-          <div className="flex flex-col items-center gap-4 w-full">
+          <View style={styles.desktopNavSection}>
              {guestNavItems.filter(item => item.isAction).map(item => renderNavItem(item))}
-          </div>
+          </View>
         )}
-      </nav>
+      </View>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  navItemContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  navItemPressable: {
+    flex: 1,
+  },
+  iconWrapper: {
+    width: 64,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+  },
+  iconWrapperActive: {
+    backgroundColor: '#D1E4FF', // primary-container
+  },
+  labelText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#C3C6CF', // on-surface-variant
+  },
+  labelTextActive: {
+    color: '#E2E2E6', // on-surface
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#A8C7FA', // primary
+    color: '#003258', // on-primary
+    fontSize: 10,
+    fontWeight: 'bold',
+    borderRadius: 999,
+    paddingHorizontal: 4,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#003258',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  mobileNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1E2021', // surface-2
+    height: 80,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    zIndex: 50,
+  },
+  desktopNav: {
+    display: 'none',
+  },
+  desktopNavSection: {
+    alignItems: 'center',
+    gap: 16,
+    width: '100%',
+  },
+   '@media (min-width: 768px)': {
+    mobileNav: {
+      display: 'none',
+    },
+    desktopNav: {
+      display: 'flex',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      height: '100%',
+      width: 80,
+      backgroundColor: '#1E2021',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 24,
+      zIndex: 50,
+    }
+  },
+});
+
 
 export default BottomNavbar;

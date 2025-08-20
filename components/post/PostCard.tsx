@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { usePostActions } from '../../hooks/usePostActions';
@@ -62,8 +63,8 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
     const postText = record?.text || '';
     const rkey = post.uri.split('/').pop() as string;
-    const postLink = `#/post/${author.did}/${rkey}`;
-    const profileLink = `#/profile/${author.handle}`;
+    const postLink = `/post/${author.did}/${rkey}`;
+    const profileLink = `/profile/${author.handle}`;
 
     const getMediaInfo = (p: AppBskyFeedDefs.PostView): { mediaPost: AppBskyFeedDefs.PostView, mediaEmbed: (AppBskyEmbedImages.View | AppBskyEmbedVideo.View) } | null => {
         const embed = p.embed;
@@ -214,7 +215,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                 <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
                     <Repeat size={14} />
                     <span className="truncate">
-                        Reposted by <a href={`#/profile/${reason.by.handle}`} className="hover:underline" onClick={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</a>
+                        Reposted by <Link href={`/profile/${reason.by.handle}` as any} className="hover:underline" onClick={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</Link>
                     </span>
                 </div>
             );
@@ -246,25 +247,25 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     const mediaElement = renderMedia();
     if (!mediaElement) return null;
 
-    const Wrapper = isClickable ? 'a' : 'div';
+    const Wrapper = isClickable ? Link : 'div';
     const wrapperProps = isClickable ? { href: postLink } : {};
 
     return (
          <article className="bg-surface-2 rounded-xl overflow-hidden flex flex-col">
-            <Wrapper {...wrapperProps} className="w-full block">
+            <Wrapper {...wrapperProps as any} className="w-full block">
                 {mediaElement}
             </Wrapper>
             <div className="p-3">
                 {renderContext()}
                 {postText && (
-                     <Wrapper {...wrapperProps} className="block mb-2">
+                     <Wrapper {...wrapperProps as any} className="block mb-2">
                         <p className="text-sm text-on-surface line-clamp-3 break-words">
                             <RichTextRenderer record={record} />
                         </p>
                     </Wrapper>
                 )}
                  <div className="flex items-center justify-between gap-2 text-sm mt-2">
-                   <a href={profileLink} className="flex items-center gap-2 truncate hover:opacity-80 transition-opacity min-w-0">
+                   <Link href={profileLink as any} className="flex items-center gap-2 truncate hover:opacity-80 transition-opacity min-w-0">
                      <img 
                         src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${author.did}/24`} 
                         alt={`${author.displayName}'s avatar`} 
@@ -277,7 +278,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                             <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
                         )}
                      </div>
-                   </a>
+                   </Link>
                    <button 
                         onClick={handleLike} 
                         disabled={isLiking}

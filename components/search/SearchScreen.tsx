@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, AppBskyEmbedRecord, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
@@ -138,13 +139,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             setIsLoading(false);
         }
     }, [debouncedQuery, initialQuery, activeFilter, fetchResults]);
-    
-    const handleFilterChange = (filter: FilterType) => {
-        const effectiveQuery = query || initialQuery;
-        if (effectiveQuery.trim()) {
-            window.location.hash = `#/search?q=${encodeURIComponent(effectiveQuery)}&filter=${filter}`;
+
+    useEffect(() => {
+        if(debouncedQuery) {
+             window.history.replaceState(null, '', `#/search?q=${encodeURIComponent(debouncedQuery)}&filter=${activeFilter}`);
         }
-    };
+    }, [debouncedQuery, activeFilter]);
     
     const handlePinToggle = useCallback((feed:AppBskyFeedDefs.GeneratorView) => {
         const isPinned = pinnedUris.has(feed.uri);
@@ -237,16 +237,17 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         <>
                             <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-4 mb-4">
                                 {filters.map(filter => (
-                                    <button 
+                                    <Link 
                                         key={filter.id}
-                                        onClick={() => handleFilterChange(filter.id)}
+                                        href={`/(tabs)/search?q=${encodeURIComponent(query)}&filter=${filter.id}` as any}
+                                        replace
                                         className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
                                             ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
                                         `}
                                     >
                                         <filter.icon size={16} />
                                         {filter.label}
-                                    </button>
+                                    </Link>
                                 ))}
                             </div>
 

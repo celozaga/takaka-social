@@ -1,6 +1,5 @@
-
-
 import React, { useState } from 'react';
+import { Link } from 'expo-router';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -15,7 +14,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   const { toast } = useToast();
   const [viewerState, setViewerState] = useState(actor.viewer);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const profileLink = `#/profile/${actor.handle}`;
+  const profileLink = `/profile/${actor.handle}`;
 
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,7 +77,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   };
 
   return (
-    <a href={profileLink} className="block p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
+    <Link href={profileLink as any} className="block p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
       <div className="flex items-start gap-4">
         <img src={actor.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={actor.displayName || actor.handle} className="w-12 h-12 rounded-full bg-surface-3 flex-shrink-0" loading="lazy" />
         <div className="flex-1 min-w-0">
@@ -103,7 +102,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
           )}
         </div>
       </div>
-    </a>
+    </Link>
   );
 };
 
