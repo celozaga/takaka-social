@@ -149,10 +149,9 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     }
   };
 
-  if (isLoading) {
-    return (
-      <View>
-        {ListHeaderComponent}
+  const renderContent = () => {
+    if (isLoading) {
+      return (
         <View style={styles.masonryContainer}>
           <View style={styles.column}>
             {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
@@ -161,39 +160,30 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
             {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
           </View>
         </View>
-      </View>
-    );
-  }
-  
-  if (!isLoading && (error || moderatedFeed.length === 0)) {
-    return (
-      <ScrollView>
-        <View>
-          {ListHeaderComponent}
-          {error ? (
-            <View style={styles.messageContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-              <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
-                <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.messageContainer}>
-              <Text style={styles.infoText}>{t('feed.empty')}</Text>
-            </View>
-          )}
+      );
+    }
+    
+    if (error) {
+      return (
+        <View style={styles.messageContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
+            <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
+          </Pressable>
         </View>
-      </ScrollView>
-    );
-  }
+      );
+    }
 
-  return (
-    <ScrollView
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-    >
+    if (moderatedFeed.length === 0) {
+      return (
+        <View style={styles.messageContainer}>
+          <Text style={styles.infoText}>{t('feed.empty')}</Text>
+        </View>
+      );
+    }
+
+    return (
       <View>
-        {ListHeaderComponent}
         <View style={styles.masonryContainer}>
           <View style={styles.column}>
             {columnsData.left.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}
@@ -204,6 +194,18 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
         </View>
         {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} />}
         {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
+      </View>
+    );
+  };
+
+  return (
+    <ScrollView
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+    >
+      <View>
+        {ListHeaderComponent}
+        {renderContent()}
       </View>
     </ScrollView>
   );

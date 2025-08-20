@@ -212,7 +212,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     };
     
     if (!modDecision) {
-        return <View style={styles.container}><PostCardSkeleton /></View>;
+        return <PostCardSkeleton />;
     }
     
     if (modDecision.visibility === 'hide') {
@@ -221,7 +221,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     
     if (modDecision.visibility === 'warn' && !isContentVisible) {
         return (
-             <View style={styles.card}>
+            <View style={styles.card}>
                 <ContentWarning 
                     reason={modDecision.reason!} 
                     onShow={() => setIsContentVisible(true)} 
@@ -242,9 +242,9 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     }
 
     return (
-         <View style={styles.container}>
+        <View style={styles.card}>
             <Wrapper>
-                <View style={styles.card}>
+                <>
                     {mediaElement}
                     <View style={styles.content}>
                         {renderContext()}
@@ -282,17 +282,13 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                             </Pressable>
                         </View>
                     </View>
-                </View>
+                </>
             </Wrapper>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        // @ts-ignore: breakInside is a web-only property for column layout
-        breakInside: 'avoid',
-    },
     card: {
         backgroundColor: '#1E2021',
         borderRadius: 12,

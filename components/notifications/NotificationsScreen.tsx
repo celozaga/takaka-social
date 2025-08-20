@@ -105,7 +105,7 @@ const NotificationsScreen: React.FC = () => {
             renderItem={({ item }) => <NotificationItem notification={item} />}
             keyExtractor={(item) => item.uri}
             ListHeaderComponent={renderListHeader}
-            contentContainerStyle={styles.container}
+            contentContainerStyle={styles.listContentContainer}
             onRefresh={fetchInitialNotifications}
             refreshing={isLoading}
             onEndReached={loadMoreNotifications}
@@ -134,7 +134,7 @@ const NotificationsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { paddingBottom: 16 },
+    listContentContainer: { paddingBottom: 16 },
     filterScrollContainer: { paddingHorizontal: 16, paddingTop: 16 },
     filterContainer: { gap: 8, paddingBottom: 8 },
     filterButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999 },
