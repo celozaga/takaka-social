@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import {AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo, AtUri } from '@atproto/api';
+import {AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, NativeScrollEvent } from 'react-native';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 
@@ -40,7 +40,6 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const columns = 2;
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     try {
@@ -128,77 +127,122 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   }, [feed, moderation]);
 
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
-  
-  const renderItem = ({ item }: { item:AppBskyFeedDefs.FeedViewPost }) => (
-    <PostCard feedViewPost={item} />
-  );
 
-  const ListSkeleton = () => (
-    <View style={styles.grid}>
-        {ListHeaderComponent}
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={styles.gridColumn}>
-                {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
-            </View>
-            <View style={styles.gridColumn}>
-                {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
-            </View>
-        </View>
-    </View>
-  );
+  const columnsData = useMemo(() => {
+    const left: AppBskyFeedDefs.FeedViewPost[] = [];
+    const right: AppBskyFeedDefs.FeedViewPost[] = [];
+    moderatedFeed.forEach((item, index) => {
+      if (index % 2 === 0) {
+        left.push(item);
+      } else {
+        right.push(item);
+      }
+    });
+    return { left, right };
+  }, [moderatedFeed]);
+
+  const handleScroll = (event: { nativeEvent: NativeScrollEvent }) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 400;
+    if (isCloseToBottom) {
+      loadMorePosts();
+    }
+  };
 
   if (isLoading) {
-    return <ListSkeleton />;
+    return (
+      <View>
+        {ListHeaderComponent}
+        <View style={styles.masonryContainer}>
+          <View style={styles.column}>
+            {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+          </View>
+          <View style={styles.column}>
+            {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
+          </View>
+        </View>
+      </View>
+    );
+  }
+  
+  if (!isLoading && (error || moderatedFeed.length === 0)) {
+    return (
+      <ScrollView>
+        <View>
+          {ListHeaderComponent}
+          {error ? (
+            <View style={styles.messageContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
+                <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.messageContainer}>
+              <Text style={styles.infoText}>{t('feed.empty')}</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    );
   }
 
   return (
-    <FlatList
-        data={moderatedFeed}
-        key={columns}
-        numColumns={columns}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        onEndReached={loadMorePosts}
-        onEndReachedThreshold={0.8}
-        ListHeaderComponent={ListHeaderComponent}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.contentContainer}
-        ListFooterComponent={() => (
-          <>
-            {isLoadingMore ? (
-              <ActivityIndicator size="large" style={{ marginVertical: 20 }} />
-            ) : !hasMore && moderatedFeed.length > 0 ? (
-              <Text style={styles.endOfList}>{t('common.endOfList')}</Text>
-            ) : null}
-          </>
-        )}
-        ListEmptyComponent={() => (
-          <>
-            {error ? (
-              <View style={styles.messageContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-                <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
-                    <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
-                </Pressable>
-              </View>
-            ) : !isLoading && moderatedFeed.length === 0 ? (
-              <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>
-            ) : null}
-          </>
-        )}
-    />
+    <ScrollView
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+    >
+      <View>
+        {ListHeaderComponent}
+        <View style={styles.masonryContainer}>
+          <View style={styles.column}>
+            {columnsData.left.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}
+          </View>
+          <View style={styles.column}>
+            {columnsData.right.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}
+          </View>
+        </View>
+        {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} />}
+        {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-    grid: { paddingHorizontal: 12 },
-    gridColumn: { flex: 1, gap: 12 },
-    columnWrapper: { gap: 12 },
-    contentContainer: { paddingHorizontal: 12, paddingTop: 16 },
-    messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16, marginHorizontal: 12, },
-    errorText: { color: '#F2B8B5', textAlign: 'center', marginBottom: 16 },
-    infoText: { color: '#C3C6CF', textAlign: 'center' },
-    endOfList: { textAlign: 'center', color: '#C3C6CF', padding: 32 },
+    masonryContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        paddingHorizontal: 12,
+        paddingTop: 16,
+    },
+    column: {
+        flex: 1,
+        gap: 12,
+    },
+    messageContainer: { 
+        padding: 32, 
+        backgroundColor: '#1E2021', 
+        borderRadius: 12, 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        marginTop: 16, 
+        marginHorizontal: 12, 
+    },
+    errorText: { 
+        color: '#F2B8B5', 
+        textAlign: 'center', 
+        marginBottom: 16 
+    },
+    infoText: { 
+        color: '#C3C6CF', 
+        textAlign: 'center' 
+    },
+    endOfList: { 
+        textAlign: 'center', 
+        color: '#C3C6CF', 
+        padding: 32 
+    },
     tryAgainButton: {
         backgroundColor: '#2b2d2e',
         paddingHorizontal: 24,

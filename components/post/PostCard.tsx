@@ -292,8 +292,6 @@ const styles = StyleSheet.create({
     container: {
         // @ts-ignore: breakInside is a web-only property for column layout
         breakInside: 'avoid',
-        marginBottom: 12,
-        flex: 1,
     },
     card: {
         backgroundColor: '#1E2021',
