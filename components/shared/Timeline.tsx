@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -7,7 +6,7 @@ import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, useWindowDimensions, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 
 interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
@@ -31,8 +30,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const { width } = useWindowDimensions();
-  const isWide = width > 640;
+  const columns = 2;
 
 
   const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
@@ -124,11 +122,10 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     });
   }, [feed, moderation]);
 
-  const columns = isWide ? 2 : 1;
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
   
   const renderItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => (
-    <View style={{ flex: 1, padding: columns > 1 ? 8 : 0, paddingTop: 0 }}>
+    <View style={{ flex: 1 }}>
       <PostCard feedViewPost={item} />
     </View>
   );
@@ -158,10 +155,12 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
         keyExtractor={keyExtractor}
         onEndReached={loadMorePosts}
         onEndReachedThreshold={0.5}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.contentContainer}
         ListFooterComponent={() => (
             <>
             {isLoadingMore && (
-                <View style={[styles.grid, { paddingTop: 16 }]}>
+                <View style={styles.grid}>
                     {[...Array(columns)].map((_, i) => <View key={i} style={styles.gridItem}><PostCardSkeleton /></View>)}
                 </View>
             )}
@@ -187,10 +186,19 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         gap: 16,
+        paddingTop: 16,
+        paddingHorizontal: 16,
     },
     gridItem: {
         flex: 1,
         gap: 16,
+    },
+    columnWrapper: {
+      gap: 16,
+    },
+    contentContainer: {
+      paddingTop: 16,
+      paddingHorizontal: 16,
     },
     messageContainer: {
         padding: 32,

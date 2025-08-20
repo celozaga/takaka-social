@@ -243,7 +243,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
 
 
     return (
-         <View style={styles.card}>
+         <View style={[styles.card, styles.container]}>
             <Wrapper>{mediaElement}</Wrapper>
             <View style={styles.content}>
                 {renderContext()}
