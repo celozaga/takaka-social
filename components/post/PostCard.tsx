@@ -21,6 +21,37 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     const { agent } = useAtp();
     const moderation = useModeration();
     const [isContentVisible, setIsContentVisible] = React.useState(false);
+    const [hlsUrl, setHlsUrl] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (!showAllMedia) return;
+
+        const { post } = feedViewPost;
+        const embed = post.embed;
+        let videoEmbed: AppBskyEmbedVideo.View | undefined;
+
+        if (AppBskyEmbedVideo.isView(embed)) {
+            videoEmbed = embed;
+        } else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) {
+            videoEmbed = embed.media as AppBskyEmbedVideo.View;
+        }
+
+        if (videoEmbed) {
+            const fetchUrl = async () => {
+                try {
+                    const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
+                        did: post.author.did,
+                        cid: videoEmbed!.cid,
+                    });
+                    setHlsUrl(result.data.url);
+                } catch (error) {
+                    console.warn(`Could not get HLS playback URL for ${post.uri}, falling back to blob.`, error);
+                    setHlsUrl(null);
+                }
+            };
+            fetchUrl();
+        }
+    }, [showAllMedia, feedViewPost, agent]);
     
     const { post, reason } = feedViewPost;
     
@@ -123,12 +154,15 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
 
             if (showAllMedia) {
-                const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
+                const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
                 const playerOptions = {
                     autoplay: true,
                     controls: true,
                     poster: posterUrl,
-                    sources: [{ src: videoUrl, type: 'video/mp4' }],
+                    sources: [{ 
+                        src: hlsUrl || blobVideoUrl, 
+                        type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' 
+                    }],
                     loop: true,
                     muted: true,
                     playsinline: true
