@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -10,7 +6,7 @@ import {
     Settings, ChevronRight, BadgeCheck, List, Search, 
     Bell, Users, UserCheck, Clapperboard, MessageSquare
 } from 'lucide-react';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 
 const AppGridItem: React.FC<{
     icon: React.ElementType,
@@ -43,8 +39,6 @@ const MoreScreen: React.FC = () => {
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    useHeadManager({ title: t('more.title') });
-
     useEffect(() => {
         if (session?.did) {
             setIsLoading(true);
@@ -73,50 +67,53 @@ const MoreScreen: React.FC = () => {
     const appGridItems = chatSupported ? baseAppGridItems : baseAppGridItems.filter(item => item.label !== t('nav.messages'));
 
     return (
-        <div className="pt-4">
-            <div className="space-y-8">
-                {isLoading ? (
-                    <div className="bg-surface-2 rounded-lg p-4 animate-pulse">
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-surface-3"></div>
-                            <div className="space-y-2">
-                                <div className="h-5 w-32 bg-surface-3 rounded"></div>
-                                <div className="h-4 w-24 bg-surface-3 rounded"></div>
-                            </div>
-                        </div>
-                    </div>
-                ) : profile && (
-                    <a href={profileLink} className="block bg-surface-2 rounded-lg p-4 hover:bg-surface-3 transition-colors">
-                        <div className="flex items-center justify-between">
+        <>
+            <Head><title>{t('more.title')}</title></Head>
+            <div className="pt-4">
+                <div className="space-y-8">
+                    {isLoading ? (
+                        <div className="bg-surface-2 rounded-lg p-4 animate-pulse">
                             <div className="flex items-center gap-4">
-                                <img src={profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
-                                <div>
-                                    <p className="font-bold text-lg flex items-center gap-1.5">
-                                        <span>{profile.displayName || `@${profile.handle}`}</span>
-                                        {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                            <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
-                                        )}
-                                    </p>
-                                    <p className="text-on-surface-variant">@{profile.handle}</p>
+                                <div className="w-16 h-16 rounded-full bg-surface-3"></div>
+                                <div className="space-y-2">
+                                    <div className="h-5 w-32 bg-surface-3 rounded"></div>
+                                    <div className="h-4 w-24 bg-surface-3 rounded"></div>
                                 </div>
                             </div>
-                            <ChevronRight className="w-6 h-6 text-on-surface-variant" />
                         </div>
-                    </a>
-                )}
+                    ) : profile && (
+                        <a href={profileLink} className="block bg-surface-2 rounded-lg p-4 hover:bg-surface-3 transition-colors">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <img src={profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
+                                    <div>
+                                        <p className="font-bold text-lg flex items-center gap-1.5">
+                                            <span>{profile.displayName || `@${profile.handle}`}</span>
+                                            {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                                                <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
+                                            )}
+                                        </p>
+                                        <p className="text-on-surface-variant">@{profile.handle}</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-6 h-6 text-on-surface-variant" />
+                            </div>
+                        </a>
+                    )}
 
-                {session && (
-                    <div>
-                        <h2 className="text-base font-bold text-on-surface-variant mb-4 px-1">{t('more.allApps')}</h2>
-                        <div className="grid grid-cols-4 gap-y-6 gap-x-2">
-                            {appGridItems.map(item => (
-                                <AppGridItem key={item.label} {...item} />
-                            ))}
+                    {session && (
+                        <div>
+                            <h2 className="text-base font-bold text-on-surface-variant mb-4 px-1">{t('more.allApps')}</h2>
+                            <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+                                {appGridItems.map(item => (
+                                    <AppGridItem key={item.label} {...item} />
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -9,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import ConvoHeader from './ConvoHeader';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 
 const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const { agent, session, chatSupported } = useAtp();
@@ -20,8 +17,6 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   const [error, setError] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const listEndRef = useRef<HTMLDivElement>(null);
-
-  useHeadManager({ title: peer ? t('messages.convoTitle', { peerName: peer.displayName || peer.handle }) : t('messages.title') });
 
   const fetchConvo = useCallback(async () => {
     if (chatSupported === false) {
@@ -128,22 +123,25 @@ const ConvoScreen: React.FC<{ peerDid: string }> = ({ peerDid }) => {
   };
   
   return (
-    <div className="bg-surface-1 text-on-surface h-full flex flex-col">
-      <ConvoHeader peer={peer} isLoading={isLoading} />
-      <div className="flex-1 overflow-y-auto pt-20 pb-4 px-4 space-y-4">
-        {isLoading && (
-          <div className="flex justify-center items-center h-full">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        )}
-        {error && <div className="text-center text-error p-4">{error}</div>}
-        {!isLoading && messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
-        ))}
-        <div ref={listEndRef} />
+    <>
+      <Head><title>{peer ? t('messages.convoTitle', { peerName: peer.displayName || peer.handle }) : t('messages.title')}</title></Head>
+      <div className="bg-surface-1 text-on-surface h-full flex flex-col">
+        <ConvoHeader peer={peer} isLoading={isLoading} />
+        <div className="flex-1 overflow-y-auto pt-20 pb-4 px-4 space-y-4">
+          {isLoading && (
+            <div className="flex justify-center items-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          )}
+          {error && <div className="text-center text-error p-4">{error}</div>}
+          {!isLoading && messages.map((msg) => (
+            <MessageBubble key={msg.id} message={msg} />
+          ))}
+          <div ref={listEndRef} />
+        </div>
+        <MessageInput onSendMessage={handleSendMessage} />
       </div>
-      <MessageInput onSendMessage={handleSendMessage} />
-    </div>
+    </>
   );
 };
 

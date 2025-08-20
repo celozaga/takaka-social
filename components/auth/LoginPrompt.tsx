@@ -1,31 +1,87 @@
-
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUI } from '../../context/UIContext';
 import { LogIn } from 'lucide-react';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 
 const LoginPrompt: React.FC = () => {
   const { openLoginModal } = useUI();
   const { t } = useTranslation();
 
   return (
-    <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg z-50">
-      <div className="bg-primary-container text-on-primary-container p-3 rounded-xl shadow-lg flex items-center justify-between gap-4 animate-in slide-in-from-bottom-5 duration-300">
-        <div>
-            <p className="font-semibold text-sm">{t('loginPrompt.title')}</p>
-            <p className="text-xs opacity-80">{t('loginPrompt.description')}</p>
-        </div>
-        <button 
-            onClick={openLoginModal}
-            className="bg-primary text-on-primary font-bold py-2 px-4 rounded-full text-sm flex-shrink-0 flex items-center gap-2"
+    <View style={styles.container}>
+      <View style={styles.promptBox}>
+        <View>
+            <Text style={styles.title}>{t('loginPrompt.title')}</Text>
+            <Text style={styles.description}>{t('loginPrompt.description')}</Text>
+        </View>
+        <Pressable 
+            onPress={openLoginModal}
+            style={styles.button}
         >
-          <LogIn size={16} />
-          {t('nav.signIn')}
-        </button>
-      </div>
-    </div>
+          <LogIn size={16} color="#003258" />
+          <Text style={styles.buttonText}>{t('nav.signIn')}</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: Platform.select({ web: 16, default: 80 }),
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    zIndex: 50,
+  },
+  promptBox: {
+    backgroundColor: '#D1E4FF', // primary-container
+    color: '#001D35', // on-primary-container
+    padding: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    width: '100%',
+    maxWidth: 512,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+      },
+      default: {
+        elevation: 5,
+      }
+    }),
+  },
+  title: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#001D35',
+  },
+  description: {
+    fontSize: 12,
+    color: '#001D35',
+    opacity: 0.8,
+  },
+  button: {
+    backgroundColor: '#A8C7FA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    flexShrink: 0,
+  },
+  buttonText: {
+    color: '#003258',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+});
 
 export default LoginPrompt;

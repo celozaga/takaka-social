@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Mousewheel, Virtual } from 'swiper/modules';
 import type { Swiper as SwiperCore } from 'swiper';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
@@ -22,8 +22,6 @@ const WatchScreen: React.FC = () => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
-
-    useHeadManager({ title: t('more.watch') });
 
     const isPostVideo = (post: AppBskyFeedDefs.PostView): boolean => {
         return !!post.embed && (
@@ -140,51 +138,54 @@ const WatchScreen: React.FC = () => {
     }
 
     return (
-        <div className="w-full h-full relative">
-            <Swiper
-                direction={'vertical'}
-                slidesPerView={1}
-                mousewheel={true}
-                modules={[Mousewheel, Virtual]}
-                className="h-full"
-                onSlideChange={handleSlideChange}
-                onReachEnd={handleReachEnd}
-                virtual
-            >
-                {videoPosts.map((postView, index) => {
-                    const shouldLoad = Math.abs(index - activeIndex) <= 1; // Preload next and previous
-                    return (
-                        <SwiperSlide key={`${postView.post.uri}-${index}`} virtualIndex={index}>
-                            <VideoPlayer 
-                                postView={postView} 
-                                isActive={index === activeIndex} 
-                                shouldLoad={shouldLoad}
-                                hlsUrl={playbackUrls.get(postView.post.uri)}
-                            />
+        <>
+            <Head><title>{t('more.watch')}</title></Head>
+            <div className="w-full h-full relative">
+                <Swiper
+                    direction={'vertical'}
+                    slidesPerView={1}
+                    mousewheel={true}
+                    modules={[Mousewheel, Virtual]}
+                    className="h-full"
+                    onSlideChange={handleSlideChange}
+                    onReachEnd={handleReachEnd}
+                    virtual
+                >
+                    {videoPosts.map((postView, index) => {
+                        const shouldLoad = Math.abs(index - activeIndex) <= 1; // Preload next and previous
+                        return (
+                            <SwiperSlide key={`${postView.post.uri}-${index}`} virtualIndex={index}>
+                                <VideoPlayer 
+                                    postView={postView} 
+                                    isActive={index === activeIndex} 
+                                    shouldLoad={shouldLoad}
+                                    hlsUrl={playbackUrls.get(postView.post.uri)}
+                                />
+                            </SwiperSlide>
+                        );
+                    })}
+                     {(isLoadingMore || (isLoading && videoPosts.length > 0)) && (
+                        <SwiperSlide virtualIndex={videoPosts.length}>
+                            <div className="w-full h-full flex items-center justify-center bg-black">
+                                <Loader2 className="w-8 h-8 animate-spin text-white" />
+                            </div>
                         </SwiperSlide>
-                    );
-                })}
-                 {(isLoadingMore || (isLoading && videoPosts.length > 0)) && (
-                    <SwiperSlide virtualIndex={videoPosts.length}>
-                        <div className="w-full h-full flex items-center justify-center bg-black">
-                            <Loader2 className="w-8 h-8 animate-spin text-white" />
-                        </div>
-                    </SwiperSlide>
-                 )}
-                 {!hasMore && videoPosts.length > 0 && !isLoadingMore && (
-                    <SwiperSlide virtualIndex={videoPosts.length + 1}>
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white">
-                            <p className="text-lg font-semibold">{t('watch.allSeenTitle')}</p>
-                            <p className="text-sm text-on-surface-variant mt-1">{t('watch.allSeenDescription')}</p>
-                        </div>
-                    </SwiperSlide>
-                 )}
-            </Swiper>
+                     )}
+                     {!hasMore && videoPosts.length > 0 && !isLoadingMore && (
+                        <SwiperSlide virtualIndex={videoPosts.length + 1}>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white">
+                                <p className="text-lg font-semibold">{t('watch.allSeenTitle')}</p>
+                                <p className="text-sm text-on-surface-variant mt-1">{t('watch.allSeenDescription')}</p>
+                            </div>
+                        </SwiperSlide>
+                     )}
+                </Swiper>
 
-            <button onClick={() => window.history.back()} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
-                <ArrowLeft size={24} />
-            </button>
-        </div>
+                <button onClick={() => window.history.back()} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
+                    <ArrowLeft size={24} />
+                </button>
+            </div>
+        </>
     );
 };
 

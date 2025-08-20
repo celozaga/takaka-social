@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -7,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import Timeline from '../shared/Timeline';
 import FeedViewHeader from './FeedViewHeader';
 import { ArrowLeft } from 'lucide-react';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 import { useFeedActions } from '../../hooks/useFeedActions';
 
 interface FeedViewScreenProps {
@@ -24,12 +22,6 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     const [error, setError] = useState<string | null>(null);
 
     const { feedView } = useFeedActions(feedUri || undefined);
-
-    useHeadManager({
-        title: feedView ? `${t('common.feeds')}: ${feedView.displayName}` : t('common.feeds'),
-        description: feedView?.description,
-        imageUrl: feedView?.avatar,
-    });
 
     useEffect(() => {
         setCustomFeedHeaderVisible(true);
@@ -81,15 +73,22 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     }
 
     return (
-        <div>
-            <FeedViewHeader
-                feedUri={feedUri}
-                onBack={() => window.history.back()}
-            />
-            <div className="mt-4">
-                <Timeline key={feedUri} feedUri={feedUri} />
+        <>
+            <Head>
+                <title>{feedView ? `${t('common.feeds')}: ${feedView.displayName}` : t('common.feeds')}</title>
+                {feedView?.description && <meta name="description" content={feedView.description} />}
+                {feedView?.avatar && <meta property="og:image" content={feedView.avatar} />}
+            </Head>
+            <div>
+                <FeedViewHeader
+                    feedUri={feedUri}
+                    onBack={() => window.history.back()}
+                />
+                <div className="mt-4">
+                    <Timeline key={feedUri} feedUri={feedUri} />
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -13,7 +12,7 @@ import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
 import TrendingTopics from './TrendingTopics';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -55,8 +54,6 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     
     const loaderRef = useRef<HTMLDivElement>(null);
-
-    useHeadManager({ title: t('search.title') });
 
     const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
       { id: 'top', label: t('search.top'), icon: TrendingUp },
@@ -218,91 +215,94 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     }
     
     return (
-        <div>
-            <div className="sticky top-0 z-10 bg-surface-1 pt-4 pb-3">
-                <form onSubmit={handleFormSubmit} className="flex gap-2">
-                    <div className="relative flex-grow">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                        <input
-                            type="search"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t('search.placeholder')}
-                            className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
-                        />
-                    </div>
-                </form>
-            </div>
-
+        <>
+            <Head><title>{t('search.title')}</title></Head>
             <div>
-                {showDiscoveryContent ? (
-                     <div className="space-y-8 mt-1">
-                        <TrendingTopics />
-                        <SuggestedFollows />
-                        <PopularFeeds />
-                    </div>
-                ) : (
-                    <>
-                        <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-4 mb-4">
-                            {filters.map(filter => (
-                                <button 
-                                    key={filter.id}
-                                    onClick={() => handleFilterChange(filter.id)}
-                                    className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
-                                        ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
-                                    `}
-                                >
-                                    <filter.icon size={16} />
-                                    {filter.label}
-                                </button>
-                            ))}
+                <div className="sticky top-0 z-10 bg-surface-1 pt-4 pb-3">
+                    <form onSubmit={handleFormSubmit} className="flex gap-2">
+                        <div className="relative flex-grow">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+                            <input
+                                type="search"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder={t('search.placeholder')}
+                                className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
+                            />
                         </div>
+                    </form>
+                </div>
 
-                        {isLoading && (
-                            isListView ? (
-                                <div className="space-y-3">
-                                    {[...Array(5)].map((_, i) => (
-                                         <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="columns-2 gap-4">
-                                    {[...Array(6)].map((_, i) => (
-                                        <div key={i} className="break-inside-avoid mb-4">
-                                            <PostCardSkeleton />
-                                        </div>
-                                    ))}
-                                </div>
-                            )
-                        )}
-                        {!isLoading && results.length > 0 && renderResults()}
-                        
-                        {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && (
-                            <div className="text-center text-on-surface-variant py-8">{t('common.endOfList')}</div>
-                        )}
-                        
-                        {!isLoading && results.length === 0 && (
-                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('search.empty', { query: initialQuery })}</div>
-                        )}
-                        
-                        <div ref={loaderRef} className="h-10">
-                            {isLoadingMore && supportsInfiniteScroll && (
+                <div>
+                    {showDiscoveryContent ? (
+                         <div className="space-y-8 mt-1">
+                            <TrendingTopics />
+                            <SuggestedFollows />
+                            <PopularFeeds />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-4 mb-4">
+                                {filters.map(filter => (
+                                    <button 
+                                        key={filter.id}
+                                        onClick={() => handleFilterChange(filter.id)}
+                                        className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2
+                                            ${activeFilter === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
+                                        `}
+                                    >
+                                        <filter.icon size={16} />
+                                        {filter.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {isLoading && (
                                 isListView ? (
-                                   <div className="space-y-3 mt-4">
-                                       <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                                   </div>
+                                    <div className="space-y-3">
+                                        {[...Array(5)].map((_, i) => (
+                                             <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                                        ))}
+                                    </div>
                                 ) : (
-                                    <div className="columns-2 gap-4 mt-4">
-                                        <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
-                                        <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                    <div className="columns-2 gap-4">
+                                        {[...Array(6)].map((_, i) => (
+                                            <div key={i} className="break-inside-avoid mb-4">
+                                                <PostCardSkeleton />
+                                            </div>
+                                        ))}
                                     </div>
                                 )
                             )}
-                        </div>
-                    </>
-                )}
+                            {!isLoading && results.length > 0 && renderResults()}
+                            
+                            {!isLoading && !isLoadingMore && !hasMore && results.length > 0 && (
+                                <div className="text-center text-on-surface-variant py-8">{t('common.endOfList')}</div>
+                            )}
+                            
+                            {!isLoading && results.length === 0 && (
+                                <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('search.empty', { query: initialQuery })}</div>
+                            )}
+                            
+                            <div ref={loaderRef} className="h-10">
+                                {isLoadingMore && supportsInfiniteScroll && (
+                                    isListView ? (
+                                       <div className="space-y-3 mt-4">
+                                           <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                                       </div>
+                                    ) : (
+                                        <div className="columns-2 gap-4 mt-4">
+                                            <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                            <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

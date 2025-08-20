@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
@@ -11,7 +8,7 @@ import PopularFeeds from './PopularFeeds';
 import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import FeedAvatar from './FeedAvatar';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 
 const EditableFeedItem: React.FC<{
     feed: AppBskyFeedDefs.GeneratorView;
@@ -75,8 +72,6 @@ const FeedsScreen: React.FC = () => {
 
     const [isUpdating, setIsUpdating] = useState(false);
 
-    useHeadManager({ title: t('feeds.title') });
-
     useEffect(() => {
         setCustomFeedHeaderVisible(true);
         return () => setCustomFeedHeaderVisible(false);
@@ -97,96 +92,105 @@ const FeedsScreen: React.FC = () => {
 
     if (!session) {
         return (
-            <div>
-                <ScreenHeader title={t('feeds.title')} />
-                <div className="mt-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold">{t('feeds.discover')}</h2>
-                        <a href="#/search?filter=feeds" className="p-2 -mr-2 rounded-full hover:bg-surface-3" aria-label={t('nav.search')}>
-                            <Search size={20} />
-                        </a>
+            <>
+                <Head><title>{t('feeds.title')}</title></Head>
+                <div>
+                    <ScreenHeader title={t('feeds.title')} />
+                    <div className="mt-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold">{t('feeds.discover')}</h2>
+                            <a href="#/search?filter=feeds" className="p-2 -mr-2 rounded-full hover:bg-surface-3" aria-label={t('nav.search')}>
+                                <Search size={20} />
+                            </a>
+                        </div>
+                        <PopularFeeds showHeader={false} />
                     </div>
-                    <PopularFeeds showHeader={false} />
                 </div>
-            </div>
+            </>
         );
     }
     
     if (isLoadingSavedFeeds) {
         return (
-             <div>
-                <ScreenHeader title={t('feeds.title')} />
-                <div className="mt-4">
-                    <div className="space-y-4">
-                        {[...Array(5)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-20 animate-pulse"></div>)}
+             <>
+                <Head><title>{t('feeds.title')}</title></Head>
+                <div>
+                    <ScreenHeader title={t('feeds.title')} />
+                    <div className="mt-4">
+                        <div className="space-y-4">
+                            {[...Array(5)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-20 animate-pulse"></div>)}
+                        </div>
                     </div>
                 </div>
-            </div>
+            </>
         );
     }
 
     return (
-        <div>
-            <ScreenHeader title={t('feeds.title')} />
-            <div className="mt-4">
-                <p className="text-on-surface-variant text-sm mb-6">
-                    {t('feeds.manageDescription')}
-                </p>
+        <>
+            <Head><title>{t('feeds.title')}</title></Head>
+            <div>
+                <ScreenHeader title={t('feeds.title')} />
+                <div className="mt-4">
+                    <p className="text-on-surface-variant text-sm mb-6">
+                        {t('feeds.manageDescription')}
+                    </p>
 
-                <div className="space-y-6">
-                    <section>
-                        <h2 className="text-lg font-bold mb-3 text-on-surface-variant">{t('feeds.pinned')}</h2>
-                        {pinnedItems.length > 0 ? (
-                            <div className="space-y-2">
-                                {pinnedItems.map((item, index) => {
-                                    const feed = feedViews.get(item.value);
-                                    if (!feed) return null;
-                                    const currentIndex = pinnedItems.findIndex(i => i.value === item.value);
-                                    return <EditableFeedItem
-                                        key={item.id}
-                                        feed={feed}
-                                        isPinned={true}
-                                        isFirst={index === 0}
-                                        isLast={index === pinnedItems.length - 1}
-                                        disabled={isUpdating}
-                                        onMoveUp={() => handleAction(() => reorder(currentIndex, currentIndex - 1))}
-                                        onMoveDown={() => handleAction(() => reorder(currentIndex, currentIndex + 1))}
-                                        onTogglePin={() => handleAction(() => togglePin(item.value))}
-                                        onRemove={() => handleAction(() => removeFeed(item.value))}
-                                    />
-                                })}
-                            </div>
-                        ) : <p className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">{t('feeds.emptyPinned')}</p>}
-                    </section>
-                    
-                     <section>
-                        <h2 className="text-lg font-bold mb-3 text-on-surface-variant">{t('feeds.saved')}</h2>
-                        {savedItems.length > 0 ? (
-                            <div className="space-y-2">
-                                {savedItems.map((item) => {
-                                    const feed = feedViews.get(item.value);
-                                    if (!feed) return null;
-                                    return <EditableFeedItem
-                                        key={item.id}
-                                        feed={feed}
-                                        isPinned={false}
-                                        isFirst={false} isLast={false} onMoveUp={()=>{}} onMoveDown={()=>{}}
-                                        disabled={isUpdating}
-                                        onTogglePin={() => handleAction(() => togglePin(item.value))}
-                                        onRemove={() => handleAction(() => removeFeed(item.value))}
-                                    />
-                                })}
-                            </div>
-                        ) : (
-                            <div className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">
-                                <p>{t('feeds.emptySaved')}</p>
-                                <a href="#/search?filter=feeds" className="font-semibold text-primary hover:underline mt-1 inline-block">{t('feeds.findNew')}</a>
-                            </div>
-                        )}
-                    </section>
+                    <div className="space-y-6">
+                        <section>
+                            <h2 className="text-lg font-bold mb-3 text-on-surface-variant">{t('feeds.pinned')}</h2>
+                            {pinnedItems.length > 0 ? (
+                                <div className="space-y-2">
+                                    {pinnedItems.map((item, index) => {
+                                        const feed = feedViews.get(item.value);
+                                        if (!feed) return null;
+                                        const currentIndex = pinnedItems.findIndex(i => i.value === item.value);
+                                        return <EditableFeedItem
+                                            key={item.id}
+                                            feed={feed}
+                                            isPinned={true}
+                                            isFirst={index === 0}
+                                            isLast={index === pinnedItems.length - 1}
+                                            disabled={isUpdating}
+                                            onMoveUp={() => handleAction(() => reorder(currentIndex, currentIndex - 1))}
+                                            onMoveDown={() => handleAction(() => reorder(currentIndex, currentIndex + 1))}
+                                            onTogglePin={() => handleAction(() => togglePin(item.value))}
+                                            onRemove={() => handleAction(() => removeFeed(item.value))}
+                                        />
+                                    })}
+                                </div>
+                            ) : <p className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">{t('feeds.emptyPinned')}</p>}
+                        </section>
+                        
+                         <section>
+                            <h2 className="text-lg font-bold mb-3 text-on-surface-variant">{t('feeds.saved')}</h2>
+                            {savedItems.length > 0 ? (
+                                <div className="space-y-2">
+                                    {savedItems.map((item) => {
+                                        const feed = feedViews.get(item.value);
+                                        if (!feed) return null;
+                                        return <EditableFeedItem
+                                            key={item.id}
+                                            feed={feed}
+                                            isPinned={false}
+                                            isFirst={false} isLast={false} onMoveUp={()=>{}} onMoveDown={()=>{}}
+                                            disabled={isUpdating}
+                                            onTogglePin={() => handleAction(() => togglePin(item.value))}
+                                            onRemove={() => handleAction(() => removeFeed(item.value))}
+                                        />
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">
+                                    <p>{t('feeds.emptySaved')}</p>
+                                    <a href="#/search?filter=feeds" className="font-semibold text-primary hover:underline mt-1 inline-block">{t('feeds.findNew')}</a>
+                                </div>
+                            )}
+                        </section>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

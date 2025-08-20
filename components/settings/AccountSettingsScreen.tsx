@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -6,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ChevronRight, ShieldCheck, Loader2 } from 'lucide-react';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 
 interface SettingsListItemProps {
     icon: React.ElementType;
@@ -57,8 +56,6 @@ const AccountSettingsScreen: React.FC = () => {
     const { toast } = useToast();
     const { t } = useTranslation();
     const [actionInProgress, setActionInProgress] = useState<string | null>(null);
-
-    useHeadManager({ title: t('accountSettings.title') });
 
     React.useEffect(() => {
         setCustomFeedHeaderVisible(true);
@@ -123,24 +120,27 @@ const AccountSettingsScreen: React.FC = () => {
     );
 
     return (
-        <div>
-            <ScreenHeader title="Account" />
-            <div className="mt-4 space-y-6">
-                <div className="bg-surface-2 rounded-lg overflow-hidden">
-                    <SettingsListItem icon={Mail} label="Email" value={emailValue} />
-                    <SettingsListItem icon={Edit} label="Update email" onClick={openUpdateEmailModal} disabled={!!actionInProgress} />
-                    <SettingsListItem icon={Lock} label="Password" href="https://bsky.app/settings/password" />
-                    <SettingsListItem icon={AtSign} label="Handle" value={`@${session?.handle}`} onClick={openUpdateHandleModal} disabled={!!actionInProgress} />
-                    <SettingsListItem icon={Cake} label="Birthday" href="https://bsky.app/settings/birthday" />
-                </div>
+        <>
+            <Head><title>{t('accountSettings.title')}</title></Head>
+            <div>
+                <ScreenHeader title="Account" />
+                <div className="mt-4 space-y-6">
+                    <div className="bg-surface-2 rounded-lg overflow-hidden">
+                        <SettingsListItem icon={Mail} label="Email" value={emailValue} />
+                        <SettingsListItem icon={Edit} label="Update email" onClick={openUpdateEmailModal} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Lock} label="Password" href="https://bsky.app/settings/password" />
+                        <SettingsListItem icon={AtSign} label="Handle" value={`@${session?.handle}`} onClick={openUpdateHandleModal} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Cake} label="Birthday" href="https://bsky.app/settings/birthday" />
+                    </div>
 
-                <div className="bg-surface-2 rounded-lg overflow-hidden">
-                    <SettingsListItem icon={Download} label="Export my data" onClick={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
-                    <SettingsListItem icon={Power} label="Deactivate account" onClick={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
-                    <SettingsListItem icon={Trash2} label="Delete account" onClick={handleDeleteAccount} isDestructive isLoading={actionInProgress === 'delete'} disabled={!!actionInProgress} />
+                    <div className="bg-surface-2 rounded-lg overflow-hidden">
+                        <SettingsListItem icon={Download} label="Export my data" onClick={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Power} label="Deactivate account" onClick={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Trash2} label="Delete account" onClick={handleDeleteAccount} isDestructive isLoading={actionInProgress === 'delete'} disabled={!!actionInProgress} />
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

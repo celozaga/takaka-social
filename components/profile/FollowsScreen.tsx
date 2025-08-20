@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -8,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } from '@atproto/api';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 
 interface FollowsScreenProps {
     actor: string;
@@ -28,7 +25,6 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     const loaderRef = useRef<HTMLDivElement>(null);
 
     const title = t(`common.${type}`);
-    useHeadManager({ title });
 
     useEffect(() => {
         setCustomFeedHeaderVisible(true);
@@ -101,28 +97,31 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     }, [hasMore, isLoading, isLoadingMore, loadMore]);
     
     return (
-        <div>
-            <ScreenHeader title={title} />
-            <div className="mt-4 space-y-3">
-                {isLoading && (
-                    [...Array(8)].map((_, i) => (
-                         <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                    ))
-                )}
-                {!isLoading && error && (
-                    <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error}</div>
-                )}
-                {!isLoading && !error && list.length === 0 && (
-                    <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('follows.empty')}</div>
-                )}
-                {list.map(user => (
-                    <ActorSearchResultCard key={user.did} actor={user} />
-                ))}
-                <div ref={loaderRef} className="h-10">
-                    {isLoadingMore && <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse mt-4"></div>}
+        <>
+            <Head><title>{title}</title></Head>
+            <div>
+                <ScreenHeader title={title} />
+                <div className="mt-4 space-y-3">
+                    {isLoading && (
+                        [...Array(8)].map((_, i) => (
+                             <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                        ))
+                    )}
+                    {!isLoading && error && (
+                        <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error}</div>
+                    )}
+                    {!isLoading && !error && list.length === 0 && (
+                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('follows.empty')}</div>
+                    )}
+                    {list.map(user => (
+                        <ActorSearchResultCard key={user.did} actor={user} />
+                    ))}
+                    <div ref={loaderRef} className="h-10">
+                        {isLoadingMore && <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse mt-4"></div>}
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 export default FollowsScreen;

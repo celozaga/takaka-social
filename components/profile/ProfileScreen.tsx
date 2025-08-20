@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -11,7 +8,7 @@ import PostCardSkeleton from '../post/PostCardSkeleton';
 import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 import Label from '../shared/Label';
 
 type FeedFilter = 'all' | 'photos' | 'videos';
@@ -72,13 +69,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
     const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
-
-    useHeadManager({
-        title: profile ? `${profile.displayName || profile.handle}` : t('profile.title'),
-        description: profile?.description,
-        imageUrl: profile?.avatar,
-        type: 'profile'
-    });
 
     const loaderRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -356,136 +346,144 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     );
     
     return (
-        <div>
-             <div className="sticky top-0 bg-surface-1/80 backdrop-blur-sm z-30 -mx-4 px-4">
-                <div className="flex items-center justify-between h-16">
-                    <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
-                        <ArrowLeft size={20} />
-                    </button>
-                    <h1 className="font-bold text-center truncate">@{profile.handle}</h1>
-                    <div className="w-8 flex justify-end">
-                        {!isMe && session && viewerState && <ActionsMenu />}
+        <>
+            <Head>
+                <title>{profile ? `${profile.displayName || profile.handle}` : t('profile.title')}</title>
+                {profile?.description && <meta name="description" content={profile.description} />}
+                {profile?.avatar && <meta property="og:image" content={profile.avatar} />}
+                <meta property="og:type" content="profile" />
+            </Head>
+            <div>
+                 <div className="sticky top-0 bg-surface-1/80 backdrop-blur-sm z-30 -mx-4 px-4">
+                    <div className="flex items-center justify-between h-16">
+                        <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
+                            <ArrowLeft size={20} />
+                        </button>
+                        <h1 className="font-bold text-center truncate">@{profile.handle}</h1>
+                        <div className="w-8 flex justify-end">
+                            {!isMe && session && viewerState && <ActionsMenu />}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="px-4 pb-4">
-                <div className="flex items-center gap-4 mt-4">
-                    <img src={profile.avatar} alt="Avatar" className="w-24 h-24 rounded-full bg-surface-3" loading="lazy"/>
-                    <div className="flex-1 flex items-center justify-around">
-                        <a href={`#/profile/${actor}/following`} className="text-center hover:opacity-80">
-                            <strong className="block text-lg font-bold">{profile.followsCount}</strong>
-                            <span className="text-sm text-on-surface-variant">Following</span>
-                        </a>
-                        <div className="w-px h-10 bg-outline"></div>
-                        <a href={`#/profile/${actor}/followers`} className="text-center hover:opacity-80">
-                            <strong className="block text-lg font-bold">{profile.followersCount}</strong>
-                            <span className="text-sm text-on-surface-variant">Followers</span>
-                        </a>
-                        <div className="w-px h-10 bg-outline"></div>
-                        <div className="text-center">
-                            <strong className="block text-lg font-bold">{profile.postsCount}</strong>
-                            <span className="text-sm text-on-surface-variant">Posts</span>
+                <div className="px-4 pb-4">
+                    <div className="flex items-center gap-4 mt-4">
+                        <img src={profile.avatar} alt="Avatar" className="w-24 h-24 rounded-full bg-surface-3" loading="lazy"/>
+                        <div className="flex-1 flex items-center justify-around">
+                            <a href={`#/profile/${actor}/following`} className="text-center hover:opacity-80">
+                                <strong className="block text-lg font-bold">{profile.followsCount}</strong>
+                                <span className="text-sm text-on-surface-variant">Following</span>
+                            </a>
+                            <div className="w-px h-10 bg-outline"></div>
+                            <a href={`#/profile/${actor}/followers`} className="text-center hover:opacity-80">
+                                <strong className="block text-lg font-bold">{profile.followersCount}</strong>
+                                <span className="text-sm text-on-surface-variant">Followers</span>
+                            </a>
+                            <div className="w-px h-10 bg-outline"></div>
+                            <div className="text-center">
+                                <strong className="block text-lg font-bold">{profile.postsCount}</strong>
+                                <span className="text-sm text-on-surface-variant">Posts</span>
+                            </div>
                         </div>
+                    </div>
+                    
+                    <div className="mt-3">
+                        <h2 className="text-lg font-bold flex items-center gap-2">
+                            <span>{profile.displayName || `@${profile.handle}`}</span>
+                            {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                                <BadgeCheck className="w-5 h-5 text-primary" fill="currentColor" />
+                            )}
+                        </h2>
+                         {profile.description && (
+                            <div className="mt-1 text-on-surface whitespace-pre-wrap text-sm">
+                                {descriptionWithFacets ? (
+                                    <RichTextRenderer record={descriptionWithFacets} />
+                                ) : (
+                                    <>{profile.description}</>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {profile.labels && ComAtprotoLabelDefs.isLabel(profile.labels[0]) && profile.labels.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                            {profile.labels.map((label) => (
+                               <Label key={label.val} label={label} />
+                            ))}
+                        </div>
+                    )}
+
+
+                    <div className="mt-4 flex items-center gap-2">
+                        {isMe ? (
+                            <button onClick={openEditProfileModal} className="w-full font-bold py-2.5 px-6 rounded-lg transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80">
+                                Edit Profile
+                            </button>
+                        ) : session && viewerState && (
+                            <>
+                                <FollowButton />
+                                {chatSupported && (
+                                    <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
+                                        <MessageSquare size={20} />
+                                    </a>
+                                )}
+                            </>
+                        )}
                     </div>
                 </div>
                 
-                <div className="mt-3">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                        <span>{profile.displayName || `@${profile.handle}`}</span>
-                        {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                            <BadgeCheck className="w-5 h-5 text-primary" fill="currentColor" />
-                        )}
-                    </h2>
-                     {profile.description && (
-                        <div className="mt-1 text-on-surface whitespace-pre-wrap text-sm">
-                            {descriptionWithFacets ? (
-                                <RichTextRenderer record={descriptionWithFacets} />
-                            ) : (
-                                <>{profile.description}</>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {profile.labels && ComAtprotoLabelDefs.isLabel(profile.labels[0]) && profile.labels.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                        {profile.labels.map((label) => (
-                           <Label key={label.val} label={label} />
-                        ))}
-                    </div>
-                )}
-
-
-                <div className="mt-4 flex items-center gap-2">
-                    {isMe ? (
-                        <button onClick={openEditProfileModal} className="w-full font-bold py-2.5 px-6 rounded-lg transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80">
-                            Edit Profile
+                {viewerState?.blocking ? (
+                    <div className="text-center p-8 bg-surface-2 rounded-xl">
+                        <p className="font-bold text-lg">You have blocked @${profile.handle}</p>
+                        <p className="text-on-surface-variant text-sm mb-4">You won't see their posts or be able to follow them.</p>
+                        <button onClick={handleUnblock} disabled={isActionLoading} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 disabled:opacity-50">
+                            Unblock
                         </button>
-                    ) : session && viewerState && (
-                        <>
-                            <FollowButton />
-                            {chatSupported && (
-                                <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
-                                    <MessageSquare size={20} />
-                                </a>
-                            )}
-                        </>
-                    )}
-                </div>
-            </div>
-            
-            {viewerState?.blocking ? (
-                <div className="text-center p-8 bg-surface-2 rounded-xl">
-                    <p className="font-bold text-lg">You have blocked @${profile.handle}</p>
-                    <p className="text-on-surface-variant text-sm mb-4">You won't see their posts or be able to follow them.</p>
-                    <button onClick={handleUnblock} disabled={isActionLoading} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 disabled:opacity-50">
-                        Unblock
-                    </button>
-                </div>
-            ) : (
-                <>
-                    <div className="flex items-center justify-around border-b border-surface-3">
-                        <button onClick={() => setActiveFilter('all')} className={`w-full p-4 flex justify-center ${activeFilter === 'all' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><Grid size={22} /></button>
-                        <button onClick={() => setActiveFilter('photos')} className={`w-full p-4 flex justify-center ${activeFilter === 'photos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><ImageIcon size={22} /></button>
-                        <button onClick={() => setActiveFilter('videos')} className={`w-full p-4 flex justify-center ${activeFilter === 'videos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><VideoIcon size={22} /></button>
                     </div>
-
-                    <div className="pt-1">
-                        {displayedFeed.length === 0 && !hasMore && (
-                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">
-                                This user has not posted any {activeFilter !== 'all' ? `${activeFilter.slice(0,-1)}s` : 'media'} yet.
-                            </div>
-                        )}
-                        
-                        <div className="columns-2 gap-4 mt-4">
-                            {displayedFeed.map((feedViewPost) => (
-                                <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
-                                    <PostCard feedViewPost={feedViewPost} />
-                                </div>
-                            ))}
+                ) : (
+                    <>
+                        <div className="flex items-center justify-around border-b border-surface-3">
+                            <button onClick={() => setActiveFilter('all')} className={`w-full p-4 flex justify-center ${activeFilter === 'all' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><Grid size={22} /></button>
+                            <button onClick={() => setActiveFilter('photos')} className={`w-full p-4 flex justify-center ${activeFilter === 'photos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><ImageIcon size={22} /></button>
+                            <button onClick={() => setActiveFilter('videos')} className={`w-full p-4 flex justify-center ${activeFilter === 'videos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><VideoIcon size={22} /></button>
                         </div>
 
-                        <div ref={loaderRef} className="h-10">
-                            {isLoadingMore && (
+                        <div className="pt-1">
+                            {displayedFeed.length === 0 && !hasMore && (
+                                <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">
+                                    This user has not posted any {activeFilter !== 'all' ? `${activeFilter.slice(0,-1)}s` : 'media'} yet.
+                                </div>
+                            )}
+                            
                             <div className="columns-2 gap-4 mt-4">
-                                <div className="break-inside-avoid mb-4">
-                                <PostCardSkeleton />
-                                </div>
-                                <div className="break-inside-avoid mb-4">
-                                <PostCardSkeleton />
-                                </div>
+                                {displayedFeed.map((feedViewPost) => (
+                                    <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
+                                        <PostCard feedViewPost={feedViewPost} />
+                                    </div>
+                                ))}
                             </div>
+
+                            <div ref={loaderRef} className="h-10">
+                                {isLoadingMore && (
+                                <div className="columns-2 gap-4 mt-4">
+                                    <div className="break-inside-avoid mb-4">
+                                    <PostCardSkeleton />
+                                    </div>
+                                    <div className="break-inside-avoid mb-4">
+                                    <PostCardSkeleton />
+                                    </div>
+                                </div>
+                                )}
+                            </div>
+
+                            {!hasMore && displayedFeed.length > 0 && (
+                                <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
                             )}
                         </div>
-
-                        {!hasMore && displayedFeed.length > 0 && (
-                            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
-                        )}
-                    </div>
-                </>
-            )}
-        </div>
+                    </>
+                )}
+            </div>
+        </>
     );
 };
 

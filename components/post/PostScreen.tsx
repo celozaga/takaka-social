@@ -9,11 +9,11 @@ import { useToast } from '../ui/use-toast';
 import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, Loader2, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 import { useModeration } from '../../context/ModerationContext';
-import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import SharedVideoPlayer from '../shared/VideoPlayer';
+import { moderatePost } from '../../lib/moderation';
 
 
 const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined => {
@@ -60,9 +60,6 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const title = postAuthor ? `${t('post.byline', { user: `@${postAuthor.handle}`})}${postExcerpt ? `: "${postExcerpt}"` : ''}` : t('common.post');
   const description = record?.text;
   const imageUrl = thread?.post ? getImageUrlFromPost(thread.post) : undefined;
-
-  useHeadManager({ title, description, imageUrl, type: 'article' });
-
 
   useEffect(() => {
     setCurrentImageIndex(0); // Reset for new posts
@@ -336,45 +333,53 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
   
   return (
-    <div>
-      <PageHeader />
-      
+    <>
+      <Head>
+        <title>{title}</title>
+        {description && <meta name="description" content={description} />}
+        {imageUrl && <meta property="og:image" content={imageUrl} />}
+        <meta property="og:type" content="article" />
+      </Head>
       <div>
-        <div className="p-4">
-             {renderMedia(mainPost)}
-             {currentRecord.text && (
-                <div className="my-3 text-on-surface whitespace-pre-wrap break-words">
-                    <RichTextRenderer record={currentRecord} />
+        <PageHeader />
+        
+        <div>
+          <div className="p-4">
+               {renderMedia(mainPost)}
+               {currentRecord.text && (
+                  <div className="my-3 text-on-surface whitespace-pre-wrap break-words">
+                      <RichTextRenderer record={currentRecord} />
+                  </div>
+               )}
+               <p className="text-sm text-on-surface-variant my-3">{format(new Date(currentRecord.createdAt), "h:mm a · MMM d, yyyy")}</p>
+          </div>
+          
+          <PostScreenActionBar post={mainPost} />
+          
+          <div className="md:mt-4">
+            {(mainPost.replyCount || 0) > 0 ? (
+              <>
+                <div className="px-4 pt-4 pb-2">
+                  <h2 className="text-lg font-bold">
+                    {mainPost.replyCount} {t(mainPost.replyCount === 1 ? 'common.reply' : 'common.replies')}
+                  </h2>
                 </div>
-             )}
-             <p className="text-sm text-on-surface-variant my-3">{format(new Date(currentRecord.createdAt), "h:mm a · MMM d, yyyy")}</p>
-        </div>
-        
-        <PostScreenActionBar post={mainPost} />
-        
-        <div className="md:mt-4">
-          {(mainPost.replyCount || 0) > 0 ? (
-            <>
-              <div className="px-4 pt-4 pb-2">
-                <h2 className="text-lg font-bold">
-                  {mainPost.replyCount} {t(mainPost.replyCount === 1 ? 'common.reply' : 'common.replies')}
-                </h2>
+                {allReplies.length > 0 && (
+                  <div>
+                    <Reply reply={thread} isRoot={true} />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4 mx-4 md:mx-0">
+                  <MessageSquareDashed size={40} className="mx-auto mb-4 opacity-50" />
+                  <p className="font-semibold text-on-surface">{t('post.noReplies')}</p>
               </div>
-              {allReplies.length > 0 && (
-                <div>
-                  <Reply reply={thread} isRoot={true} />
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4 mx-4 md:mx-0">
-                <MessageSquareDashed size={40} className="mx-auto mb-4 opacity-50" />
-                <p className="font-semibold text-on-surface">{t('post.noReplies')}</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

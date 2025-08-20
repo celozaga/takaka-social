@@ -5,7 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Quote, Bell, Loader2 } from 'lucide-react';
-import { useHeadManager } from '../../hooks/useHeadManager';
+import { Head } from 'expo-router';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
@@ -37,8 +37,6 @@ const NotificationSettingsScreen: React.FC = () => {
         quote: true,
     });
     type SettingsKey = keyof typeof settings;
-
-    useHeadManager({ title: t('notificationSettings.title') });
 
     // Load initial settings from preferences and browser permissions
     useEffect(() => {
@@ -178,40 +176,43 @@ const NotificationSettingsScreen: React.FC = () => {
     }
 
     return (
-        <div>
-            <ScreenHeader title="Notifications" />
-            <div className="mt-4 space-y-4">
-                 <div className="bg-surface-2 rounded-lg p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Bell className="w-6 h-6 text-on-surface-variant" />
-                        <div>
-                            <p className="font-semibold">Enable Push Notifications</p>
-                            <p className="text-sm text-on-surface-variant">Get alerts on your device</p>
-                        </div>
-                    </div>
-                    <ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />
-                </div>
-
-                <div className={`transition-opacity duration-300 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <h3 className="font-bold text-on-surface-variant px-2 my-2">Notify me about...</h3>
-                    <div className="bg-surface-2 rounded-lg divide-y divide-outline">
-                         {settingsItems.map((item) => (
-                            <div key={item.key} className="p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <item.icon className="w-6 h-6 text-on-surface-variant" />
-                                    <p className="font-semibold">{item.title}</p>
-                                </div>
-                                <ToggleSwitch
-                                    checked={settings[item.key]}
-                                    onChange={(checked) => handleSettingToggle(item.key, checked)}
-                                    disabled={isSaving}
-                                />
+        <>
+            <Head><title>{t('notificationSettings.title')}</title></Head>
+            <div>
+                <ScreenHeader title="Notifications" />
+                <div className="mt-4 space-y-4">
+                     <div className="bg-surface-2 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Bell className="w-6 h-6 text-on-surface-variant" />
+                            <div>
+                                <p className="font-semibold">Enable Push Notifications</p>
+                                <p className="text-sm text-on-surface-variant">Get alerts on your device</p>
                             </div>
-                        ))}
+                        </div>
+                        <ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />
+                    </div>
+
+                    <div className={`transition-opacity duration-300 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <h3 className="font-bold text-on-surface-variant px-2 my-2">Notify me about...</h3>
+                        <div className="bg-surface-2 rounded-lg divide-y divide-outline">
+                             {settingsItems.map((item) => (
+                                <div key={item.key} className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <item.icon className="w-6 h-6 text-on-surface-variant" />
+                                        <p className="font-semibold">{item.title}</p>
+                                    </div>
+                                    <ToggleSwitch
+                                        checked={settings[item.key]}
+                                        onChange={(checked) => handleSettingToggle(item.key, checked)}
+                                        disabled={isSaving}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
