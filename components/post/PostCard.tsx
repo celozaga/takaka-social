@@ -10,6 +10,7 @@ import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import PostCardSkeleton from './PostCardSkeleton';
+import { resizeImage } from '../../lib/image';
 
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -60,7 +61,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                             return (
                                 <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 rounded-md overflow-hidden">
                                     <img
-                                        src={image.thumb}
+                                        src={resizeImage(image.thumb, 400)}
                                         alt={image.alt || `Post image ${index + 1}`}
                                         className="w-full h-full object-cover"
                                         loading="lazy"
@@ -83,7 +84,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             return (
                 <div className="relative">
                     <img 
-                        src={firstImage.thumb} 
+                        src={resizeImage(firstImage.thumb, 400)} 
                         alt={firstImage.alt || 'Post image'} 
                         className="w-full h-auto object-cover" 
                         loading="lazy"
@@ -155,7 +156,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             
             return (
                 <div className="relative">
-                    <img src={posterUrl} className="w-full h-auto object-cover bg-black" />
+                    <img src={resizeImage(posterUrl, 400)} className="w-full h-auto object-cover bg-black" />
                     <div className="absolute top-2 right-2 flex items-center gap-1.5">
                         {isRepost && (
                             <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
