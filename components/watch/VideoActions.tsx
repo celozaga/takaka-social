@@ -91,7 +91,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     return (
         <div className="absolute bottom-24 right-2 flex flex-col items-center gap-5 text-white">
             <div className="relative">
-                <Link href={`/profile/${post.author.handle}` as any} className="relative group block" onClick={e => e.stopPropagation()}>
+                <Link href={`/profile/${post.author.handle}` as any} className="relative group block" onPress={e => e.stopPropagation()}>
                     <img src={post.author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={post.author.displayName || post.author.handle} className="w-12 h-12 rounded-full border-2 border-white bg-surface-3" />
                     {post.author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
                         <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-0.5 border border-black">

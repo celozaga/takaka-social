@@ -86,7 +86,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
 
   const AuthorLink = () => (
-    <Link href={profileLink as any} className="font-bold hover:underline inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
+    <Link href={profileLink as any} className="font-bold hover:underline inline-flex items-center gap-1" onPress={e => e.stopPropagation()}>
       <span>{author.displayName || `@${author.handle}`}</span>
       {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
         <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />

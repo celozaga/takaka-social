@@ -37,7 +37,7 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
           key={segments.length}
           href={`/profile/${segment.mention!.did}` as any}
           className="text-primary hover:underline"
-          onClick={(e) => e.stopPropagation()}
+          onPress={(e) => e.stopPropagation()}
         >
           {segment.text}
         </Link>
@@ -48,7 +48,7 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
           key={segments.length}
           href={`/(tabs)/search?q=${encodeURIComponent(segment.tag!.tag)}&filter=top` as any}
           className="text-primary hover:underline"
-          onClick={(e) => e.stopPropagation()}
+          onPress={(e) => e.stopPropagation()}
         >
           {segment.text}
         </Link>

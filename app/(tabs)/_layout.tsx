@@ -132,12 +132,12 @@ const styles = StyleSheet.create({
   },
   composerBackdrop: {
      justifyContent: 'flex-start',
-     paddingTop: Platform.select({ web: '5vh', default: 40 }),
+     paddingTop: Platform.select({ web: '5vh' as any, default: 40 }),
   },
   composerWrapper: {
     width: '100%',
     maxWidth: 640,
-    height: Platform.select({web: '90vh', default: '95%'}),
+    height: Platform.select({web: '90vh' as any, default: '95%'}),
     maxHeight: 800,
     backgroundColor: '#1E2021', // surface-2
     borderRadius: 16,

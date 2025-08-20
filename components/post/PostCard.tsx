@@ -215,7 +215,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                 <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
                     <Repeat size={14} />
                     <span className="truncate">
-                        Reposted by <Link href={`/profile/${reason.by.handle}` as any} className="hover:underline" onClick={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</Link>
+                        Reposted by <Link href={`/profile/${reason.by.handle}` as any} className="hover:underline" onPress={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</Link>
                     </span>
                 </div>
             );

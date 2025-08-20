@@ -99,7 +99,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
                   <View style={styles.navItemContainer}>
                       <View style={styles.iconWrapper}>
                           <LogOut size={22} color="#8A9199"/>
-                      </div>
+                      </View>
                       <Text style={styles.labelText}>{t('nav.logout')}</Text>
                   </View>
               </Pressable>
@@ -115,7 +115,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const stylesObject = {
   navItemContainer: {
     flex: 1,
     alignItems: 'center',
@@ -202,7 +202,8 @@ const styles = StyleSheet.create({
       zIndex: 50,
     }
   },
-});
+};
+const styles = StyleSheet.create(stylesObject as any);
 
 
 export default BottomNavbar;
