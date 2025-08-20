@@ -1,8 +1,10 @@
 import React from 'react';
 import { useModeration } from '../../context/ModerationContext';
 import ScreenHeader from '../layout/ScreenHeader';
-import { ChevronRight, Shield, Filter, Users, MessageSquare, Tag, UserX, Loader2 } from 'lucide-react';
+import { ChevronRight, Shield, Filter, Users, MessageSquare, UserX } from 'lucide-react';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import { Link } from 'expo-router';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 
 const SettingsItem: React.FC<{
     icon: React.FC<any>;
@@ -12,23 +14,27 @@ const SettingsItem: React.FC<{
     disabled?: boolean;
 }> = ({ icon: Icon, title, subtitle, href, disabled }) => {
     const content = (
-        <div className={`flex items-center justify-between p-4 ${disabled ? 'opacity-50' : ''}`}>
-            <div className="flex items-center gap-4">
-                <Icon className="w-6 h-6 text-on-surface-variant" />
-                <div>
-                    <span className="font-semibold">{title}</span>
-                    {subtitle && <p className="text-sm text-on-surface-variant">{subtitle}</p>}
-                </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-on-surface-variant" />
-        </div>
+        <View style={[styles.settingsItemInner, disabled && styles.disabled]}>
+            <View style={styles.settingsItemLeft}>
+                <Icon style={styles.settingsIcon} color="#C3C6CF" />
+                <View>
+                    <Text style={styles.settingsTitle}>{title}</Text>
+                    {subtitle && <Text style={styles.settingsSubtitle}>{subtitle}</Text>}
+                </View>
+            </View>
+            <ChevronRight style={styles.settingsChevron} color="#C3C6CF" />
+        </View>
     );
     
     if (disabled) {
-        return <div className="cursor-not-allowed">{content}</div>;
+        return <View>{content}</View>;
     }
     
-    return <a href={href} className="block hover:bg-surface-3 transition-colors">{content}</a>;
+    return (
+        <Link href={href as any} asChild>
+            <Pressable style={({ pressed }) => [pressed && styles.pressed]}>{content}</Pressable>
+        </Link>
+    );
 };
 
 const BLUESKY_OFFICIAL_MOD_SERVICE = 'did:plc:z72i7hdynmk6r22z27h6tvur';
@@ -37,52 +43,96 @@ const ModerationSettingsScreen: React.FC = () => {
     const { isReady, adultContentEnabled, setAdultContentEnabled } = useModeration();
 
     return (
-        <div>
+        <View>
             <ScreenHeader title="Moderation" />
-            <div className="mt-4 space-y-6">
-                <div className="bg-surface-2 rounded-lg overflow-hidden">
-                    <SettingsItem icon={Filter} title="Muted words & tags" href="#/settings/muted-words" />
+            <View style={styles.container}>
+                <View style={styles.section}>
+                    <SettingsItem icon={Filter} title="Muted words & tags" href="/settings/muted-words" />
                     <SettingsItem icon={Users} title="Moderation lists" href="#" disabled />
                     <SettingsItem icon={MessageSquare} title="Muted accounts" href="#" disabled />
                     <SettingsItem icon={UserX} title="Blocked accounts" href="#" disabled />
-                </div>
+                </View>
                 
-                <div>
-                    <h3 className="font-bold text-on-surface-variant px-4 mb-2">Content filters</h3>
-                    <div className="bg-surface-2 rounded-lg p-4 flex items-center justify-between">
-                         <div className="flex items-center gap-4">
-                            <div>
-                                <span className="font-semibold">Enable adult content</span>
-                            </div>
-                        </div>
+                <View>
+                    <Text style={styles.sectionHeader}>Content filters</Text>
+                    <View style={styles.toggleItem}>
+                         <View>
+                            <Text style={styles.settingsTitle}>Enable adult content</Text>
+                        </View>
                         {isReady ? (
                              <ToggleSwitch checked={adultContentEnabled} onChange={setAdultContentEnabled} />
                         ) : (
-                            <Loader2 className="w-5 h-5 animate-spin text-on-surface-variant" />
+                            <ActivityIndicator color="#C3C6CF" />
                         )}
-                    </div>
-                </div>
+                    </View>
+                </View>
 
-                 <div>
-                    <h3 className="font-bold text-on-surface-variant px-4 mb-2">Advanced</h3>
-                    <div className="bg-surface-2 rounded-lg overflow-hidden">
-                        <a href={`#/settings/mod-service/${BLUESKY_OFFICIAL_MOD_SERVICE}`} className="block hover:bg-surface-3 transition-colors">
-                             <div className="flex items-center justify-between p-4">
-                                <div className="flex items-center gap-4">
-                                    <Shield className="w-6 h-6 text-primary" />
-                                    <div>
-                                        <span className="font-semibold">Bluesky Moderation Service</span>
-                                        <p className="text-sm text-on-surface-variant">Official Bluesky moderation service.</p>
-                                    </div>
+                 <View>
+                    <Text style={styles.sectionHeader}>Advanced</Text>
+                    <View style={styles.section}>
+                        <Link href={`/settings/mod-service/${BLUESKY_OFFICIAL_MOD_SERVICE}` as any} asChild>
+                            <Pressable style={({ pressed }) => [pressed && styles.pressed]}>
+                                 <View style={styles.settingsItemInner}>
+                                    <View style={styles.settingsItemLeft}>
+                                        <Shield style={styles.settingsIcon} color="#A8C7FA" />
+                                        <View>
+                                            <Text style={styles.settingsTitle}>Bluesky Moderation Service</Text>
+                                            <Text style={styles.settingsSubtitle}>Official Bluesky moderation service.</Text>
+                                        </View>
+                                    </View>
+                                    <ChevronRight style={styles.settingsChevron} color="#C3C6CF" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-on-surface-variant" />
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+                            </Pressable>
+                        </Link>
+                    </View>
+                </View>
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        marginTop: 16,
+        paddingHorizontal: 16,
+        gap: 24,
+    },
+    section: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    settingsItemInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+    },
+    disabled: { opacity: 0.5 },
+    pressed: { backgroundColor: '#2b2d2e' },
+    settingsItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    settingsIcon: { width: 24, height: 24 },
+    settingsTitle: { fontWeight: '600', color: '#E2E2E6', fontSize: 16 },
+    settingsSubtitle: { fontSize: 14, color: '#C3C6CF' },
+    settingsChevron: { width: 20, height: 20 },
+    sectionHeader: {
+        fontWeight: 'bold',
+        color: '#C3C6CF',
+        paddingHorizontal: 8,
+        marginBottom: 8,
+    },
+    toggleItem: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+});
 
 export default ModerationSettingsScreen;

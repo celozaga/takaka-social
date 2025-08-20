@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, usePathname } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid } from 'lucide-react';
-import { View, Pressable, Text, StyleSheet } from 'react-native';
+import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 
 
 interface BottomNavbarProps {
@@ -17,6 +16,8 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const { openLoginModal, openComposer } = useUI();
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
 
   const loggedInNavItems = [
     { href: '/(tabs)/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/(tabs)/home' || pathname === '/' },
@@ -71,12 +72,12 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   return (
     <>
       {/* Mobile Bottom Bar */}
-      <View style={[styles.mobileNav, { display: isHidden ? 'none' : 'flex' }]}>
+      <View style={[styles.mobileNav, { display: isHidden || isDesktop ? 'none' : 'flex' }]}>
         {navItems.map(item => <View key={item.labelKey} style={{flex: 1}}>{renderNavItem(item)}</View>)}
       </View>
       
       {/* Desktop Navigation Rail */}
-      <View style={styles.desktopNav}>
+      <View style={[styles.desktopNav, { display: isDesktop ? 'flex' : 'none'}]}>
         <View style={styles.desktopNavSection}>
             {loggedInNavItems.filter(item => item.labelKey !== 'nav.more' && item.labelKey !== 'nav.logout').map(item => renderNavItem(item))}
         </View>
@@ -103,7 +104,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   );
 };
 
-const stylesObject = {
+const styles = StyleSheet.create({
   navItemContainer: {
     flex: 1,
     alignItems: 'center',
@@ -136,9 +137,6 @@ const stylesObject = {
     top: -2,
     right: -2,
     backgroundColor: '#A8C7FA', // primary
-    color: '#003258', // on-primary
-    fontSize: 10,
-    fontWeight: 'bold',
     borderRadius: 999,
     paddingHorizontal: 4,
     minWidth: 16,
@@ -164,34 +162,24 @@ const stylesObject = {
     zIndex: 50,
   },
   desktopNav: {
-    display: 'none',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: '100%',
+    width: 80,
+    backgroundColor: '#1E2021',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 24,
+    zIndex: 50,
   },
   desktopNavSection: {
     alignItems: 'center',
     gap: 16,
     width: '100%',
   },
-   '@media (min-width: 768px)': {
-    mobileNav: {
-      display: 'none',
-    },
-    desktopNav: {
-      display: 'flex',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      height: '100%',
-      width: 80,
-      backgroundColor: '#1E2021',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: 24,
-      zIndex: 50,
-    }
-  },
-};
-const styles = StyleSheet.create(stylesObject as any);
+});
 
 
 export default BottomNavbar;

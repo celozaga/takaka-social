@@ -1,82 +1,92 @@
-
 import React, { useState } from 'react';
 import { useModeration } from '../../context/ModerationContext';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Loader2, Trash2, Tag, Plus } from 'lucide-react';
+import { Trash2, Tag, Plus } from 'lucide-react';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 
 const MutedWordsScreen: React.FC = () => {
     const { isReady, mutedWords, addMutedWord, removeMutedWord } = useModeration();
     const [newWord, setNewWord] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     
-    const handleAdd = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleAdd = async () => {
         if (!newWord.trim() || isAdding) return;
         setIsAdding(true);
         try {
             await addMutedWord(newWord.trim());
             setNewWord('');
-        } catch (error) {
-            console.error("Failed to add muted word:", error);
-        } finally {
-            setIsAdding(false);
-        }
+        } catch (error) { console.error("Failed to add muted word:", error); }
+        finally { setIsAdding(false); }
     };
 
     const handleRemove = async (word: string) => {
-        // You may want to add a loading state per item for better UX
-        try {
-            await removeMutedWord(word);
-        } catch (error) {
-            console.error("Failed to remove muted word:", error);
-        }
+        try { await removeMutedWord(word); }
+        catch (error) { console.error("Failed to remove muted word:", error); }
     }
 
     return (
-        <div>
+        <View style={{ flex: 1 }}>
             <ScreenHeader title="Muted Words & Tags" />
-            <div className="mt-4 p-4">
-                <p className="text-on-surface-variant text-sm mb-4">
+            <ScrollView contentContainerStyle={styles.container}>
+                <Text style={styles.description}>
                     Posts containing these words or tags will be hidden from your feeds. Muting is case-insensitive.
-                </p>
-                <form onSubmit={handleAdd} className="flex gap-2 mb-6">
-                    <div className="relative flex-grow">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                        <input
-                            type="text"
+                </Text>
+                <View style={styles.formContainer}>
+                    <View style={styles.inputContainer}>
+                        <Tag style={styles.inputIcon} color="#C3C6CF" size={20}/>
+                        <TextInput
                             value={newWord}
-                            onChange={(e) => setNewWord(e.target.value)}
+                            onChangeText={setNewWord}
                             placeholder="Add a word or #tag"
-                            className="w-full pl-10 pr-4 py-2 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary outline-none"
+                            placeholderTextColor="#8A9199"
+                            style={styles.input}
+                            onSubmitEditing={handleAdd}
                         />
-                    </div>
-                    <button type="submit" disabled={isAdding || !newWord.trim()} className="bg-primary text-on-primary font-bold py-2 px-4 rounded-lg flex items-center gap-2 disabled:opacity-50">
-                        {isAdding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus />}
-                        <span>Add</span>
-                    </button>
-                </form>
+                    </View>
+                    <Pressable onPress={handleAdd} disabled={isAdding || !newWord.trim()} style={[styles.addButton, (isAdding || !newWord.trim()) && styles.disabledButton]}>
+                        {isAdding ? <ActivityIndicator color="#003258" /> : <Plus color="#003258" />}
+                        <Text style={styles.addButtonText}>Add</Text>
+                    </Pressable>
+                </View>
 
-                <div className="bg-surface-2 rounded-lg">
+                <View style={styles.listContainer}>
                     {!isReady ? (
-                        <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+                        <View style={styles.centered}><ActivityIndicator size="large" /></View>
                     ) : mutedWords.length === 0 ? (
-                        <p className="p-8 text-center text-on-surface-variant">You haven't muted any words yet.</p>
+                        <View style={styles.centered}><Text style={styles.infoText}>You haven't muted any words yet.</Text></View>
                     ) : (
-                        <ul className="divide-y divide-surface-3">
-                            {mutedWords.map(word => (
-                                <li key={word.value} className="flex items-center justify-between p-3">
-                                    <span className="font-semibold">{word.value}</span>
-                                    <button onClick={() => handleRemove(word.value)} className="p-2 rounded-full hover:bg-error/20 text-on-surface-variant hover:text-error">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                        mutedWords.map((word, index) => (
+                            <View key={word.value} style={[styles.listItem, index > 0 && styles.listItemBorder]}>
+                                <Text style={styles.wordText}>{word.value}</Text>
+                                <Pressable onPress={() => handleRemove(word.value)} style={styles.removeButton}>
+                                    <Trash2 size={18} color="#C3C6CF" />
+                                </Pressable>
+                            </View>
+                        ))
                     )}
-                </div>
-            </div>
-        </div>
+                </View>
+            </ScrollView>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: { padding: 16 },
+    description: { color: '#C3C6CF', fontSize: 14, marginBottom: 16 },
+    formContainer: { flexDirection: 'row', gap: 8, marginBottom: 24 },
+    inputContainer: { position: 'relative', flex: 1, justifyContent: 'center' },
+    inputIcon: { position: 'absolute', left: 12 },
+    input: { width: '100%', paddingLeft: 40, paddingRight: 12, paddingVertical: 10, backgroundColor: '#1E2021', borderRadius: 8, color: '#E2E2E6' },
+    addButton: { backgroundColor: '#A8C7FA', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, borderRadius: 8 },
+    disabledButton: { opacity: 0.5 },
+    addButtonText: { color: '#003258', fontWeight: 'bold' },
+    listContainer: { backgroundColor: '#1E2021', borderRadius: 12, overflow: 'hidden' },
+    centered: { padding: 32, alignItems: 'center' },
+    infoText: { color: '#C3C6CF' },
+    listItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 },
+    listItemBorder: { borderTopWidth: 1, borderTopColor: '#2b2d2e' },
+    wordText: { fontWeight: '600', color: '#E2E2E6' },
+    removeButton: { padding: 8, borderRadius: 999 },
+});
 
 export default MutedWordsScreen;
