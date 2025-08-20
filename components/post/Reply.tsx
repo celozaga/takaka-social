@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -166,13 +165,10 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
               </Pressable>
             </Link>
           
-            <Link href={`/post/${post.author.did}/${post.uri.split('/').pop()}` as any} asChild>
-                <Pressable>
-                    <Text style={styles.postText}>
-                        <RichTextRenderer record={record} />
-                    </Text>
-                </Pressable>
-            </Link>
+            <Text style={styles.postText}>
+                <RichTextRenderer record={record} />
+            </Text>
+
             <View style={styles.footer}>
                 <Text style={styles.footerText}>{date}</Text>
                 <Pressable onPress={handleReplyClick}>

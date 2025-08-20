@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
+import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
 import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -21,6 +22,8 @@ type PostCardProps = {
 
 const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, showAllMedia = false }) => {
     const { agent } = useAtp();
+    const { setPostForNav } = useUI();
+    const router = useRouter();
     const moderation = useModeration();
     const [isContentVisible, setIsContentVisible] = React.useState(false);
     const [hlsUrl, setHlsUrl] = React.useState<string | null>(null);
@@ -66,6 +69,12 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     const rkey = post.uri.split('/').pop() as string;
     const postLink = `/post/${author.did}/${rkey}`;
     const profileLink = `/profile/${author.handle}`;
+
+    const handlePress = () => {
+        if (!isClickable) return;
+        setPostForNav(feedViewPost);
+        router.push(postLink);
+    };
 
     const getMediaInfo = (p: AppBskyFeedDefs.PostView): { mediaPost: AppBskyFeedDefs.PostView, mediaEmbed: (AppBskyEmbedImages.View | AppBskyEmbedVideo.View) } | null => {
         const embed = p.embed;
@@ -233,58 +242,47 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
 
     const mediaElement = renderMedia();
     if (!mediaElement) return null;
-    
-    const Wrapper = ({ children }: { children: React.ReactNode }) => {
-        if(isClickable) {
-            return <Link href={postLink as any} asChild><Pressable>{children}</Pressable></Link>
-        }
-        return <View>{children}</View>;
-    }
 
     return (
-        <View style={styles.card}>
-            <Wrapper>
-                <>
-                    {mediaElement}
-                    <View style={styles.content}>
-                        {renderContext()}
-                        {postText && (
-                            <View style={{ marginBottom: 8 }}>
-                                <Text style={styles.postText} numberOfLines={3}>
-                                    <RichTextRenderer record={record} />
-                                </Text>
-                            </View>
-                        )}
-                         <View style={styles.footer}>
-                           <Link href={profileLink as any} style={styles.authorContainer} asChild>
-                            <Pressable>
-                             <ResizedImage 
-                                src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${author.did}/24`} 
-                                alt={`${author.displayName}'s avatar`} 
-                                style={styles.avatar} 
-                                resizeWidth={48}
-                             />
-                             <View style={styles.authorInfo}>
-                                <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
-                                {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                    <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" style={{ flexShrink: 0 }} />
-                                )}
-                             </View>
-                            </Pressable>
-                           </Link>
-                           <Pressable 
-                                onPress={(e) => { e.stopPropagation(); handleLike(e); }}
-                                disabled={isLiking}
-                                style={styles.likeButton}
-                            >
-                                <Heart size={16} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? '#ec4899' : 'none'} />
-                                <Text style={[styles.likeCount, !!likeUri && { color: '#ec4899'}]}>{likeCount}</Text>
-                            </Pressable>
-                        </View>
+        <Pressable style={styles.card} onPress={handlePress}>
+            {mediaElement}
+            <View style={styles.content}>
+                {renderContext()}
+                {postText && (
+                    <View style={{ marginBottom: 8 }}>
+                        <Text style={styles.postText} numberOfLines={3}>
+                            <RichTextRenderer record={record} />
+                        </Text>
                     </View>
-                </>
-            </Wrapper>
-        </View>
+                )}
+                    <View style={styles.footer}>
+                    <Link href={profileLink as any} style={styles.authorContainer} asChild>
+                    <Pressable>
+                        <ResizedImage 
+                        src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${author.did}/24`} 
+                        alt={`${author.displayName}'s avatar`} 
+                        style={styles.avatar} 
+                        resizeWidth={48}
+                        />
+                        <View style={styles.authorInfo}>
+                        <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
+                        {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                            <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" style={{ flexShrink: 0 }} />
+                        )}
+                        </View>
+                    </Pressable>
+                    </Link>
+                    <Pressable 
+                        onPress={(e) => { e.stopPropagation(); handleLike(e); }}
+                        disabled={isLiking}
+                        style={styles.likeButton}
+                    >
+                        <Heart size={16} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? '#ec4899' : 'none'} />
+                        <Text style={[styles.likeCount, !!likeUri && { color: '#ec4899'}]}>{likeCount}</Text>
+                    </Pressable>
+                </View>
+            </View>
+        </Pressable>
     );
 };
 

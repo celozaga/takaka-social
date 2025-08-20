@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
+import { useUI } from '../../context/UIContext';
 import { formatDistanceToNow } from 'date-fns';
 import { BadgeCheck, Repeat, MessageCircle, ExternalLink } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -17,11 +17,18 @@ interface FullPostCardProps {
 
 const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     const { agent } = useAtp();
+    const { setPostForNav } = useUI();
+    const router = useRouter();
     const { post, reason, reply } = feedViewPost;
     const author = post.author;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
     const postLink = `/post/${author.did}/${post.uri.split('/').pop()}`;
+
+    const handlePress = () => {
+        setPostForNav(feedViewPost);
+        router.push(postLink);
+    };
 
     const renderMedia = () => {
         if (!post.embed) return null;
@@ -103,40 +110,38 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
     return (
         <View style={styles.container}>
-            <Link href={postLink as any} asChild>
-                <Pressable style={({pressed}) => [styles.pressableCard, pressed && styles.pressableCardPressed]}>
-                    {renderContext()}
-                    <View style={styles.mainRow}>
-                        <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
-                            <Pressable>
-                                <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                            </Pressable>
-                        </Link>
-                        <View style={styles.postContent}>
-                            <View style={styles.authorInfo}>
-                                <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
-                                    <Pressable style={styles.authorNameContainer}>
-                                        <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
-                                        {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                            <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" />
-                                        )}
-                                    </Pressable>
-                                </Link>
-                                 <Text style={styles.timestamp}>· {formatDistanceToNow(new Date(record.createdAt), { addSuffix: true })}</Text>
-                            </View>
-                            {record.text && (
-                                <Text style={styles.postText}>
-                                    <RichTextRenderer record={record} />
-                                </Text>
-                            )}
-                            {renderMedia()}
-                            <View style={styles.actionsContainer}>
-                                <PostActions post={post} />
-                            </View>
+            <Pressable onPress={handlePress} style={({pressed}) => [styles.pressableCard, pressed && styles.pressableCardPressed]}>
+                {renderContext()}
+                <View style={styles.mainRow}>
+                    <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
+                        <Pressable>
+                            <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                        </Pressable>
+                    </Link>
+                    <View style={styles.postContent}>
+                        <View style={styles.authorInfo}>
+                            <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
+                                <Pressable style={styles.authorNameContainer}>
+                                    <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
+                                    {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                                        <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" />
+                                    )}
+                                </Pressable>
+                            </Link>
+                             <Text style={styles.timestamp}>· {formatDistanceToNow(new Date(record.createdAt), { addSuffix: true })}</Text>
+                        </View>
+                        {record.text && (
+                            <Text style={styles.postText}>
+                                <RichTextRenderer record={record} />
+                            </Text>
+                        )}
+                        {renderMedia()}
+                        <View style={styles.actionsContainer}>
+                            <PostActions post={post} />
                         </View>
                     </View>
-                </Pressable>
-            </Link>
+                </View>
+            </Pressable>
         </View>
     );
 };

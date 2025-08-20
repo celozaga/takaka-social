@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -43,7 +42,7 @@ interface PostScreenProps {
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   const { agent } = useAtp();
   const router = useRouter();
-  const { openMediaActionsModal } = useUI();
+  const { openMediaActionsModal, postForNav, setPostForNav } = useUI();
   const { t } = useTranslation();
   const moderation = useModeration();
   const { getProfile } = useProfileCache();
@@ -60,35 +59,63 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
  
   const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
 
-  const record = thread?.post.record as { text: string, facets?: RichText['facets'], createdAt: string };
+  const mainPostFromState = thread?.post;
+  const record = mainPostFromState?.record as { text: string, facets?: RichText['facets'], createdAt: string };
   const postExcerpt = record?.text ? (record.text.length > 100 ? record.text.substring(0, 100) + '…' : record.text) : '';
   const title = postAuthor ? `${t('post.byline', { user: `@${postAuthor.handle}`})}${postExcerpt ? `: "${postExcerpt}"` : ''}` : t('common.post');
   const description = record?.text;
-  const imageUrl = thread?.post ? getImageUrlFromPost(thread.post) : undefined;
+  const imageUrl = mainPostFromState ? getImageUrlFromPost(mainPostFromState) : undefined;
 
   useEffect(() => {
-    setCurrentImageIndex(0); // Reset for new posts
-    const fetchThread = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
-        if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
-          setThread(data.thread);
-          const profileRes = await getProfile(data.thread.post.author.did);
-          setPostAuthor(profileRes);
-        } else {
-          throw new Error(t('post.notFound'));
+    let isMounted = true;
+    setCurrentImageIndex(0);
+
+    const fetchFullThread = async () => {
+        try {
+            const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
+            if (!isMounted) return;
+
+            if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
+                setThread(data.thread);
+                if (!postAuthor) { // Only fetch profile if not already set by postForNav
+                    const profileRes = await getProfile(data.thread.post.author.did);
+                    if (isMounted) setPostAuthor(profileRes);
+                }
+            } else {
+                throw new Error(t('post.notFound'));
+            }
+        } catch (err: any) {
+            console.error("Failed to fetch post thread:", err);
+            if (isMounted) setError(err.message || t('post.loadingError'));
+        } finally {
+            if (isMounted) setIsLoading(false);
         }
-      } catch (err: any) {
-        console.error("Failed to fetch post thread:", err);
-        setError(err.message || t('post.loadingError'));
-      } finally {
-        setIsLoading(false);
-      }
     };
-    fetchThread();
-  }, [agent, postUri, t, getProfile]);
+    
+    if (postForNav && postForNav.post.uri === postUri) {
+        setThread({
+            $type: 'app.bsky.feed.defs#threadViewPost',
+            post: postForNav.post,
+            parent: postForNav.reply?.parent,
+            replies: [], // Replies will be filled by the full fetch
+        });
+        getProfile(postForNav.post.author.did).then(p => {
+            if (isMounted) setPostAuthor(p);
+        });
+        setIsLoading(false); // We have the main content, so stop loading state
+    } else {
+        setIsLoading(true);
+    }
+
+    fetchFullThread();
+
+    return () => {
+        isMounted = false;
+        // Clean up the transient state when the component unmounts
+        setPostForNav(undefined);
+    };
+  }, [agent, postUri, t, getProfile, postForNav, setPostForNav, postAuthor]);
+
 
   useEffect(() => {
     if (!thread?.post) return;

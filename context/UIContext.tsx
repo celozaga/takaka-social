@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
 
@@ -44,6 +43,8 @@ interface UIContextType {
   repostModalPost?: AppBskyFeedDefs.PostView;
   openRepostModal: (post: AppBskyFeedDefs.PostView) => void;
   closeRepostModal: () => void;
+  postForNav?: AppBskyFeedDefs.FeedViewPost;
+  setPostForNav: (post?: AppBskyFeedDefs.FeedViewPost) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -63,6 +64,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [mediaActionsModalPost, setMediaActionsModalPost] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostModalPost, setRepostModalPost] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
+  const [postForNav, setPostForNav] = useState<AppBskyFeedDefs.FeedViewPost | undefined>(undefined);
 
 
   const openLoginModal = useCallback(() => setIsLoginModalOpen(true), []);
@@ -109,7 +111,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setTimeout(() => setMediaActionsModalPost(undefined), 300); // Delay clear for animation
   }, []);
 
-  const openRepostModal = useCallback((post: AppBskyFeedDefs.PostView) => {
+  const openRepostModal = useCallback((post:AppBskyFeedDefs.PostView) => {
     setRepostModalPost(post);
     setIsRepostModalOpen(true);
   }, []);
@@ -130,6 +132,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         isUpdateHandleModalOpen, openUpdateHandleModal, closeUpdateHandleModal,
         isMediaActionsModalOpen, mediaActionsModalPost, openMediaActionsModal, closeMediaActionsModal,
         isRepostModalOpen, repostModalPost, openRepostModal, closeRepostModal,
+        postForNav, setPostForNav,
     }}>
       {children}
     </UIContext.Provider>

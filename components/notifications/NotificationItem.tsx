@@ -1,19 +1,20 @@
-
-import React from 'react';
-import { Link } from 'expo-router';
+import React, { useState } from 'react';
+import { Link, useRouter } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
+import { useUI } from '../../context/UIContext';
 import { 
   AppBskyNotificationListNotifications, 
   AppBskyFeedPost, 
   AtUri, 
   AppBskyEmbedImages, 
   AppBskyEmbedRecord, 
-  AppBskyEmbedRecordWithMedia 
+  AppBskyEmbedRecordWithMedia,
+  AppBskyFeedDefs
 } from '@atproto/api';
 import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 
 interface NotificationItemProps {
   notification:AppBskyNotificationListNotifications.Notification;
@@ -70,15 +71,47 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
   const { reason, author, record, uri, isRead, indexedAt } = notification;
+  const { agent } = useAtp();
+  const { setPostForNav } = useUI();
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   let Icon: React.ReactNode;
   let reasonText: string = `New notification: ${reason}`;
-  let link: string = '#';
+  let isPostLink = false;
   let content: React.ReactNode = null;
 
   const postUri = new AtUri(uri);
   const profileLink = `/profile/${author.handle}`;
   const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
+
+  const handlePress = async () => {
+    if (isNavigating) return;
+
+    if (!isPostLink) {
+      router.push(profileLink);
+      return;
+    }
+
+    setIsNavigating(true);
+    try {
+      const res = await agent.getPosts({ uris: [uri] });
+      if (res.data.posts[0]) {
+        setPostForNav({ post: res.data.posts[0] });
+        router.push(postLink);
+      } else {
+        // Fallback or show error
+        router.push(postLink);
+      }
+    } catch (e) {
+      console.error("Failed to fetch post for navigation:", e);
+      // Fallback to direct navigation even if pre-fetch fails
+      router.push(postLink);
+    } finally {
+      setIsNavigating(false);
+    }
+  };
+
 
   const AuthorLink = () => (
     <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
@@ -95,30 +128,30 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
     case 'like':
       Icon = <Heart color="#ec4899" size={24} />;
       reasonText = 'liked your post';
-      link = postLink;
+      isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     case 'repost':
       Icon = <Repeat color="#A8C7FA" size={24} />;
       reasonText = 'reposted your post';
-      link = postLink;
+      isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     case 'follow':
       Icon = <UserPlus color="#A8C7FA" size={24} />;
       reasonText = 'followed you';
-      link = profileLink;
+      isPostLink = false;
       break;
     case 'reply':
       Icon = <MessageCircle color="#A8C7FA" size={24} />;
       reasonText = 'replied to your post';
-      link = postLink;
+      isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     case 'mention':
       Icon = <AtSign color="#A8C7FA" size={24} />;
       reasonText = 'mentioned you in a post';
-      link = postLink;
+      isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     default:
@@ -128,26 +161,25 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   const timeAgo = formatDistanceToNow(new Date(indexedAt), { addSuffix: true });
 
   return (
-    <Link href={link as any} asChild>
-        <Pressable style={[styles.container, !isRead && styles.unreadContainer]}>
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-                <View style={{ flexShrink: 0, width: 24, alignItems: 'center' }}>{Icon}</View>
-                <View style={{ flex: 1 }}>
-                    <View style={styles.header}>
-                        <View style={styles.headerContent}>
-                            <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                            <View style={styles.titleContainer}>
-                                <AuthorLink />
-                                <Text style={styles.titleText}> {reasonText}</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.timeAgo}>{timeAgo}</Text>
-                    </View>
-                    {content && <View style={{ marginTop: 4 }}>{content}</View>}
-                </View>
-            </View>
-        </Pressable>
-    </Link>
+    <Pressable onPress={handlePress} style={[styles.container, !isRead && styles.unreadContainer]}>
+      <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ flexShrink: 0, width: 24, alignItems: 'center' }}>{Icon}</View>
+          <View style={{ flex: 1 }}>
+              <View style={styles.header}>
+                  <View style={styles.headerContent}>
+                      <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                      <View style={styles.titleContainer}>
+                          <AuthorLink />
+                          <Text style={styles.titleText}> {reasonText}</Text>
+                      </View>
+                  </View>
+                  <Text style={styles.timeAgo}>{timeAgo}</Text>
+              </View>
+              {content && <View style={{ marginTop: 4 }}>{content}</View>}
+              {isNavigating && <View style={styles.navigatingOverlay}><ActivityIndicator /></View>}
+          </View>
+      </View>
+    </Pressable>
   );
 };
 
@@ -168,6 +200,13 @@ const styles = StyleSheet.create({
     previewText: { color: '#E2E2E6', fontSize: 14, flex: 1 },
     quotedContainer: { borderWidth: 1, borderColor: '#333', borderRadius: 6, padding: 8, backgroundColor: '#1E2021' },
     quotedText: { fontSize: 12, color: '#C3C6CF' },
+    navigatingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 8,
+    }
 });
 
 export default React.memo(NotificationItem);
