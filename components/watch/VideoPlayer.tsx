@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import {AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
@@ -80,7 +79,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
             <Pressable onPress={toggleMute} style={styles.muteButton}>
                 {isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
             </Pressable>
-        </View>
+        </Pressable>
     );
 };
 
