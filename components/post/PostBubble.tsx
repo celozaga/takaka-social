@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -32,7 +33,7 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
             const postViewRecord = postView.record;
 
             if (AppBskyFeedPost.isRecord(postViewRecord)) {
-                const postRecord: AppBskyFeedPost.Record = postViewRecord;
+                const postRecord = postViewRecord as AppBskyFeedPost.Record;
 
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
@@ -64,7 +65,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
     if (!AppBskyFeedPost.isRecord(unknownRecord)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record: AppBskyFeedPost.Record = unknownRecord;
+    const record = unknownRecord as AppBskyFeedPost.Record;
     const author = post.author;
     const isReply = !!(record.reply);
 

@@ -23,9 +23,10 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
         
         // Check for reply first, as it's the primary context
         if (AppBskyFeedPost.isRecord(record)) {
-            if (record.reply?.parent) {
+            const postRecord = record as AppBskyFeedPost.Record;
+            if (postRecord.reply?.parent) {
                 setType('reply');
-                const parentUri = record.reply.parent.uri;
+                const parentUri = postRecord.reply.parent.uri;
                 agent.getPostThread({ uri: parentUri, depth: 0 }).then(({ data }) => {
                     if (!isCancelled && AppBskyFeedDefs.isThreadViewPost(data.thread)) {
                         const parentAuthor = data.thread.post.author;
@@ -38,7 +39,7 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
         // Then check for quote
         else if (AppBskyEmbedRecord.isView(embed) && AppBskyEmbedRecord.isViewRecord(embed)) {
             if (AppBskyFeedDefs.isPostView(embed.record)) {
-                const postView: AppBskyFeedDefs.PostView = embed.record;
+                const postView = embed.record as AppBskyFeedDefs.PostView;
                 setType('quote');
                 const quotedAuthor = postView.author;
                 setAuthorName(quotedAuthor.displayName || `@${quotedAuthor.handle}`);

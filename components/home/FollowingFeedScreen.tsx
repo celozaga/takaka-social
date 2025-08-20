@@ -7,7 +7,7 @@ import { format, isToday, isYesterday } from 'date-fns';
 type ProfileFeed = {
   profile: AppBskyActorDefs.ProfileView;
   latestPost: AppBskyFeedDefs.FeedViewPost | null;
-  isUnread: boolean;
+  unreadCount: number;
 };
 
 const formatTimestamp = (dateString: string) => {
@@ -51,7 +51,7 @@ const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost | null): React.
 }
 
 const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string }> = ({ profileFeed, currentHash }) => {
-    const { profile, latestPost, isUnread } = profileFeed;
+    const { profile, latestPost, unreadCount } = profileFeed;
     const isActive = `#/profile/${profile.handle}` === currentHash;
 
     return (
@@ -67,8 +67,10 @@ const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string 
                         <div className="text-on-surface-variant text-sm line-clamp-2 break-words pr-2">
                            {getPreviewText(latestPost)}
                         </div>
-                        {isUnread && (
-                            <div className="mt-1 w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
+                        {unreadCount > 0 && (
+                            <div className="mt-1 bg-primary text-on-primary text-xs font-bold rounded-full h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center flex-shrink-0">
+                                <span>{unreadCount > 99 ? '99+' : unreadCount}</span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -100,23 +102,29 @@ const FollowingFeedScreen: React.FC = () => {
                 const { data: followsData } = await agent.getFollows({ actor: session.did, limit: 100 });
                 const profiles = followsData.follows;
 
-                const latestPostsPromises = profiles.map(profile =>
-                    agent.getAuthorFeed({ actor: profile.did, limit: 1 })
-                        .then(res => res.data.feed[0] || null)
-                        .catch(() => null)
+                const authorFeedsPromises = profiles.map(profile =>
+                    agent.getAuthorFeed({ actor: profile.did, limit: 25 }) // Fetch up to 25 posts
+                        .then(res => ({ profile, feed: res.data.feed }))
+                        .catch(() => ({ profile, feed: [] })) // Handle errors for individual feeds
                 );
-                const latestPosts = await Promise.all(latestPostsPromises);
+                const authorFeeds = await Promise.all(authorFeedsPromises);
 
-                const combinedFeeds: ProfileFeed[] = profiles.map((profile, index) => {
-                    const latestPost = latestPosts[index];
-                    let isUnread = false;
-                    if (latestPost) {
-                        const lastViewed = localStorage.getItem(`channel-last-viewed:${profile.did}`);
-                        if (!lastViewed || new Date(latestPost.post.indexedAt) > new Date(lastViewed)) {
-                            isUnread = true;
+                const combinedFeeds: ProfileFeed[] = authorFeeds.map(({ profile, feed }) => {
+                    const latestPost = feed[0] || null;
+                    const lastViewedString = localStorage.getItem(`channel-last-viewed:${profile.did}`);
+                    let unreadCount = 0;
+                    
+                    if (latestPost) { // Only calculate if there are posts
+                        if (lastViewedString) {
+                            const lastViewedDate = new Date(lastViewedString);
+                            unreadCount = feed.filter(item => new Date(item.post.indexedAt) > lastViewedDate).length;
+                        } else {
+                            // If never viewed, all fetched posts are unread.
+                            unreadCount = feed.length;
                         }
                     }
-                    return { profile, latestPost, isUnread };
+                    
+                    return { profile, latestPost, unreadCount };
                 });
 
                 combinedFeeds.sort((a, b) => {
