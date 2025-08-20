@@ -203,6 +203,8 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
       </View>
     );
   };
+  
+  const Header = ListHeaderComponent;
 
   return (
     <ScrollView
@@ -213,7 +215,7 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
       }
     >
       <View>
-        {ListHeaderComponent}
+        {Header && (React.isValidElement(Header) ? Header : <Header />)}
         {renderContent()}
       </View>
     </ScrollView>

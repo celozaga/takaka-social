@@ -61,13 +61,13 @@ const MoreScreen: React.FC = () => {
     const profileLink = session?.handle ? `/profile/${session.handle}` : '/';
 
     const listItems = session ? [
-        { icon: List, label: t('more.myFeeds'), href: '/(tabs)/feeds' },
-        { icon: Clapperboard, label: t('more.watch'), href: '/(tabs)/watch' },
-        { icon: Search, label: t('nav.search'), href: '/(tabs)/search' },
-        { icon: Bell, label: t('nav.notifications'), href: '/(tabs)/notifications' },
+        { icon: List, label: t('more.myFeeds'), href: '/feeds' },
+        { icon: Clapperboard, label: t('more.watch'), href: '/watch' },
+        { icon: Search, label: t('nav.search'), href: '/search' },
+        { icon: Bell, label: t('nav.notifications'), href: '/notifications' },
         { icon: Users, label: t('common.followers'), href: `/profile/${session.handle}/followers` },
         { icon: UserCheck, label: t('common.following'), href: `/profile/${session.handle}/following` },
-        { icon: Settings, label: t('nav.settings'), href: '/(tabs)/settings' },
+        { icon: Settings, label: t('nav.settings'), href: '/settings' },
     ] : [];
     
 

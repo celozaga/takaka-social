@@ -49,7 +49,7 @@ const PopularFeeds: React.FC<PopularFeedsProps> = ({ showHeader = true }) => {
             {showHeader && (
                 <View style={styles.header}>
                     <Text style={styles.title}>Popular Feeds</Text>
-                    <Link href="/(tabs)/feeds" asChild>
+                    <Link href="/feeds" asChild>
                         <Pressable style={styles.searchButton}>
                             <Search size={20} color="#C3C6CF" />
                         </Pressable>

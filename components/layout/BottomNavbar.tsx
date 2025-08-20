@@ -20,16 +20,16 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
   const isDesktop = width >= 768;
 
   const loggedInNavItems = [
-    { href: '/(tabs)/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/(tabs)/home' || pathname === '/' },
-    { href: '/(tabs)/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/(tabs)/search') },
+    { href: '/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/home' || pathname === '/' },
+    { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
     { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
-    { href: '/(tabs)/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/(tabs)/notifications') },
-    { href: '/(tabs)/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: pathname.startsWith('/(tabs)/more') || pathname.startsWith('/(tabs)/settings') },
+    { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
+    { href: '/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: pathname.startsWith('/more') || pathname.startsWith('/settings') },
   ];
 
   const guestNavItems = [
-    { href: '/(tabs)/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/(tabs)/home' || pathname === '/' },
-    { href: '/(tabs)/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/(tabs)/search') },
+    { href: '/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/home' || pathname === '/' },
+    { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
     { isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false },
   ];
 

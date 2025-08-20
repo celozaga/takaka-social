@@ -61,7 +61,7 @@ const SuggestedFollows: React.FC = () => {
         <View>
              <View style={styles.header}>
                 <Text style={styles.title}>Suggested Follows</Text>
-                <Link href="/(tabs)/search?filter=people" asChild>
+                <Link href="/search?filter=people" asChild>
                     <Pressable style={styles.searchButton}>
                         <Search size={20} color="#C3C6CF" />
                     </Pressable>

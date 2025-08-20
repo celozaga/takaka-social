@@ -48,7 +48,7 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
       segments.push(
         <Link
           key={segments.length}
-          href={`/(tabs)/search?q=${encodeURIComponent(segment.tag!.tag)}&filter=top` as any}
+          href={`/search?q=${encodeURIComponent(segment.tag!.tag)}&filter=top` as any}
           onPress={(e) => e.stopPropagation()}
           asChild
         >

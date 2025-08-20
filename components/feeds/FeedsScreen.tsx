@@ -107,7 +107,7 @@ const FeedsScreen: React.FC = () => {
                 <ScrollView contentContainerStyle={styles.contentContainer}>
                     <View style={styles.discoverHeader}>
                         <Text style={styles.sectionTitle}>{t('feeds.discover')}</Text>
-                        <Link href="/(tabs)/search?filter=feeds" asChild>
+                        <Link href="/search?filter=feeds" asChild>
                             <Pressable style={styles.searchButton}>
                                 <Search size={20} color="#C3C6CF" />
                             </Pressable>
@@ -183,7 +183,7 @@ const FeedsScreen: React.FC = () => {
                         ) : (
                             <View style={styles.emptyContainer}>
                                 <Text style={styles.emptyText}>{t('feeds.emptySaved')}</Text>
-                                <Link href="/(tabs)/search?filter=feeds" asChild>
+                                <Link href="/search?filter=feeds" asChild>
                                     <Pressable><Text style={styles.emptyLink}>{t('feeds.findNew')}</Text></Pressable>
                                 </Link>
                             </View>

@@ -59,7 +59,7 @@ const TrendingTopics: React.FC = () => {
                 {trends.map((tag, index) => (
                     <Link 
                         key={tag} 
-                        href={`/(tabs)/search?q=${encodeURIComponent('#' + tag)}&filter=top` as any} 
+                        href={`/search?q=${encodeURIComponent('#' + tag)}&filter=top` as any} 
                         asChild
                     >
                         <Pressable style={({ pressed }) => [styles.listItem, index > 0 && styles.listItemBorder, pressed && styles.listItemPressed]}>
