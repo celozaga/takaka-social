@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
@@ -243,7 +244,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
 
 
     return (
-         <View style={[styles.card, styles.container]}>
+         <View style={styles.container}>
             <Wrapper>{mediaElement}</Wrapper>
             <View style={styles.content}>
                 {renderContext()}
@@ -291,7 +292,8 @@ const styles = StyleSheet.create({
     container: {
         // @ts-ignore: breakInside is a web-only property for column layout
         breakInside: 'avoid',
-        marginBottom: 16
+        marginBottom: 16,
+        flex: 1,
     },
     card: {
         backgroundColor: '#1E2021',

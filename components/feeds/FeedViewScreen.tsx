@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import Feed from '../shared/Timeline';
+import Feed from '../shared/Feed';
 import FeedViewHeader from './FeedViewHeader';
 import Head from '../shared/Head';
 import { useFeedActions } from '../../hooks/useFeedActions';

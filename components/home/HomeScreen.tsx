@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
-import Feed from '../shared/Timeline';
+import Feed from '../shared/Feed';
 import FeedSelector from '../feeds/FeedSelector';
 import Head from '../shared/Head';
 import { View, StyleSheet } from 'react-native';
