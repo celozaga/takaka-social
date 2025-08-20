@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { TrendingUp } from 'lucide-react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
 
 const TrendingTopics: React.FC = () => {
     const { agent } = useAtp();
@@ -29,17 +31,17 @@ const TrendingTopics: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div>
-                <h2 className="text-xl font-bold mb-3 px-1 flex items-center gap-2">
-                    <TrendingUp className="w-6 h-6 text-primary" />
-                    <span>Trending</span>
-                </h2>
-                <div className="bg-surface-2 rounded-xl p-4 space-y-4">
+            <View>
+                <View style={styles.header}>
+                    <TrendingUp size={24} color="#A8C7FA" />
+                    <Text style={styles.title}>Trending</Text>
+                </View>
+                <View style={styles.skeletonContainer}>
                     {[...Array(5)].map((_, i) => (
-                        <div key={i} className="h-5 w-3/4 bg-surface-3 rounded animate-pulse"></div>
+                        <View key={i} style={styles.skeletonItem} />
                     ))}
-                </div>
-            </div>
+                </View>
+            </View>
         );
     }
     
@@ -48,27 +50,72 @@ const TrendingTopics: React.FC = () => {
     }
 
     return (
-        <div>
-            <h2 className="text-xl font-bold mb-3 px-1 flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-primary" />
-                <span>Trending</span>
-            </h2>
-            <div className="bg-surface-2 rounded-xl">
-                <ul className="divide-y divide-surface-3">
-                    {trends.map(tag => (
-                        <li key={tag}>
-                            <a 
-                                href={`#/search?q=${encodeURIComponent('#' + tag)}&filter=top`} 
-                                className="block p-3 hover:bg-surface-3 transition-colors rounded-lg"
-                            >
-                                <p className="font-semibold text-on-surface">#{tag}</p>
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </div>
+        <View>
+            <View style={styles.header}>
+                <TrendingUp size={24} color="#A8C7FA" />
+                <Text style={styles.title}>Trending</Text>
+            </View>
+            <View style={styles.listContainer}>
+                {trends.map((tag, index) => (
+                    <Link 
+                        key={tag} 
+                        href={`/(tabs)/search?q=${encodeURIComponent('#' + tag)}&filter=top` as any} 
+                        asChild
+                    >
+                        <Pressable style={({ pressed }) => [styles.listItem, index > 0 && styles.listItemBorder, pressed && styles.listItemPressed]}>
+                            <Text style={styles.tagText}>#{tag}</Text>
+                        </Pressable>
+                    </Link>
+                ))}
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+        paddingHorizontal: 4,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#E2E2E6'
+    },
+    skeletonContainer: {
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 12,
+        padding: 16,
+        gap: 16,
+    },
+    skeletonItem: {
+        height: 20,
+        width: '75%',
+        backgroundColor: '#2b2d2e', // surface-3
+        borderRadius: 4,
+    },
+    listContainer: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    listItem: {
+        padding: 12,
+    },
+    listItemBorder: {
+        borderTopWidth: 1,
+        borderTopColor: '#2b2d2e', // surface-3
+    },
+    listItemPressed: {
+        backgroundColor: '#2b2d2e',
+    },
+    tagText: {
+        fontWeight: '600',
+        color: '#E2E2E6'
+    }
+});
 
 export default TrendingTopics;

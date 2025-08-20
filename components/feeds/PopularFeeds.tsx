@@ -5,9 +5,10 @@ import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { Search } from 'lucide-react';
 import FeedSearchResultCard from './FeedSearchResultCard';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
 
 
-// --- Main PopularFeeds Component ---
 interface PopularFeedsProps {
   showHeader?: boolean;
 }
@@ -44,23 +45,25 @@ const PopularFeeds: React.FC<PopularFeedsProps> = ({ showHeader = true }) => {
     }
     
     return (
-        <div>
+        <View>
             {showHeader && (
-                <div className="flex items-center justify-between mb-3 px-1">
-                    <h2 className="text-xl font-bold">Popular Feeds</h2>
-                    <a href="#/feeds" className="p-1 hover:bg-surface-3 rounded-full">
-                        <Search className="w-5 h-5 text-on-surface-variant" />
-                    </a>
-                </div>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Popular Feeds</Text>
+                    <Link href="/(tabs)/feeds" asChild>
+                        <Pressable style={styles.searchButton}>
+                            <Search size={20} color="#C3C6CF" />
+                        </Pressable>
+                    </Link>
+                </View>
             )}
              {isLoading ? (
-                <div className="space-y-3">
+                <View style={styles.skeletonContainer}>
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
+                        <View key={i} style={styles.skeletonItem} />
                     ))}
-                </div>
+                </View>
              ) : (
-                <div className="space-y-3">
+                <View style={styles.listContainer}>
                     {feeds.map(feed => (
                         <FeedSearchResultCard
                             key={feed.uri} 
@@ -69,10 +72,41 @@ const PopularFeeds: React.FC<PopularFeedsProps> = ({ showHeader = true }) => {
                             onTogglePin={() => handlePinToggle(feed)}
                         />
                     ))}
-                </div>
+                </View>
              )}
-        </div>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        paddingHorizontal: 4,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#E2E2E6',
+    },
+    searchButton: {
+        padding: 4,
+    },
+    skeletonContainer: {
+        gap: 12,
+    },
+    skeletonItem: {
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 12,
+        padding: 12,
+        height: 88,
+        opacity: 0.5,
+    },
+    listContainer: {
+        gap: 12,
+    },
+});
 
 export default PopularFeeds;

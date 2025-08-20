@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { BadgeCheck, Loader2 } from 'lucide-react';
+import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 
 interface ActorSearchResultCardProps {
   actor: AppBskyActorDefs.ProfileView | AppBskyActorDefs.ProfileViewDetailed;
@@ -16,7 +18,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   const [isActionLoading, setIsActionLoading] = useState(false);
   const profileLink = `/profile/${actor.handle}`;
 
-  const handleFollow = async (e: React.MouseEvent) => {
+  const handleFollow = async (e: any) => {
     e.stopPropagation();
     e.preventDefault();
     if (isActionLoading || !session) return;
@@ -35,7 +37,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
     }
   };
 
-  const handleUnfollow = async (e: React.MouseEvent) => {
+  const handleUnfollow = async (e: any) => {
     e.stopPropagation();
     e.preventDefault();
     if (!viewerState?.following || isActionLoading) return;
@@ -57,53 +59,142 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
     if (!session || (session.did === actor.did)) return null;
 
     return (
-      <button
-        onClick={viewerState?.following ? handleUnfollow : handleFollow}
+      <Pressable
+        onPress={viewerState?.following ? handleUnfollow : handleFollow}
         disabled={isActionLoading}
-        className={`font-semibold text-sm py-1.5 px-4 rounded-full transition-colors duration-200 flex-shrink-0 flex items-center justify-center w-24
-            ${viewerState?.following
-              ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80'
-              : 'bg-primary text-on-primary hover:bg-primary/90'
-            }
-            disabled:opacity-50`}
+        style={[styles.followButton, viewerState?.following ? styles.followingButton : styles.followButtonActive, isActionLoading && styles.disabledButton]}
       >
         {isActionLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <ActivityIndicator size="small" color="#E2E2E6" />
         ) : (
-          <span>{viewerState?.following ? 'Following' : 'Follow'}</span>
+          <Text style={[styles.followButtonText, viewerState?.following ? styles.followingButtonText : styles.followButtonTextActive]}>
+            {viewerState?.following ? 'Following' : 'Follow'}
+          </Text>
         )}
-      </button>
+      </Pressable>
     );
   };
 
-  return (
-    <Link href={profileLink as any} className="block p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
-      <div className="flex items-start gap-4">
-        <img src={actor.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={actor.displayName || actor.handle} className="w-12 h-12 rounded-full bg-surface-3 flex-shrink-0" loading="lazy" />
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-center">
-            <div className="min-w-0">
-              <div className="font-bold truncate flex items-center gap-1">
-                  <span className="truncate">{actor.displayName || `@${actor.handle}`}</span>
+  const content = (
+    <View style={styles.container}>
+      <View style={styles.contentContainer}>
+        <Image source={{ uri: actor.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+        <View style={styles.mainContent}>
+          <View style={styles.header}>
+            <View style={styles.userInfo}>
+              <View style={styles.nameContainer}>
+                  <Text style={styles.displayName} numberOfLines={1}>{actor.displayName || `@${actor.handle}`}</Text>
                   {actor.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                    <BadgeCheck size={16} className="text-primary flex-shrink-0" fill="currentColor" />
+                    <BadgeCheck size={16} color="#A8C7FA" fill="currentColor" style={{ flexShrink: 0 }} />
                   )}
-              </div>
-              <p className="text-on-surface-variant text-sm truncate">@{actor.handle}</p>
-            </div>
-            <div className="ml-2">
+              </View>
+              <Text style={styles.handle} numberOfLines={1}>@{actor.handle}</Text>
+            </View>
+            <View style={styles.buttonContainer}>
                 <FollowButton />
-            </div>
-          </div>
+            </View>
+          </View>
           {actor.description && (
-            <div className="mt-2 text-sm text-on-surface line-clamp-2 break-words">
+            <Text style={styles.description} numberOfLines={2}>
               {actor.description}
-            </div>
+            </Text>
           )}
-        </div>
-      </div>
+        </View>
+      </View>
+    </View>
+  );
+
+  return (
+    <Link href={profileLink as any} asChild>
+      <Pressable>{content}</Pressable>
     </Link>
   );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        padding: 16,
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 12,
+    },
+    contentContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 16,
+    },
+    avatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#2b2d2e',
+        flexShrink: 0,
+    },
+    mainContent: {
+        flex: 1,
+        minWidth: 0,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    userInfo: {
+        flex: 1,
+        minWidth: 0,
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    displayName: {
+        fontWeight: 'bold',
+        color: '#E2E2E6',
+        flexShrink: 1,
+    },
+    handle: {
+        color: '#C3C6CF',
+        fontSize: 14,
+    },
+    buttonContainer: {
+        marginLeft: 8,
+    },
+    followButton: {
+        fontWeight: '600',
+        fontSize: 14,
+        paddingVertical: 6,
+        borderRadius: 999,
+        flexShrink: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 96,
+        height: 32,
+    },
+    followingButton: {
+        backgroundColor: '#2b2d2e', // surface-3
+    },
+    followButtonActive: {
+        backgroundColor: '#A8C7FA', // primary
+    },
+    followButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    followingButtonText: {
+        color: '#E2E2E6', // on-surface
+    },
+    followButtonTextActive: {
+        color: '#003258', // on-primary
+    },
+    disabledButton: {
+        opacity: 0.5,
+    },
+    description: {
+        marginTop: 8,
+        fontSize: 14,
+        color: '#E2E2E6',
+        lineHeight: 20,
+    }
+});
 
 export default React.memo(ActorSearchResultCard);

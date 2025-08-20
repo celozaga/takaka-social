@@ -1,26 +1,28 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import { Search } from 'lucide-react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
 
 const ActorSkeletonCard: React.FC = () => (
-    <div className="p-4 bg-surface-2 rounded-xl border border-surface-3 animate-pulse">
-        <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-surface-3 flex-shrink-0"></div>
-            <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center">
-                    <div className="min-w-0 space-y-2">
-                        <div className="h-4 w-32 bg-surface-3 rounded"></div>
-                        <div className="h-3 w-24 bg-surface-3 rounded"></div>
-                    </div>
-                    <div className="h-8 w-24 bg-surface-3 rounded-full ml-2"></div>
-                </div>
-                <div className="mt-3 h-3 w-5/6 bg-surface-3 rounded"></div>
-            </div>
-        </div>
-    </div>
+    <View style={styles.skeletonContainer}>
+        <View style={styles.skeletonContent}>
+            <View style={styles.skeletonAvatar} />
+            <View style={styles.skeletonMain}>
+                <View style={styles.skeletonHeader}>
+                    <View style={styles.skeletonHeaderText}>
+                        <View style={[styles.skeletonLine, { width: 128, height: 16 }]} />
+                        <View style={[styles.skeletonLine, { width: 96, height: 12 }]} />
+                    </View>
+                    <View style={styles.skeletonButton} />
+                </View>
+                <View style={[styles.skeletonLine, { marginTop: 12, width: '83.33%' }]} />
+            </View>
+        </View>
+    </View>
 );
 
 const SuggestedFollows: React.FC = () => {
@@ -56,15 +58,17 @@ const SuggestedFollows: React.FC = () => {
     }
 
     return (
-        <div>
-             <div className="flex items-center justify-between mb-3 px-1">
-                <h2 className="text-xl font-bold">Suggested Follows</h2>
-                <a href="#/search?filter=people" className="p-1 hover:bg-surface-3 rounded-full" aria-label="Find more people">
-                    <Search className="w-5 h-5 text-on-surface-variant" />
-                </a>
-            </div>
+        <View>
+             <View style={styles.header}>
+                <Text style={styles.title}>Suggested Follows</Text>
+                <Link href="/(tabs)/search?filter=people" asChild>
+                    <Pressable style={styles.searchButton}>
+                        <Search size={20} color="#C3C6CF" />
+                    </Pressable>
+                </Link>
+            </View>
 
-            <div className="space-y-3">
+            <View style={styles.listContainer}>
                 {isLoading ? (
                     [...Array(5)].map((_, i) => <ActorSkeletonCard key={i} />)
                 ) : (
@@ -72,9 +76,74 @@ const SuggestedFollows: React.FC = () => {
                         <ActorSearchResultCard key={profile.did} actor={profile} />
                     ))
                 )}
-            </div>
-        </div>
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        paddingHorizontal: 4,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#E2E2E6'
+    },
+    searchButton: {
+        padding: 4,
+    },
+    listContainer: {
+        gap: 12,
+    },
+    skeletonContainer: {
+        padding: 16,
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#2b2d2e', // surface-3
+    },
+    skeletonContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 16,
+    },
+    skeletonAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#2b2d2e',
+        flexShrink: 0,
+    },
+    skeletonMain: {
+        flex: 1,
+        minWidth: 0,
+    },
+    skeletonHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    skeletonHeaderText: {
+        minWidth: 0,
+        gap: 8,
+    },
+    skeletonLine: {
+        height: 12,
+        backgroundColor: '#2b2d2e',
+        borderRadius: 4,
+    },
+    skeletonButton: {
+        height: 32,
+        width: 96,
+        backgroundColor: '#2b2d2e',
+        borderRadius: 999,
+        marginLeft: 8,
+    }
+});
 
 export default SuggestedFollows;
