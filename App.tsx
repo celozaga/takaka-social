@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -143,13 +144,21 @@ const Main: React.FC = () => {
         return <SettingsScreen />;
       case '':
       case 'home':
-      case 'feed':
         if (session) {
           const lastViewedProfile = localStorage.getItem('takaka-last-viewed-profile');
-          if (lastViewedProfile) {
-            window.location.hash = `#/profile/${lastViewedProfile}`;
-            return <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-          }
+          // Use replace to avoid polluting browser history, preventing back button issues
+          window.location.replace(lastViewedProfile ? `#/profile/${lastViewedProfile}` : '#/feed');
+          return <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+        }
+        // Logged-out home screen
+        return (
+          <div className="px-4 pt-16 pb-24">
+            <HomeScreen />
+          </div>
+        );
+      case 'feed':
+        if (session) {
+          // This case now correctly renders the feed view without redirecting
           return (
             <>
               <div className="hidden md:flex h-full w-full items-center justify-center text-on-surface-variant p-8 text-center">
@@ -164,11 +173,9 @@ const Main: React.FC = () => {
             </>
           );
         }
-        return (
-          <div className="px-4 pt-16 pb-24">
-            <HomeScreen />
-          </div>
-        );
+        // If not logged in, show the normal home screen
+        window.location.hash = '#/';
+        return null;
       default:
         return session ? <FollowingFeedScreen /> : <HomeScreen />;
     }

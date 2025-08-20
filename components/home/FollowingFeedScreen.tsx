@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import {
     AppBskyActorDefs,
@@ -49,7 +51,7 @@ const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost): React.ReactNo
 
 const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string }> = React.memo(({ profileFeed, currentHash }) => {
     const { profile, latestPost, unreadCount } = profileFeed;
-    const isActive = `#/profile/${profile.handle}` === currentHash;
+    const isActive = `#/profile/${profile.handle}` === currentHash || `#/profile/${profile.did}` === currentHash;
     const hasUnread = unreadCount > 0;
 
     const previewNode = latestPost
@@ -101,6 +103,7 @@ const FollowingFeedScreen: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentHash, setCurrentHash] = React.useState(window.location.hash);
+    const isInitialLoad = useRef(true);
 
     React.useEffect(() => {
         const handler = () => setCurrentHash(window.location.hash);
@@ -118,13 +121,13 @@ const FollowingFeedScreen: React.FC = () => {
         if (!session) return;
         
         const fetchAndProcessFeeds = async () => {
-            setIsLoading(true);
-            setError(null);
+            if (isInitialLoad.current) {
+                setIsLoading(true);
+                setError(null);
+            }
             try {
-                // 1. Get all followed profiles first to ensure the list is complete.
                 const followedProfiles = await fetchAllFollows(agent, session.did);
 
-                // 2. Fetch the latest feed for each profile in parallel.
                 const feedPromises = followedProfiles.map(async (profile): Promise<ProfileFeed> => {
                     try {
                         const lastViewedString = lastViewedTimestamps.get(profile.did);
@@ -146,7 +149,6 @@ const FollowingFeedScreen: React.FC = () => {
                         return { profile, latestPost, unreadCount, lastActivity };
                     } catch (e) {
                         console.warn(`Failed to get feed for ${profile.handle}`, e);
-                        // Return a default structure for profiles whose feeds fail to load
                         return {
                             profile,
                             latestPost: undefined,
@@ -160,9 +162,14 @@ const FollowingFeedScreen: React.FC = () => {
                 setProfileFeeds(results);
             } catch (e) {
                 console.error("Failed to fetch followed profiles or feeds:", e);
-                setError("Could not load your feed.");
+                if (isInitialLoad.current) {
+                    setError("Could not load your feed.");
+                }
             } finally {
-                setIsLoading(false);
+                if (isInitialLoad.current) {
+                    setIsLoading(false);
+                    isInitialLoad.current = false;
+                }
             }
         };
 

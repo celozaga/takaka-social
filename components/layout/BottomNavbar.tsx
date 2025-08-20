@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -39,9 +40,12 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
     window.addEventListener('hashchange', handler);
     return () => window.removeEventListener('hashchange', handler);
   }, []);
+  
+  const isFeedActive = currentHash.startsWith('#/feed') || currentHash.startsWith('#/profile') || currentHash === '#/' || currentHash === '';
+
 
   const loggedInNavItems: NavItem[] = [
-    { href: '#/', labelKey: 'nav.profiles', icon: Users, activeCondition: currentHash === '#/' || currentHash === '' || currentHash.startsWith('#/profiles') },
+    { href: '#/feed', labelKey: 'nav.profiles', icon: Users, activeCondition: isFeedActive },
     { href: '#/search', labelKey: 'nav.search', icon: Search, activeCondition: currentHash.startsWith('#/search') },
     { href: '#/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: currentHash.startsWith('#/notifications') },
   ];
