@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo, AtUri } from '@atproto/api';
+import {AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo, AtUri } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
@@ -162,16 +161,20 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
         ListHeaderComponent={ListHeaderComponent}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.contentContainer}
-        ListFooterComponent={() => {
-            if (isLoadingMore) return <ActivityIndicator size="large" style={{ marginVertical: 20 }} />;
-            if (!hasMore && moderatedFeed.length > 0) return <Text style={styles.endOfList}>{t('common.endOfList')}</Text>;
-            return null;
-        }}
-        ListEmptyComponent={() => {
-            if (error) return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
-            if (!isLoading && moderatedFeed.length === 0) return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>;
-            return null;
-        }}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <ActivityIndicator size="large" style={{ marginVertical: 20 }} />
+          ) : !hasMore && moderatedFeed.length > 0 ? (
+            <Text style={styles.endOfList}>{t('common.endOfList')}</Text>
+          ) : null
+        }
+        ListEmptyComponent={
+          error ? (
+            <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>
+          ) : !isLoading && moderatedFeed.length === 0 ? (
+            <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>
+          ) : null
+        }
     />
   );
 };
