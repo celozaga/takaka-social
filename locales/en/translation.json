@@ -33,7 +33,6 @@
     "home": "Home",
     "search": "Search",
     "compose": "Compose",
-    "messages": "Messages",
     "notifications": "Notifications",
     "more": "More",
     "feeds": "Feeds",
@@ -54,10 +53,6 @@
     "button": "Sign In",
     "buttonLoading": "Signing In...",
     "loginFailed": "Login failed. Please check your handle and app password."
-  },
-  "app": {
-    "messagingNotSupported": "Messaging Not Supported",
-    "messagingNotSupportedDescription": "Your Bluesky server (PDS) does not currently support the direct messaging feature."
   },
   "loginPrompt": {
     "title": "Experience the full Takaka",
@@ -107,16 +102,6 @@
   "feedView": {
     "notFound": "Could not find the specified feed.",
     "loadingError": "Could not load feed"
-  },
-  "messages": {
-    "title": "Messages",
-    "convoTitle": "Chat with {{peerName}}",
-    "loadingError": "Could not load messages.",
-    "emptyTitle": "No messages yet",
-    "emptyDescription": "Start a conversation from someone's profile.",
-    "convoLoadingError": "Could not load conversation.",
-    "deleted": "Message deleted",
-    "inputPlaceholder": "Send a message..."
   },
   "more": {
     "title": "More",
