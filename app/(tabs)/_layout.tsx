@@ -46,10 +46,8 @@ const MainLayout: React.FC = () => {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         {showNav && <Navbar />}
-        <View style={styles.contentArea}>
-           <View style={[styles.mainContent, !showNav && styles.fullScreenContent]}>
-            <Slot />
-          </View>
+        <View style={[styles.mainContent, isFullScreenPage && styles.fullScreenContent]}>
+          <Slot />
         </View>
         {showNav && <BottomNavbar isHidden={isCustomFeedHeaderVisible} />}
         {!session && showNav && <LoginPrompt />}
@@ -139,12 +137,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#111314', // surface-1
   },
-  contentArea: {
-    flex: 1,
-    paddingLeft: Platform.select({ web: 80, default: 0 }),
-  },
   mainContent: {
     flex: 1,
+    paddingLeft: Platform.select({ web: 80, default: 0 }),
     paddingTop: Platform.select({ web: 64, default: 0 }),
     paddingBottom: Platform.select({ web: 0, default: 80 }),
     marginHorizontal: 'auto',

@@ -67,7 +67,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     }, [profile?.description, agent]);
     
     const ListHeader = useMemo(() => (
-      <View style={{ paddingTop: 64 }}>
+      <View>
         <View style={{backgroundColor: '#111314'}}>
             {profile?.banner && <Image source={{ uri: profile.banner }} style={styles.banner} />}
             <View style={styles.profileInfoContainer}>
@@ -114,7 +114,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             <Head><title>{profile.displayName || profile.handle}</title></Head>
             <View style={{flex: 1}}>
                 <ProfileHeader handle={profile.handle} onMoreClick={() => setIsMenuOpen(true)} />
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, paddingTop: 64 }}>
                     <Feed
                         key={`${actor}-${activeFilter}`}
                         feedUri={actor} 

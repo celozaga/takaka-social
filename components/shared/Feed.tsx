@@ -213,10 +213,8 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
       }
     >
       <View>
-        <>
-            {ListHeaderComponent}
-            {renderContent()}
-        </>
+        {ListHeaderComponent}
+        {renderContent()}
       </View>
     </ScrollView>
   );
