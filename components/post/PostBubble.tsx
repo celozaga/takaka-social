@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -32,24 +25,24 @@ interface PostBubbleProps {
 }
 
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
-    if (AppBskyEmbedRecord.isViewNotFound(embed)) {
+    if (AppBskyEmbedRecord.isViewNotFound(embed.record)) {
         return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Quoted post not found.</div>;
     }
 
-    if (AppBskyEmbedRecord.isViewBlocked(embed)) {
+    if (AppBskyEmbedRecord.isViewBlocked(embed.record)) {
         return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Content from a blocked user.</div>;
     }
 
-    if (AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record as any)) {
-        const postView = embed.record as AppBskyFeedDefs.PostView;
-        const author = postView.author;
-        const postViewRecord = postView.record as unknown;
+    if (AppBskyEmbedRecord.isViewRecord(embed.record)) {
+        const quotedRecordInfo = embed.record;
+        const author = quotedRecordInfo.author;
+        const postValue = quotedRecordInfo.value;
 
-        if (AppBskyFeedPost.isRecord(postViewRecord)) {
-            const postRecord = postViewRecord as AppBskyFeedPost.Record;
+        if (AppBskyFeedPost.isRecord(postValue)) {
+            const postRecord = postValue as AppBskyFeedPost.Record;
 
             return (
-                <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
+                <a href={`#/post/${author.did}/${quotedRecordInfo.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
                     <div className="flex items-center gap-2 text-sm">
                         <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
                         <span className="font-semibold">{author.displayName}</span>

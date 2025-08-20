@@ -3,10 +3,6 @@ import { useAtp } from '../../context/AtpContext';
 import {
     AppBskyActorDefs,
     AppBskyFeedDefs,
-    RichText,
-    AppBskyEmbedImages,
-    AppBskyEmbedRecordWithMedia,
-    AppBskyEmbedVideo,
     BskyAgent
 } from '@atproto/api';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -19,7 +15,8 @@ type ProfileFeed = {
   lastActivity: string; // ISO string for sorting
 };
 
-const formatTimestamp = (dateString: string) => {
+const formatTimestamp = (dateString?: string) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     if (isToday(date)) {
         return format(date, 'p'); // e.g., 4:30 PM
@@ -32,24 +29,10 @@ const formatTimestamp = (dateString: string) => {
 
 const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost): React.ReactNode => {
     const isRepost = AppBskyFeedDefs.isReasonRepost(latestPost.reason);
-    const postToShow = latestPost.post;
+    const postToShow = isRepost ? latestPost.post : latestPost.post;
     const record = postToShow.record as any;
 
-    let textPreview: React.ReactNode = null;
-    if (record.text) {
-        textPreview = <>{record.text}</>;
-    } else if (postToShow.embed) {
-        const embed = postToShow.embed;
-        if (AppBskyEmbedImages.isView(embed) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedImages.isView(embed.media))) {
-            textPreview = <span className="text-on-surface-variant">[Photo]</span>;
-        } else if (AppBskyEmbedVideo.isView(embed) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media))) {
-            textPreview = <span className="text-on-surface-variant">[Video]</span>;
-        }
-    }
-
-    if (!textPreview) {
-       textPreview = <span className="text-on-surface-variant">New post by {postToShow.author.displayName || `@${postToShow.author.handle}`}</span>;
-    }
+    let textPreview: React.ReactNode = record?.text || null;
 
     if (isRepost) {
         return (
@@ -63,19 +46,15 @@ const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost): React.ReactNo
     return textPreview;
 };
 
-const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string }> = ({ profileFeed, currentHash }) => {
+
+const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string }> = React.memo(({ profileFeed, currentHash }) => {
     const { profile, latestPost, unreadCount } = profileFeed;
     const isActive = `#/profile/${profile.handle}` === currentHash;
-
-    const eventTimestamp = latestPost
-        ? (AppBskyFeedDefs.isReasonRepost(latestPost.reason) ? latestPost.reason.indexedAt : latestPost.post.indexedAt)
-        : profile.indexedAt;
+    const hasUnread = unreadCount > 0;
 
     const previewNode = latestPost
         ? getPreviewText(latestPost)
         : <span className="text-on-surface-variant italic">No recent activity</span>;
-
-    const hasUnread = unreadCount > 0;
 
     return (
         <li>
@@ -84,7 +63,7 @@ const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string 
                 <div className="flex-1 min-w-0 border-b border-surface-3 pb-3">
                     <div className="flex justify-between items-center">
                         <h2 className={`font-bold text-lg truncate ${hasUnread ? 'text-on-surface' : 'text-on-surface-variant'}`}>{profile.displayName || profile.handle}</h2>
-                        <p className="text-sm text-on-surface-variant flex-shrink-0 ml-2">{formatTimestamp(eventTimestamp)}</p>
+                        <p className="text-sm text-on-surface-variant flex-shrink-0 ml-2">{formatTimestamp(profileFeed.lastActivity)}</p>
                     </div>
                     <div className="flex justify-between items-start mt-0.5">
                         <div className="text-on-surface-variant text-sm line-clamp-2 break-words pr-2">
@@ -100,8 +79,7 @@ const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string 
             </a>
         </li>
     );
-};
-
+});
 
 const fetchAllFollows = async (agent: BskyAgent, actor: string) => {
     let follows: AppBskyActorDefs.ProfileView[] = [];
@@ -131,60 +109,62 @@ const FollowingFeedScreen: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (!session) return;
+        if (!session || !lastViewedTimestamps) return;
         
         const fetchAndProcessFeeds = async () => {
             setIsLoading(true);
             setError(null);
-
             try {
-                const [allFollowedProfiles, timelineRes] = await Promise.all([
-                    fetchAllFollows(agent, session.did),
-                    agent.getTimeline({ limit: 100 })
-                ]);
-
-                const timelineItems = timelineRes.data.feed;
-
-                const profileFeedMap = new Map<string, ProfileFeed>();
-                for (const profile of allFollowedProfiles) {
-                    profileFeedMap.set(profile.did, {
-                        profile,
-                        unreadCount: 0,
-                        lastActivity: profile.indexedAt,
-                    });
-                }
+                const followedProfiles = await fetchAllFollows(agent, session.did);
                 
-                for (const item of timelineItems) {
-                    const actor = AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by : item.post.author;
-                    
-                    if (profileFeedMap.has(actor.did)) {
-                        const profileData = profileFeedMap.get(actor.did)!;
+                const feedPromises = followedProfiles.map(async (profile) => {
+                    try {
+                        const feedRes = await agent.getAuthorFeed({ actor: profile.did, limit: 30 });
+                        const posts = feedRes.data.feed;
+                        
+                        const lastViewedString = lastViewedTimestamps.get(profile.did);
+                        const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
+                        
+                        let unreadCount = 0;
+                        for (const item of posts) {
+                            const eventDate = new Date(AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt);
+                            if (eventDate > lastViewedDate) {
+                                unreadCount++;
+                            } else {
+                                break; // Feeds are chronological, so we can stop
+                            }
+                        }
 
-                        const lastViewedString = lastViewedTimestamps.get(actor.did);
-                        const eventDate = new Date(
-                            AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt
-                        );
-                        
-                        if (!lastViewedString || new Date(lastViewedString) < eventDate) {
-                            profileData.unreadCount += 1;
-                        }
-                        
-                        const currentLastActivity = new Date(profileData.lastActivity);
-                        if (eventDate > currentLastActivity) {
-                            profileData.latestPost = item;
-                            profileData.lastActivity = eventDate.toISOString();
-                        }
+                        const latestPost = posts[0];
+                        const lastActivity = latestPost
+                            ? (AppBskyFeedDefs.isReasonRepost(latestPost.reason) ? latestPost.reason.indexedAt : latestPost.post.indexedAt)
+                            : profile.indexedAt;
+
+                        return {
+                            profile,
+                            latestPost,
+                            unreadCount,
+                            lastActivity,
+                        };
+                    } catch (e) {
+                        console.warn(`Failed to get feed for ${profile.handle}`, e);
+                        // Return a default structure for profiles whose feeds fail to load
+                        return {
+                            profile,
+                            latestPost: undefined,
+                            unreadCount: 0,
+                            lastActivity: profile.indexedAt,
+                        };
                     }
-                }
-                
-                const processedFeeds = Array.from(profileFeedMap.values());
-                
-                processedFeeds.sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
-                
-                setProfileFeeds(processedFeeds);
+                });
 
+                const results = await Promise.all(feedPromises);
+                
+                results.sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
+                
+                setProfileFeeds(results);
             } catch (e) {
-                console.error("Failed to fetch and process feed:", e);
+                console.error("Failed to fetch followed profiles or feeds:", e);
                 setError("Could not load your feed.");
             } finally {
                 setIsLoading(false);
@@ -192,7 +172,6 @@ const FollowingFeedScreen: React.FC = () => {
         };
 
         fetchAndProcessFeeds();
-
     }, [agent, session, lastViewedTimestamps]);
 
     if (isLoading) {
