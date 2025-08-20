@@ -67,7 +67,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     }, [profile?.description, agent]);
     
     const ListHeader = useMemo(() => (
-      <View>
+      <View style={{ paddingTop: 64 }}>
         <View style={{backgroundColor: '#111314'}}>
             {profile?.banner && <Image source={{ uri: profile.banner }} style={styles.banner} />}
             <View style={styles.profileInfoContainer}>

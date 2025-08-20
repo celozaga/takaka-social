@@ -136,15 +136,17 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   if (isLoading) {
     return (
         <View style={styles.grid}>
-            {ListHeaderComponent}
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-                <View style={styles.gridColumn}>
-                    {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+            <>
+                {ListHeaderComponent}
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                    <View style={styles.gridColumn}>
+                        {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+                    </View>
+                    <View style={styles.gridColumn}>
+                        {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
+                    </View>
                 </View>
-                <View style={styles.gridColumn}>
-                    {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
-                </View>
-            </View>
+            </>
         </View>
     );
   }

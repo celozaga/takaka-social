@@ -6,7 +6,7 @@ import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, NativeScrollEvent } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, NativeScrollEvent, RefreshControl } from 'react-native';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 
@@ -40,6 +40,7 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     try {
@@ -97,6 +98,11 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
 
   useEffect(() => {
     loadInitialPosts();
+  }, [loadInitialPosts]);
+
+  const onRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    loadInitialPosts().finally(() => setIsRefreshing(false));
   }, [loadInitialPosts]);
 
   const loadMorePosts = useCallback(async () => {
@@ -202,10 +208,15 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     <ScrollView
       onScroll={handleScroll}
       scrollEventThrottle={16}
+      refreshControl={
+        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#A8C7FA" />
+      }
     >
       <View>
-        {ListHeaderComponent}
-        {renderContent()}
+        <>
+            {ListHeaderComponent}
+            {renderContent()}
+        </>
       </View>
     </ScrollView>
   );
