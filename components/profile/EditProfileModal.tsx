@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
+import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { X, Camera, Loader2 } from 'lucide-react';
 
@@ -12,6 +13,7 @@ interface EditProfileModalProps {
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
+  const { getProfile, clearProfile } = useProfileCache();
 
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,8 +30,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   useEffect(() => {
     if (session?.did) {
       setIsLoading(true);
-      agent.getProfile({ actor: session.did })
-        .then(({ data }) => {
+      getProfile(session.did)
+        .then((data) => {
           setProfile(data);
           setDisplayName(data.displayName || '');
           setDescription(data.description || '');
@@ -41,7 +43,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
         })
         .finally(() => setIsLoading(false));
     }
-  }, [agent, session?.did]);
+  }, [getProfile, session?.did]);
 
   useEffect(() => {
     // Revoke object URLs on unmount to prevent memory leaks
@@ -86,6 +88,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
           banner: existing?.banner, // Keep existing banner
         };
       });
+
+      // Invalidate the cache for our own profile
+      if (session?.did) {
+        clearProfile(session.did);
+      }
 
       toast({ title: "Profile updated successfully!" });
       onSuccess();

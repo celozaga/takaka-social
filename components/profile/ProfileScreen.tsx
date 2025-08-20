@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
+import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs, AppBskyFeedDefs,AtUri,RichText,AppBskyEmbedImages,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyEmbedRecord, ComAtprotoLabelDefs } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
@@ -56,6 +57,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { t } = useTranslation();
     const { toast } = useToast();
     const { openEditProfileModal, setCustomFeedHeaderVisible } = useUI();
+    const { getProfile } = useProfileCache();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
@@ -212,11 +214,11 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
         try {
             if (!currentCursor) {
-                const profileRes = await agent.getProfile({ actor });
-                setProfile(profileRes.data);
-                setViewerState(profileRes.data.viewer);
+                const profileRes = await getProfile(actor);
+                setProfile(profileRes);
+                setViewerState(profileRes.viewer);
 
-                if (profileRes.data.viewer?.blocking || profileRes.data.viewer?.blockedBy) {
+                if (profileRes.viewer?.blocking || profileRes.viewer?.blockedBy) {
                     setHasMore(false);
                     setIsLoading(false);
                     return;
@@ -243,7 +245,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent, actor]);
+    }, [agent, actor, getProfile]);
 
     useEffect(() => {
         fetchProfileAndFeed();

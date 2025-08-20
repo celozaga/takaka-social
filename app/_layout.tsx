@@ -3,6 +3,7 @@ import { AtpProvider } from '@/context/AtpContext';
 import { UIProvider } from '@/context/UIContext';
 import { HiddenPostsProvider } from '@/context/HiddenPostsContext';
 import { ModerationProvider } from '@/context/ModerationContext';
+import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
 import { Toaster, ToastProvider } from '@/components/ui/Toaster';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
@@ -19,9 +20,11 @@ export default function RootLayout() {
           <ModerationProvider>
             <UIProvider>
               <HiddenPostsProvider>
-                <StatusBar style="light" />
-                <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
-                <Toaster />
+                <ProfileCacheProvider>
+                  <StatusBar style="light" />
+                  <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+                  <Toaster />
+                </ProfileCacheProvider>
               </HiddenPostsProvider>
             </UIProvider>
           </ModerationProvider>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useModeration } from '../../context/ModerationContext';
+import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { ArrowLeft, Loader2, BadgeCheck } from 'lucide-react';
 
@@ -43,7 +44,7 @@ type LabelVisibility = 'show' | 'warn' | 'hide';
 
 
 const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ serviceDid }) => {
-    const { agent } = useAtp();
+    const { getProfile } = useProfileCache();
     const { isReady, adultContentEnabled, labelPreferences, setLabelPreference } = useModeration();
     const [serviceProfile, setServiceProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +53,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
         const fetchProfile = async () => {
             setIsLoading(true);
             try {
-                const { data } = await agent.getProfile({ actor: serviceDid });
+                const data = await getProfile(serviceDid);
                 setServiceProfile(data);
             } catch (e) {
                 console.error("Failed to fetch mod service profile", e);
@@ -61,7 +62,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
             }
         };
         fetchProfile();
-    }, [agent, serviceDid]);
+    }, [getProfile, serviceDid]);
     
     if (isLoading) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>

@@ -10,9 +10,9 @@ import PopularFeeds from '../feeds/PopularFeeds';
 import SuggestedFollows from '../profile/SuggestedFollows';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
-import ScreenHeader from '../layout/ScreenHeader';
 import TrendingTopics from './TrendingTopics';
 import { Head } from 'expo-router';
+import { useDebounce } from '../../hooks/useDebounce';
 
 type SearchResult = AppBskyFeedDefs.PostView | AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -46,6 +46,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const { agent } = useAtp();
     const { t } = useTranslation();
     const [query, setQuery] = useState(initialQuery);
+    const debouncedQuery = useDebounce(query, 500); // 500ms debounce delay
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -64,13 +65,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
       { id: 'feeds', label: t('common.feeds'), icon: List },
     ];
 
-    // Derive activeFilter directly from props, making the URL the single source of truth.
     const activeFilter = (initialFilter as FilterType) || 'top';
     
-    const showDiscoveryContent = !initialQuery.trim();
+    const showDiscoveryContent = !debouncedQuery.trim() && !initialQuery.trim();
     const supportsInfiniteScroll = activeFilter !== 'people';
     const isListView = activeFilter === 'people' || activeFilter === 'feeds';
-
 
     const fetchResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim()) {
@@ -129,24 +128,21 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             setIsLoadingMore(false);
         }
     }, [agent]);
-    
-    useEffect(() => {
-        if (!showDiscoveryContent) {
-            fetchResults(initialQuery, activeFilter);
-        }
-    }, [initialQuery, activeFilter, fetchResults, showDiscoveryContent]);
 
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (query.trim()) {
-            window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${activeFilter}`;
+    useEffect(() => {
+        const effectiveQuery = debouncedQuery || initialQuery;
+        if (effectiveQuery.trim()) {
+            fetchResults(effectiveQuery, activeFilter);
+        } else {
+            setResults([]);
+            setIsLoading(false);
         }
-    };
+    }, [debouncedQuery, initialQuery, activeFilter, fetchResults]);
     
     const handleFilterChange = (filter: FilterType) => {
-        if (query.trim()) {
-            // Simply update the URL. The component will be re-mounted with new props.
-            window.location.hash = `#/search?q=${encodeURIComponent(query)}&filter=${filter}`;
+        const effectiveQuery = query || initialQuery;
+        if (effectiveQuery.trim()) {
+            window.location.hash = `#/search?q=${encodeURIComponent(effectiveQuery)}&filter=${filter}`;
         }
     };
     
@@ -159,12 +155,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         }
     }, [pinnedUris, togglePin, addFeed]);
     
-     // Effect for IntersectionObserver
     useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
             if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore && supportsInfiniteScroll) {
-              fetchResults(initialQuery, activeFilter, cursor);
+              fetchResults(debouncedQuery || initialQuery, activeFilter, cursor);
             }
           },
           { rootMargin: '400px' }
@@ -174,7 +169,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         return () => {
           if (currentLoader) observer.unobserve(currentLoader);
         };
-    }, [hasMore, isLoading, isLoadingMore, fetchResults, initialQuery, activeFilter, cursor, supportsInfiniteScroll]);
+    }, [hasMore, isLoading, isLoadingMore, fetchResults, debouncedQuery, initialQuery, activeFilter, cursor, supportsInfiniteScroll]);
 
     const renderResults = () => {
       if (activeFilter === 'people') {
@@ -219,18 +214,16 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             <Head><title>{t('search.title')}</title></Head>
             <div>
                 <div className="sticky top-0 z-10 bg-surface-1 pt-4 pb-3">
-                    <form onSubmit={handleFormSubmit} className="flex gap-2">
-                        <div className="relative flex-grow">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                            <input
-                                type="search"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder={t('search.placeholder')}
-                                className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
-                            />
-                        </div>
-                    </form>
+                    <div className="relative flex-grow">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={t('search.placeholder')}
+                            className="w-full pl-12 pr-4 py-3 bg-surface-2 rounded-lg focus:ring-1 focus:ring-primary focus:bg-surface-3 outline-none transition duration-200"
+                        />
+                    </div>
                 </div>
 
                 <div>
@@ -281,7 +274,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             )}
                             
                             {!isLoading && results.length === 0 && (
-                                <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('search.empty', { query: initialQuery })}</div>
+                                <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('search.empty', { query: debouncedQuery || initialQuery })}</div>
                             )}
                             
                             <div ref={loaderRef} className="h-10">

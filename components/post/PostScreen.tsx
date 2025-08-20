@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
+import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
@@ -39,11 +40,12 @@ interface PostScreenProps {
 }
 
 const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
-  const { agent, session } = useAtp();
-  const { openComposer, openMediaActionsModal } = useUI();
+  const { agent } = useAtp();
+  const { openMediaActionsModal } = useUI();
   const { toast } = useToast();
   const { t } = useTranslation();
   const moderation = useModeration();
+  const { getProfile } = useProfileCache();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +72,8 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
         const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
         if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
           setThread(data.thread);
-          const profileRes = await agent.getProfile({ actor: data.thread.post.author.did });
-          setPostAuthor(profileRes.data);
+          const profileRes = await getProfile(data.thread.post.author.did);
+          setPostAuthor(profileRes);
         } else {
           throw new Error(t('post.notFound'));
         }
@@ -83,7 +85,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       }
     };
     fetchThread();
-  }, [agent, postUri, t]);
+  }, [agent, postUri, t, getProfile]);
 
   useEffect(() => {
     if (!thread?.post) return;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
+import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { 
     Settings, ChevronRight, BadgeCheck, List, Search, 
@@ -34,7 +35,8 @@ const AppGridItem: React.FC<{
 
 
 const MoreScreen: React.FC = () => {
-    const { agent, session, chatSupported } = useAtp();
+    const { session, chatSupported } = useAtp();
+    const { getProfile } = useProfileCache();
     const { t } = useTranslation();
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -42,14 +44,14 @@ const MoreScreen: React.FC = () => {
     useEffect(() => {
         if (session?.did) {
             setIsLoading(true);
-            agent.getProfile({ actor: session.did })
-                .then(({ data }) => setProfile(data))
+            getProfile(session.did)
+                .then(setProfile)
                 .catch(err => console.error("Failed to fetch profile for More screen:", err))
                 .finally(() => setIsLoading(false));
         } else {
             setIsLoading(false);
         }
-    }, [agent, session?.did]);
+    }, [getProfile, session?.did]);
     
     const profileLink = `#/profile/${session?.handle}`;
 

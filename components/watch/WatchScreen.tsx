@@ -39,7 +39,6 @@ const WatchScreen: React.FC = () => {
             let nextCursor = currentCursor;
             let attempts = 0;
 
-            // Fetch until we have at least 5 videos or run out of posts/attempts
             while (fetchedPosts.filter(p => isPostVideo(p.post)).length < 5 && attempts < 5 && (hasMore || !currentCursor)) {
                 if(!hasMore && currentCursor) break;
                 attempts++;
@@ -70,57 +69,44 @@ const WatchScreen: React.FC = () => {
         }
     }, [agent, hasMore, isLoadingMore, t]);
 
-    const fetchPlaybackUrls = useCallback(async (posts: AppBskyFeedDefs.FeedViewPost[]) => {
-        const postsWithoutUrls = posts.filter(p => !playbackUrls.has(p.post.uri));
-        if (postsWithoutUrls.length === 0) return;
-
-        const urls = await Promise.all(postsWithoutUrls.map(async (p) => {
-            try {
-                const embed = p.post.embed;
-                let videoEmbed: AppBskyEmbedVideo.View | undefined;
-                if (AppBskyEmbedVideo.isView(embed)) {
-                    videoEmbed = embed;
-                } else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) {
-                    videoEmbed = embed.media as AppBskyEmbedVideo.View;
-                }
-                
-                if (!videoEmbed) return null;
-
-                const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
-                    did: p.post.author.did,
-                    cid: videoEmbed.cid,
-                });
-                return { uri: p.post.uri, url: result.data.url };
-            } catch (error) {
-                console.warn(`Could not get playback URL for ${p.post.uri}`, error);
-                return null;
+    const prefetchNextUrl = useCallback(async (post: AppBskyFeedDefs.FeedViewPost) => {
+        if (!post || playbackUrls.has(post.post.uri)) return;
+        
+        try {
+            const embed = post.post.embed;
+            let videoEmbed: AppBskyEmbedVideo.View | undefined;
+            if (AppBskyEmbedVideo.isView(embed)) {
+                videoEmbed = embed;
+            } else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) {
+                videoEmbed = embed.media as AppBskyEmbedVideo.View;
             }
-        }));
+            
+            if (!videoEmbed) return;
 
-        setPlaybackUrls(prev => {
-            const newMap = new Map(prev);
-            for (const item of urls) {
-                if (item) {
-                    newMap.set(item.uri, item.url);
-                }
-            }
-            return newMap;
-        });
+            const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
+                did: post.post.author.did,
+                cid: videoEmbed.cid,
+            });
+
+            setPlaybackUrls(prev => new Map(prev).set(post.post.uri, result.data.url));
+        } catch (error) {
+            console.warn(`Could not prefetch playback URL for ${post.post.uri}`, error);
+        }
     }, [agent, playbackUrls]);
+
 
     useEffect(() => {
         // Initial fetch
         fetchVideos();
     }, [fetchVideos]);
-
-     useEffect(() => {
-        if (videoPosts.length > 0) {
-            fetchPlaybackUrls(videoPosts);
-        }
-    }, [videoPosts, fetchPlaybackUrls]);
     
     const handleSlideChange = (swiper: SwiperCore) => {
         setActiveIndex(swiper.activeIndex);
+        // Pre-fetch the next video's HLS URL for smoother playback
+        const nextPost = videoPosts[swiper.activeIndex + 1];
+        if (nextPost) {
+            prefetchNextUrl(nextPost);
+        }
     };
     
     const handleReachEnd = () => {
