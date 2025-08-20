@@ -81,7 +81,7 @@ const ModerationSettingsScreen: React.FC = () => {
                                         </View>
                                     </View>
                                     <ChevronRight style={styles.settingsChevron} color="#C3C6CF" />
-                                </div>
+                                </View>
                             </Pressable>
                         </Link>
                     </View>
