@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -147,36 +149,29 @@ const NotificationsScreen: React.FC = () => {
   };
   
   return (
-    <div>
-        <ScreenHeader title={t('notifications.title')}>
-            <a href="#/settings" className="p-2 rounded-full hover:bg-surface-3" aria-label={t('nav.settings')}>
-                <Settings size={20} />
-            </a>
-        </ScreenHeader>
-        <div className="mt-4">
-            <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
-            {filters.map(filter => (
-                <button
-                key={filter.id}
-                onClick={() => setActiveTab(filter.id)}
-                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap
-                    ${activeTab === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
-                `}
-                >
-                {filter.label}
-                </button>
-            ))}
-            </div>
-            <div className="mt-4">
-                {renderContent()}
-            </div>
-            <div ref={loaderRef} className="h-10">
-                {isLoadingMore && <div className="bg-surface-2 p-4 rounded-xl animate-pulse h-20 mt-4"></div>}
-            </div>
-            {!hasMore && notifications.length > 0 && (
-                <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
-            )}
+    <div className="pt-4">
+        <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
+          {filters.map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setActiveTab(filter.id)}
+              className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap
+                  ${activeTab === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
+              `}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
+        <div className="mt-4">
+            {renderContent()}
+        </div>
+        <div ref={loaderRef} className="h-10">
+            {isLoadingMore && <div className="bg-surface-2 p-4 rounded-xl animate-pulse h-20 mt-4"></div>}
+        </div>
+        {!hasMore && notifications.length > 0 && (
+            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+        )}
     </div>
   );
 };

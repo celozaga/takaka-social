@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useModeration } from '../../context/ModerationContext';
@@ -108,7 +107,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                         <div key={def.id} className={`bg-surface-2 rounded-lg p-4 transition-opacity ${isDisabled ? 'opacity-50' : ''}`}>
                             <h3 className="font-semibold">{def.title}</h3>
                             <p className="text-sm text-on-surface-variant">{def.description}</p>
-                            {isDisabled && <p className="text-xs text-accent mt-1">Configured in moderation settings.</p>}
+                            {isDisabled && <p className="text-xs text-amber-400 mt-1">Configured in moderation settings.</p>}
 
                             <div className={`mt-3 grid grid-cols-3 gap-2 ${isDisabled ? 'pointer-events-none' : ''}`}>
                                  {(['Hide', 'Warn', 'Show'] as const).map(option => {

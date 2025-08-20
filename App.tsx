@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -7,21 +9,23 @@ import { UIProvider, useUI } from './context/UIContext';
 import { HiddenPostsProvider } from './context/HiddenPostsContext';
 import { ModerationProvider } from './context/ModerationContext';
 import { Toaster, ToastProvider } from './components/ui/Toaster';
+import Navbar from './components/layout/Navbar';
 import BottomNavbar from './components/layout/BottomNavbar';
 import Composer from './components/composer/Composer';
 import LoginPrompt from './components/auth/LoginPrompt';
-import { Loader2, Pencil, Send } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useHeadManager } from './hooks/useHeadManager';
-import { ChannelStateProvider } from './context/ChannelStateContext';
 
 // Lazy load screen components
 const LoginScreen = lazy(() => import('./components/auth/LoginScreen'));
 const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
-const FollowingFeedScreen = lazy(() => import('./components/home/FollowingFeedScreen'));
 const ProfileScreen = lazy(() => import('./components/profile/ProfileScreen'));
 const PostScreen = lazy(() => import('./components/post/PostScreen'));
 const SearchScreen = lazy(() => import('./components/search/SearchScreen'));
 const NotificationsScreen = lazy(() => import('./components/notifications/NotificationsScreen'));
+const FeedsScreen = lazy(() => import('./components/feeds/FeedsScreen'));
+const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'));
+const FeedViewScreen = lazy(() => import('./components/feeds/FeedViewScreen'));
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const NotificationSettingsScreen = lazy(() => import('./components/settings/NotificationSettingsScreen'));
 const LanguageSettingsScreen = lazy(() => import('./components/settings/LanguageSettingsScreen'));
@@ -29,13 +33,16 @@ const AccountSettingsScreen = lazy(() => import('./components/settings/AccountSe
 const ModerationSettingsScreen = lazy(() => import('./components/settings/ModerationSettingsScreen'));
 const ModerationServiceScreen = lazy(() => import('./components/settings/ModerationServiceScreen'));
 const MutedWordsScreen = lazy(() => import('./components/settings/MutedWordsScreen'));
+const MoreScreen = lazy(() => import('./components/more/MoreScreen'));
 const FollowsScreen = lazy(() => import('./components/profile/FollowsScreen'));
 const EditProfileModal = lazy(() => import('./components/profile/EditProfileModal'));
 const UpdateEmailModal = lazy(() => import('./components/settings/UpdateEmailModal'));
 const UpdateHandleModal = lazy(() => import('./components/settings/UpdateHandleModal'));
+const WatchScreen = lazy(() => import('./components/watch/WatchScreen'));
+const MessagesScreen = lazy(() => import('./components/messages/MessagesScreen'));
+const ConvoScreen = lazy(() => import('./components/messages/ConvoScreen'));
 const MediaActionsModal = lazy(() => import('./components/shared/MediaActionsModal'));
 const RepostModal = lazy(() => import('./components/shared/RepostModal'));
-const FeedHeaderModal = lazy(() => import('./components/feeds/FeedHeaderModal'));
 
 
 const App: React.FC = () => {
@@ -43,14 +50,12 @@ const App: React.FC = () => {
     <AtpProvider>
       <ModerationProvider>
         <UIProvider>
-          <ChannelStateProvider>
-            <HiddenPostsProvider>
-              <ToastProvider>
-                <Main />
-                <Toaster />
-              </ToastProvider>
-            </HiddenPostsProvider>
-          </ChannelStateProvider>
+          <HiddenPostsProvider>
+            <ToastProvider>
+              <Main />
+              <Toaster />
+            </ToastProvider>
+          </HiddenPostsProvider>
         </UIProvider>
       </ModerationProvider>
     </AtpProvider>
@@ -58,16 +63,17 @@ const App: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { session, isLoadingSession } = useAtp();
+  const { session, isLoadingSession, chatSupported } = useAtp();
   const { 
     isLoginModalOpen, closeLoginModal, 
-    isComposerOpen, openComposer, closeComposer, composerReplyTo, composerInitialText,
+    isComposerOpen, closeComposer, composerReplyTo, composerInitialText, 
+    isCustomFeedHeaderVisible, 
+    isFeedModalOpen, closeFeedModal,
     isEditProfileModalOpen, closeEditProfileModal,
     isUpdateEmailModalOpen, closeUpdateEmailModal,
     isUpdateHandleModalOpen, closeUpdateHandleModal,
     isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
-    isRepostModalOpen, closeRepostModal, repostModalPost,
-    isFeedModalOpen, closeFeedModal, feedModalUri,
+    isRepostModalOpen, closeRepostModal, repostModalPost
   } = useUI();
   const [route, setRoute] = useState(window.location.hash);
   const { i18n, t } = useTranslation();
@@ -92,21 +98,34 @@ const Main: React.FC = () => {
       if (event.key === 'Escape') {
         closeComposer();
         closeLoginModal();
+        closeFeedModal();
         closeEditProfileModal();
         closeUpdateEmailModal();
         closeUpdateHandleModal();
         closeMediaActionsModal();
         closeRepostModal();
-        closeFeedModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeComposer, closeLoginModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal, closeRepostModal, closeFeedModal]);
+  }, [closeComposer, closeLoginModal, closeFeedModal, closeEditProfileModal, closeUpdateEmailModal, closeUpdateHandleModal, closeMediaActionsModal, closeRepostModal]);
 
   if (isLoadingSession) {
+    // Show a minimal loading state while session is being restored
     return <div className="min-h-screen bg-surface-1" />;
   }
+  
+  const isPostScreen = route.startsWith('#/post/');
+  const isWatchScreen = route.startsWith('#/watch');
+  const isConvoScreen = route.startsWith('#/messages/');
+  const isSearchScreen = route.startsWith('#/search');
+  const isNotificationsScreen = route.startsWith('#/notifications');
+  const isMoreScreen = route.startsWith('#/more');
+  
+  const isSectionView = isSearchScreen || isNotificationsScreen || isMoreScreen;
+  const isBottomNavHidden = isPostScreen || isCustomFeedHeaderVisible || isWatchScreen || isConvoScreen;
+  const isTopNavHidden = isBottomNavHidden || isSectionView;
+
 
   const renderContent = () => {
     const pathWithQuery = route.replace(/^#\//, '');
@@ -116,6 +135,11 @@ const Main: React.FC = () => {
 
     switch (parts[0]) {
       case 'profile':
+        if (parts[2] === 'feed' && parts[3]) {
+          const handle = parts[1];
+          const rkey = parts[3];
+          return <FeedViewScreen handle={handle} rkey={rkey} key={`${handle}-${rkey}`} />;
+        }
         if (parts[2] === 'followers') {
             return <FollowsScreen actor={parts[1]} type="followers" key={`${parts[1]}-followers`} />;
         }
@@ -124,120 +148,121 @@ const Main: React.FC = () => {
         }
         return <ProfileScreen actor={parts[1]} key={parts[1]} />;
       case 'post':
-        return <PostScreen did={parts[1]} rkey={parts[2]} key={`${parts[1]}-${parts[2]}`} />;
+        const did = parts[1];
+        const rkey = parts[2];
+        return <PostScreen did={did} rkey={rkey} key={`${did}-${rkey}`} />;
       case 'search':
         const params = new URLSearchParams(query);
         const q = params.get('q') || '';
         const filter = params.get('filter') || 'top';
         return <SearchScreen initialQuery={q} initialFilter={filter} key={`${q}-${filter}`} />;
       case 'notifications':
-        if (!session) { window.location.hash = '#/'; return null; }
-        return <NotificationsScreen />;
-      case 'settings':
-         if (!session) { window.location.hash = '#/'; return null; }
-        if (parts[1] === 'notifications') return <NotificationSettingsScreen />;
-        if (parts[1] === 'language') return <LanguageSettingsScreen />;
-        if (parts[1] === 'account') return <AccountSettingsScreen />;
-        if (parts[1] === 'moderation') return <ModerationSettingsScreen />;
-        if (parts[1] === 'mod-service' && parts[2]) return <ModerationServiceScreen serviceDid={parts[2]} />;
-        if (parts[1] === 'muted-words') return <MutedWordsScreen />;
-        return <SettingsScreen />;
-      case '':
-      case 'home':
-        if (session) {
-          const lastViewedProfile = localStorage.getItem('takaka-last-viewed-profile');
-          // Use replace to avoid polluting browser history, preventing back button issues
-          window.location.replace(lastViewedProfile ? `#/profile/${lastViewedProfile}` : '#/feed');
-          return <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+        if (!session) {
+          window.location.hash = '#/';
+          return null;
         }
-        // Logged-out home screen
-        return (
-          <div className="px-4 pt-16 pb-24">
-            <HomeScreen />
-          </div>
-        );
-      case 'feed':
-        if (session) {
-          // This case now correctly renders the feed view without redirecting
+        return <NotificationsScreen />;
+      case 'feeds':
+        return <FeedsScreen />;
+      case 'settings':
+         if (!session) {
+          window.location.hash = '#/';
+          return null;
+        }
+        if (parts[1] === 'notifications') {
+          return <NotificationSettingsScreen />;
+        }
+        if (parts[1] === 'language') {
+            return <LanguageSettingsScreen />;
+        }
+        if (parts[1] === 'account') {
+            return <AccountSettingsScreen />;
+        }
+        if (parts[1] === 'moderation') {
+          return <ModerationSettingsScreen />;
+        }
+        if (parts[1] === 'mod-service' && parts[2]) {
+            return <ModerationServiceScreen serviceDid={parts[2]} />;
+        }
+        if (parts[1] === 'muted-words') {
+            return <MutedWordsScreen />;
+        }
+        return <SettingsScreen />;
+      case 'more':
+         if (!session) {
+          window.location.hash = '#/';
+          return null;
+        }
+        return <MoreScreen />;
+      case 'watch':
+        if (!session) {
+          window.location.hash = '#/';
+          return null;
+        }
+        return <WatchScreen />;
+      case 'messages':
+        if (!session) {
+            window.location.hash = '#/';
+            return null;
+        }
+        if (chatSupported === undefined) {
           return (
-            <>
-              <div className="hidden md:flex h-full w-full items-center justify-center text-on-surface-variant p-8 text-center">
-                <div>
-                  <h2 className="text-xl font-bold">Welcome back</h2>
-                  <p>Select a profile from the left to view their posts.</p>
-                </div>
-              </div>
-              <div className="md:hidden px-4 pt-16 pb-24">
-                <FollowingFeedScreen />
-              </div>
-            </>
+            <div className="w-full flex justify-center items-center pt-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
           );
         }
-        // If not logged in, show the normal home screen
-        window.location.hash = '#/';
-        return null;
+        if (chatSupported === false) {
+          return (
+            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">
+              <h2 className="font-bold text-lg text-on-surface">{t('app.messagingNotSupported')}</h2>
+              <p className="mt-1">{t('app.messagingNotSupportedDescription')}</p>
+            </div>
+          );
+        }
+        if (parts[1]) {
+            return <ConvoScreen peerDid={parts[1]} key={parts[1]} />;
+        }
+        return <MessagesScreen />;
       default:
-        return session ? <FollowingFeedScreen /> : <HomeScreen />;
+        return <HomeScreen />;
     }
   };
   
-  const mainContent = (
-    <Suspense fallback={
-      <div className="w-full flex justify-center items-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    }>
-      {renderContent()}
-    </Suspense>
-  );
+  const mainContainerClasses = `w-full flex justify-center md:pl-20`;
+
+  const mainContentClasses = isWatchScreen || isConvoScreen
+    ? 'w-full h-screen bg-black'
+    : isPostScreen
+      ? 'w-full max-w-3xl transition-all duration-300 pb-8'
+      : `w-full max-w-3xl px-4 ${isBottomNavHidden ? 'pt-4' : isSectionView ? '' : 'pt-20'} transition-all duration-300 ${session ? 'pb-24 md:pb-8' : 'pb-40 md:pb-8'}`;
+
 
   return (
     <div className="min-h-screen bg-surface-1 text-on-surface">
-      <BottomNavbar />
-      
-      <div className="w-full md:pl-20">
-        {!session ? (
-           <div className="flex justify-center">
-             <main className="w-full max-w-xl">
-               {mainContent}
-               <LoginPrompt />
-             </main>
-           </div>
-        ) : (
-          <div className="md:flex h-screen">
-            <aside className="w-96 border-r border-outline flex-col hidden md:flex shrink-0">
-               <header className="flex-shrink-0 flex items-center gap-3 p-4 h-16 border-b border-outline">
-                <Send size={28} className="text-primary" />
-                <h1 className="text-xl font-bold">Takaka</h1>
-              </header>
-              <div className="flex-1 overflow-y-auto">
-                <FollowingFeedScreen />
-              </div>
-            </aside>
-            <main className="w-full md:flex-1 md:overflow-y-auto">
-              {mainContent}
-            </main>
-          </div>
-        )}
+      <BottomNavbar isHidden={isBottomNavHidden} />
+      {!isTopNavHidden && <Navbar />}
+      <div className={mainContainerClasses}>
+        <main className={mainContentClasses}>
+          <Suspense fallback={
+            <div className="w-full flex justify-center items-center pt-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          }>
+            {renderContent()}
+          </Suspense>
+        </main>
       </div>
       
-      {session && (
-        <button
-          onClick={() => openComposer()}
-          className="fixed bottom-24 right-4 md:bottom-6 md:right-6 bg-primary text-on-primary rounded-2xl w-14 h-14 flex items-center justify-center shadow-lg z-50 hover:bg-primary/90 transition-colors"
-          aria-label={t('nav.compose')}
-        >
-          <Pencil size={24} />
-        </button>
-      )}
+      {!session && !isPostScreen && !isWatchScreen && <LoginPrompt />}
 
       {isComposerOpen && session && (
         <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
           onClick={closeComposer}
         >
           <div 
-            className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-2xl bg-surface-1 rounded-t-2xl md:rounded-2xl flex flex-col shadow-2xl animate-slide-in-from-bottom"
+            className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-2xl bg-surface-1 rounded-t-2xl md:rounded-2xl flex flex-col shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
             onClick={e => e.stopPropagation()}
           >
              <Composer 
@@ -251,7 +276,7 @@ const Main: React.FC = () => {
       )}
 
       {isLoginModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeLoginModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeLoginModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-96 bg-surface-2 rounded-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <LoginScreen onSuccess={closeLoginModal} />
@@ -260,14 +285,25 @@ const Main: React.FC = () => {
         </div>
       )}
       
+      {isFeedModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeFeedModal}>
+          <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                <FeedHeaderModal />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
       {isEditProfileModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeEditProfileModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeEditProfileModal}>
           <div className="relative w-full max-w-xl" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-xl h-[500px] bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <EditProfileModal
                 onClose={closeEditProfileModal}
                 onSuccess={() => {
                     closeEditProfileModal();
+                    // Force a reload of the profile page if we are on it to see changes
                     if (window.location.hash === `#/profile/${session?.handle}` || window.location.hash === `#/profile/${session?.did}`) {
                         window.location.reload();
                     }
@@ -279,7 +315,7 @@ const Main: React.FC = () => {
       )}
 
       {isUpdateEmailModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeUpdateEmailModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeUpdateEmailModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <UpdateEmailModal
@@ -295,7 +331,7 @@ const Main: React.FC = () => {
       )}
 
       {isUpdateHandleModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={closeUpdateHandleModal}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 animate-in fade-in-0 duration-300" onClick={closeUpdateHandleModal}>
           <div className="relative w-full max-w-md" onClick={e => e.stopPropagation()}>
             <Suspense fallback={<div className="w-full max-w-md h-64 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                 <UpdateHandleModal
@@ -309,11 +345,11 @@ const Main: React.FC = () => {
 
       {isMediaActionsModalOpen && mediaActionsModalPost && (
          <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
           onClick={closeMediaActionsModal}
         >
           <div 
-            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
             onClick={e => e.stopPropagation()}
           >
             <Suspense fallback={<div className="w-full h-96 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
@@ -328,11 +364,11 @@ const Main: React.FC = () => {
 
       {isRepostModalOpen && repostModalPost && (
          <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
+          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-in fade-in-0 duration-300"
           onClick={closeRepostModal}
         >
           <div 
-            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
+            className="relative w-full max-w-lg bg-surface-2 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-full md:slide-in-from-bottom-0 duration-300"
             onClick={e => e.stopPropagation()}
           >
             <Suspense fallback={<div className="w-full h-48 bg-surface-2 rounded-t-2xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
@@ -340,22 +376,6 @@ const Main: React.FC = () => {
                 post={repostModalPost}
                 onClose={closeRepostModal}
               />
-            </Suspense>
-          </div>
-        </div>
-      )}
-      
-      {isFeedModalOpen && feedModalUri && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-[100] flex items-end md:items-center justify-center animate-fade-in"
-          onClick={closeFeedModal}
-        >
-          <div 
-            className="relative w-full max-w-lg bg-transparent rounded-t-2xl md:rounded-2xl shadow-2xl animate-slide-in-from-bottom"
-            onClick={e => e.stopPropagation()}
-          >
-            <Suspense fallback={<div className="w-full h-96 bg-surface-2 rounded-xl flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
-              <FeedHeaderModal />
             </Suspense>
           </div>
         </div>

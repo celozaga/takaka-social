@@ -1,32 +1,31 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
-import { BskyAgent, AppBskyActorDefs,AppBskyFeedDefs } from '@atproto/api';
+import { useToast } from '../components/ui/use-toast';
+import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
 
-// Define the shape of the preferences item for feeds
-interface FeedPrefItem {
-    id: string; // Typically a timestamp-based unique ID
-    value: string; // The AT URI of the feed generator
-    pinned: boolean;
-}
+type SavedFeedsPrefV2 = AppBskyActorDefs.SavedFeedsPrefV2;
+type SavedFeedsPref = AppBskyActorDefs.SavedFeedsPref;
+type SavedFeed = AppBskyActorDefs.SavedFeed;
 
-// Define the shape of the saved feeds preference object
-interface SavedFeedsPref {
-    $type: 'app.bsky.actor.defs#savedFeedsPref';
-    items: FeedPrefItem[];
-}
-
-const isSavedFeedsPref = (pref: any): pref is SavedFeedsPref => {
-    return pref && pref.$type === 'app.bsky.actor.defs#savedFeedsPref';
-};
+const V2_TYPE = 'app.bsky.actor.defs#savedFeedsPrefV2';
+const V1_TYPE = 'app.bsky.actor.defs#savedFeedsPref';
 
 export const useSavedFeeds = () => {
     const { agent, session } = useAtp();
-    const [isLoading, setIsLoading] = useState(true);
-    const [preferences, setPreferences] = useState<SavedFeedsPref | null>(null);
-    const [feedViews, setFeedViews] = useState<Map<string, AppBskyFeedDefs.GeneratorView>>(new Map());
+    const { toast } = useToast();
+    const { t } = useTranslation();
 
-    const fetchFeeds = useCallback(async () => {
+    const [preferences, setPreferences] = useState<SavedFeedsPrefV2 | undefined>(undefined);
+    const [feedViews, setFeedViews] = useState<Map<string, AppBskyFeedDefs.GeneratorView>>(new Map());
+    const [isLoading, setIsLoading] = useState(true);
+
+    const pinnedUris = new Set(preferences?.items.filter(item => item.pinned).map(item => item.value) || []);
+    const allUris = preferences?.items.map(item => item.value) || [];
+
+    const load = useCallback(async () => {
         if (!session) {
             setIsLoading(false);
             return;
@@ -34,105 +33,168 @@ export const useSavedFeeds = () => {
         setIsLoading(true);
         try {
             const { data } = await agent.app.bsky.actor.getPreferences();
-            const savedFeedsPref = data.preferences.find(isSavedFeedsPref);
+            const feedsPref = data.preferences.find(p => p.$type === V2_TYPE || p.$type === V1_TYPE);
 
-            if (savedFeedsPref) {
-                setPreferences(savedFeedsPref);
-                const feedUris = savedFeedsPref.items.map(item => item.value);
-                if (feedUris.length > 0) {
-                    const { data: generatorsData } = await agent.app.bsky.feed.getFeedGenerators({ feeds: feedUris });
-                    const newFeedViews = new Map<string, AppBskyFeedDefs.GeneratorView>();
-                    generatorsData.feeds.forEach(feed => newFeedViews.set(feed.uri, feed));
-                    setFeedViews(newFeedViews);
-                }
+            let v2Pref: SavedFeedsPrefV2;
+
+            if (!feedsPref) {
+                // No preferences found, start with a clean slate.
+                v2Pref = { $type: V2_TYPE, items: [] };
+            } else if (AppBskyActorDefs.isSavedFeedsPref(feedsPref)) { 
+                // V1 preferences found, migrate them robustly.
+                const v1 = feedsPref as SavedFeedsPref;
+                const pinnedUrisV1 = Array.isArray(v1.pinned) ? v1.pinned.filter(u => typeof u === 'string') : [];
+                const savedUrisV1 = Array.isArray(v1.saved) ? v1.saved.filter(u => typeof u === 'string') : [];
+                const allV1Uris = [...new Set([...pinnedUrisV1, ...savedUrisV1])];
+                
+                v2Pref = {
+                    $type: V2_TYPE,
+                    items: allV1Uris.map(uri => ({
+                        id: crypto.randomUUID(),
+                        type: 'feed',
+                        value: uri,
+                        pinned: pinnedUrisV1.includes(uri),
+                    }))
+                };
             } else {
-                // If no pref exists, create a default empty one
-                setPreferences({ $type: 'app.bsky.actor.defs#savedFeedsPref', items: [] });
+                // V2 preferences found, validate and sanitize them.
+                const potentialV2 = feedsPref as Partial<SavedFeedsPrefV2>;
+                if (Array.isArray(potentialV2.items)) {
+                    const validItems = potentialV2.items.filter((item: any): item is SavedFeed => 
+                        item &&
+                        typeof item.id === 'string' &&
+                        item.type === 'feed' &&
+                        typeof item.value === 'string' &&
+                        typeof item.pinned === 'boolean'
+                    );
+                    v2Pref = { $type: V2_TYPE, items: validItems };
+                } else {
+                    // `items` is missing or not an array. Reset to empty.
+                    v2Pref = { $type: V2_TYPE, items: [] };
+                }
             }
+
+            setPreferences(v2Pref);
+
+            const urisToFetch = v2Pref.items.map(item => item.value).filter(Boolean);
+            if (urisToFetch.length > 0) {
+                const { data: generators } = await agent.app.bsky.feed.getFeedGenerators({ feeds: urisToFetch });
+                setFeedViews(new Map(generators.feeds.map(f => [f.uri, f])));
+            } else {
+                setFeedViews(new Map());
+            }
+
         } catch (error) {
-            console.error("Failed to fetch saved feeds:", error);
+            console.error("Failed to load feeds:", error);
+            toast({ title: t('common.error'), description: t('hooks.loadFeedsError'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
-    }, [agent, session]);
+    }, [agent, session, toast, t]);
 
     useEffect(() => {
-        fetchFeeds();
-    }, [fetchFeeds]);
+        load();
+    }, [load]);
 
-    const savePreferences = useCallback(async (newItems: FeedPrefItem[]) => {
-        const { data: currentPrefs } = await agent.app.bsky.actor.getPreferences();
-        const otherPrefs = currentPrefs.preferences.filter(p => !isSavedFeedsPref(p));
+    const savePreferences = useCallback(async (newPreferences: SavedFeedsPrefV2) => {
+        try {
+            const { data: currentData } = await agent.app.bsky.actor.getPreferences();
 
-        const newSavedFeedsPref: SavedFeedsPref = {
-            $type: 'app.bsky.actor.defs#savedFeedsPref',
-            items: newItems,
-        };
+            // Filter out old feed preferences (v1 or v2) to avoid duplication
+            const otherPreferences = currentData.preferences.filter(
+                p => p.$type !== V2_TYPE && p.$type !== V1_TYPE
+            );
+            
+            // Construct the new list of all preferences
+            const finalPreferences = [...otherPreferences, { ...newPreferences, $type: V2_TYPE }];
 
-        await agent.app.bsky.actor.putPreferences({
-            preferences: [...otherPrefs, newSavedFeedsPref as any],
-        });
-
-        setPreferences(newSavedFeedsPref);
-    }, [agent]);
+            await agent.app.bsky.actor.putPreferences({ preferences: finalPreferences });
+            setPreferences(newPreferences);
+        } catch (error) {
+            console.error("Failed to save preferences:", error);
+            toast({ title: t('common.error'), description: t('hooks.saveFeedsError'), variant: "destructive" });
+            await load(); // Re-fetch to revert optimistic update
+        }
+    }, [agent, toast, load, t]);
     
-    const pinnedUris = useMemo(() => {
-        return new Set(preferences?.items.filter(item => item.pinned).map(item => item.value) || []);
-    }, [preferences]);
-
-    const addFeed = useCallback(async (feed:AppBskyFeedDefs.GeneratorView, pin: boolean = false) => {
-        const currentItems = preferences?.items || [];
-        if (currentItems.some(item => item.value === feed.uri)) return; // Already exists
-
-        const newItem: FeedPrefItem = {
-            id: Date.now().toString(),
-            value: feed.uri,
-            pinned: pin,
+    const addFeed = useCallback(async (feed:AppBskyFeedDefs.GeneratorView, pin = false) => {
+        if (!session) {
+            toast({ title: t('hooks.signInToSave'), description: t('hooks.signInToSaveDescription') });
+            return;
+        }
+        setFeedViews(prev => new Map(prev).set(feed.uri, feed));
+        
+        const newPref: SavedFeedsPrefV2 = {
+            $type: V2_TYPE,
+            items: [...(preferences?.items || [])]
         };
         
-        await savePreferences([...currentItems, newItem]);
-        setFeedViews(prev => new Map(prev).set(feed.uri, feed));
-    }, [preferences, savePreferences]);
+        const existing = newPref.items.find(item => item.value === feed.uri);
+        if (existing) {
+            existing.pinned = pin; // Update pinning status if it exists
+        } else {
+            newPref.items.push({ id: crypto.randomUUID(), type: 'feed', value: feed.uri, pinned: pin });
+        }
 
-    const removeFeed = useCallback(async (uri: string) => {
-        const currentItems = preferences?.items || [];
-        const newItems = currentItems.filter(item => item.value !== uri);
-        await savePreferences(newItems);
-    }, [preferences, savePreferences]);
+        await savePreferences(newPref);
+        toast({ title: pin ? t('hooks.feedPinned') : t('hooks.feedSaved') });
+    }, [preferences, savePreferences, session, toast, t]);
 
     const togglePin = useCallback(async (uri: string) => {
-        const currentItems = preferences?.items || [];
-        const itemIndex = currentItems.findIndex(item => item.value === uri);
-        if (itemIndex === -1) return; // Not a saved feed
-
-        const newItems = [...currentItems];
-        const item = newItems[itemIndex];
-        newItems[itemIndex] = { ...item, pinned: !item.pinned };
-
-        await savePreferences(newItems);
-    }, [preferences, savePreferences]);
-
-    const reorder = useCallback(async (fromIndex: number, toIndex: number) => {
-        const currentItems = preferences?.items || [];
-        const pinnedItems = currentItems.filter(i => i.pinned);
-        const unpinnedItems = currentItems.filter(i => !i.pinned);
+        if (!preferences) return;
         
-        if (fromIndex < 0 || fromIndex >= pinnedItems.length || toIndex < 0 || toIndex >= pinnedItems.length) return;
+        const newItems = preferences.items.map(item => {
+            if (item.value === uri) {
+                return { ...item, pinned: !item.pinned };
+            }
+            return item;
+        });
 
-        const [movedItem] = pinnedItems.splice(fromIndex, 1);
-        pinnedItems.splice(toIndex, 0, movedItem);
+        const newPref = { ...preferences, items: newItems };
 
-        await savePreferences([...pinnedItems, ...unpinnedItems]);
+        await savePreferences(newPref);
+        toast({ title: newPref.items.find(i => i.value === uri)?.pinned ? t('hooks.feedPinned') : t('hooks.feedUnpinned') });
+    }, [preferences, savePreferences, toast, t]);
+    
+    const removeFeed = useCallback(async (uri: string) => {
+        if (!preferences) return;
+        const newPref: SavedFeedsPrefV2 = {
+            ...preferences,
+            items: preferences.items.filter(i => i.value !== uri)
+        };
+        await savePreferences(newPref);
+        toast({ title: t('hooks.feedRemoved') });
+    }, [preferences, savePreferences, toast, t]);
+
+    const reorder = useCallback(async (from: number, to: number) => {
+        if (!preferences) return;
+        
+        const pinned = preferences.items.filter(i => i.pinned);
+        const unpinned = preferences.items.filter(i => !i.pinned);
+
+        const [moved] = pinned.splice(from, 1);
+        pinned.splice(to, 0, moved);
+
+        const newPref: SavedFeedsPrefV2 = {
+            ...preferences,
+            items: [...pinned, ...unpinned]
+        };
+
+        await savePreferences(newPref);
     }, [preferences, savePreferences]);
+
 
     return {
         isLoading,
         preferences,
-        feedViews,
+        allUris,
         pinnedUris,
-        addFeed,
-        removeFeed,
+        feedViews,
+        load,
         togglePin,
+        removeFeed,
+        addFeed,
         reorder,
+        savePreferences,
     };
 };

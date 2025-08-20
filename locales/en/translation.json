@@ -14,20 +14,34 @@
     "following": "Following",
     "followers": "Followers",
     "editProfile": "Edit Profile",
+    "all": "All",
+    "people": "People",
+    "feeds": "Feeds",
+    "images": "Images",
+    "videos": "Videos",
     "endOfList": "You've reached the end!",
     "tryAgain": "Please try again.",
+    "media": "media",
+    "photos": "photos",
+    "videos_noun": "videos",
     "back": "Back",
     "share": "Share"
   },
   "nav": {
     "home": "Home",
-    "profiles": "Feed",
     "search": "Search",
     "compose": "Compose",
+    "messages": "Messages",
     "notifications": "Notifications",
+    "more": "More",
+    "feeds": "Feeds",
     "signIn": "Sign In",
     "logout": "Logout",
     "settings": "Settings"
+  },
+  "home": {
+    "following": "Following",
+    "discover": "Discover"
   },
   "signIn": {
     "title": "Sign In to Takaka",
@@ -38,6 +52,10 @@
     "button": "Sign In",
     "buttonLoading": "Signing In...",
     "loginFailed": "Login failed. Please check your handle and app password."
+  },
+  "app": {
+    "messagingNotSupported": "Messaging Not Supported",
+    "messagingNotSupportedDescription": "Your Bluesky server (PDS) does not currently support the direct messaging feature."
   },
   "loginPrompt": {
     "title": "Experience the full Takaka",
@@ -60,10 +78,64 @@
       "postTooLong": "Post is too long."
     }
   },
+  "feedModal": {
+    "loadingError": "Could not load feed details.",
+    "byline": "By @{{handle}}",
+    "likes": "Liked by {{count}} users",
+    "like": "Like",
+    "unlike": "Unlike",
+    "pin": "Pin feed",
+    "unpin": "Unpin feed",
+    "report": "Report feed",
+    "reportNotImplemented": "Report functionality not yet implemented."
+  },
+  "feeds": {
+    "title": "Feeds",
+    "manageDescription": "Reorder, pin, or remove your feeds. Changes are saved automatically.",
+    "pinned": "Pinned Feeds",
+    "saved": "Saved Feeds",
+    "emptyPinned": "Pin a saved feed below to add it here.",
+    "emptySaved": "You have no other saved feeds.",
+    "findNew": "Find New Feeds",
+    "discover": "Discover Feeds",
+    "byline": "Feed by @{{handle}}",
+    "unpinAction": "Unpin",
+    "pinAction": "Pin Feed"
+  },
+  "feedView": {
+    "notFound": "Could not find the specified feed.",
+    "loadingError": "Could not load feed"
+  },
+  "messages": {
+    "title": "Messages",
+    "convoTitle": "Chat with {{peerName}}",
+    "loadingError": "Could not load messages.",
+    "emptyTitle": "No messages yet",
+    "emptyDescription": "Start a conversation from someone's profile.",
+    "convoLoadingError": "Could not load conversation.",
+    "deleted": "Message deleted",
+    "inputPlaceholder": "Send a message..."
+  },
+  "more": {
+    "title": "More",
+    "myFeeds": "My Feeds",
+    "watch": "Watch",
+    "allApps": "All Apps"
+  },
   "notifications": {
     "title": "Notifications",
     "loadingError": "Could not load your notifications. Please try again later.",
-    "empty": "You don't have any notifications here."
+    "empty": "You don't have any notifications here.",
+    "mentions": "Mentions",
+    "reposts": "Reposts",
+    "follows": "Follows",
+    "likedYourPost": "<0>{{author}}</0> liked your post",
+    "repostedYourPost": "<0>{{author}}</0> reposted your post",
+    "followedYou": "<0>{{author}}</0> followed you",
+    "repliedToYourPost": "<0>{{author}}</0> replied to your post",
+    "mentionedYou": "<0>{{author}}</0> mentioned you in a post",
+    "newNotification": "New notification: {{reason}}",
+    "quotedPost": "Quoted from another post."
   },
   "post": {
     "byline": "Post by {{user}}",
@@ -71,8 +143,24 @@
     "loadingError": "Could not load post.",
     "linkCopied": "Link Copied!",
     "linkCopiedDescription": "Post URL has been copied to your clipboard.",
+    "replyPlaceholder": "Reply...",
     "noReplies": "No one has replied to this post yet.",
-    "loadingMoreReplies": "Loading more replies..."
+    "viewReplies_one": "View {{count}} reply",
+    "viewReplies_other": "View {{count}} replies",
+    "loadingMoreReplies": "Loading more replies...",
+    "endOfThread": "End of this thread.",
+    "repostedBy": "Reposted by <1>{{user}}</1>",
+    "replyTo": "Reply to <1>{{user}}</1>"
+  },
+  "mediaActions": {
+    "title": "More",
+    "notInterested": "Not interested",
+    "blockUser": "Block @{{handle}}",
+    "unblockUser": "Unblock @{{handle}}",
+    "reportPost": "Report post",
+    "deletePost": "Delete post",
+    "muteUser": "Mute @{{handle}}",
+    "unmuteUser": "Unmute @{{handle}}"
   },
   "repostModal": {
     "repost": "Repost",
@@ -82,16 +170,46 @@
     "undoSuccess": "Repost undone."
   },
   "postActions": {
+    "share": "Share Post",
+    "translate": "Translate",
+    "copyText": "Copy Post Text",
+    "hide": "Hide post for me",
+    "report": "Report Post",
+    "delete": "Delete Post",
     "confirmDelete": "Are you sure you want to delete this post? This cannot be undone.",
     "toast": {
+      "textCopied": "Text Copied!",
+      "postHidden": "Post Hidden",
+      "postHiddenDescription": "This post will no longer be shown to you.",
       "deleteSuccess": "Post Deleted",
       "deleteError": "Could not delete post."
     }
   },
   "profile": {
+    "title": "Profile",
+    "loadingError": "Could not load profile.",
+    "notFound": "Profile not found.",
+    "blockedBy": "You are blocked by this user.",
+    "blockedUser": "You have blocked @{{handle}}",
+    "blockedUserDescription": "You won't see their posts or be able to follow them.",
+    "unblock": "Unblock",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "block": "Block",
+    "confirmBlock": "Are you sure you want to block @{{handle}}? They will not be able to see your posts or interact with you.",
+    "emptyFeed": "This user has not posted any {{mediaType}} yet.",
     "toast": {
       "followError": "Could not follow user.",
-      "unfollowError": "Could not unfollow user."
+      "unfollowError": "Could not unfollow user.",
+      "muteSuccess": "User Muted",
+      "muteSuccessDescription": "You will no longer see posts from @{{handle}}",
+      "muteError": "Could not mute user.",
+      "unmuteSuccess": "User Unmuted",
+      "unmuteError": "Could not unmute user.",
+      "blockSuccess": "User Blocked",
+      "blockError": "Could not block user.",
+      "unblockSuccess": "User Unblocked",
+      "unblockError": "Could not unblock user."
     }
   },
   "editProfile": {
@@ -106,22 +224,114 @@
       "error": "Error updating profile"
     }
   },
+  "follows": {
+    "loadingError": "Could not load {{type}}.",
+    "empty": "No users found."
+  },
   "search": {
     "title": "Search",
-    "placeholder": "Search profiles and posts",
+    "placeholder": "Search posts, users, and feeds",
     "top": "Top",
     "latest": "Latest",
-    "profiles": "Profiles",
-    "empty": "No results found for \"{{query}}\"."
+    "empty": "No results found for \"{{query}}\".",
+    "trending": "Trending",
+    "suggestedFollows": "Suggested Follows",
+    "popularFeeds": "Popular Feeds"
   },
   "timeline": {
     "loadingError": "Could not load this feed. Please try again later.",
-    "empty": "This feed is empty."
+    "empty": "No visual posts found in this feed."
+  },
+  "watch": {
+    "allSeenTitle": "You've seen it all!",
+    "allSeenDescription": "Check back later for more videos."
   },
   "hooks": {
     "actionFailed": "Action failed",
     "likeError": "Could not update like status.",
     "repostError": "Could not repost.",
-    "repostReplyError": "Replies cannot be reposted."
+    "repostReplyError": "Replies cannot be reposted.",
+    "loadFeedsError": "Could not load your feeds.",
+    "saveFeedsError": "Your changes could not be saved.",
+    "signInToSave": "Please sign in",
+    "signInToSaveDescription": "You must be signed in to save feeds.",
+    "feedPinned": "Feed Pinned",
+    "feedSaved": "Feed Saved",
+    "feedUnpinned": "Feed Unpinned",
+    "feedRemoved": "Feed Removed"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "language": "Language",
+    "notifications": "Notifications",
+    "signOut": "Sign Out",
+    "signOutConfirm": "Are you sure you want to sign out?"
+  },
+  "languageSettings": {
+    "title": "App Language",
+    "description": "Choose the language for the app's interface."
+  },
+  "accountSettings": {
+    "title": "Account",
+    "email": "Email",
+    "updateEmail": "Update email",
+    "password": "Password",
+    "handle": "Handle",
+    "birthday": "Birthday",
+    "exportData": "Export my data",
+    "deactivateAccount": "Deactivate account",
+    "deleteAccount": "Delete account",
+    "toast": {
+      "exportRequest": "Requesting Data Export...",
+      "exportRequestDescription": "This may take a few moments.",
+      "exportStarted": "Export Started",
+      "exportStartedDescription": "Your data export is being prepared. You will receive an email when it is ready to download.",
+      "exportError": "Could not start data export. Please try again later.",
+      "deactivated": "Account Deactivated",
+      "deactivatedDescription": "You have been logged out.",
+      "deactivateError": "Could not deactivate your account. Please try again.",
+      "deleteRequest": "Requesting Account Deletion...",
+      "deleteRequested": "Deletion Requested",
+      "deleteRequestedDescription": "Please check your email to confirm account deletion.",
+      "deleteError": "Could not request account deletion. Please try again later."
+    },
+    "confirmations": {
+      "deactivate": "Are you sure you want to deactivate your account? Your profile and posts will not be visible, but your data will be preserved. You can reactivate your account by logging in again.",
+      "delete": "Are you sure you want to request account deletion? This is permanent and cannot be undone. An email will be sent to you to confirm."
+    }
+  },
+  "notificationSettings": {
+    "title": "Notifications",
+    "toast": {
+      "permissionDenied": "Permission Denied",
+      "permissionDeniedDescription": "You need to grant permission in your browser settings to enable notifications.",
+      "saveSuccess": "Settings saved",
+      "saveError": "Could not save settings.",
+      "enabled": "Push notifications enabled!",
+      "enableError": "Could not enable push notifications.",
+      "disabled": "Push notifications disabled",
+      "disableError": "Could not disable notifications."
+    },
+    "enablePush": "Enable Push Notifications",
+    "getAlerts": "Get alerts on your device",
+    "notifyMeAbout": "Notify me about..."
+  },
+  "updateEmail": {
+    "title": "Update Email",
+    "checkEmail": "Check your email",
+    "confirmationSent": "A confirmation link has been sent to <strong>{{email}}</strong>. Please click the link to confirm your new email address.",
+    "description": "Enter your new email address. A verification link will be sent to it.",
+    "placeholder": "new-email@example.com",
+    "button": "Send Verification Email",
+    "successToast": "Email updated successfully!"
+  },
+  "updateHandle": {
+    "title": "Update Handle",
+    "description": "Enter your new handle. This will log you out and you will need to sign in again.",
+    "placeholder": "new-handle.bsky.social",
+    "button": "Update Handle",
+    "successToastTitle": "Handle updated!",
+    "successToastDescription": "You have been logged out. Please sign in again with your new handle."
   }
 }

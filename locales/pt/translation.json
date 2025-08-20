@@ -14,20 +14,34 @@
     "following": "Seguindo",
     "followers": "Seguidores",
     "editProfile": "Editar perfil",
+    "all": "Todos",
+    "people": "Pessoas",
+    "feeds": "Feeds",
+    "images": "Imagens",
+    "videos": "Vídeos",
     "endOfList": "Você chegou ao fim!",
     "tryAgain": "Por favor, tente novamente.",
+    "media": "mídia",
+    "photos": "fotos",
+    "videos_noun": "vídeos",
     "back": "Voltar",
     "share": "Compartilhar"
   },
   "nav": {
     "home": "Início",
-    "profiles": "Feed",
     "search": "Busca",
     "compose": "Compor",
+    "messages": "Mensagens",
     "notifications": "Notificações",
+    "more": "Mais",
+    "feeds": "Feeds",
     "signIn": "Entrar",
     "logout": "Sair",
     "settings": "Configurações"
+  },
+  "home": {
+    "following": "Seguindo",
+    "discover": "Descobrir"
   },
   "signIn": {
     "title": "Entrar no Takaka",
@@ -38,6 +52,10 @@
     "button": "Entrar",
     "buttonLoading": "Entrando...",
     "loginFailed": "Falha no login. Verifique seu handle e senha de aplicativo."
+  },
+  "app": {
+    "messagingNotSupported": "Mensagens não suportadas",
+    "messagingNotSupportedDescription": "Seu servidor Bluesky (PDS) não suporta atualmente o recurso de mensagens diretas."
   },
   "loginPrompt": {
     "title": "Experimente o Takaka completo",
@@ -60,10 +78,64 @@
       "postTooLong": "A publicação é muito longa."
     }
   },
+  "feedModal": {
+    "loadingError": "Não foi possível carregar os detalhes do feed.",
+    "byline": "Por @{{handle}}",
+    "likes": "Curtido por {{count}} usuários",
+    "like": "Curtir",
+    "unlike": "Descurtir",
+    "pin": "Fixar feed",
+    "unpin": "Desafixar feed",
+    "report": "Denunciar feed",
+    "reportNotImplemented": "A funcionalidade de denúncia ainda não foi implementada."
+  },
+  "feeds": {
+    "title": "Feeds",
+    "manageDescription": "Reordene, fixe ou remova seus feeds. As alterações são salvas automaticamente.",
+    "pinned": "Feeds Fixados",
+    "saved": "Feeds Salvos",
+    "emptyPinned": "Fixe um feed salvo abaixo para adicioná-lo aqui.",
+    "emptySaved": "Você não tem outros feeds salvos.",
+    "findNew": "Encontrar novos feeds",
+    "discover": "Descobrir Feeds",
+    "byline": "Feed por @{{handle}}",
+    "unpinAction": "Desafixar",
+    "pinAction": "Fixar Feed"
+  },
+  "feedView": {
+    "notFound": "Não foi possível encontrar o feed especificado.",
+    "loadingError": "Não foi possível carregar o feed"
+  },
+  "messages": {
+    "title": "Mensagens",
+    "convoTitle": "Conversa com {{peerName}}",
+    "loadingError": "Não foi possível carregar as mensagens.",
+    "emptyTitle": "Nenhuma mensagem ainda",
+    "emptyDescription": "Inicie uma conversa a partir do perfil de alguém.",
+    "convoLoadingError": "Não foi possível carregar a conversa.",
+    "deleted": "Mensagem apagada",
+    "inputPlaceholder": "Enviar uma mensagem..."
+  },
+  "more": {
+    "title": "Mais",
+    "myFeeds": "Meus Feeds",
+    "watch": "Assistir",
+    "allApps": "Todos os aplicativos"
+  },
   "notifications": {
     "title": "Notificações",
     "loadingError": "Não foi possível carregar suas notificações. Por favor, tente novamente mais tarde.",
-    "empty": "Você não tem nenhuma notificação aqui."
+    "empty": "Você não tem nenhuma notificação aqui.",
+    "mentions": "Menções",
+    "reposts": "Reposts",
+    "follows": "Seguidores",
+    "likedYourPost": "<0>{{author}}</0> curtiu sua publicação",
+    "repostedYourPost": "<0>{{author}}</0> repostou sua publicação",
+    "followedYou": "<0>{{author}}</0> seguiu você",
+    "repliedToYourPost": "<0>{{author}}</0> respondeu à sua publicação",
+    "mentionedYou": "<0>{{author}}</0> mencionou você em uma publicação",
+    "newNotification": "Nova notificação: {{reason}}",
+    "quotedPost": "Citado de outra publicação."
   },
   "post": {
     "byline": "Publicação de {{user}}",
@@ -71,8 +143,24 @@
     "loadingError": "Não foi possível carregar a publicação.",
     "linkCopied": "Link copiado!",
     "linkCopiedDescription": "A URL da publicação foi copiada para a área de transferência.",
+    "replyPlaceholder": "Responder...",
     "noReplies": "Ninguém respondeu a esta publicação ainda.",
-    "loadingMoreReplies": "Carregando mais respostas..."
+    "viewReplies_one": "Ver {{count}} resposta",
+    "viewReplies_other": "Ver {{count}} respostas",
+    "loadingMoreReplies": "Carregando mais respostas...",
+    "endOfThread": "Fim deste tópico.",
+    "repostedBy": "Repostado por <1>{{user}}</1>",
+    "replyTo": "Em resposta a <1>{{user}}</1>"
+  },
+  "mediaActions": {
+    "title": "Mais",
+    "notInterested": "Não tenho interesse",
+    "blockUser": "Bloquear @{{handle}}",
+    "unblockUser": "Desbloquear @{{handle}}",
+    "reportPost": "Denunciar publicação",
+    "deletePost": "Excluir publicação",
+    "muteUser": "Silenciar @{{handle}}",
+    "unmuteUser": "Reativar som de @{{handle}}"
   },
   "repostModal": {
     "repost": "Repostar",
@@ -82,16 +170,46 @@
     "undoSuccess": "Repost desfeito."
   },
   "postActions": {
+    "share": "Compartilhar Publicação",
+    "translate": "Traduzir",
+    "copyText": "Copiar Texto da Publicação",
+    "hide": "Ocultar publicação para mim",
+    "report": "Denunciar Publicação",
+    "delete": "Excluir Publicação",
     "confirmDelete": "Tem certeza que deseja excluir esta publicação? Esta ação não pode ser desfeita.",
     "toast": {
+      "textCopied": "Texto Copiado!",
+      "postHidden": "Publicação Oculta",
+      "postHiddenDescription": "Esta publicação não será mais exibida para você.",
       "deleteSuccess": "Publicação Excluída",
       "deleteError": "Não foi possível excluir a publicação."
     }
   },
   "profile": {
+    "title": "Perfil",
+    "loadingError": "Não foi possível carregar o perfil.",
+    "notFound": "Perfil não encontrado.",
+    "blockedBy": "Você foi bloqueado por este usuário.",
+    "blockedUser": "Você bloqueou @{{handle}}",
+    "blockedUserDescription": "Você não verá as publicações dele nem poderá segui-lo.",
+    "unblock": "Desbloquear",
+    "mute": "Silenciar",
+    "unmute": "Reativar som",
+    "block": "Bloquear",
+    "confirmBlock": "Tem certeza de que deseja bloquear @{{handle}}? Eles não poderão ver suas publicações nem interagir com você.",
+    "emptyFeed": "Este usuário ainda não publicou nenhuma {{mediaType}}.",
     "toast": {
       "followError": "Não foi possível seguir o usuário.",
-      "unfollowError": "Não foi possível deixar de seguir o usuário."
+      "unfollowError": "Não foi possível deixar de seguir o usuário.",
+      "muteSuccess": "Usuário silenciado",
+      "muteSuccessDescription": "Você não verá mais as publicações de @{{handle}}",
+      "muteError": "Não foi possível silenciar o usuário.",
+      "unmuteSuccess": "Som do usuário reativado",
+      "unmuteError": "Não foi possível reativar o som do usuário.",
+      "blockSuccess": "Usuário bloqueado",
+      "blockError": "Não foi possível bloquear o usuário.",
+      "unblockSuccess": "Usuário desbloqueado",
+      "unblockError": "Não foi possível desbloquear o usuário."
     }
   },
   "editProfile": {
@@ -106,22 +224,114 @@
       "error": "Erro ao atualizar o perfil"
     }
   },
+  "follows": {
+    "loadingError": "Não foi possível carregar {{type}}.",
+    "empty": "Nenhum usuário encontrado."
+  },
   "search": {
     "title": "Busca",
-    "placeholder": "Buscar perfis e publicações",
+    "placeholder": "Buscar publicações, usuários e feeds",
     "top": "Top",
     "latest": "Recentes",
-    "profiles": "Perfis",
-    "empty": "Nenhum resultado encontrado para \"{{query}}\"."
+    "empty": "Nenhum resultado encontrado para \"{{query}}\".",
+    "trending": "Tendências",
+    "suggestedFollows": "Sugestões para seguir",
+    "popularFeeds": "Feeds populares"
   },
   "timeline": {
     "loadingError": "Não foi possível carregar este feed. Por favor, tente novamente mais tarde.",
-    "empty": "Este feed está vazio."
+    "empty": "Nenhuma publicação visual encontrada neste feed."
+  },
+  "watch": {
+    "allSeenTitle": "Você já viu tudo!",
+    "allSeenDescription": "Volte mais tarde para mais vídeos."
   },
   "hooks": {
     "actionFailed": "Ação falhou",
     "likeError": "Não foi possível atualizar o status de curtida.",
     "repostError": "Não foi possível repostar.",
-    "repostReplyError": "Respostas não podem ser repostadas."
+    "repostReplyError": "Respostas não podem ser repostadas.",
+    "loadFeedsError": "Não foi possível carregar seus feeds.",
+    "saveFeedsError": "Suas alterações não puderam ser salvas.",
+    "signInToSave": "Faça o login",
+    "signInToSaveDescription": "Você precisa estar logado para salvar feeds.",
+    "feedPinned": "Feed fixado",
+    "feedSaved": "Feed salvo",
+    "feedUnpinned": "Feed desafixado",
+    "feedRemoved": "Feed removido"
+  },
+  "settings": {
+    "title": "Configurações",
+    "account": "Conta",
+    "language": "Idioma",
+    "notifications": "Notificações",
+    "signOut": "Sair",
+    "signOutConfirm": "Tem certeza de que deseja sair?"
+  },
+  "languageSettings": {
+    "title": "Idioma do aplicativo",
+    "description": "Escolha o idioma para la interface do aplicativo."
+  },
+  "accountSettings": {
+    "title": "Conta",
+    "email": "E-mail",
+    "updateEmail": "Atualizar e-mail",
+    "password": "Senha",
+    "handle": "Handle",
+    "birthday": "Data de nascimento",
+    "exportData": "Exportar meus dados",
+    "deactivateAccount": "Desativar conta",
+    "deleteAccount": "Excluir conta",
+    "toast": {
+      "exportRequest": "Solicitando exportação de dados...",
+      "exportRequestDescription": "Isso pode levar alguns instantes.",
+      "exportStarted": "Exportação iniciada",
+      "exportStartedDescription": "Sua exportação de dados está sendo preparada. Você receberá um e-mail quando estiver pronta para download.",
+      "exportError": "Não foi possível iniciar a exportação de dados. Tente novamente mais tarde.",
+      "deactivated": "Conta desativada",
+      "deactivatedDescription": "Você foi desconectado.",
+      "deactivateError": "Não foi possível desativar sua conta. Por favor, tente novamente.",
+      "deleteRequest": "Solicitando exclusão de conta...",
+      "deleteRequested": "Exclusão solicitada",
+      "deleteRequestedDescription": "Verifique seu e-mail para confirmar a exclusão da conta.",
+      "deleteError": "Não foi possível solicitar a exclusão da conta. Por favor, tente novamente."
+    },
+    "confirmations": {
+      "deactivate": "Tem certeza de que deseja desativar sua conta? Seu perfil e publicações não ficarão visíveis, mas seus dados serão preservados. Você pode reativar sua conta fazendo login novamente.",
+      "delete": "Tem certeza de que deseja solicitar a exclusão da conta? Esta ação é permanente e não pode ser desfeita. Um e-mail será enviado para você para confirmação."
+    }
+  },
+  "notificationSettings": {
+    "title": "Notificações",
+    "toast": {
+      "permissionDenied": "Permissão negada",
+      "permissionDeniedDescription": "Você precisa conceder permissão nas configurações do seu navegador para ativar as notificações.",
+      "saveSuccess": "Configurações salvas",
+      "saveError": "Não foi possível salvar as configurações.",
+      "enabled": "Notificações push ativadas!",
+      "enableError": "Não foi possível ativar as notificações push.",
+      "disabled": "Notificações push desativadas",
+      "disableError": "Não foi possível desativar as notificações."
+    },
+    "enablePush": "Ativar notificações push",
+    "getAlerts": "Receba alertas no seu dispositivo",
+    "notifyMeAbout": "Notificar-me sobre..."
+  },
+  "updateEmail": {
+    "title": "Atualizar e-mail",
+    "checkEmail": "Verifique seu e-mail",
+    "confirmationSent": "Um link de confirmação foi enviado para <strong>{{email}}</strong>. Clique no link para confirmar seu novo endereço de e-mail.",
+    "description": "Insira seu novo endereço de e-mail. Um link de verificação será enviado para ele.",
+    "placeholder": "novo-email@exemplo.com",
+    "button": "Enviar e-mail de verificação",
+    "successToast": "E-mail atualizado com sucesso!"
+  },
+  "updateHandle": {
+    "title": "Atualizar Handle",
+    "description": "Insira seu novo handle. Isso fará com que você saia da sua conta e precise fazer login novamente.",
+    "placeholder": "novo-handle.bsky.social",
+    "button": "Atualizar Handle",
+    "successToastTitle": "Handle atualizado!",
+    "successToastDescription": "Você foi desconectado. Por favor, faça login novamente com seu novo handle."
   }
 }

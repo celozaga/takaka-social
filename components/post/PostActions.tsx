@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Heart, Repeat, MessageCircle } from 'lucide-react';
 import { useAtp } from '../../context/AtpContext';
@@ -34,39 +35,28 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <button 
-        onClick={handleLike} 
-        disabled={isLiking}
-        className={`flex items-center gap-1.5 py-1 pl-1.5 pr-2.5 rounded-full transition-colors group ${
-          likeUri 
-            ? 'bg-like/20 text-like' 
-            : 'text-on-surface-variant hover:bg-like/10 hover:text-like'
-        }`}
-        aria-label="Like"
-      >
-        <Heart size={18} fill={likeUri ? 'currentColor' : 'none'} />
-        <span className="text-sm font-semibold">{likeCount}</span>
+    <div className="flex items-center gap-3 text-on-surface-variant">
+      <button onClick={handleReplyClick} className="flex items-center gap-1 hover:text-primary transition-colors">
+        <MessageCircle size={18} />
+        <span className="text-sm font-semibold">{post.replyCount || 0}</span>
       </button>
       <button 
         onClick={handleRepost} 
         disabled={isReposting}
-        className={`flex items-center gap-1.5 py-1 pl-1.5 pr-2.5 rounded-full transition-colors group ${
-          repostUri 
-            ? 'bg-primary/20 text-primary' 
-            : 'text-on-surface-variant hover:bg-primary/10 hover:text-primary'
-        }`}
+        className={`flex items-center gap-1 transition-colors ${repostUri ? 'text-primary' : 'hover:text-primary'}`}
         aria-label="Repost"
       >
         <Repeat size={18} />
         <span className="text-sm font-semibold">{repostCount}</span>
       </button>
       <button 
-        onClick={handleReplyClick} 
-        className="flex items-center gap-1.5 py-1 pl-1.5 pr-2.5 rounded-full transition-colors group text-on-surface-variant hover:bg-primary/10 hover:text-primary"
+        onClick={handleLike} 
+        disabled={isLiking}
+        className={`flex items-center gap-1 transition-colors ${likeUri ? 'text-pink-500' : 'hover:text-pink-500'}`}
+        aria-label="Like"
       >
-        <MessageCircle size={18} />
-        <span className="text-sm font-semibold">{post.replyCount || 0}</span>
+        <Heart size={18} fill={likeUri ? 'currentColor' : 'none'} />
+        <span className="text-sm font-semibold">{likeCount}</span>
       </button>
     </div>
   );

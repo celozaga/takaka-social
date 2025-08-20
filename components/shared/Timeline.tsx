@@ -3,14 +3,23 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyFeedGetTimeline } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
+import PostCard from '../post/PostCard';
+import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import PostBubble from '../post/PostBubble';
 
 interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
 }
+
+const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+
+    // Only show posts with direct media.
+    return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
+};
 
 const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const { agent } = useAtp();
@@ -25,42 +34,23 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
+  const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
+    // Filter out replies and posts without direct media.
+    return posts.filter(item => !item.reply && isPostAMediaPost(item.post));
+  };
+  
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     if (feedUri === 'following') {
       if (!agent.hasSession) {
         return Promise.resolve({
             success: true,
-            headers: {},
-            data: { feed: [] }
+            data: { feed: [], cursor: undefined }
         } as AppBskyFeedGetTimeline.Response);
       }
       return agent.getTimeline({ cursor: currentCursor, limit: 25 });
     }
     return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 25 });
   }, [agent, feedUri]);
-
-  const fetchInitialTimeline = useCallback(async () => {
-      setIsLoading(true);
-      setError(null);
-      setFeed([]);
-      setCursor(undefined);
-      setHasMore(true);
-
-      try {
-        const response = await fetchPosts();
-        setFeed(response.data.feed);
-        if (response.data.cursor && response.data.feed.length > 0) {
-          setCursor(response.data.cursor);
-        } else {
-          setHasMore(false);
-        }
-      } catch (err: any) {
-        console.error('Failed to fetch timeline:', err);
-        setError(t('timeline.loadingError'));
-      } finally {
-        setIsLoading(false);
-      }
-  }, [fetchPosts, t]);
 
 
   const loadMorePosts = useCallback(async () => {
@@ -71,9 +61,10 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
       const response = await fetchPosts(cursor);
 
       if (response.data.feed.length > 0) {
+        const newMediaPosts = filterMediaPosts(response.data.feed);
         setFeed(prevFeed => {
             const existingCids = new Set(prevFeed.map(p => p.post.cid));
-            const uniqueNewPosts = response.data.feed.filter(p => !existingCids.has(p.post.cid));
+            const uniqueNewPosts = newMediaPosts.filter(p => !existingCids.has(p.post.cid));
             return [...prevFeed, ...uniqueNewPosts];
         });
 
@@ -92,9 +83,35 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     }
   }, [cursor, hasMore, isLoadingMore, fetchPosts]);
 
+  // Effect for initial data load
   useEffect(() => {
+    const fetchInitialTimeline = async () => {
+      setIsLoading(true);
+      setError(null);
+      setFeed([]);
+      setCursor(undefined);
+      setHasMore(true);
+
+      try {
+        const response = await fetchPosts();
+        const mediaPosts = filterMediaPosts(response.data.feed);
+        setFeed(mediaPosts);
+        
+        if (response.data.cursor && response.data.feed.length > 0) {
+          setCursor(response.data.cursor);
+        } else {
+          setHasMore(false);
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch timeline:', err);
+        setError(t('timeline.loadingError'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchInitialTimeline();
-  }, [fetchInitialTimeline]);
+  }, [fetchPosts, t]);
   
   const moderatedFeed = useMemo(() => {
     if (!moderation.isReady) {
@@ -106,6 +123,8 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     });
   }, [feed, moderation]);
 
+
+  // Effect for IntersectionObserver
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -113,7 +132,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
           loadMorePosts();
         }
       },
-      { rootMargin: '400px' }
+      { rootMargin: '200px' }
     );
 
     const currentLoader = loaderRef.current;
@@ -130,9 +149,11 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-surface-2 rounded-xl p-4 h-32 animate-pulse"></div>
+      <div className="columns-2 gap-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="break-inside-avoid mb-4">
+            <PostCardSkeleton />
+          </div>
         ))}
       </div>
     );
@@ -147,19 +168,25 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   }
 
   return (
-    <div className="space-y-4">
-      {moderatedFeed.map((feedViewPost) => (
-        <PostBubble 
-          key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} 
-          post={feedViewPost.post} 
-          reason={AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason : undefined}
-          showAuthor 
-        />
-      ))}
+    <div>
+      <div className="columns-2 gap-4">
+        {moderatedFeed.map((feedViewPost) => (
+          <div key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} className="break-inside-avoid mb-4">
+            <PostCard feedViewPost={feedViewPost} />
+          </div>
+        ))}
+      </div>
 
-      <div ref={loaderRef} className="h-10">
+      <div ref={loaderRef} className="h-10"> {/* Sentinel element */}
         {isLoadingMore && (
-           <div className="bg-surface-2 rounded-xl p-4 h-20 animate-pulse"></div>
+          <div className="columns-2 gap-4 mt-4">
+            <div className="break-inside-avoid mb-4">
+              <PostCardSkeleton />
+            </div>
+            <div className="break-inside-avoid mb-4">
+              <PostCardSkeleton />
+            </div>
+          </div>
         )}
       </div>
 

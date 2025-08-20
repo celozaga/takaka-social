@@ -1,314 +1,490 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
-import { UserPlus, UserCheck, BadgeCheck, ArrowLeft, Loader2 } from 'lucide-react';
+import { AppBskyActorDefs, AppBskyFeedDefs,AtUri,RichText,AppBskyEmbedImages,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyEmbedRecord, ComAtprotoLabelDefs } from '@atproto/api';
+import PostCard from '../post/PostCard';
+import PostCardSkeleton from '../post/PostCardSkeleton';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
+import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
-import PostBubble from '../post/PostBubble';
-import { useChannelState } from '../../context/ChannelStateContext';
+import { useHeadManager } from '../../hooks/useHeadManager';
+import Label from '../shared/Label';
+
+type FeedFilter = 'all' | 'photos' | 'videos';
+
+const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+    // Only show posts with direct media.
+    return (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) || AppBskyEmbedVideo.isView(embed);
+};
+
+// --- Start Filter Logic Helpers ---
+const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+    return AppBskyEmbedImages.isView(embed) && embed.images.length > 0;
+}
+
+const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+    return AppBskyEmbedVideo.isView(embed);
+}
+// --- End Filter Logic Helpers ---
+
+const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter): AppBskyFeedDefs.FeedViewPost[] => {
+    // First, filter out replies and posts that are not direct media posts
+    const baseFiltered = posts.filter(item => !item.reply && isPostAMediaPost(item.post));
+
+    // Then, apply the specific media type filter
+    switch (filter) {
+        case 'all':
+            return baseFiltered;
+        case 'photos':
+            return baseFiltered.filter(item => hasPhotos(item.post));
+        case 'videos':
+            return baseFiltered.filter(item => hasVideos(item.post));
+        default:
+            return baseFiltered;
+    }
+};
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
-    const { agent, session } = useAtp();
+    const { agent, session, chatSupported } = useAtp();
+    const { t } = useTranslation();
     const { toast } = useToast();
-    const { openEditProfileModal } = useUI();
-    const { getLastViewedAt, markChannelReadUpTo } = useChannelState();
+    const { openEditProfileModal, setCustomFeedHeaderVisible } = useUI();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
+    const [viewerState, setViewerState] = useState<AppBskyActorDefs.ViewerState | undefined>(undefined);
+    const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isActionLoading, setIsActionLoading] = useState(false);
-
-    // Feed state, moved from ProfileFeed
-    const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [initialFeedLoad, setInitialFeedLoad] = useState(true);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+    const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
+    const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
+
+    useHeadManager({
+        title: profile ? `${profile.displayName || profile.handle}` : t('profile.title'),
+        description: profile?.description,
+        imageUrl: profile?.avatar,
+        type: 'profile'
+    });
+
     const loaderRef = useRef<HTMLDivElement>(null);
-    const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-    const [hasScrolledToLastRead, setHasScrolledToLastRead] = useState(false);
-
-    const isMe = session?.did === profile?.did;
-    const isBlocked = !!(profile?.viewer?.blocking || profile?.viewer?.blockedBy);
-
-    // Mark channel as read when feed loads
-    useEffect(() => {
-        if (!feed || feed.length === 0 || !profile?.did) return;
-        
-        const top = feed[0];
-        // Prioritize indexedAt, fallback to createdAt
-        const topIso =
-            (top.post as any)?.indexedAt ||
-            (top.post?.record as any)?.createdAt ||
-            new Date().toISOString();
-
-        markChannelReadUpTo(profile.did, topIso).catch(() => {});
-    }, [feed, profile?.did, markChannelReadUpTo]);
-
-
-    const fetchFeed = useCallback(async (currentCursor?: string) => {
-        if (isBlocked || !profile?.did) {
-            setHasMore(false);
-            setInitialFeedLoad(false);
-            return;
-        }
-
-        if (currentCursor) {
-            setIsLoadingMore(true);
-        } else {
-            setInitialFeedLoad(true);
-        }
-
-        try {
-            const res = await agent.getAuthorFeed({ actor: profile.did, limit: 30, cursor: currentCursor });
-            setFeed(prev => currentCursor ? [...prev, ...res.data.feed] : res.data.feed);
-            setCursor(res.data.cursor);
-            setHasMore(!!res.data.cursor && res.data.feed.length > 0);
-        } catch (err) {
-            console.error("Failed to load profile feed:", err);
-            setHasMore(false);
-        } finally {
-            setIsLoadingMore(false);
-            setInitialFeedLoad(false);
-        }
-    }, [agent, profile?.did, isBlocked]);
-
-    // Fetch profile data
-    useEffect(() => {
-        const fetchProfile = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const profileRes = await agent.getProfile({ actor });
-                setProfile(profileRes.data);
-                localStorage.setItem('takaka-last-viewed-profile', actor);
-            } catch (err: any) {
-                setError(err.message || "Could not load profile.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchProfile();
-    }, [agent, actor]);
-
-    // Fetch initial feed once profile is loaded
-    useEffect(() => {
-        if (profile?.did) {
-            fetchFeed();
-        }
-    }, [profile?.did, fetchFeed]);
+    const menuRef = useRef<HTMLDivElement>(null);
     
-    // Infinite scroll observer
+    const isMe = session?.did === profile?.did;
+
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && hasMore && !initialFeedLoad && !isLoadingMore) {
-                    fetchFeed(cursor);
-                }
-            },
-            { rootMargin: '500px' }
-        );
-        const currentLoader = loaderRef.current;
-        if (currentLoader) observer.observe(currentLoader);
-        return () => { if (currentLoader) observer.unobserve(currentLoader); };
-    }, [hasMore, initialFeedLoad, isLoadingMore, cursor, fetchFeed]);
-
-    // Effect to scroll to last read post
-    useEffect(() => {
-        if (feed.length > 0 && !initialFeedLoad && !hasScrolledToLastRead) {
-            const lastViewedISO = getLastViewedAt(actor);
-
-            if (lastViewedISO) {
-                const lastViewedDate = new Date(lastViewedISO);
-                let targetPost: AppBskyFeedDefs.FeedViewPost | undefined;
-
-                // Find the first post that is older than or equal to our last viewed timestamp.
-                // This is the last post the user has seen.
-                for (const item of feed) {
-                    const postDate = new Date(
-                        (item.post as any)?.indexedAt ||
-                        (item.post?.record as any)?.createdAt
-                    );
-                    if (postDate <= lastViewedDate) {
-                        targetPost = item;
-                        break;
-                    }
-                }
-
-                if (targetPost) {
-                    const targetCid = targetPost.post.cid;
-                    const targetElement = postRefs.current.get(targetCid);
-                    if (targetElement) {
-                        // Delay scroll to allow DOM to settle
-                        setTimeout(() => {
-                            targetElement.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center'
-                            });
-                            // Highlight the post temporarily
-                            targetElement.style.transition = 'background-color 0.5s ease-in-out';
-                            targetElement.style.backgroundColor = 'var(--primary-container)';
-                            setTimeout(() => {
-                                if (targetElement) {
-                                    targetElement.style.backgroundColor = '';
-                                }
-                            }, 2000);
-                        }, 100);
-                    }
-                }
-            }
-            setHasScrolledToLastRead(true);
-        }
-    }, [feed, initialFeedLoad, hasScrolledToLastRead, actor, getLastViewedAt]);
-
-
+        setCustomFeedHeaderVisible(true);
+        return () => setCustomFeedHeaderVisible(false);
+    }, [setCustomFeedHeaderVisible]);
+    
+    // Handlers for social actions
     const handleFollow = async () => {
         if (!profile || isActionLoading || !session) return;
         setIsActionLoading(true);
-        const oldViewerState = profile.viewer;
-        setProfile(p => p ? { ...p, viewer: { ...p.viewer, following: 'temp-uri' }, followersCount: p.followersCount + 1 } : null);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, following: 'temp-uri' } : undefined);
+        setProfile(p => p ? { ...p, followersCount: p.followersCount + 1 } : null);
         try {
             const { uri } = await agent.follow(profile.did);
-            setProfile(p => p ? { ...p, viewer: { ...p.viewer, following: uri } } : null);
+            setViewerState(prev => prev ? { ...prev, following: uri } : undefined);
         } catch (e) {
             console.error("Failed to follow:", e);
             toast({ title: "Error", description: "Could not follow user.", variant: "destructive" });
-            setProfile(p => p ? { ...p, viewer: oldViewerState, followersCount: p.followersCount - 1 } : null);
+            setViewerState(oldViewerState);
+            setProfile(p => p ? { ...p, followersCount: p.followersCount - 1 } : null);
         } finally {
             setIsActionLoading(false);
         }
     };
 
     const handleUnfollow = async () => {
-        if (!profile || !profile.viewer?.following || isActionLoading) return;
+        if (!profile || !viewerState?.following || isActionLoading) return;
         setIsActionLoading(true);
-        const oldViewerState = profile.viewer;
+        const oldViewerState = viewerState;
         const oldFollowersCount = profile.followersCount;
-        setProfile(p => p ? { ...p, viewer: { ...p.viewer, following: undefined }, followersCount: p.followersCount - 1 } : null);
+        setViewerState(prev => prev ? { ...prev, following: undefined } : undefined);
+        setProfile(p => p ? { ...p, followersCount: p.followersCount - 1 } : null);
         try {
-            await agent.deleteFollow(profile.viewer.following);
+            await agent.deleteFollow(viewerState.following);
         } catch (e) {
             console.error("Failed to unfollow:", e);
             toast({ title: "Error", description: "Could not unfollow user.", variant: "destructive" });
-            setProfile(p => p ? { ...p, viewer: oldViewerState, followersCount: oldFollowersCount } : null);
+            setViewerState(oldViewerState);
+            setProfile(p => p ? { ...p, followersCount: oldFollowersCount } : null);
         } finally {
             setIsActionLoading(false);
         }
     };
     
-    if (isLoading) {
-        return <div className="w-full h-full flex items-center justify-center bg-surface-1"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    const handleMute = async () => {
+        if (!profile || isActionLoading) return;
+        setIsActionLoading(true);
+        setIsMenuOpen(false);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, muted: true } : undefined);
+        try {
+            await agent.mute(profile.did);
+            toast({ title: "User Muted", description: `You will no longer see posts from @${profile.handle}`});
+        } catch (e) {
+            console.error("Failed to mute:", e);
+            toast({ title: "Error", description: "Could not mute user.", variant: "destructive" });
+            setViewerState(oldViewerState);
+        } finally {
+            setIsActionLoading(false);
+        }
     }
+    
+    const handleUnmute = async () => {
+        if (!profile || isActionLoading) return;
+        setIsActionLoading(true);
+        setIsMenuOpen(false);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, muted: false } : undefined);
+        try {
+            await agent.unmute(profile.did);
+            toast({ title: "User Unmuted" });
+        } catch (e) {
+            console.error("Failed to unmute:", e);
+            toast({ title: "Error", description: "Could not unmute user.", variant: "destructive" });
+            setViewerState(oldViewerState);
+        } finally {
+            setIsActionLoading(false);
+        }
+    }
+    
+    const handleBlock = async () => {
+        if (!profile || isActionLoading || !session) return;
+        setIsMenuOpen(false);
+        if (!window.confirm(`Are you sure you want to block @${profile.handle}? They will not be able to see your posts or interact with you.`)) return;
+        setIsActionLoading(true);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, blocking: 'temp-uri', following: undefined } : undefined);
+        try {
+            const { uri } = await agent.app.bsky.graph.block.create(
+                { repo: session.did }, 
+                { subject: profile.did, createdAt: new Date().toISOString() }
+            );
+            setViewerState(prev => prev ? { ...prev, blocking: uri } : undefined);
+            toast({ title: "User Blocked" });
+        } catch (e) {
+            console.error("Failed to block:", e);
+            toast({ title: "Error", description: "Could not block user.", variant: "destructive" });
+            setViewerState(oldViewerState);
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
 
+    const handleUnblock = async () => {
+        if (!profile || !viewerState?.blocking || isActionLoading || !session) return;
+        setIsActionLoading(true);
+        setIsMenuOpen(false);
+        const oldViewerState = viewerState;
+        setViewerState(prev => prev ? { ...prev, blocking: undefined } : undefined);
+        try {
+            await agent.app.bsky.graph.block.delete({
+                repo: session.did,
+                rkey: new AtUri(viewerState.blocking).rkey,
+            });
+            toast({ title: "User Unblocked" });
+        } catch (e) {
+            console.error("Failed to unblock:", e);
+            toast({ title: "Error", description: "Could not unblock user.", variant: "destructive" });
+            setViewerState(oldViewerState);
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const fetchProfileAndFeed = useCallback(async (currentCursor?: string) => {
+        if (!currentCursor) {
+            setIsLoading(true);
+            setError(null);
+            setFeed([]);
+            setCursor(undefined);
+            setHasMore(true);
+        } else {
+            setIsLoadingMore(true);
+        }
+
+        try {
+            if (!currentCursor) {
+                const profileRes = await agent.getProfile({ actor });
+                setProfile(profileRes.data);
+                setViewerState(profileRes.data.viewer);
+
+                if (profileRes.data.viewer?.blocking || profileRes.data.viewer?.blockedBy) {
+                    setHasMore(false);
+                    setIsLoading(false);
+                    return;
+                }
+            }
+
+            const feedRes = await agent.getAuthorFeed({ actor, limit: 30, cursor: currentCursor });
+            setFeed(prevFeed => [...prevFeed, ...feedRes.data.feed]);
+            
+            if (feedRes.data.cursor && feedRes.data.feed.length > 0) {
+                setCursor(feedRes.data.cursor);
+                setHasMore(true);
+            } else {
+                setHasMore(false);
+            }
+        } catch (err: any) {
+            console.error("Failed to fetch profile data:", err);
+            if (err.error === 'BlockedByActor') {
+                setError("You are blocked by this user.");
+            } else {
+                setError(err.message || "Could not load profile.");
+            }
+        } finally {
+            setIsLoading(false);
+            setIsLoadingMore(false);
+        }
+    }, [agent, actor]);
+
+    useEffect(() => {
+        fetchProfileAndFeed();
+    }, [fetchProfileAndFeed]);
+    
+    useEffect(() => {
+        if (profile?.description) {
+            const processDescription = async () => {
+                const rt = new RichText({ text: profile.description! });
+                await rt.detectFacets(agent);
+                setDescriptionWithFacets({ text: rt.text, facets: rt.facets });
+            };
+            processDescription();
+        } else {
+            setDescriptionWithFacets(null);
+        }
+    }, [profile?.description, agent]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
+              fetchProfileAndFeed(cursor);
+            }
+          },
+          { rootMargin: '400px' }
+        );
+        const currentLoader = loaderRef.current;
+        if (currentLoader) observer.observe(currentLoader);
+        return () => {
+          if (currentLoader) observer.unobserve(currentLoader);
+        };
+    }, [hasMore, isLoading, isLoadingMore, fetchProfileAndFeed, cursor]);
+    
+    const displayedFeed = useMemo(() => filterPosts(feed, activeFilter), [feed, activeFilter]);
+    
+    if (isLoading && feed.length === 0) {
+        return (
+            <div className="h-[80vh] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
     if (error || !profile) {
-        return <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error || "Profile not found."}</div>;
+        return <div className="text-center text-error p-8 bg-surface-2 rounded-xl mt-20">{error || "Profile not found."}</div>;
     }
 
     const FollowButton = () => (
         <button
-            onClick={profile.viewer?.following ? handleUnfollow : handleFollow}
+            onClick={viewerState?.following ? handleUnfollow : handleFollow}
             disabled={isActionLoading}
-            className={`font-bold py-2 px-6 rounded-full transition duration-200 flex items-center gap-2
-                ${profile.viewer?.following 
+            className={`font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 flex-grow justify-center
+                ${viewerState?.following 
                     ? 'bg-surface-3 text-on-surface hover:bg-surface-3/80' 
-                    : 'bg-primary text-on-primary hover:bg-primary/90'
-                } disabled:opacity-50`}
+                    : 'bg-accent text-on-accent hover:bg-accent/90'
+                }
+                disabled:opacity-50`}
         >
-            {profile.viewer?.following ? <UserCheck size={18} /> : <UserPlus size={18} />}
-            <span>{profile.viewer?.following ? 'Following' : 'Follow'}</span>
+            <span>{viewerState?.following ? 'Following' : 'Follow'}</span>
         </button>
     );
 
-    const renderFeed = () => {
-        if (initialFeedLoad) {
-            return (
-                <div className="flex justify-center items-center h-40">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    const ActionsMenu = () => (
+        <div className="relative" ref={menuRef}>
+            <button
+                onClick={() => setIsMenuOpen(prev => !prev)}
+                className="p-2 rounded-full hover:bg-surface-3"
+                aria-label="More actions"
+            >
+                <MoreHorizontal size={20} />
+            </button>
+            {isMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-surface-3 rounded-lg z-10 overflow-hidden shadow-lg">
+                    <ul>
+                        <li>
+                            <button onClick={viewerState?.muted ? handleUnmute : handleMute} className="w-full text-left px-4 py-2 hover:bg-surface-2 flex items-center gap-3">
+                                <MicOff size={16} /> {viewerState?.muted ? 'Unmute' : 'Mute'}
+                            </button>
+                        </li>
+                        <li>
+                            <button onClick={viewerState?.blocking ? handleUnblock : handleBlock} className={`w-full text-left px-4 py-2 flex items-center gap-3 ${viewerState?.blocking ? 'hover:bg-surface-2' : 'hover:bg-error/20 text-error'}`}>
+                                {viewerState?.blocking ? <><ShieldOff size={16}/> Unblock</> : <><Shield size={16}/> Block</>}
+                            </button>
+                        </li>
+                    </ul>
                 </div>
-            );
-        }
-        if (isBlocked) {
-            return (
-                <div className="p-4 text-center text-on-surface-variant bg-surface-2 rounded-lg">
-                    This user's posts are not available.
+            )}
+        </div>
+    );
+    
+    return (
+        <div>
+             <div className="sticky top-0 bg-surface-1/80 backdrop-blur-sm z-30 -mx-4 px-4">
+                <div className="flex items-center justify-between h-16">
+                    <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h1 className="font-bold text-center truncate">@{profile.handle}</h1>
+                    <div className="w-8 flex justify-end">
+                        {!isMe && session && viewerState && <ActionsMenu />}
+                    </div>
                 </div>
-            )
-        }
-        return (
-            <div className="space-y-4">
-                {feed.map((feedViewPost) => {
-                    const reason = feedViewPost.reason;
-                    const isRepost = AppBskyFeedDefs.isReasonRepost(reason);
-                    const repostAuthorDid = isRepost ? reason.by.did : '';
-                    return (
-                        <PostBubble 
-                            key={`${feedViewPost.post.cid}-${repostAuthorDid}`} 
-                            post={feedViewPost.post}
-                            reason={isRepost ? reason : undefined}
-                            showAuthor={isRepost}
-                            profileOwnerActor={actor}
-                            ref={(el: HTMLDivElement | null) => {
-                                if (el) {
-                                    postRefs.current.set(feedViewPost.post.cid, el);
-                                } else {
-                                    postRefs.current.delete(feedViewPost.post.cid);
-                                }
-                            }}
-                        />
-                    );
-                })}
-                <div ref={loaderRef} className="h-10">
-                    {isLoadingMore && (
-                        <div className="flex justify-center items-center">
-                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+
+            <div className="px-4 pb-4">
+                <div className="flex items-center gap-4 mt-4">
+                    <img src={profile.avatar} alt="Avatar" className="w-24 h-24 rounded-full bg-surface-3" loading="lazy"/>
+                    <div className="flex-1 flex items-center justify-around">
+                        <a href={`#/profile/${actor}/following`} className="text-center hover:opacity-80">
+                            <strong className="block text-lg font-bold">{profile.followsCount}</strong>
+                            <span className="text-sm text-on-surface-variant">Following</span>
+                        </a>
+                        <div className="w-px h-10 bg-outline"></div>
+                        <a href={`#/profile/${actor}/followers`} className="text-center hover:opacity-80">
+                            <strong className="block text-lg font-bold">{profile.followersCount}</strong>
+                            <span className="text-sm text-on-surface-variant">Followers</span>
+                        </a>
+                        <div className="w-px h-10 bg-outline"></div>
+                        <div className="text-center">
+                            <strong className="block text-lg font-bold">{profile.postsCount}</strong>
+                            <span className="text-sm text-on-surface-variant">Posts</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="mt-3">
+                    <h2 className="text-lg font-bold flex items-center gap-2">
+                        <span>{profile.displayName || `@${profile.handle}`}</span>
+                        {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                            <BadgeCheck className="w-5 h-5 text-primary" fill="currentColor" />
+                        )}
+                    </h2>
+                     {profile.description && (
+                        <div className="mt-1 text-on-surface whitespace-pre-wrap text-sm">
+                            {descriptionWithFacets ? (
+                                <RichTextRenderer record={descriptionWithFacets} />
+                            ) : (
+                                <>{profile.description}</>
+                            )}
                         </div>
                     )}
                 </div>
-                 {!hasMore && feed.length > 0 && (
-                    <div className="text-center text-on-surface-variant py-8 text-sm">You've reached the end.</div>
-                )}
-                {!hasMore && feed.length === 0 && (
-                     <div className="text-center text-on-surface-variant py-8 text-sm">This user hasn't posted anything yet.</div>
-                )}
-            </div>
-        );
-    }
 
-    return (
-        <div className="h-full w-full flex flex-col bg-surface-1 channel-bg">
-            <header className="sticky top-0 bg-surface-2/80 backdrop-blur-sm z-10 flex-shrink-0 border-b border-outline">
-                <div className="flex items-center gap-4 h-16 px-4">
-                    <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3 md:hidden">
-                        <ArrowLeft size={20} />
-                    </button>
-                    <a href={`#/profile/${profile.handle}`} className="flex-1 min-w-0 flex items-center gap-3">
-                        <img src={profile.avatar} alt={profile.displayName} className="w-10 h-10 rounded-full bg-surface-3" />
-                        <div className="truncate">
-                           <h1 className="font-bold text-lg truncate flex items-center gap-1.5">
-                                <span>{profile.displayName || profile.handle}</span>
-                                {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                    <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
-                                )}
-                            </h1>
-                            <p className="text-sm text-on-surface-variant">{profile.followersCount} followers</p>
-                        </div>
-                    </a>
-                    <div className="flex-shrink-0">
-                      {session && (isMe ? (
-                          <button onClick={openEditProfileModal} className="font-bold py-1 px-4 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 text-sm">
-                              Edit
-                          </button>
-                      ) : (
-                          <FollowButton />
-                      ))}
+                {profile.labels && ComAtprotoLabelDefs.isLabel(profile.labels[0]) && profile.labels.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                        {profile.labels.map((label) => (
+                           <Label key={label.val} label={label} />
+                        ))}
                     </div>
+                )}
+
+
+                <div className="mt-4 flex items-center gap-2">
+                    {isMe ? (
+                        <button onClick={openEditProfileModal} className="w-full font-bold py-2.5 px-6 rounded-lg transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80">
+                            Edit Profile
+                        </button>
+                    ) : session && viewerState && (
+                        <>
+                            <FollowButton />
+                            {chatSupported && (
+                                <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
+                                    <MessageSquare size={20} />
+                                </a>
+                            )}
+                        </>
+                    )}
                 </div>
-            </header>
+            </div>
             
-            <main className="flex-1 overflow-y-auto p-4">
-                {renderFeed()}
-            </main>
+            {viewerState?.blocking ? (
+                <div className="text-center p-8 bg-surface-2 rounded-xl">
+                    <p className="font-bold text-lg">You have blocked @${profile.handle}</p>
+                    <p className="text-on-surface-variant text-sm mb-4">You won't see their posts or be able to follow them.</p>
+                    <button onClick={handleUnblock} disabled={isActionLoading} className="font-bold py-2 px-6 rounded-full transition duration-200 bg-surface-3 text-on-surface hover:bg-surface-3/80 disabled:opacity-50">
+                        Unblock
+                    </button>
+                </div>
+            ) : (
+                <>
+                    <div className="flex items-center justify-around border-b border-surface-3">
+                        <button onClick={() => setActiveFilter('all')} className={`w-full p-4 flex justify-center ${activeFilter === 'all' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><Grid size={22} /></button>
+                        <button onClick={() => setActiveFilter('photos')} className={`w-full p-4 flex justify-center ${activeFilter === 'photos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><ImageIcon size={22} /></button>
+                        <button onClick={() => setActiveFilter('videos')} className={`w-full p-4 flex justify-center ${activeFilter === 'videos' ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-variant'}`}><VideoIcon size={22} /></button>
+                    </div>
+
+                    <div className="pt-1">
+                        {displayedFeed.length === 0 && !hasMore && (
+                            <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl mt-4">
+                                This user has not posted any {activeFilter !== 'all' ? `${activeFilter.slice(0,-1)}s` : 'media'} yet.
+                            </div>
+                        )}
+                        
+                        <div className="columns-2 gap-4 mt-4">
+                            {displayedFeed.map((feedViewPost) => (
+                                <div key={feedViewPost.post.cid} className="break-inside-avoid mb-4">
+                                    <PostCard feedViewPost={feedViewPost} />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div ref={loaderRef} className="h-10">
+                            {isLoadingMore && (
+                            <div className="columns-2 gap-4 mt-4">
+                                <div className="break-inside-avoid mb-4">
+                                <PostCardSkeleton />
+                                </div>
+                                <div className="break-inside-avoid mb-4">
+                                <PostCardSkeleton />
+                                </div>
+                            </div>
+                            )}
+                        </div>
+
+                        {!hasMore && displayedFeed.length > 0 && (
+                            <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 };
