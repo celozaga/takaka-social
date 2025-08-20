@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
@@ -7,7 +7,7 @@ import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, FlatList } from 'react-native';
 
 interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
@@ -34,8 +34,6 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const { width } = useWindowDimensions();
   const isWide = width > 640;
 
-
-  const loaderRef = useRef<HTMLDivElement>(null);
 
   const filterMediaPosts = (posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
     // Filter out replies and posts without direct media.
@@ -126,37 +124,22 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
     });
   }, [feed, moderation]);
 
-
-  // Effect for IntersectionObserver
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-          loadMorePosts();
-        }
-      },
-      { rootMargin: '400px' }
-    );
-
-    const currentLoader = loaderRef.current;
-    if (currentLoader) {
-      observer.observe(currentLoader);
-    }
-
-    return () => {
-      if (currentLoader) {
-        observer.unobserve(currentLoader);
-      }
-    };
-  }, [hasMore, isLoading, isLoadingMore, loadMorePosts]);
+  const columns = isWide ? 2 : 1;
+  const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
+  
+  const renderItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => (
+    <View style={{ flex: 1, padding: columns > 1 ? 8 : 0, paddingTop: 0 }}>
+      <PostCard feedViewPost={item} />
+    </View>
+  );
 
   if (isLoading) {
     return (
         <View style={styles.grid}>
-            {[...Array(8)].map((_, i) => (
-                <View key={i} style={styles.gridItem}>
-                    <PostCardSkeleton />
-                </View>
+            {[...Array(columns)].map((_, colIndex) => (
+              <View key={colIndex} style={styles.gridItem}>
+                {[...Array(4)].map((_, i) => <PostCardSkeleton key={i} />)}
+              </View>
             ))}
         </View>
     );
@@ -165,47 +148,38 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   if (error) {
     return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
   }
-  
-  if (moderatedFeed.length === 0 && !isLoading && !hasMore) {
-    return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('timeline.empty')}</Text></View>;
-  }
-
-  const columns = isWide ? 2 : 1;
-  const columnData: AppBskyFeedDefs.FeedViewPost[][] = Array.from({ length: columns }, () => []);
-  moderatedFeed.forEach((item, index) => {
-    columnData[index % columns].push(item);
-  });
 
   return (
-    <View>
-      <View style={styles.timelineContainer}>
-        {columnData.map((columnItems, colIndex) => (
-          <View key={colIndex} style={{ flex: 1, gap: 16 }}>
-            {columnItems.map((feedViewPost) => (
-              <PostCard key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} feedViewPost={feedViewPost} />
-            ))}
-          </View>
-        ))}
-      </View>
-
-
-      <View ref={loaderRef as any} style={{ height: 40 }}>
-        {isLoadingMore && (
-          <View style={[styles.timelineContainer, { marginTop: 16 }]}>
-            <View style={{ flex: 1, gap: 16 }}>
-              <PostCardSkeleton />
-            </View>
-            {isWide && <View style={{ flex: 1, gap: 16 }}><PostCardSkeleton /></View>}
-          </View>
+    <FlatList
+        data={moderatedFeed}
+        key={columns} // Change key on column change to re-render
+        numColumns={columns}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        onEndReached={loadMorePosts}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() => (
+            <>
+            {isLoadingMore && (
+                <View style={[styles.grid, { paddingTop: 16 }]}>
+                    {[...Array(columns)].map((_, i) => <View key={i} style={styles.gridItem}><PostCardSkeleton /></View>)}
+                </View>
+            )}
+            {!hasMore && moderatedFeed.length > 0 && (
+                <View style={styles.endMessageContainer}>
+                    <Text style={styles.infoText}>{t('common.endOfList')}</Text>
+                </View>
+            )}
+            </>
         )}
-      </View>
-
-      {!hasMore && moderatedFeed.length > 0 && (
-        <View style={styles.endMessageContainer}>
-            <Text style={styles.infoText}>{t('common.endOfList')}</Text>
-        </View>
-      )}
-    </View>
+        ListEmptyComponent={
+            !isLoading && !hasMore ? (
+                <View style={styles.messageContainer}>
+                    <Text style={styles.infoText}>{t('timeline.empty')}</Text>
+                </View>
+            ) : null
+        }
+    />
   );
 };
 
@@ -216,6 +190,7 @@ const styles = StyleSheet.create({
     },
     gridItem: {
         flex: 1,
+        gap: 16,
     },
     messageContainer: {
         padding: 32,
@@ -223,6 +198,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 16,
     },
     errorText: {
         color: '#F2B8B5',
@@ -231,10 +207,6 @@ const styles = StyleSheet.create({
     infoText: {
         color: '#C3C6CF',
         textAlign: 'center',
-    },
-    timelineContainer: {
-        flexDirection: 'row',
-        gap: 16,
     },
     endMessageContainer: {
         paddingVertical: 32,

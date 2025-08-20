@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -124,7 +125,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
     }
   }).current;
 
-  const renderMedia = (post: AppBskyFeedDefs.PostView) => {
+  const renderMedia = (post:AppBskyFeedDefs.PostView) => {
     if (!post.embed) return null;
     let embed = post.embed;
     if(AppBskyEmbedRecordWithMedia.isView(post.embed)) {
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     carouselImage: { height: 350, backgroundColor: 'black' },
     carouselCounter: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
     carouselCounterText: { color: 'white', fontSize: 12, fontWeight: '600' },
-    postText: { marginVertical: 12, color: '#E2E2E6', fontSize: 16, lineHeight: 24, whiteSpace: 'pre-wrap' } as any,
+    postText: { marginVertical: 12, color: '#E2E2E6', fontSize: 16, lineHeight: 24 },
     dateText: { fontSize: 14, color: '#C3C6CF', marginVertical: 12 },
     repliesHeader: { fontSize: 18, fontWeight: 'bold', color: '#E2E2E6', paddingTop: 16, paddingBottom: 8 },
     noRepliesContainer: { alignItems: 'center', padding: 32, backgroundColor: '#1E2021', borderRadius: 12, marginTop: 16 },

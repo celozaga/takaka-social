@@ -207,9 +207,9 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                 />
 
                 {mediaFiles.length > 0 && (
-                    <View style={[styles.mediaGrid, mediaFiles.length > 1 && styles.mediaGridMultiple]}>
+                    <View style={styles.mediaGrid}>
                         {mediaFiles.map((mf, index) => (
-                            <View key={index} style={styles.mediaItem}>
+                            <View key={index} style={[styles.mediaItem, { width: mediaFiles.length > 1 ? '48%' : '100%' }]}>
                                 <Image source={{ uri: mf.preview }} style={styles.mediaPreview} />
                                 <Pressable onPress={() => removeMedia(index)} style={styles.removeMediaButton}>
                                     <X color="white" size={16} />
@@ -307,10 +307,9 @@ const styles = StyleSheet.create({
     main: { flexDirection: 'row', gap: 16, padding: 16, flexGrow: 1 },
     avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2b2d2e' },
     textInput: { color: '#E2E2E6', fontSize: 20, textAlignVertical: 'top', minHeight: 100 },
-    mediaGrid: { marginTop: 16, gap: 8 },
-    mediaGridMultiple: { display: 'grid' as any, gridTemplateColumns: '1fr 1fr' },
+    mediaGrid: { marginTop: 16, gap: 8, flexDirection: 'row', flexWrap: 'wrap' },
     mediaItem: { position: 'relative' },
-    mediaPreview: { width: '100%', aspectRatio: 1, borderRadius: 8, objectFit: 'cover' },
+    mediaPreview: { width: '100%', aspectRatio: 1, borderRadius: 8, resizeMode: 'cover' },
     removeMediaButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: 999 },
     footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8, borderTopWidth: 1, borderTopColor: '#2b2d2e' },
     iconButton: { padding: 8 },

@@ -97,9 +97,11 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
+    flex: 1,
   },
   timelineContainer: {
     marginTop: 16,
+    flex: 1,
   }
 });
 

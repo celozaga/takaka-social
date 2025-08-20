@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { X, Camera, Loader2 } from 'lucide-react';
-import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
 
 interface EditProfileModalProps {
   onClose: () => void;
@@ -105,42 +106,44 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
             </Pressable>
         </View>
         
-        <View style={styles.content}>
-            <View style={styles.avatarContainer}>
-                <Pressable style={styles.avatarPressable} onPress={() => Platform.OS === 'web' && avatarInputRef?.current?.click()}>
-                    {avatarPreview && <Image source={{ uri: avatarPreview }} style={styles.avatarImage} />}
-                    <View style={styles.avatarOverlay}>
-                        <Camera color="white" size={32} />
-                    </View>
-                </Pressable>
-                {Platform.OS === 'web' && <input type="file" ref={avatarInputRef as any} onChange={handleFileChange} accept="image/jpeg, image/png, image/gif" style={{ display: 'none' }} />}
-            </View>
+        <ScrollView>
+            <View style={styles.content}>
+                <View style={styles.avatarContainer}>
+                    <Pressable style={styles.avatarPressable} onPress={() => Platform.OS === 'web' && avatarInputRef?.current?.click()}>
+                        {avatarPreview && <Image source={{ uri: avatarPreview }} style={styles.avatarImage} />}
+                        <View style={styles.avatarOverlay}>
+                            <Camera color="white" size={32} />
+                        </View>
+                    </Pressable>
+                    {Platform.OS === 'web' && <input type="file" ref={avatarInputRef as any} onChange={handleFileChange} accept="image/jpeg, image/png, image/gif" style={{ display: 'none' }} />}
+                </View>
 
-            <View style={{ gap: 16 }}>
-                <View>
-                    <Text style={styles.label}>Display Name</Text>
-                    <TextInput
-                        value={displayName}
-                        onChangeText={setDisplayName}
-                        maxLength={64}
-                        style={styles.input}
-                        placeholderTextColor="#8A9199"
-                    />
-                </View>
-                <View>
-                    <Text style={styles.label}>Bio</Text>
-                    <TextInput
-                        value={description}
-                        onChangeText={setDescription}
-                        maxLength={256}
-                        multiline
-                        numberOfLines={4}
-                        style={[styles.input, styles.textArea]}
-                        placeholderTextColor="#8A9199"
-                    />
+                <View style={{ gap: 16 }}>
+                    <View>
+                        <Text style={styles.label}>Display Name</Text>
+                        <TextInput
+                            value={displayName}
+                            onChangeText={setDisplayName}
+                            maxLength={64}
+                            style={styles.input}
+                            placeholderTextColor="#8A9199"
+                        />
+                    </View>
+                    <View>
+                        <Text style={styles.label}>Bio</Text>
+                        <TextInput
+                            value={description}
+                            onChangeText={setDescription}
+                            maxLength={256}
+                            multiline
+                            numberOfLines={4}
+                            style={[styles.input, styles.textArea]}
+                            placeholderTextColor="#8A9199"
+                        />
+                    </View>
                 </View>
             </View>
-        </View>
+        </ScrollView>
     </View>
   );
 };
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
     saveButton: { backgroundColor: '#A8C7FA', paddingVertical: 8, paddingHorizontal: 24, borderRadius: 999 },
     saveButtonDisabled: { opacity: 0.5 },
     saveButtonText: { color: '#003258', fontWeight: 'bold' },
-    content: { overflowY: 'auto' as any, padding: 24 },
+    content: { padding: 24 },
     avatarContainer: { alignItems: 'center', marginBottom: 24 },
     avatarPressable: { width: 128, height: 128, borderRadius: 64, borderWidth: 4, borderColor: '#1E2021', backgroundColor: '#2b2d2e', overflow: 'hidden' },
     avatarImage: { width: '100%', height: '100%', resizeMode: 'cover' },

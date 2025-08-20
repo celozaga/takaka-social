@@ -86,18 +86,17 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
         if (AppBskyEmbedImages.isView(mediaEmbed)) {
             const embed = mediaEmbed;
             if (showAllMedia && embed.images.length > 0) {
-                const gridCols = embed.images.length >= 2 ? 'grid-cols-2' : 'grid-cols-1';
                 return (
                     <View style={styles.imageGrid}>
                         {embed.images.map((image, index) => {
                             return (
                                 <Link key={index} href={image.fullsize} asChild>
-                                <Pressable style={styles.imageGridItem}>
+                                <Pressable style={[styles.imageGridItem, { width: embed.images.length > 1 ? '48%' : '100%' }]}>
                                     <ResizedImage
                                         src={image.thumb}
                                         resizeWidth={400}
                                         alt={image.alt || `Post image ${index + 1}`}
-                                        style={styles.image}
+                                        style={styles.gridImage}
                                     />
                                 </Pressable>
                                 </Link>
@@ -111,6 +110,10 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             if (!firstImage) return null;
             
             const hasMultipleImages = embed.images.length > 1;
+
+            const imageAspectRatio = firstImage.aspectRatio
+                ? firstImage.aspectRatio.width / firstImage.aspectRatio.height
+                : 1;
             
             return (
                 <View style={{ position: 'relative' }}>
@@ -118,7 +121,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                         src={firstImage.thumb}
                         resizeWidth={400}
                         alt={firstImage.alt || 'Post image'} 
-                        style={styles.image} 
+                        style={[styles.image, { aspectRatio: imageAspectRatio }]} 
                     />
                     {(hasMultipleImages || isRepost) && (
                          <View style={styles.mediaBadgeContainer}>
@@ -152,6 +155,10 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const serviceUrl = agent.service.toString();
             const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
 
+            const videoAspectRatio = embedView.aspectRatio
+                ? embedView.aspectRatio.width / embedView.aspectRatio.height
+                : 16 / 9;
+
             if (showAllMedia) {
                 const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
                 const playerOptions = {
@@ -171,7 +178,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             
             return (
                 <View style={{ position: 'relative' }}>
-                    <ResizedImage src={posterUrl || ''} resizeWidth={400} alt="Video poster" style={{...styles.image, backgroundColor: '#000'}} />
+                    <ResizedImage src={posterUrl || ''} resizeWidth={400} alt="Video poster" style={[styles.image, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} />
                     <View style={styles.mediaBadgeContainer}>
                         {isRepost && (
                             <View style={styles.mediaBadge}>
@@ -294,12 +301,17 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: 'auto',
-        aspectRatio: 1,
-        objectFit: 'cover',
+        resizeMode: 'cover',
+        maxHeight: 600,
+    },
+    gridImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
     },
     imageGrid: {
-        display: 'grid' as any,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 6,
     },
     imageGridItem: {
