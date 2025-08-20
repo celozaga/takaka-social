@@ -10,29 +10,31 @@ import {
     Bell, Users, UserCheck, Clapperboard
 } from 'lucide-react';
 import Head from '../shared/Head';
+import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
 
-const AppGridItem: React.FC<{
+
+const ListItem: React.FC<{
     icon: React.ElementType,
     label: string,
-    href?: string,
-    onClick?: () => void,
-    colorClass?: string
-}> = ({ icon: Icon, label, href, onClick, colorClass }) => {
+    href: string,
+}> = ({ icon: Icon, label, href }) => {
     const content = (
-        <>
-            <div className="w-16 h-16 bg-surface-2 rounded-2xl flex items-center justify-center group-hover:bg-surface-3 transition-colors">
-                <Icon size={32} className={colorClass || 'text-on-surface-variant'} />
-            </div>
-            <span className="text-xs text-center text-on-surface font-medium">{label}</span>
-        </>
+        <View style={styles.listItemContent}>
+            <View style={styles.listItemLeft}>
+                <Icon size={24} color="#C3C6CF" />
+                <Text style={styles.listItemLabel}>{label}</Text>
+            </View>
+            <ChevronRight size={20} color="#C3C6CF" />
+        </View>
     );
-
-    const className = "flex flex-col items-center justify-start gap-2 group";
-
-    if (href) {
-        return <Link href={href as any} className={className}>{content}</Link>;
-    }
-    return <button onClick={onClick} className={className}>{content}</button>;
+    
+    return (
+        <Link href={href as any} asChild>
+            <Pressable style={({ pressed }) => [styles.listItem, pressed && styles.listItemPressed]}>
+                {content}
+            </Pressable>
+        </Link>
+    );
 };
 
 
@@ -52,71 +54,173 @@ const MoreScreen: React.FC = () => {
                 .finally(() => setIsLoading(false));
         } else {
             setIsLoading(false);
+            setProfile(null);
         }
     }, [getProfile, session?.did]);
     
-    const profileLink = `/profile/${session?.handle}`;
+    const profileLink = session?.handle ? `/profile/${session.handle}` : '/';
 
-    const appGridItems = session ? [
-        { icon: List, label: t('more.myFeeds'), href: '/(tabs)/feeds', colorClass: 'text-sky-400' },
-        { icon: Clapperboard, label: t('more.watch'), href: '/(tabs)/watch', colorClass: 'text-rose-400' },
-        { icon: Search, label: t('nav.search'), href: '/(tabs)/search', colorClass: 'text-amber-400' },
-        { icon: Bell, label: t('nav.notifications'), href: '/(tabs)/notifications', colorClass: 'text-indigo-400' },
-        { icon: Users, label: t('common.followers'), href: `/profile/${session.handle}/followers`, colorClass: 'text-teal-400' },
-        { icon: UserCheck, label: t('common.following'), href: `/profile/${session.handle}/following`, colorClass: 'text-cyan-400' },
-        { icon: Settings, label: t('nav.settings'), href: '/(tabs)/settings', colorClass: 'text-slate-400' },
+    const listItems = session ? [
+        { icon: List, label: t('more.myFeeds'), href: '/(tabs)/feeds' },
+        { icon: Clapperboard, label: t('more.watch'), href: '/(tabs)/watch' },
+        { icon: Search, label: t('nav.search'), href: '/(tabs)/search' },
+        { icon: Bell, label: t('nav.notifications'), href: '/(tabs)/notifications' },
+        { icon: Users, label: t('common.followers'), href: `/profile/${session.handle}/followers` },
+        { icon: UserCheck, label: t('common.following'), href: `/profile/${session.handle}/following` },
+        { icon: Settings, label: t('nav.settings'), href: '/(tabs)/settings' },
     ] : [];
     
 
     return (
         <>
             <Head><title>{t('more.title')}</title></Head>
-            <div className="pt-4">
-                <div className="space-y-8">
+            <View style={styles.container}>
+                <View style={{gap: 32}}>
                     {isLoading ? (
-                        <div className="bg-surface-2 rounded-lg p-4 animate-pulse">
-                            <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-full bg-surface-3"></div>
-                                <div className="space-y-2">
-                                    <div className="h-5 w-32 bg-surface-3 rounded"></div>
-                                    <div className="h-4 w-24 bg-surface-3 rounded"></div>
-                                </div>
-                            </div>
-                        </div>
+                        <View style={[styles.profileCard, styles.profileCardSkeleton]}>
+                            <View style={styles.profileContent}>
+                                <View style={styles.avatarSkeleton} />
+                                <View style={{gap: 8}}>
+                                    <View style={styles.textSkeletonLg} />
+                                    <View style={styles.textSkeletonSm} />
+                                </View>
+                            </View>
+                        </View>
                     ) : profile && (
-                        <Link href={profileLink as any} className="block bg-surface-2 rounded-lg p-4 hover:bg-surface-3 transition-colors">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <img src={profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt="My Avatar" className="w-16 h-16 rounded-full bg-surface-3" />
-                                    <div>
-                                        <p className="font-bold text-lg flex items-center gap-1.5">
-                                            <span>{profile.displayName || `@${profile.handle}`}</span>
-                                            {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                                <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" fill="currentColor" />
-                                            )}
-                                        </p>
-                                        <p className="text-on-surface-variant">@{profile.handle}</p>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-6 h-6 text-on-surface-variant" />
-                            </div>
+                        <Link href={profileLink as any} asChild>
+                            <Pressable style={({ pressed }) => [styles.profileCard, pressed && styles.profileCardPressed]}>
+                                <View style={styles.profileContent}>
+                                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1}}>
+                                        <Image source={{ uri: profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                                        <View style={{flex: 1}}>
+                                            <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+                                                <Text style={styles.profileName} numberOfLines={1}>{profile.displayName || `@${profile.handle}`}</Text>
+                                                {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                                                    <BadgeCheck size={20} color="#A8C7FA" fill="currentColor" />
+                                                )}
+                                            </View>
+                                            <Text style={styles.profileHandle} numberOfLines={1}>@{profile.handle}</Text>
+                                        </View>
+                                    </View>
+                                    <ChevronRight size={24} color="#C3C6CF" />
+                                </View>
+                            </Pressable>
                         </Link>
                     )}
 
                     {session && (
-                        <div>
-                            <h2 className="text-base font-bold text-on-surface-variant mb-4 px-1">{t('more.allApps')}</h2>
-                            <div className="grid grid-cols-4 gap-y-6 gap-x-2">
-                                {appGridItems.map(item => (
-                                    <AppGridItem key={item.label} {...item} />
+                        <View>
+                            <Text style={styles.sectionTitle}>{t('more.allApps')}</Text>
+                            <View style={styles.listContainer}>
+                                {listItems.map((item, index) => (
+                                    <React.Fragment key={item.label}>
+                                        <ListItem {...item} />
+                                        {index < listItems.length - 1 && <View style={styles.divider} />}
+                                    </React.Fragment>
                                 ))}
-                            </div>
-                        </div>
+                            </View>
+                        </View>
                     )}
-                </div>
-            </div>
+                </View>
+            </View>
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        paddingTop: 16,
+        paddingHorizontal: 16,
+    },
+    profileCard: {
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 8,
+    },
+    profileCardPressed: {
+        backgroundColor: '#2b2d2e', // surface-3
+    },
+    profileCardSkeleton: {
+        height: 96,
+        padding: 16,
+        justifyContent: 'center'
+    },
+    profileContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+    },
+    avatar: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#2b2d2e',
+    },
+    avatarSkeleton: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#2b2d2e',
+        marginRight: 16,
+    },
+    textSkeletonLg: {
+        height: 20,
+        width: 128,
+        backgroundColor: '#2b2d2e',
+        borderRadius: 4,
+    },
+    textSkeletonSm: {
+        height: 16,
+        width: 96,
+        backgroundColor: '#2b2d2e',
+        borderRadius: 4,
+    },
+    profileName: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        color: '#E2E2E6' // on-surface
+    },
+    profileHandle: {
+        color: '#C3C6CF', // on-surface-variant
+    },
+    sectionTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#C3C6CF',
+        marginBottom: 8,
+        paddingHorizontal: 4,
+    },
+    listContainer: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    listItem: {
+        padding: 16,
+    },
+    listItemPressed: {
+        backgroundColor: '#2b2d2e',
+    },
+    listItemContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    listItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    listItemLabel: {
+        color: '#E2E2E6',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#2b2d2e', // surface-3
+        marginLeft: 56, // to align with text
+    },
+});
 
 export default MoreScreen;

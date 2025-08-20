@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -7,6 +8,8 @@ import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Quote, Bell, Loader2 } from 'lucide-react';
 import Head from '../shared/Head';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
 const APP_ID = 'social.takaka.app'; // A unique identifier for our app
@@ -43,7 +46,10 @@ const NotificationSettingsScreen: React.FC = () => {
         setCustomFeedHeaderVisible(true);
         const loadSettings = async () => {
             setIsLoading(true);
-            setPushEnabled(Notification.permission === 'granted');
+            // Check for Notification API availability for web
+            if (typeof Notification !== 'undefined') {
+              setPushEnabled(Notification.permission === 'granted');
+            }
             try {
                 const { data } = await agent.app.bsky.actor.getPreferences();
                 const pushPref = data.preferences.find(
@@ -77,7 +83,6 @@ const NotificationSettingsScreen: React.FC = () => {
             .filter(key => !newSettings[key]);
 
         try {
-            // Persist the preferences on the user's account
             const { data: currentPrefs } = await agent.app.bsky.actor.getPreferences();
             const otherPrefs = currentPrefs.preferences.filter(p => p.$type !== 'app.bsky.actor.defs#pushNotificationsPref');
             
@@ -91,14 +96,14 @@ const NotificationSettingsScreen: React.FC = () => {
                 ]
             });
 
-            toast({ title: "Settings saved" });
+            toast({ title: t('notificationSettings.toast.saveSuccess') });
         } catch (error) {
             console.error("Failed to save notification settings:", error);
-            toast({ title: "Error", description: "Could not save settings.", variant: "destructive" });
+            toast({ title: "Error", description: t('notificationSettings.toast.saveError'), variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
-    }, [agent, toast]);
+    }, [agent, toast, t]);
     
     const handleSettingToggle = (key: SettingsKey, value: boolean) => {
         const newSettings = { ...settings, [key]: value };
@@ -107,10 +112,15 @@ const NotificationSettingsScreen: React.FC = () => {
     };
 
     const handleMasterToggle = async (enabled: boolean) => {
+       if (typeof Notification === 'undefined' || typeof navigator.serviceWorker === 'undefined') {
+            toast({ title: "Unsupported", description: "Push notifications are not supported on this device or browser.", variant: "destructive"});
+            return;
+        }
+
         if (enabled) {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
-                toast({ title: "Permission Denied", description: "You need to grant permission in your browser settings to enable notifications.", variant: "destructive"});
+                toast({ title: t('notificationSettings.toast.permissionDenied'), description: t('notificationSettings.toast.permissionDeniedDescription'), variant: "destructive"});
                 return;
             }
             try {
@@ -128,10 +138,10 @@ const NotificationSettingsScreen: React.FC = () => {
                     appId: APP_ID,
                 });
                 setPushEnabled(true);
-                toast({ title: "Push notifications enabled!" });
+                toast({ title: t('notificationSettings.toast.enabled') });
             } catch (error) {
                 console.error("Failed to subscribe to push notifications:", error);
-                toast({ title: "Error", description: "Could not enable push notifications.", variant: "destructive"});
+                toast({ title: t('common.error'), description: t('notificationSettings.toast.enableError'), variant: "destructive"});
                 setPushEnabled(false);
             } finally {
                 setIsSaving(false);
@@ -145,10 +155,10 @@ const NotificationSettingsScreen: React.FC = () => {
                     await subscription.unsubscribe();
                 }
                 setPushEnabled(false);
-                toast({ title: "Push notifications disabled" });
+                toast({ title: t('notificationSettings.toast.disabled') });
             } catch (error) {
                 console.error("Failed to unsubscribe:", error);
-                toast({ title: "Error", description: "Could not disable notifications.", variant: "destructive"});
+                toast({ title: t('common.error'), description: t('notificationSettings.toast.disableError'), variant: "destructive"});
             } finally {
                 setIsSaving(false);
             }
@@ -156,64 +166,120 @@ const NotificationSettingsScreen: React.FC = () => {
     };
 
     const settingsItems = [
-        { key: 'like' as SettingsKey, icon: Heart, title: 'Likes' },
-        { key: 'repost' as SettingsKey, icon: Repeat, title: 'Reposts' },
-        { key: 'follow' as SettingsKey, icon: UserPlus, title: 'Follows' },
-        { key: 'reply' as SettingsKey, icon: MessageCircle, title: 'Replies' },
-        { key: 'mention' as SettingsKey, icon: AtSign, title: 'Mentions' },
-        { key: 'quote' as SettingsKey, icon: Quote, title: 'Quotes' },
+        { key: 'like' as SettingsKey, icon: Heart, title: t('notifications.likedYourPost', { author: '' }).trim() },
+        { key: 'repost' as SettingsKey, icon: Repeat, title: t('notifications.reposts') },
+        { key: 'follow' as SettingsKey, icon: UserPlus, title: t('notifications.follows') },
+        { key: 'reply' as SettingsKey, icon: MessageCircle, title: t('common.replies') },
+        { key: 'mention' as SettingsKey, icon: AtSign, title: t('notifications.mentions') },
+        { key: 'quote' as SettingsKey, icon: Quote, title: t('notifications.quotedPost') },
     ];
 
     if (isLoading) {
         return (
-            <div>
-                <ScreenHeader title="Notifications" />
-                <div className="flex justify-center items-center h-64">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
-            </div>
+            <View style={styles.container}>
+                <ScreenHeader title={t('notificationSettings.title')} />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#A8C7FA" />
+                </View>
+            </View>
         )
     }
 
     return (
         <>
             <Head><title>{t('notificationSettings.title')}</title></Head>
-            <div>
-                <ScreenHeader title="Notifications" />
-                <div className="mt-4 space-y-4">
-                     <div className="bg-surface-2 rounded-lg p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Bell className="w-6 h-6 text-on-surface-variant" />
-                            <div>
-                                <p className="font-semibold">Enable Push Notifications</p>
-                                <p className="text-sm text-on-surface-variant">Get alerts on your device</p>
-                            </div>
-                        </div>
-                        <ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />
-                    </div>
+            <View style={styles.container}>
+                <ScreenHeader title={t('notificationSettings.title')} />
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                     <View style={styles.section}>
+                        <View style={styles.listItem}>
+                            <View style={styles.listItemLeft}>
+                                <Bell size={24} color="#C3C6CF" />
+                                <View>
+                                    <Text style={styles.label}>{t('notificationSettings.enablePush')}</Text>
+                                    <Text style={styles.subLabel}>{t('notificationSettings.getAlerts')}</Text>
+                                </View>
+                            </View>
+                            <ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />
+                        </View>
+                    </View>
 
-                    <div className={`transition-opacity duration-300 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <h3 className="font-bold text-on-surface-variant px-2 my-2">Notify me about...</h3>
-                        <div className="bg-surface-2 rounded-lg divide-y divide-outline">
-                             {settingsItems.map((item) => (
-                                <div key={item.key} className="p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <item.icon className="w-6 h-6 text-on-surface-variant" />
-                                        <p className="font-semibold">{item.title}</p>
-                                    </div>
+                    <View style={!pushEnabled && styles.disabledSection}>
+                        <Text style={styles.sectionHeader}>{t('notificationSettings.notifyMeAbout')}</Text>
+                        <View style={styles.section}>
+                             {settingsItems.map((item, index) => (
+                                <View key={item.key} style={[styles.listItem, index === settingsItems.length - 1 && styles.lastListItem]}>
+                                    <View style={styles.listItemLeft}>
+                                        <item.icon size={24} color="#C3C6CF" />
+                                        <Text style={styles.label}>{item.title}</Text>
+                                    </View>
                                     <ToggleSwitch
                                         checked={settings[item.key]}
                                         onChange={(checked) => handleSettingToggle(item.key, checked)}
-                                        disabled={isSaving}
+                                        disabled={isSaving || !pushEnabled}
                                     />
-                                </div>
+                                </View>
                             ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </View>
+                    </View>
+                </ScrollView>
+            </View>
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scrollContent: {
+        padding: 16,
+        gap: 16,
+    },
+    section: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    disabledSection: {
+        opacity: 0.5,
+    },
+    sectionHeader: {
+        fontWeight: 'bold',
+        color: '#C3C6CF',
+        paddingHorizontal: 8,
+        marginBottom: 8,
+    },
+    listItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#2b2d2e',
+    },
+    lastListItem: {
+        borderBottomWidth: 0,
+    },
+    listItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    label: {
+        fontWeight: '600',
+        color: '#E2E2E6',
+        fontSize: 16,
+    },
+    subLabel: {
+        fontSize: 14,
+        color: '#C3C6CF',
+    },
+});
 
 export default NotificationSettingsScreen;

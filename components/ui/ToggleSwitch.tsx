@@ -1,4 +1,6 @@
+
 import React from 'react';
+import { Switch, Platform } from 'react-native';
 
 const ToggleSwitch: React.FC<{
   checked: boolean;
@@ -6,22 +8,17 @@ const ToggleSwitch: React.FC<{
   disabled?: boolean;
 }> = ({ checked, onChange, disabled }) => {
   return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
+    <Switch
+      trackColor={{ false: '#2b2d2e', true: '#A8C7FA' }} // surface-3, primary
+      thumbColor={Platform.OS === 'ios' ? undefined : (checked ? '#A8C7FA' : '#C3C6CF')}
+      ios_backgroundColor="#2b2d2e"
+      onValueChange={onChange}
+      value={checked}
       disabled={disabled}
-      className={`relative inline-flex items-center h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? 'bg-primary' : 'bg-surface-3'
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-          checked ? 'translate-x-5' : 'translate-x-0'
-        }`}
-      />
-    </button>
+      style={Platform.OS === 'web' ? {
+        cursor: disabled ? 'not-allowed' : 'pointer'
+      } as any : {}}
+    />
   );
 };
 

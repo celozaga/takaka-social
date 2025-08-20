@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -6,48 +7,43 @@ import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ChevronRight, ShieldCheck, Loader2 } from 'lucide-react';
 import Head from '../shared/Head';
+import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Alert, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 
 interface SettingsListItemProps {
     icon: React.ElementType;
     label: string;
     value?: React.ReactNode;
     href?: string;
-    onClick?: () => void;
+    onPress?: () => void;
     isDestructive?: boolean;
     isLoading?: boolean;
     disabled?: boolean;
 }
 
-const SettingsListItem: React.FC<SettingsListItemProps> = ({ icon: Icon, label, value, href, onClick, isDestructive = false, isLoading = false, disabled = false }) => {
-    const finalOnClick = disabled ? undefined : onClick;
+const SettingsListItem: React.FC<SettingsListItemProps> = ({ icon: Icon, label, value, href, onPress, isDestructive = false, isLoading = false, disabled = false }) => {
+    const handlePress = () => {
+        if (disabled) return;
+        if (onPress) onPress();
+        else if (href) Linking.openURL(href);
+    };
 
-    const content = (
-        <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-4">
-                <Icon className={`w-6 h-6 ${isDestructive ? 'text-error' : 'text-on-surface-variant'}`} />
-                <span className={`font-semibold ${isDestructive ? 'text-error' : 'text-on-surface'}`}>{label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-                {value && <span className="text-on-surface-variant text-sm truncate">{value}</span>}
-                 {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-on-surface-variant" />
+    return (
+        <Pressable onPress={handlePress} disabled={disabled} style={({ pressed }) => [styles.listItem, disabled && styles.disabled, pressed && !disabled && styles.listItemPressed]}>
+            <View style={styles.listItemContent}>
+                <Icon style={styles.icon} color={isDestructive ? '#F2B8B5' : '#C3C6CF'} size={24} />
+                <Text style={[styles.label, isDestructive && styles.destructiveText]}>{label}</Text>
+            </View>
+            <View style={styles.listItemContent}>
+                {value && <Text style={styles.valueText}>{value}</Text>}
+                {isLoading ? (
+                    <Loader2 color="#C3C6CF" size={20} style={{ animation: 'spin 1s linear infinite' } as any} />
                 ) : (
-                    (href || onClick) && <ChevronRight className="w-5 h-5 text-on-surface-variant" />
+                    (href || onPress) && <ChevronRight color="#C3C6CF" size={20} />
                 )}
-            </div>
-        </div>
+            </View>
+        </Pressable>
     );
-
-    const baseClasses = `transition-colors block w-full text-left ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
-    const hoverClasses = href || onClick ? "hover:bg-surface-3" : "";
-
-    if (href) {
-        return <a href={href} target="_blank" rel="noopener noreferrer" className={`${baseClasses} ${hoverClasses}`}>{content}</a>;
-    }
-    if (onClick) {
-        return <button onClick={finalOnClick} disabled={disabled} className={`${baseClasses} ${hoverClasses}`}>{content}</button>;
-    }
-    return <div className={baseClasses}>{content}</div>;
 };
 
 const AccountSettingsScreen: React.FC = () => {
@@ -55,6 +51,7 @@ const AccountSettingsScreen: React.FC = () => {
     const { setCustomFeedHeaderVisible, openUpdateEmailModal, openUpdateHandleModal } = useUI();
     const { toast } = useToast();
     const { t } = useTranslation();
+    const router = useRouter();
     const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
     React.useEffect(() => {
@@ -62,6 +59,27 @@ const AccountSettingsScreen: React.FC = () => {
         return () => setCustomFeedHeaderVisible(false);
     }, [setCustomFeedHeaderVisible]);
 
+    const handleAction = (title: string, message: string, actionFn: () => Promise<void>) => {
+        const performAction = async () => {
+            try {
+                await actionFn();
+            } catch (e) {
+                console.error(`Action '${title}' failed`, e);
+            }
+        };
+
+        if (Platform.OS === 'web') {
+            if (window.confirm(message)) {
+                performAction();
+            }
+        } else {
+            Alert.alert(title, message, [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Confirm', style: 'destructive', onPress: performAction },
+            ]);
+        }
+    };
+    
     const handleExportData = async () => {
         if (actionInProgress) return;
         setActionInProgress('export');
@@ -76,72 +94,117 @@ const AccountSettingsScreen: React.FC = () => {
             setActionInProgress(null);
         }
     };
-
-    const handleDeactivate = async () => {
-        if (actionInProgress) return;
-        if (window.confirm(t('accountSettings.confirmations.deactivate'))) {
-            setActionInProgress('deactivate');
-            try {
-                await agent.com.atproto.server.deactivateAccount({});
-                toast({ title: t('accountSettings.toast.deactivated'), description: t('accountSettings.toast.deactivatedDescription') });
-                await logout();
-                window.location.hash = '#/';
-            } catch (e) {
-                console.error("Failed to deactivate account", e);
-                toast({ title: "Error", description: t('accountSettings.toast.deactivateError'), variant: "destructive" });
-            } finally {
-                 setActionInProgress(null);
-            }
-        }
-    };
     
-    const handleDeleteAccount = async () => {
-        if (actionInProgress) return;
-        if (window.confirm(t('accountSettings.confirmations.delete'))) {
+    const handleDeactivate = () => handleAction(
+        'Deactivate Account',
+        t('accountSettings.confirmations.deactivate'),
+        async () => {
+            setActionInProgress('deactivate');
+            await agent.com.atproto.server.deactivateAccount({});
+            toast({ title: t('accountSettings.toast.deactivated'), description: t('accountSettings.toast.deactivatedDescription') });
+            await logout();
+            router.replace('/');
+            setActionInProgress(null);
+        }
+    );
+
+    const handleDeleteAccount = () => handleAction(
+        'Delete Account',
+        t('accountSettings.confirmations.delete'),
+        async () => {
             setActionInProgress('delete');
             toast({ title: t('accountSettings.toast.deleteRequest') });
-            try {
-                await agent.com.atproto.server.requestAccountDelete();
-                toast({ title: t('accountSettings.toast.deleteRequested'), description: t('accountSettings.toast.deleteRequestedDescription') });
-            } catch (e) {
-                console.error("Failed to request account deletion", e);
-                toast({ title: "Error", description: t('accountSettings.toast.deleteError'), variant: "destructive" });
-            } finally {
-                setActionInProgress(null);
-            }
+            await agent.com.atproto.server.requestAccountDelete();
+            toast({ title: t('accountSettings.toast.deleteRequested'), description: t('accountSettings.toast.deleteRequestedDescription') });
+            setActionInProgress(null);
         }
-    };
+    );
     
     const emailValue = (
-        <div className="flex items-center gap-1.5">
-            <span>{session?.email}</span>
-            {session?.emailConfirmed && <ShieldCheck className="w-4 h-4 text-primary" />}
-        </div>
+        <View style={styles.emailValueContainer}>
+            <Text style={styles.valueText}>{session?.email}</Text>
+            {session?.emailConfirmed && <ShieldCheck color="#A8C7FA" size={16} />}
+        </View>
     );
 
     return (
         <>
             <Head><title>{t('accountSettings.title')}</title></Head>
-            <div>
-                <ScreenHeader title="Account" />
-                <div className="mt-4 space-y-6">
-                    <div className="bg-surface-2 rounded-lg overflow-hidden">
-                        <SettingsListItem icon={Mail} label="Email" value={emailValue} />
-                        <SettingsListItem icon={Edit} label="Update email" onClick={openUpdateEmailModal} disabled={!!actionInProgress} />
-                        <SettingsListItem icon={Lock} label="Password" href="https://bsky.app/settings/password" />
-                        <SettingsListItem icon={AtSign} label="Handle" value={`@${session?.handle}`} onClick={openUpdateHandleModal} disabled={!!actionInProgress} />
-                        <SettingsListItem icon={Cake} label="Birthday" href="https://bsky.app/settings/birthday" />
-                    </div>
+            <View style={styles.container}>
+                <ScreenHeader title={t('accountSettings.title')} />
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                    <View style={styles.section}>
+                        <SettingsListItem icon={Mail} label={t('accountSettings.email')} value={emailValue} />
+                        <SettingsListItem icon={Edit} label={t('accountSettings.updateEmail')} onPress={openUpdateEmailModal} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Lock} label={t('accountSettings.password')} href="https://bsky.app/settings/password" />
+                        <SettingsListItem icon={AtSign} label={t('accountSettings.handle')} value={`@${session?.handle}`} onPress={openUpdateHandleModal} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Cake} label={t('accountSettings.birthday')} href="https://bsky.app/settings/birthday" />
+                    </View>
 
-                    <div className="bg-surface-2 rounded-lg overflow-hidden">
-                        <SettingsListItem icon={Download} label="Export my data" onClick={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
-                        <SettingsListItem icon={Power} label="Deactivate account" onClick={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
-                        <SettingsListItem icon={Trash2} label="Delete account" onClick={handleDeleteAccount} isDestructive isLoading={actionInProgress === 'delete'} disabled={!!actionInProgress} />
-                    </div>
-                </div>
-            </div>
+                    <View style={styles.section}>
+                        <SettingsListItem icon={Download} label={t('accountSettings.exportData')} onPress={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Power} label={t('accountSettings.deactivateAccount')} onPress={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
+                        <SettingsListItem icon={Trash2} label={t('accountSettings.deleteAccount')} onPress={handleDeleteAccount} isDestructive isLoading={actionInProgress === 'delete'} disabled={!!actionInProgress} />
+                    </View>
+                </ScrollView>
+            </View>
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 16,
+        gap: 24,
+    },
+    section: {
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    listItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        backgroundColor: '#1E2021',
+    },
+    listItemPressed: {
+        backgroundColor: '#2b2d2e',
+    },
+    disabled: {
+        opacity: 0.5,
+    },
+    listItemContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    icon: {
+        width: 24,
+        height: 24,
+    },
+    label: {
+        fontWeight: '600',
+        color: '#E2E2E6',
+        fontSize: 16,
+    },
+    destructiveText: {
+        color: '#F2B8B5',
+    },
+    valueText: {
+        color: '#C3C6CF',
+        fontSize: 14,
+        marginRight: 8,
+    },
+    emailValueContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+});
 
 export default AccountSettingsScreen;

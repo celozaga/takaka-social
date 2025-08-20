@@ -1,8 +1,9 @@
 
-
 import React from 'react';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 
 interface ScreenHeaderProps {
     title: string;
@@ -11,19 +12,61 @@ interface ScreenHeaderProps {
 
 const ScreenHeader: React.FC<ScreenHeaderProps> = ({ title, children }) => {
     const { t } = useTranslation();
+    const router = useRouter();
+
     return (
-        <div className="sticky top-0 -mx-4 -mt-4 px-4 bg-surface-1 z-30">
-            <div className="flex items-center justify-between h-16">
-                 <div className="flex items-center gap-4">
-                    <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3" aria-label={t('common.back')}>
-                        <ArrowLeft size={20} />
-                    </button>
-                    <h1 className="text-xl font-bold">{title}</h1>
-                </div>
-                {children && <div className="flex items-center gap-2">{children}</div>}
-            </div>
-        </div>
+        <View style={styles.container}>
+            <View style={styles.innerContainer}>
+                <View style={styles.leftContainer}>
+                    <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]} accessibilityLabel={t('common.back')}>
+                        <ArrowLeft size={20} color="#E2E2E6" />
+                    </Pressable>
+                    <Text style={styles.title}>{title}</Text>
+                </View>
+                {children && <View style={styles.rightContainer}>{children}</View>}
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        paddingHorizontal: 16,
+        backgroundColor: '#111314', // surface-1
+        height: 64,
+        justifyContent: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#2b2d2e', // surface-3
+    },
+    innerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '100%',
+    },
+    leftContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    backButton: {
+        padding: 8,
+        marginLeft: -8,
+        borderRadius: 999,
+    },
+    backButtonPressed: {
+        backgroundColor: '#2b2d2e', // surface-3
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#E2E2E6',
+    },
+    rightContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+});
 
 export default ScreenHeader;
