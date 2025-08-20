@@ -80,12 +80,14 @@ const HomeScreen: React.FC = () => {
     <>
       <Head><title>{t('nav.home')}</title></Head>
       <View style={styles.container}>
-        <FeedSelector
-          feeds={feeds}
-          selectedFeed={selectedFeed}
-          onSelectFeed={setSelectedFeed}
-          isLoading={isLoadingFeeds}
-        />
+        <View style={styles.selectorContainer}>
+          <FeedSelector
+            feeds={feeds}
+            selectedFeed={selectedFeed}
+            onSelectFeed={setSelectedFeed}
+            isLoading={isLoadingFeeds}
+          />
+        </View>
         <View style={styles.feedContainer}>
           <Feed key={selectedFeed} feedUri={selectedFeed} />
         </View>
@@ -97,6 +99,11 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'column',
+  },
+  selectorContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   feedContainer: {
     flex: 1,

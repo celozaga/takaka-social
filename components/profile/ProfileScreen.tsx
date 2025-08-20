@@ -113,14 +113,18 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     return (
         <>
             <Head><title>{profile.displayName || profile.handle}</title></Head>
-            <ProfileHeader handle={profile.handle} onMoreClick={() => setIsMenuOpen(true)} />
-            <Feed
-                // Using a key ensures the feed re-fetches when the actor or filter changes
-                key={`${actor}-${activeFilter}`}
-                feedUri={actor} 
-                mediaFilter={activeFilter}
-                ListHeaderComponent={ListHeader} 
-            />
+            <View style={{flex: 1}}>
+                <ProfileHeader handle={profile.handle} onMoreClick={() => setIsMenuOpen(true)} />
+                <View style={{ flex: 1 }}>
+                    <Feed
+                        // Using a key ensures the feed re-fetches when the actor or filter changes
+                        key={`${actor}-${activeFilter}`}
+                        feedUri={actor} 
+                        mediaFilter={activeFilter}
+                        ListHeaderComponent={ListHeader} 
+                    />
+                </View>
+            </View>
         </>
     );
 };

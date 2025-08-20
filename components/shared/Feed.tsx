@@ -8,7 +8,7 @@ import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 
@@ -175,7 +175,12 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
         ListEmptyComponent={
           <>
             {error ? (
-              <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>
+              <View style={styles.messageContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+                <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
+                    <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
+                </Pressable>
+              </View>
             ) : !isLoading && moderatedFeed.length === 0 ? (
               <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>
             ) : null}
@@ -191,9 +196,19 @@ const styles = StyleSheet.create({
     columnWrapper: { gap: 16 },
     contentContainer: { paddingHorizontal: 16, paddingTop: 16 },
     messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16, marginHorizontal: 16, },
-    errorText: { color: '#F2B8B5', textAlign: 'center' },
+    errorText: { color: '#F2B8B5', textAlign: 'center', marginBottom: 16 },
     infoText: { color: '#C3C6CF', textAlign: 'center' },
     endOfList: { textAlign: 'center', color: '#C3C6CF', padding: 32 },
+    tryAgainButton: {
+        backgroundColor: '#2b2d2e',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 999,
+    },
+    tryAgainText: {
+        color: '#E2E2E6',
+        fontWeight: 'bold',
+    }
 });
 
 export default Feed;
