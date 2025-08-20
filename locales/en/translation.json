@@ -25,7 +25,9 @@
     "photos": "photos",
     "videos_noun": "videos",
     "back": "Back",
-    "share": "Share"
+    "share": "Share",
+    "rateLimitError": "Please wait a moment before trying again.",
+    "rateLimitTitle": "Rate limit reached"
   },
   "nav": {
     "home": "Home",

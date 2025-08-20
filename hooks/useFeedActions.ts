@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
@@ -70,9 +69,13 @@ export const useFeedActions = (feedUri?: string) => {
                 const { data } = await agent.app.bsky.feed.getFeedGenerator({ feed: feedView.uri });
                 setLikeCount(data.view.likeCount || 0);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to like/unlike feed:", err);
-            toast({ title: t('common.error'), description: t('hooks.actionFailed'), variant: "destructive" });
+            if (err && err.status === 429) {
+                toast({ title: t('common.rateLimitTitle'), description: t('common.rateLimitError'), variant: "destructive" });
+            } else {
+                toast({ title: t('common.error'), description: t('hooks.actionFailed'), variant: "destructive" });
+            }
             setLikeUri(originalLikeUri);
             setLikeCount(originalLikeCount);
         } finally {

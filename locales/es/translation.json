@@ -25,7 +25,9 @@
     "photos": "fotos",
     "videos_noun": "vídeos",
     "back": "Atrás",
-    "share": "Compartir"
+    "share": "Compartir",
+    "rateLimitError": "Por favor, espera un momento antes de volver a intentarlo.",
+    "rateLimitTitle": "Límite de peticiones alcanzado"
   },
   "nav": {
     "home": "Inicio",

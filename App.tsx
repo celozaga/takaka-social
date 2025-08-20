@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -47,18 +49,18 @@ const RepostModal = lazy(() => import('./components/shared/RepostModal'));
 
 const App: React.FC = () => {
   return (
-    <AtpProvider>
-      <ModerationProvider>
-        <UIProvider>
-          <HiddenPostsProvider>
-            <ToastProvider>
+    <ToastProvider>
+      <AtpProvider>
+        <ModerationProvider>
+          <UIProvider>
+            <HiddenPostsProvider>
               <Main />
               <Toaster />
-            </ToastProvider>
-          </HiddenPostsProvider>
-        </UIProvider>
-      </ModerationProvider>
-    </AtpProvider>
+            </HiddenPostsProvider>
+          </UIProvider>
+        </ModerationProvider>
+      </AtpProvider>
+    </ToastProvider>
   );
 };
 

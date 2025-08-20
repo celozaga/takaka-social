@@ -1,11 +1,10 @@
 
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../components/ui/use-toast';
-import { AppBskyFeedPost } from '@atproto/api';
+import { AppBskyFeedPost} from '@atproto/api';
 
 interface PostActionable {
   uri: string;
@@ -62,9 +61,13 @@ export const usePostActions = (post: PostActionable) => {
         const { uri } = await agent.like(post.uri, post.cid);
         setLikeUri(uri);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to like/unlike post:', error);
-      toast({ title: t('hooks.actionFailed'), description: t('hooks.likeError'), variant: "destructive" });
+      if (error && error.status === 429) {
+        toast({ title: t('common.rateLimitTitle'), description: t('common.rateLimitError'), variant: "destructive" });
+      } else {
+        toast({ title: t('hooks.actionFailed'), description: t('hooks.likeError'), variant: "destructive" });
+      }
       setLikeUri(originalLikeUri);
       setLikeCount(originalLikeCount);
     } finally {
@@ -99,9 +102,13 @@ export const usePostActions = (post: PostActionable) => {
         const { uri } = await agent.repost(post.uri, post.cid);
         setRepostUri(uri);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to repost:', error);
-      toast({ title: t('hooks.actionFailed'), description: t('hooks.repostError'), variant: "destructive" });
+      if (error && error.status === 429) {
+        toast({ title: t('common.rateLimitTitle'), description: t('common.rateLimitError'), variant: "destructive" });
+      } else {
+        toast({ title: t('hooks.actionFailed'), description: t('hooks.repostError'), variant: "destructive" });
+      }
       setRepostUri(originalRepostUri);
       setRepostCount(originalRepostCount);
     } finally {

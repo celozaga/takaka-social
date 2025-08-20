@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
+import { useToast } from '../components/ui/use-toast';
 
 interface AtpContextType {
   agent: BskyAgent;
@@ -24,6 +25,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [unreadCount, setUnreadCount] = useState(0);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [chatSupported, setChatSupported] = useState<boolean | undefined>(undefined);
+  const [isPollingPaused, setIsPollingPaused] = useState(false);
+  const { toast } = useToast();
 
   const agent = useMemo(() => new BskyAgent({
     service: PDS_URL,
@@ -51,6 +54,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setUnreadCount(data.count);
     } catch (error) {
       console.error("Failed to fetch notification count:", error);
+      throw error;
     }
   }, [agent]);
   
@@ -75,6 +79,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setChatUnreadCount(0);
         } else {
             console.error("Failed to fetch chat unread count:", error);
+            throw error;
         }
     }
   }, [agent]);
@@ -84,7 +89,30 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    let pollInterval: number;
+    let pollInterval: number | undefined;
+    let pauseTimeout: number | undefined;
+
+    const pollFunction = async () => {
+      if (isPollingPaused || !agent.hasSession) return;
+      try {
+        await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
+      } catch (error: any) {
+        if (error && error.status === 429) {
+          console.warn("Rate limit hit. Pausing polling for 60 seconds.");
+          setIsPollingPaused(true);
+          toast({
+              title: "Rate limit reached",
+              description: "Too many requests. Will retry automatically in a minute.",
+              variant: "destructive"
+          });
+          if (pauseTimeout) clearTimeout(pauseTimeout);
+          pauseTimeout = window.setTimeout(() => {
+              setIsPollingPaused(false);
+              console.log("Resuming polling.");
+          }, 60000);
+        }
+      }
+    };
 
     const initialize = async () => {
       setIsLoadingSession(true);
@@ -94,18 +122,10 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
           setSession(parsedSession);
-          // Run checks sequentially to ensure chat support is known before starting polls.
-          await fetchUnreadCount();
-          await fetchChatUnreadCount();
-
-          pollInterval = window.setInterval(() => {
-            fetchUnreadCount();
-            // We need a way to check chatSupported without causing a dependency loop.
-            // A simple approach is to let fetchChatUnreadCount handle its own logic.
-            // A better way would be a ref, but to keep changes minimal, we accept
-            // that this might poll an unsupported endpoint, which `fetchChatUnreadCount` now handles gracefully.
-            fetchChatUnreadCount();
-          }, 30000);
+          await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]).catch(() => {
+            // Ignore initial fetch errors, polling will handle it
+          });
+          pollInterval = window.setInterval(pollFunction, 30000);
         } catch (error) {
           console.error("Failed to resume session:", error);
           localStorage.removeItem('atp-session');
@@ -121,11 +141,10 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     initialize();
     
     return () => {
-        if (pollInterval) {
-            clearInterval(pollInterval);
-        }
+        if (pollInterval) clearInterval(pollInterval);
+        if (pauseTimeout) clearTimeout(pauseTimeout);
     };
-  }, [agent, fetchUnreadCount, fetchChatUnreadCount]);
+  }, [agent, fetchUnreadCount, fetchChatUnreadCount, isPollingPaused, toast]);
 
   const login = async (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => {
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });

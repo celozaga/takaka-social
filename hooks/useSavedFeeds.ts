@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
@@ -110,9 +109,13 @@ export const useSavedFeeds = () => {
 
             await agent.app.bsky.actor.putPreferences({ preferences: finalPreferences });
             setPreferences(newPreferences);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to save preferences:", error);
-            toast({ title: t('common.error'), description: t('hooks.saveFeedsError'), variant: "destructive" });
+            if (error && error.status === 429) {
+                toast({ title: t('common.rateLimitTitle'), description: t('common.rateLimitError'), variant: "destructive" });
+            } else {
+                toast({ title: t('common.error'), description: t('hooks.saveFeedsError'), variant: "destructive" });
+            }
             await load(); // Re-fetch to revert optimistic update
         }
     }, [agent, toast, load, t]);
