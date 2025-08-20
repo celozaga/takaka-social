@@ -1,6 +1,7 @@
 
 
 
+
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -35,26 +36,24 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
         return <div className="border border-outline rounded-lg p-2 mt-2 text-sm text-on-surface-variant">Content from a blocked user.</div>;
     }
 
-    if (AppBskyEmbedRecord.isViewRecord(embed)) {
-        if (AppBskyFeedDefs.isPostView(embed.record)) {
-            const postView = embed.record;
-            const author = postView.author;
-            const postViewRecord = postView.record as unknown;
+    if (AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
+        const postView = embed.record;
+        const author = postView.author;
+        const postViewRecord = postView.record as unknown;
 
-            if (AppBskyFeedPost.isRecord(postViewRecord)) {
-                const postRecord = postViewRecord;
+        if (AppBskyFeedPost.isRecord(postViewRecord)) {
+            const postRecord = postViewRecord as AppBskyFeedPost.Record;
 
-                return (
-                    <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
-                        <div className="flex items-center gap-2 text-sm">
-                            <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
-                            <span className="font-semibold">{author.displayName}</span>
-                            <span className="text-on-surface-variant">@{author.handle}</span>
-                        </div>
-                        <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
-                    </a>
-                );
-            }
+            return (
+                <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
+                    <div className="flex items-center gap-2 text-sm">
+                        <img src={author.avatar} className="w-5 h-5 rounded-full bg-surface-3" />
+                        <span className="font-semibold">{author.displayName}</span>
+                        <span className="text-on-surface-variant">@{author.handle}</span>
+                    </div>
+                    <p className="text-sm mt-1 line-clamp-4">{postRecord.text}</p>
+                </a>
+            );
         }
     }
     

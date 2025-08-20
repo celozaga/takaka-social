@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { format, isToday, isYesterday } from 'date-fns';
+import { useChannelState } from '../../context/ChannelStateContext';
 
 type ProfileFeed = {
   profile: AppBskyActorDefs.ProfileView;
@@ -26,7 +28,6 @@ const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost | null): React.
     if (!latestPost) return <span className="text-on-surface-variant italic">No posts yet.</span>;
     
     if (AppBskyFeedDefs.isReasonRepost(latestPost.reason)) {
-        const originalAuthor = latestPost.post.author;
         return (
             <span className="text-on-surface-variant">
                 <span className="font-semibold text-on-surface">{latestPost.reason.by.displayName || `@${latestPost.reason.by.handle}`}</span> reposted
@@ -81,6 +82,7 @@ const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string 
 
 const FollowingFeedScreen: React.FC = () => {
     const { agent, session } = useAtp();
+    const { lastViewedTimestamps } = useChannelState();
     const [profileFeeds, setProfileFeeds] = useState<ProfileFeed[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -111,7 +113,7 @@ const FollowingFeedScreen: React.FC = () => {
 
                 const combinedFeeds: ProfileFeed[] = authorFeeds.map(({ profile, feed }) => {
                     const latestPost = feed[0] || null;
-                    const lastViewedString = localStorage.getItem(`channel-last-viewed:${profile.did}`);
+                    const lastViewedString = lastViewedTimestamps.get(profile.did);
                     let unreadCount = 0;
                     
                     if (latestPost) { // Only calculate if there are posts
@@ -143,7 +145,7 @@ const FollowingFeedScreen: React.FC = () => {
         };
 
         fetchFeeds();
-    }, [agent, session]);
+    }, [agent, session, lastViewedTimestamps]);
 
     if (isLoading) {
         return (

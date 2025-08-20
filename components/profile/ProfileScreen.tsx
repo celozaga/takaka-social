@@ -7,6 +7,7 @@ import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
 import { UserPlus, UserCheck, BadgeCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 import PostBubble from '../post/PostBubble';
+import { useChannelState } from '../../context/ChannelStateContext';
 
 const ProfileFeed: React.FC<{ actor: string, isBlocked: boolean }> = ({ actor, isBlocked }) => {
     const { agent } = useAtp();
@@ -113,6 +114,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { openEditProfileModal } = useUI();
+    const { updateLastViewedTimestamp } = useChannelState();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -162,7 +164,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             try {
                 const profileRes = await agent.getProfile({ actor });
                 setProfile(profileRes.data);
-                localStorage.setItem(`channel-last-viewed:${profileRes.data.did}`, new Date().toISOString());
+                updateLastViewedTimestamp(profileRes.data.did);
                 localStorage.setItem('takaka-last-viewed-profile', actor);
             } catch (err: any) {
                 setError(err.message || "Could not load profile.");
@@ -172,7 +174,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         };
 
         fetchProfile();
-    }, [agent, actor]);
+    }, [agent, actor, updateLastViewedTimestamp]);
     
 
     if (isLoading) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AtpProvider, useAtp } from './context/AtpContext';
@@ -10,6 +11,7 @@ import Composer from './components/composer/Composer';
 import LoginPrompt from './components/auth/LoginPrompt';
 import { Loader2, Pencil, Send } from 'lucide-react';
 import { useHeadManager } from './hooks/useHeadManager';
+import { ChannelStateProvider } from './context/ChannelStateContext';
 
 // Lazy load screen components
 const LoginScreen = lazy(() => import('./components/auth/LoginScreen'));
@@ -40,12 +42,14 @@ const App: React.FC = () => {
     <AtpProvider>
       <ModerationProvider>
         <UIProvider>
-          <HiddenPostsProvider>
-            <ToastProvider>
-              <Main />
-              <Toaster />
-            </ToastProvider>
-          </HiddenPostsProvider>
+          <ChannelStateProvider>
+            <HiddenPostsProvider>
+              <ToastProvider>
+                <Main />
+                <Toaster />
+              </ToastProvider>
+            </HiddenPostsProvider>
+          </ChannelStateProvider>
         </UIProvider>
       </ModerationProvider>
     </AtpProvider>
