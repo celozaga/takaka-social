@@ -86,12 +86,11 @@ const FollowingFeedScreen: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [currentHash, setCurrentHash] = React.useState(window.location.hash);
     
-    const [phase, setPhase] = useState<'timeline' | 'follows'>('timeline');
-    
-    // Using refs to avoid re-creating useCallback on every state change
+    // Using refs to manage state that shouldn't trigger re-renders on its own
     const timelineCursor = useRef<string | undefined>();
     const followsCursor = useRef<string | undefined>();
     const seenDids = useRef(new Set<string>());
+    const phase = useRef<'timeline' | 'follows'>('timeline');
     const hasMoreTimeline = useRef(true);
     const hasMoreFollows = useRef(true);
     const isFetching = useRef(false);
@@ -105,18 +104,20 @@ const FollowingFeedScreen: React.FC = () => {
     }, []);
 
     const loadMore = useCallback(async () => {
-        if (isFetching.current || (!hasMoreTimeline.current && !hasMoreFollows.current)) return;
+        if (isFetching.current || (!hasMoreTimeline.current && !hasMoreFollows.current)) {
+            return;
+        }
         
         isFetching.current = true;
         setIsLoadingMore(true);
 
         try {
-            if (phase === 'timeline' && hasMoreTimeline.current) {
+            if (phase.current === 'timeline' && hasMoreTimeline.current) {
                 const timelineRes = await agent.getTimeline({ limit: 50, cursor: timelineCursor.current });
 
                 if (!timelineRes.data.cursor || timelineRes.data.feed.length === 0) {
                     hasMoreTimeline.current = false;
-                    setPhase('follows');
+                    phase.current = 'follows'; // Transition to next phase
                 } else {
                     timelineCursor.current = timelineRes.data.cursor;
                 }
@@ -141,7 +142,7 @@ const FollowingFeedScreen: React.FC = () => {
                 }
                 setProfileFeeds(prev => [...prev, ...newFeeds]);
 
-            } else if (phase === 'follows' && hasMoreFollows.current) {
+            } else if (phase.current === 'follows' && hasMoreFollows.current) {
                 const followsRes = await agent.getFollows({ actor: session!.did, limit: 100, cursor: followsCursor.current });
                 
                 if (!followsRes.data.cursor || followsRes.data.follows.length === 0) {
@@ -169,35 +170,38 @@ const FollowingFeedScreen: React.FC = () => {
         } finally {
             setIsLoadingMore(false);
             isFetching.current = false;
+            // If timeline phase finished and there's more to load, call again for follows phase
+            if (phase.current === 'follows' && !hasMoreTimeline.current && hasMoreFollows.current) {
+                loadMore();
+            }
         }
-    }, [agent, session, phase, lastViewedTimestamps]);
+    }, [agent, session, lastViewedTimestamps]);
 
     // Initial load effect
     useEffect(() => {
         if (!session) return;
 
-        // Reset state for initial load or user change
+        // Reset all state and refs for initial load or session change
         setIsLoading(true);
         setProfileFeeds([]);
-        setPhase('timeline');
+        setError(null);
         timelineCursor.current = undefined;
         followsCursor.current = undefined;
         seenDids.current.clear();
+        phase.current = 'timeline';
         hasMoreTimeline.current = true;
         hasMoreFollows.current = true;
-        setError(null);
         isFetching.current = false;
+        
+        loadMore().finally(() => setIsLoading(false));
 
-        loadMore().finally(() => {
-            setIsLoading(false)
-        });
     }, [session, loadMore]);
 
     // Intersection observer effect
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && !isLoading) {
+                if (entries[0].isIntersecting && !isLoading && !isFetching.current) {
                     loadMore();
                 }
             },
@@ -215,13 +219,6 @@ const FollowingFeedScreen: React.FC = () => {
             }
         };
     }, [isLoading, loadMore]);
-
-    // Chaining effect to load follows immediately after timeline finishes
-    useEffect(() => {
-        if (phase === 'follows' && !hasMoreTimeline.current && hasMoreFollows.current && !isLoading && !isLoadingMore) {
-            loadMore();
-        }
-    }, [phase, isLoading, isLoadingMore, loadMore]);
 
     if (isLoading) {
         return (
