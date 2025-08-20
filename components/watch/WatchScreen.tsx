@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -8,7 +5,7 @@ import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from 
 import VideoPlayer from './VideoPlayer';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Mousewheel } from 'swiper/modules';
+import { Mousewheel, Virtual } from 'swiper/modules';
 import type { Swiper as SwiperCore } from 'swiper';
 import { useHeadManager } from '../../hooks/useHeadManager';
 
@@ -148,15 +145,16 @@ const WatchScreen: React.FC = () => {
                 direction={'vertical'}
                 slidesPerView={1}
                 mousewheel={true}
-                modules={[Mousewheel]}
+                modules={[Mousewheel, Virtual]}
                 className="h-full"
                 onSlideChange={handleSlideChange}
                 onReachEnd={handleReachEnd}
+                virtual
             >
                 {videoPosts.map((postView, index) => {
-                    const shouldLoad = Math.abs(index - activeIndex) <= 2; // Preload next 2 and previous 2
+                    const shouldLoad = Math.abs(index - activeIndex) <= 1; // Preload next and previous
                     return (
-                        <SwiperSlide key={`${postView.post.uri}-${index}`}>
+                        <SwiperSlide key={`${postView.post.uri}-${index}`} virtualIndex={index}>
                             <VideoPlayer 
                                 postView={postView} 
                                 isActive={index === activeIndex} 
@@ -167,14 +165,14 @@ const WatchScreen: React.FC = () => {
                     );
                 })}
                  {(isLoadingMore || (isLoading && videoPosts.length > 0)) && (
-                    <SwiperSlide>
+                    <SwiperSlide virtualIndex={videoPosts.length}>
                         <div className="w-full h-full flex items-center justify-center bg-black">
                             <Loader2 className="w-8 h-8 animate-spin text-white" />
                         </div>
                     </SwiperSlide>
                  )}
                  {!hasMore && videoPosts.length > 0 && !isLoadingMore && (
-                    <SwiperSlide>
+                    <SwiperSlide virtualIndex={videoPosts.length + 1}>
                         <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white">
                             <p className="text-lg font-semibold">{t('watch.allSeenTitle')}</p>
                             <p className="text-sm text-on-surface-variant mt-1">{t('watch.allSeenDescription')}</p>
