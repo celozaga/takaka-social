@@ -186,7 +186,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
                 </Pressable>
             )}
           </View>
-        </div>
+        </View>
         
         <View style={styles.likeContainer}>
             <Pressable 
