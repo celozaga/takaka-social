@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import {AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
@@ -6,6 +7,7 @@ import VideoActions from './VideoActions';
 import { Volume2, VolumeX, Loader2 } from 'lucide-react';
 import SharedVideoPlayer from '../shared/VideoPlayer';
 import type Player from 'video.js/dist/types/player';
+import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
 
 
 interface VideoPlayerProps {
@@ -18,7 +20,6 @@ interface VideoPlayerProps {
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoad, hlsUrl }) => {
     const { agent } = useAtp();
     const playerRef = useRef<Player | null>(null);
-
     const [isMuted, setIsMuted] = useState(true);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
 
@@ -26,11 +27,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
     const record = post.record as any;
 
     let embedView: AppBskyEmbedVideo.View | undefined;
-    if (AppBskyEmbedVideo.isView(post.embed)) {
-        embedView = post.embed;
-    } else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) {
-        embedView = post.embed.media as AppBskyEmbedVideo.View;
-    }
+    if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
+    else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
 
     if (!embedView) return null;
 
@@ -42,93 +40,58 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
     const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
     const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
 
-    const playerOptions = {
-        autoplay: isActive,
-        controls: false, // We use a custom UI
-        poster: embedView.thumbnail,
-        sources: [{
-            src: hlsUrl || blobVideoUrl,
-            type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4'
-        }],
-        loop: true,
-        muted: isMuted,
-        playsinline: true,
-    };
+    const playerOptions = { autoplay: isActive, controls: false, poster: embedView.thumbnail, sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }], loop: true, muted: isMuted, playsinline: true };
     
     useEffect(() => {
-        const player = playerRef.current;
-        if (player) {
-            if (isActive) {
-                player.play()?.catch(() => {});
-            } else {
-                player.pause();
-                player.currentTime(0);
-            }
+        if (playerRef.current) {
+            if (isActive) playerRef.current.play()?.catch(() => {});
+            else { playerRef.current.pause(); playerRef.current.currentTime(0); }
         }
     }, [isActive]);
 
-    const handlePlayerReady = (player: Player) => {
-        playerRef.current = player;
-        setIsPlayerReady(true);
-        if (isActive) {
-            player.play()?.catch(() => {});
-        }
-    };
-    
-    const handleVideoClick = () => {
-        const player = playerRef.current;
-        if (!player) return;
+    const handlePlayerReady = (player: Player) => { playerRef.current = player; setIsPlayerReady(true); if (isActive) player.play()?.catch(() => {}); };
+    const handleVideoClick = () => { if (playerRef.current) playerRef.current.paused() ? playerRef.current.play()?.catch(() => {}) : playerRef.current.pause(); };
+    const toggleMute = (e: any) => { e.stopPropagation(); setIsMuted(prev => !prev); if(playerRef.current) playerRef.current.muted(!isMuted); };
 
-        if (player.paused()) {
-            player.play()?.catch(() => {});
-        } else {
-            player.pause();
-        }
-    };
-
-    const toggleMute = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsMuted(prev => !prev);
-        if(playerRef.current) {
-            playerRef.current.muted(!isMuted);
-        }
-    };
-
-    if (!shouldLoad) {
-        return <div className="w-full h-full bg-black" />;
-    }
+    if (!shouldLoad) return <View style={styles.container} />;
 
     return (
-        <div className="relative w-full h-full bg-black snap-start" onClick={handleVideoClick}>
-            <SharedVideoPlayer
-                options={playerOptions}
-                onReady={handlePlayerReady}
-                className="w-full h-full"
-            />
+        <Pressable style={styles.container} onPress={handleVideoClick}>
+            <SharedVideoPlayer options={playerOptions} onReady={handlePlayerReady} className="w-full h-full" />
 
             {!isPlayerReady && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none z-20">
-                    <img src={embedView.thumbnail} alt="Video thumbnail" className="absolute inset-0 w-full h-full object-contain z-0" aria-hidden="true" />
-                    <Loader2 className="w-10 h-10 text-white animate-spin" />
-                </div>
+                <View style={styles.loadingOverlay}>
+                    <Image source={{ uri: embedView.thumbnail }} style={styles.thumbnail} />
+                    <ActivityIndicator size="large" color="white" />
+                </View>
             )}
             
-            <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 bg-gradient-to-t from-black/60 to-transparent text-white pointer-events-none z-20">
-                <a href={`#/profile/${post.author.handle}`} className="font-bold flex items-center gap-2 pointer-events-auto w-fit">
-                    {post.author.displayName || `@${post.author.handle}`}
-                </a>
-                <p className="text-sm mt-1 line-clamp-2">
+            <View style={styles.infoOverlay}>
+                <Pressable onPress={(e) => e.stopPropagation()}>
+                    <Text style={styles.authorText}>{post.author.displayName || `@${post.author.handle}`}</Text>
+                </Pressable>
+                <Text style={styles.descriptionText} numberOfLines={2}>
                     <RichTextRenderer record={record} />
-                </p>
-            </div>
+                </Text>
+            </View>
             
             <VideoActions post={post} />
             
-            <button onClick={toggleMute} className="absolute top-4 right-4 bg-black/40 p-2 rounded-full text-white hover:bg-black/60 transition-colors z-20 pointer-events-auto">
-                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-            </button>
-        </div>
+            <Pressable onPress={toggleMute} style={styles.muteButton}>
+                {isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
+            </Pressable>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: { width: '100%', height: '100%', backgroundColor: 'black' },
+    loadingOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 20 },
+    thumbnail: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', resizeMode: 'contain', zIndex: -1 },
+    infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingBottom: 96, zIndex: 20 },
+    authorText: { fontWeight: 'bold', color: 'white' },
+    descriptionText: { fontSize: 14, color: 'white', marginTop: 4 },
+    muteButton: { position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.4)', padding: 8, borderRadius: 999, zIndex: 20 },
+});
 
 export default React.memo(VideoPlayer);

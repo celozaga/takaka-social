@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -5,6 +6,7 @@ import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
 import Timeline from '../shared/Timeline';
 import FeedSelector from '../feeds/FeedSelector';
 import Head from '../shared/Head';
+import { View, StyleSheet } from 'react-native';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
@@ -64,18 +66,12 @@ const HomeScreen: React.FC = () => {
     fetchFeeds();
   }, [agent, session]);
   
-  // Effect to switch feed only when session status changes (login/logout).
-  // Removed `selectedFeed` from dependencies to prevent it from resetting user selection.
   useEffect(() => {
     if (session) {
-      // Switch to 'following' only if the user was previously logged out
-      // and on the default discover feed. This avoids overriding their selection
-      // if they navigate away and back.
       if (selectedFeed === DISCOVER_FEED_URI) {
         setSelectedFeed('following');
       }
     } else {
-      // If user logs out, switch to the public discover feed.
       setSelectedFeed(DISCOVER_FEED_URI);
     }
   }, [session]);
@@ -83,19 +79,28 @@ const HomeScreen: React.FC = () => {
   return (
     <>
       <Head><title>{t('nav.home')}</title></Head>
-      <div>
+      <View style={styles.container}>
         <FeedSelector
           feeds={feeds}
           selectedFeed={selectedFeed}
           onSelectFeed={setSelectedFeed}
           isLoading={isLoadingFeeds}
         />
-        <div className="mt-4">
+        <View style={styles.timelineContainer}>
           <Timeline key={selectedFeed} feedUri={selectedFeed} />
-        </div>
-      </div>
+        </View>
+      </View>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+  },
+  timelineContainer: {
+    marginTop: 16,
+  }
+});
 
 export default HomeScreen;

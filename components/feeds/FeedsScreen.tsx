@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
@@ -9,6 +10,8 @@ import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import FeedAvatar from './FeedAvatar';
 import Head from '../shared/Head';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { Link } from 'expo-router';
 
 const EditableFeedItem: React.FC<{
     feed: AppBskyFeedDefs.GeneratorView;
@@ -22,38 +25,44 @@ const EditableFeedItem: React.FC<{
     onRemove: () => void;
 }> = ({ feed, isPinned, isFirst, isLast, disabled, onMoveUp, onMoveDown, onTogglePin, onRemove }) => {
     const { t } = useTranslation();
+    const feedLink = `/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
+
     return (
-        <div className={`flex items-center gap-3 p-2 bg-surface-2 rounded-xl transition-opacity ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <View style={[styles.itemContainer, disabled && styles.itemDisabled]}>
             <FeedAvatar src={feed.avatar} alt={feed.displayName} className="w-10 h-10 rounded-lg flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-                <a href={`#/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`} className="font-bold truncate hover:underline">{feed.displayName}</a>
-                <p className="text-sm text-on-surface-variant">{t('feeds.byline', { handle: feed.creator.handle })}</p>
-            </div>
-            <div className="flex items-center gap-0.5 text-on-surface-variant">
+            <View style={styles.itemMain}>
+                <Link href={feedLink as any} asChild>
+                    <Pressable>
+                        <Text style={styles.itemTitle} numberOfLines={1}>{feed.displayName}</Text>
+                    </Pressable>
+                </Link>
+                <Text style={styles.itemByline}>{t('feeds.byline', { handle: feed.creator.handle })}</Text>
+            </View>
+            <View style={styles.itemActions}>
                 {isPinned ? (
                     <>
-                        <button onClick={onMoveUp} disabled={isFirst || disabled} className="p-2 rounded-full hover:bg-surface-3 disabled:opacity-30 disabled:cursor-not-allowed">
-                            <ArrowUp size={18} />
-                        </button>
-                        <button onClick={onMoveDown} disabled={isLast || disabled} className="p-2 rounded-full hover:bg-surface-3 disabled:opacity-30 disabled:cursor-not-allowed">
-                            <ArrowDown size={18} />
-                        </button>
-                        <button onClick={onTogglePin} disabled={disabled} className="p-2 rounded-full text-primary hover:bg-surface-3 disabled:opacity-30 disabled:cursor-not-allowed" title={t('feeds.unpinAction')}>
-                            <Pin size={18} fill="currentColor" />
-                        </button>
+                        <Pressable onPress={onMoveUp} disabled={isFirst || disabled} style={styles.actionButton}>
+                            <ArrowUp size={18} color="#C3C6CF" />
+                        </Pressable>
+                        <Pressable onPress={onMoveDown} disabled={isLast || disabled} style={styles.actionButton}>
+                            <ArrowDown size={18} color="#C3C6CF" />
+                        </Pressable>
+                        <Pressable onPress={onTogglePin} disabled={disabled} style={styles.actionButton}>
+                            <Pin size={18} color="#A8C7FA" fill="#A8C7FA" />
+                        </Pressable>
                     </>
                 ) : (
                     <>
-                         <button onClick={onRemove} disabled={disabled} className="p-2 rounded-full hover:bg-error/20 hover:text-error disabled:opacity-30 disabled:cursor-not-allowed" title={t('hooks.feedRemoved')}>
-                            <Trash2 size={18} />
-                        </button>
-                        <button onClick={onTogglePin} disabled={disabled} className="p-2 rounded-full hover:bg-surface-3 hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed" title={t('feeds.pinAction')}>
-                            <Pin size={18} />
-                        </button>
+                         <Pressable onPress={onRemove} disabled={disabled} style={[styles.actionButton, styles.actionButtonDestructive]}>
+                            <Trash2 size={18} color="#C3C6CF" />
+                        </Pressable>
+                        <Pressable onPress={onTogglePin} disabled={disabled} style={styles.actionButton}>
+                            <Pin size={18} color="#C3C6CF" />
+                        </Pressable>
                     </>
                 )}
-            </div>
-        </div>
+            </View>
+        </View>
     );
 };
 
@@ -89,23 +98,23 @@ const FeedsScreen: React.FC = () => {
 
     const pinnedItems = preferences?.items.filter(item => item.pinned) || [];
     const savedItems = preferences?.items.filter(item => !item.pinned) || [];
-
+    
     if (!session) {
         return (
             <>
                 <Head><title>{t('feeds.title')}</title></Head>
-                <div>
-                    <ScreenHeader title={t('feeds.title')} />
-                    <div className="mt-4">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold">{t('feeds.discover')}</h2>
-                            <a href="#/search?filter=feeds" className="p-2 -mr-2 rounded-full hover:bg-surface-3" aria-label={t('nav.search')}>
-                                <Search size={20} />
-                            </a>
-                        </div>
-                        <PopularFeeds showHeader={false} />
-                    </div>
-                </div>
+                <ScreenHeader title={t('feeds.title')} />
+                <ScrollView contentContainerStyle={styles.contentContainer}>
+                    <View style={styles.discoverHeader}>
+                        <Text style={styles.sectionTitle}>{t('feeds.discover')}</Text>
+                        <Link href="/(tabs)/search?filter=feeds" asChild>
+                            <Pressable style={styles.searchButton}>
+                                <Search size={20} color="#C3C6CF" />
+                            </Pressable>
+                        </Link>
+                    </View>
+                    <PopularFeeds showHeader={false} />
+                </ScrollView>
             </>
         );
     }
@@ -114,14 +123,10 @@ const FeedsScreen: React.FC = () => {
         return (
              <>
                 <Head><title>{t('feeds.title')}</title></Head>
-                <div>
-                    <ScreenHeader title={t('feeds.title')} />
-                    <div className="mt-4">
-                        <div className="space-y-4">
-                            {[...Array(5)].map((_, i) => <div key={i} className="bg-surface-2 rounded-xl h-20 animate-pulse"></div>)}
-                        </div>
-                    </div>
-                </div>
+                <ScreenHeader title={t('feeds.title')} />
+                <View style={styles.contentContainer}>
+                    {[...Array(5)].map((_, i) => <View key={i} style={styles.skeletonItem} />)}
+                </View>
             </>
         );
     }
@@ -129,69 +134,85 @@ const FeedsScreen: React.FC = () => {
     return (
         <>
             <Head><title>{t('feeds.title')}</title></Head>
-            <div>
-                <ScreenHeader title={t('feeds.title')} />
-                <div className="mt-4">
-                    <p className="text-on-surface-variant text-sm mb-6">
-                        {t('feeds.manageDescription')}
-                    </p>
-
-                    <div className="space-y-6">
-                        <section>
-                            <h2 className="text-lg font-bold mb-3 text-on-surface-variant">{t('feeds.pinned')}</h2>
-                            {pinnedItems.length > 0 ? (
-                                <div className="space-y-2">
-                                    {pinnedItems.map((item, index) => {
-                                        const feed = feedViews.get(item.value);
-                                        if (!feed) return null;
-                                        const currentIndex = pinnedItems.findIndex(i => i.value === item.value);
-                                        return <EditableFeedItem
-                                            key={item.id}
-                                            feed={feed}
-                                            isPinned={true}
-                                            isFirst={index === 0}
-                                            isLast={index === pinnedItems.length - 1}
-                                            disabled={isUpdating}
-                                            onMoveUp={() => handleAction(() => reorder(currentIndex, currentIndex - 1))}
-                                            onMoveDown={() => handleAction(() => reorder(currentIndex, currentIndex + 1))}
-                                            onTogglePin={() => handleAction(() => togglePin(item.value))}
-                                            onRemove={() => handleAction(() => removeFeed(item.value))}
-                                        />
-                                    })}
-                                </div>
-                            ) : <p className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">{t('feeds.emptyPinned')}</p>}
-                        </section>
-                        
-                         <section>
-                            <h2 className="text-lg font-bold mb-3 text-on-surface-variant">{t('feeds.saved')}</h2>
-                            {savedItems.length > 0 ? (
-                                <div className="space-y-2">
-                                    {savedItems.map((item) => {
-                                        const feed = feedViews.get(item.value);
-                                        if (!feed) return null;
-                                        return <EditableFeedItem
-                                            key={item.id}
-                                            feed={feed}
-                                            isPinned={false}
-                                            isFirst={false} isLast={false} onMoveUp={()=>{}} onMoveDown={()=>{}}
-                                            disabled={isUpdating}
-                                            onTogglePin={() => handleAction(() => togglePin(item.value))}
-                                            onRemove={() => handleAction(() => removeFeed(item.value))}
-                                        />
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="text-on-surface-variant text-sm text-center py-4 bg-surface-2 rounded-lg">
-                                    <p>{t('feeds.emptySaved')}</p>
-                                    <a href="#/search?filter=feeds" className="font-semibold text-primary hover:underline mt-1 inline-block">{t('feeds.findNew')}</a>
-                                </div>
-                            )}
-                        </section>
-                    </div>
-                </div>
-            </div>
+            <ScreenHeader title={t('feeds.title')} />
+            <ScrollView contentContainerStyle={styles.contentContainer}>
+                <Text style={styles.description}>{t('feeds.manageDescription')}</Text>
+                <View style={{ gap: 24 }}>
+                    <View>
+                        <Text style={styles.sectionTitle}>{t('feeds.pinned')}</Text>
+                        {pinnedItems.length > 0 ? (
+                            <View style={{ gap: 8 }}>
+                                {pinnedItems.map((item, index) => {
+                                    const feed = feedViews.get(item.value);
+                                    if (!feed) return null;
+                                    const currentIndex = pinnedItems.findIndex(i => i.value === item.value);
+                                    return <EditableFeedItem
+                                        key={item.id}
+                                        feed={feed}
+                                        isPinned
+                                        isFirst={index === 0}
+                                        isLast={index === pinnedItems.length - 1}
+                                        disabled={isUpdating}
+                                        onMoveUp={() => handleAction(() => reorder(currentIndex, currentIndex - 1))}
+                                        onMoveDown={() => handleAction(() => reorder(currentIndex, currentIndex + 1))}
+                                        onTogglePin={() => handleAction(() => togglePin(item.value))}
+                                        onRemove={() => handleAction(() => removeFeed(item.value))}
+                                    />
+                                })}
+                            </View>
+                        ) : <View style={styles.emptyContainer}><Text style={styles.emptyText}>{t('feeds.emptyPinned')}</Text></View>}
+                    </View>
+                    
+                     <View>
+                        <Text style={styles.sectionTitle}>{t('feeds.saved')}</Text>
+                        {savedItems.length > 0 ? (
+                            <View style={{ gap: 8 }}>
+                                {savedItems.map((item) => {
+                                    const feed = feedViews.get(item.value);
+                                    if (!feed) return null;
+                                    return <EditableFeedItem
+                                        key={item.id}
+                                        feed={feed}
+                                        isPinned={false} isFirst={false} isLast={false} onMoveUp={()=>{}} onMoveDown={()=>{}}
+                                        disabled={isUpdating}
+                                        onTogglePin={() => handleAction(() => togglePin(item.value))}
+                                        onRemove={() => handleAction(() => removeFeed(item.value))}
+                                    />
+                                })}
+                            </View>
+                        ) : (
+                            <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyText}>{t('feeds.emptySaved')}</Text>
+                                <Link href="/(tabs)/search?filter=feeds" asChild>
+                                    <Pressable><Text style={styles.emptyLink}>{t('feeds.findNew')}</Text></Pressable>
+                                </Link>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </ScrollView>
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    contentContainer: { padding: 16 },
+    description: { color: '#C3C6CF', fontSize: 14, marginBottom: 24 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: '#C3C6CF' },
+    itemContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, backgroundColor: '#1E2021', borderRadius: 12 },
+    itemDisabled: { opacity: 0.5 },
+    itemMain: { flex: 1, minWidth: 0 },
+    itemTitle: { fontWeight: 'bold', color: '#E2E2E6' },
+    itemByline: { fontSize: 14, color: '#C3C6CF' },
+    itemActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    actionButton: { padding: 8, borderRadius: 999 },
+    actionButtonDestructive: {}, // Add hover style if needed
+    emptyContainer: { alignItems: 'center', paddingVertical: 16, backgroundColor: '#1E2021', borderRadius: 8 },
+    emptyText: { color: '#C3C6CF', fontSize: 14 },
+    emptyLink: { fontWeight: '600', color: '#A8C7FA', textDecorationLine: 'underline', marginTop: 4 },
+    discoverHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+    searchButton: { padding: 8, marginRight: -8 },
+    skeletonItem: { backgroundColor: '#1E2021', borderRadius: 12, height: 84, opacity: 0.5 },
+});
 
 export default FeedsScreen;

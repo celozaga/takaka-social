@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'expo-router';
 import { Heart, MessageCircle, Repeat, Share2, BadgeCheck, Plus, Check, MoreHorizontal } from 'lucide-react';
@@ -5,7 +6,8 @@ import { usePostActions } from '../../hooks/usePostActions';
 import { useUI } from '../../context/UIContext';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import { AppBskyFeedDefs} from '@atproto/api';
+import { AppBskyFeedDefs } from '@atproto/api';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 
 interface VideoActionsProps {
   post: AppBskyFeedDefs.PostView;
@@ -22,118 +24,62 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { likeUri, likeCount, isLiking, handleLike, repostUri, repostCount, isReposting, handleRepost } = usePostActions(post);
-
     const [followUri, setFollowUri] = useState(post.author.viewer?.following);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
 
-    useEffect(() => {
-        setFollowUri(post.author.viewer?.following);
-    }, [post.author.viewer?.following]);
+    useEffect(() => setFollowUri(post.author.viewer?.following), [post.author.viewer?.following]);
 
     const isMe = session?.did === post.author.did;
-
-    const handleFollow = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (isFollowLoading || isMe || followUri) return;
-
-        setIsFollowLoading(true);
-        agent.follow(post.author.did)
-            .then(({ uri }) => {
-                setFollowUri(uri);
-            })
-            .catch(err => {
-                console.error("Failed to follow:", err);
-                toast({ title: "Error", description: "Could not follow user.", variant: "destructive" });
-            })
-            .finally(() => {
-                setIsFollowLoading(false);
-            });
-    }, [agent, isFollowLoading, isMe, followUri, post.author.did, toast]);
-    
-    const handleUnfollow = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (isFollowLoading || isMe || !followUri) return;
-
-        setIsFollowLoading(true);
-        agent.deleteFollow(followUri)
-            .then(() => {
-                setFollowUri(undefined);
-            })
-            .catch(err => {
-                console.error("Failed to unfollow:", err);
-                toast({ title: "Error", description: "Could not unfollow user.", variant: "destructive" });
-            })
-            .finally(() => {
-                setIsFollowLoading(false);
-            });
-    }, [agent, isFollowLoading, isMe, followUri, toast]);
-
-    const handleComment = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
-    }, [openComposer, post.uri, post.cid]);
-
-    const handleLikeClick = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        handleLike();
-    }, [handleLike]);
-    
-    const handleRepostClick = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        handleRepost();
-    }, [handleRepost]);
-    
-    const handleMoreClick = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        openMediaActionsModal(post);
-    }, [openMediaActionsModal, post]);
+    const handleFollow = useCallback((e: any) => { e.stopPropagation(); if (isFollowLoading || isMe || followUri) return; setIsFollowLoading(true); agent.follow(post.author.did).then(({ uri }) => setFollowUri(uri)).finally(() => setIsFollowLoading(false)); }, [agent, isFollowLoading, isMe, followUri, post.author.did]);
+    const handleUnfollow = useCallback((e: any) => { e.stopPropagation(); if (isFollowLoading || isMe || !followUri) return; setIsFollowLoading(true); agent.deleteFollow(followUri).then(() => setFollowUri(undefined)).finally(() => setIsFollowLoading(false)); }, [agent, isFollowLoading, isMe, followUri]);
+    const handleComment = useCallback((e: any) => { e.stopPropagation(); openComposer({ replyTo: { uri: post.uri, cid: post.cid } }); }, [openComposer, post.uri, post.cid]);
+    const handleMoreClick = useCallback((e: any) => { e.stopPropagation(); openMediaActionsModal(post); }, [openMediaActionsModal, post]);
 
     return (
-        <div className="absolute bottom-24 right-2 flex flex-col items-center gap-5 text-white">
-            <div className="relative">
-                <Link href={`/profile/${post.author.handle}` as any} className="relative group block" onPress={e => e.stopPropagation()}>
-                    <img src={post.author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={post.author.displayName || post.author.handle} className="w-12 h-12 rounded-full border-2 border-white bg-surface-3" />
-                    {post.author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                        <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-0.5 border border-black">
-                            <BadgeCheck size={14} className="text-on-primary" fill="currentColor" />
-                        </div>
-                    )}
+        <View style={styles.container}>
+            <View>
+                <Link href={`/profile/${post.author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
+                    <Pressable>
+                        <Image source={{ uri: post.author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                        {post.author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                            <View style={styles.badgeContainer}><BadgeCheck size={14} color="white" fill="currentColor" /></View>
+                        )}
+                    </Pressable>
                 </Link>
                 {!isMe && (
-                    <button 
-                        onClick={followUri ? handleUnfollow : handleFollow} 
-                        disabled={isFollowLoading}
-                        className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center border-2 border-black transition-colors ${
-                            followUri ? 'bg-zinc-800' : 'bg-red-500'
-                        }`}
-                        aria-label={followUri ? "Unfollow user" : "Follow user"}
-                    >
-                        {followUri ? (
-                            <Check size={16} className="text-red-500" strokeWidth={3} />
-                        ) : (
-                            <Plus size={16} className="text-white" />
-                        )}
-                    </button>
+                    <Pressable onPress={followUri ? handleUnfollow : handleFollow} disabled={isFollowLoading} style={[styles.followButton, !followUri && styles.followButtonActive]}>
+                        {followUri ? <Check size={16} color="#A8C7FA" strokeWidth={3} /> : <Plus size={16} color="white" />}
+                    </Pressable>
                 )}
-            </div>
+            </View>
             
-            <button onClick={handleLikeClick} disabled={isLiking} className="flex flex-col items-center gap-1.5">
-                <Heart size={32} className={`transition-transform transform active:scale-125 ${likeUri ? 'text-pink-500' : 'text-white'}`} fill={likeUri ? 'currentColor' : 'none'} />
-                <span className="text-sm font-semibold drop-shadow">{formatCount(likeCount)}</span>
-            </button>
-            <button onClick={handleComment} className="flex flex-col items-center gap-1.5">
-                <MessageCircle size={32} className="transform active:scale-110"/>
-                <span className="text-sm font-semibold drop-shadow">{formatCount(post.replyCount || 0)}</span>
-            </button>
-            <button onClick={handleRepostClick} disabled={isReposting} className="flex flex-col items-center gap-1.5">
-                <Repeat size={32} className={`transition-colors transform active:scale-110 ${repostUri ? 'text-primary' : 'text-white'}`} />
-                <span className="text-sm font-semibold drop-shadow">{formatCount(repostCount)}</span>
-            </button>
-            <button onClick={handleMoreClick} className="flex flex-col items-center gap-1.5">
-                <MoreHorizontal size={32} className="transform active:scale-110" />
-            </button>
-        </div>
+            <Pressable onPress={(e) => { e.stopPropagation(); handleLike(e as any); }} disabled={isLiking} style={styles.actionButton}>
+                <Heart size={32} color={likeUri ? '#ec4899' : 'white'} fill={likeUri ? '#ec4899' : 'none'} />
+                <Text style={styles.actionText}>{formatCount(likeCount)}</Text>
+            </Pressable>
+            <Pressable onPress={handleComment} style={styles.actionButton}>
+                <MessageCircle size={32} color="white"/>
+                <Text style={styles.actionText}>{formatCount(post.replyCount || 0)}</Text>
+            </Pressable>
+            <Pressable onPress={(e) => { e.stopPropagation(); handleRepost(e as any); }} disabled={isReposting} style={styles.actionButton}>
+                <Repeat size={32} color={repostUri ? '#A8C7FA' : 'white'} />
+                <Text style={styles.actionText}>{formatCount(repostCount)}</Text>
+            </Pressable>
+            <Pressable onPress={handleMoreClick} style={styles.actionButton}>
+                <MoreHorizontal size={32} color="white" />
+            </Pressable>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: { position: 'absolute', bottom: 96, right: 8, alignItems: 'center', gap: 20, zIndex: 20 },
+    avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: 'white', backgroundColor: '#2b2d2e' },
+    badgeContainer: { position: 'absolute', bottom: -2, right: -2, backgroundColor: '#A8C7FA', borderRadius: 999, padding: 2, borderWidth: 1, borderColor: 'black' },
+    followButton: { position: 'absolute', bottom: -8, left: '50%', transform: [{ translateX: -12 }], width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'black', backgroundColor: '#374151' },
+    followButtonActive: { backgroundColor: '#ef4444' },
+    actionButton: { alignItems: 'center', gap: 6 },
+    actionText: { fontSize: 14, fontWeight: '600', color: 'white' },
+});
 
 export default React.memo(VideoActions);

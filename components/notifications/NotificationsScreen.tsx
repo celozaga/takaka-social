@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Settings } from 'lucide-react';
 import Head from '../shared/Head';
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 
 type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows';
 
@@ -28,8 +29,6 @@ const NotificationsScreen: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState<NotificationFilter>('all');
 
-  const loaderRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const fetchInitialNotifications = async () => {
       setIsLoading(true);
@@ -41,24 +40,18 @@ const NotificationsScreen: React.FC = () => {
       try {
         await agent.app.bsky.notification.updateSeen({ seenAt: new Date().toISOString() });
         resetUnreadCount();
-
         const response = await agent.app.bsky.notification.listNotifications({ limit: 40 });
         setNotifications(response.data.notifications);
-        
-        if (response.data.cursor && response.data.notifications.length > 0) {
-          setCursor(response.data.cursor);
-        } else {
-          setHasMore(false);
-        }
+        setCursor(response.data.cursor);
+        setHasMore(!!response.data.cursor && response.data.notifications.length > 0);
       } catch (err) {
-        console.error('Failed to fetch notifications:', err);
-        setError('Could not load your notifications. Please try again later.');
+        setError(t('notifications.loadingError'));
       } finally {
         setIsLoading(false);
       }
     };
     fetchInitialNotifications();
-  }, [agent, resetUnreadCount]);
+  }, [agent, resetUnreadCount, t]);
 
   const loadMoreNotifications = useCallback(async () => {
     if (isLoadingMore || !cursor || !hasMore) return;
@@ -67,16 +60,11 @@ const NotificationsScreen: React.FC = () => {
       const response = await agent.app.bsky.notification.listNotifications({ cursor, limit: 40 });
       if (response.data.notifications.length > 0) {
         setNotifications(prev => [...prev, ...response.data.notifications]);
-        if (response.data.cursor) {
-          setCursor(response.data.cursor);
-        } else {
-          setHasMore(false);
-        }
+        setCursor(response.data.cursor);
+        setHasMore(!!response.data.cursor);
       } else {
         setHasMore(false);
       }
-    } catch (err) {
-      console.error('Failed to load more notifications:', err);
     } finally {
       setIsLoadingMore(false);
     }
@@ -84,95 +72,75 @@ const NotificationsScreen: React.FC = () => {
   
   const filteredNotifications = useMemo(() => {
     switch (activeTab) {
-      case 'all':
-        return notifications;
-      case 'mentions':
-        return notifications.filter(n => n.reason === 'mention' || n.reason === 'reply');
-      case 'reposts':
-        return notifications.filter(n => n.reason === 'repost');
-      case 'follows':
-        return notifications.filter(n => n.reason === 'follow');
-      default:
-        return notifications;
+      case 'mentions': return notifications.filter(n => n.reason === 'mention' || n.reason === 'reply');
+      case 'reposts': return notifications.filter(n => n.reason === 'repost');
+      case 'follows': return notifications.filter(n => n.reason === 'follow');
+      default: return notifications;
     }
   }, [notifications, activeTab]);
 
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-          loadMoreNotifications();
-        }
-      },
-      { rootMargin: '400px' }
-    );
-    const currentLoader = loaderRef.current;
-    if (currentLoader) observer.observe(currentLoader);
-    return () => {
-      if (currentLoader) observer.unobserve(currentLoader);
-    };
-  }, [hasMore, isLoading, isLoadingMore, loadMoreNotifications]);
-
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <div className="space-y-2">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="bg-surface-2 p-4 rounded-xl animate-pulse h-20"></div>
-          ))}
-        </div>
-      );
+      return <View style={{ gap: 8 }}>{[...Array(10)].map((_, i) => <View key={i} style={styles.skeletonItem} />)}</View>;
     }
-
     if (error) {
-      return <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error}</div>;
+      return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
     }
-
     if (filteredNotifications.length === 0) {
-      return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">You don't have any notifications here.</div>;
+      return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('notifications.empty')}</Text></View>;
     }
-
     return (
-      <div className="flow-root">
-        <ul className="-my-2">
-          {filteredNotifications.map((notification) => (
+      <View>
+        {filteredNotifications.map((notification) => (
             <NotificationItem key={notification.uri} notification={notification} />
-          ))}
-        </ul>
-      </div>
+        ))}
+      </View>
     );
   };
   
   return (
     <>
       <Head><title>{t('notifications.title')}</title></Head>
-      <div className="pt-4">
-          <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
+      <ScreenHeader title={t('notifications.title')} />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        onScroll={({ nativeEvent }) => {
+            if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) {
+                loadMoreNotifications();
+            }
+        }}
+        scrollEventThrottle={16}
+      >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
             {filters.map(filter => (
-              <button
-                key={filter.id}
-                onClick={() => setActiveTab(filter.id)}
-                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap
-                    ${activeTab === filter.id ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant hover:bg-surface-3'}
-                `}
-              >
-                {filter.label}
-              </button>
+              <Pressable key={filter.id} onPress={() => setActiveTab(filter.id)} style={[styles.filterButton, activeTab === filter.id && styles.activeFilter]}>
+                <Text style={[styles.filterText, activeTab === filter.id && styles.activeFilterText]}>{filter.label}</Text>
+              </Pressable>
             ))}
-          </div>
-          <div className="mt-4">
+          </ScrollView>
+          <View style={{ marginTop: 16 }}>
               {renderContent()}
-          </div>
-          <div ref={loaderRef} className="h-10">
-              {isLoadingMore && <div className="bg-surface-2 p-4 rounded-xl animate-pulse h-20 mt-4"></div>}
-          </div>
-          {!hasMore && notifications.length > 0 && (
-              <div className="text-center text-on-surface-variant py-8">You've reached the end!</div>
-          )}
-      </div>
+          </View>
+          {isLoadingMore && <ActivityIndicator style={{ marginVertical: 24 }} size="large" />}
+          {!hasMore && notifications.length > 0 && <Text style={styles.endText}>{t('common.endOfList')}</Text>}
+      </ScrollView>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+    container: { padding: 16 },
+    filterContainer: { gap: 8, paddingBottom: 8 },
+    filterButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999 },
+    activeFilter: { backgroundColor: '#D1E4FF' },
+    filterText: { fontSize: 14, fontWeight: '500', color: '#C3C6CF' },
+    activeFilterText: { color: '#001D35' },
+    skeletonItem: { backgroundColor: '#1E2021', borderRadius: 12, height: 80, opacity: 0.5 },
+    messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center' },
+    errorText: { color: '#F2B8B5' },
+    infoText: { color: '#C3C6CF' },
+    endText: { textAlign: 'center', color: '#C3C6CF', paddingVertical: 32 },
+});
 
 export default NotificationsScreen;

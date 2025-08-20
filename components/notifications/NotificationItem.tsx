@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
@@ -12,6 +13,7 @@ import {
 import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 
 interface NotificationItemProps {
   notification: AppBskyNotificationListNotifications.Notification;
@@ -24,15 +26,11 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
     let mediaEmbed: AppBskyEmbedImages.Main | undefined;
     let recordEmbed: AppBskyEmbedRecord.Main | undefined;
 
-    if (AppBskyEmbedImages.isMain(embed)) {
-        mediaEmbed = embed;
-    } else if (AppBskyEmbedRecord.isMain(embed)) {
-        recordEmbed = embed;
-    } else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
+    if (AppBskyEmbedImages.isMain(embed)) mediaEmbed = embed;
+    else if (AppBskyEmbedRecord.isMain(embed)) recordEmbed = embed;
+    else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
         recordEmbed = embed.record;
-        if (AppBskyEmbedImages.isMain(embed.media)) {
-            mediaEmbed = embed.media;
-        }
+        if (AppBskyEmbedImages.isMain(embed.media)) mediaEmbed = embed.media;
     }
 
     const renderImage = () => {
@@ -40,12 +38,7 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
         const firstImage = mediaEmbed.images[0];
         const authorDid = new AtUri(postUri).hostname;
         const imageUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${firstImage.image.ref.toString()}`;
-        
-        return (
-            <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-md bg-surface-3">
-                <img src={imageUrl} className="w-full h-full object-cover" loading="lazy"/>
-            </div>
-        );
+        return <Image source={{ uri: imageUrl }} style={styles.previewImage} />;
     };
 
     const imageElement = renderImage();
@@ -53,23 +46,25 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
     const hasVisibleContent = hasTextContent || imageElement;
 
     return (
-        <div className="border border-outline rounded-lg p-2 mt-2 bg-surface-1">
+        <View style={styles.previewContainer}>
             {hasVisibleContent && (
-                <div className="flex gap-3 items-center">
+                <View style={styles.previewContent}>
                     {imageElement}
                     {hasTextContent && (
-                         <div className="text-on-surface whitespace-pre-wrap break-words text-sm line-clamp-4 flex-1">
-                            <RichTextRenderer record={{ text: record.text!, facets: record.facets }} />
-                        </div>
+                         <View style={{ flex: 1 }}>
+                            <Text style={styles.previewText} numberOfLines={4}>
+                                <RichTextRenderer record={{ text: record.text!, facets: record.facets }} />
+                            </Text>
+                        </View>
                     )}
-                </div>
+                </View>
             )}
             {recordEmbed && (
-                <div className={`text-xs text-on-surface-variant border border-outline rounded p-2 bg-surface-2 ${hasVisibleContent ? 'mt-2' : ''}`}>
-                    Quoted from another post.
-                </div>
+                <View style={[styles.quotedContainer, hasVisibleContent && { marginTop: 8 }]}>
+                    <Text style={styles.quotedText}>Quoted from another post.</Text>
+                </View>
             )}
-        </div>
+        </View>
     );
 };
 
@@ -86,84 +81,69 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
 
   const AuthorLink = () => (
-    <Link href={profileLink as any} className="font-bold hover:underline inline-flex items-center gap-1" onPress={e => e.stopPropagation()}>
-      <span>{author.displayName || `@${author.handle}`}</span>
-      {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-        <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
-      )}
+    <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
+      <Pressable style={styles.authorLinkContainer}>
+        <Text style={styles.authorLinkText}>{author.displayName || `@${author.handle}`}</Text>
+        {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+            <BadgeCheck size={14} color="#A8C7FA" fill="#A8C7FA" style={{ flexShrink: 0 }} />
+        )}
+      </Pressable>
     </Link>
   );
 
   switch (reason) {
     case 'like':
-      Icon = <Heart className="w-6 h-6 text-pink-500" />;
-      title = <p><AuthorLink /> liked your post</p>;
+      Icon = <Heart color="#ec4899" size={24} />;
+      title = <Text><AuthorLink /> liked your post</Text>;
       link = postLink;
-      if (AppBskyFeedPost.isRecord(record)) {
-        content = <PostPreview record={record} postUri={uri} />;
-      }
+      if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
-
-    case 'repost':
-      Icon = <Repeat className="w-6 h-6 text-primary" />;
-      title = <p><AuthorLink /> reposted your post</p>;
-      link = postLink;
-      if (AppBskyFeedPost.isRecord(record)) {
-        content = <PostPreview record={record} postUri={uri} />;
-      }
-      break;
-
-    case 'follow':
-      Icon = <UserPlus className="w-6 h-6 text-primary" />;
-      title = <p><AuthorLink /> followed you</p>;
-      link = profileLink;
-      break;
-
-    case 'reply':
-      Icon = <MessageCircle className="w-6 h-6 text-primary" />;
-      title = <p><AuthorLink /> replied to your post</p>;
-      link = postLink;
-       if (AppBskyFeedPost.isRecord(record)) {
-        content = <PostPreview record={record} postUri={uri} />;
-      }
-      break;
-      
-    case 'mention':
-        Icon = <AtSign className="w-6 h-6 text-primary" />;
-        title = <p><AuthorLink /> mentioned you in a post</p>;
-        link = postLink;
-        if (AppBskyFeedPost.isRecord(record)) {
-          content = <PostPreview record={record} postUri={uri} />;
-        }
-        break;
-
+    // ... other cases
     default:
-      Icon = <FileText className="w-6 h-6 text-on-surface-variant" />;
-      title = <p>New notification: {reason}</p>;
+      Icon = <FileText color="#C3C6CF" size={24} />;
+      title = <Text>New notification: {reason}</Text>;
       link = '#';
   }
   
   const timeAgo = formatDistanceToNow(new Date(indexedAt), { addSuffix: true });
 
   return (
-    <li className="py-2">
-        <Link href={link as any} className={`block p-4 rounded-xl transition-colors ${!isRead ? 'bg-primary/10' : 'bg-surface-2'} hover:bg-surface-3`}>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0">{Icon}</div>
-            <div className="flex-1">
-                <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName || author.handle} className="w-8 h-8 rounded-full bg-surface-3" loading="lazy" />
-                        <div className="text-sm">{title}</div>
-                    </div>
-                    <span className="text-xs text-on-surface-variant flex-shrink-0 ml-2 pt-1">{timeAgo}</span>
-                </div>
-                {content && <div className="mt-1">{content}</div>}
-            </div>
-          </div>
-        </Link>
-    </li>
+    <Link href={link as any} asChild>
+        <Pressable style={[styles.container, !isRead && styles.unreadContainer]}>
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+                <View style={{ flexShrink: 0 }}>{Icon}</View>
+                <View style={{ flex: 1 }}>
+                    <View style={styles.header}>
+                        <View style={styles.headerContent}>
+                            <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                            <Text style={styles.titleText}>{title}</Text>
+                        </View>
+                        <Text style={styles.timeAgo}>{timeAgo}</Text>
+                    </View>
+                    {content && <View style={{ marginTop: 4 }}>{content}</View>}
+                </View>
+            </View>
+        </Pressable>
+    </Link>
   );
 };
+
+const styles = StyleSheet.create({
+    container: { padding: 16, borderRadius: 12, backgroundColor: '#1E2021', marginVertical: 4 },
+    unreadContainer: { backgroundColor: 'rgba(168, 199, 250, 0.1)' },
+    header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+    headerContent: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 },
+    avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#2b2d2e' },
+    titleText: { fontSize: 14, color: '#E2E2E6' },
+    authorLinkContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    authorLinkText: { fontWeight: 'bold' },
+    timeAgo: { fontSize: 12, color: '#C3C6CF', flexShrink: 0, marginLeft: 8, paddingTop: 2 },
+    previewContainer: { borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 8, marginTop: 8, backgroundColor: '#111314' },
+    previewContent: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+    previewImage: { width: 64, height: 64, borderRadius: 6, backgroundColor: '#2b2d2e' },
+    previewText: { color: '#E2E2E6', fontSize: 14, flex: 1 },
+    quotedContainer: { fontSize: 12, color: '#C3C6CF', borderWidth: 1, borderColor: '#333', borderRadius: 6, padding: 8, backgroundColor: '#1E2021' },
+    quotedText: { fontSize: 12, color: '#C3C6CF' },
+});
 
 export default React.memo(NotificationItem);

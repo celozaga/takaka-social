@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { X, Loader2, Mail } from 'lucide-react';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 
 interface UpdateEmailModalProps {
   onClose: () => void;
@@ -16,22 +18,22 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSave = async () => {
+        if (!email.trim()) {
+            setError("Email cannot be empty.");
+            return;
+        }
         setIsSaving(true);
         setError('');
         setSuccess(false);
         try {
             await agent.com.atproto.server.updateEmail({ email });
-            // If the call succeeds without throwing, the email was updated without needing verification.
             toast({ title: "Email updated successfully!" });
             onSuccess();
         } catch (err: any) {
-            // If verification is required, the server throws a 'TokenRequired' error.
             if (err.name === 'XRPCError' && err.error === 'TokenRequired') {
                 setSuccess(true);
             } else {
-                console.error("Failed to update email", err);
                 setError(err.message || 'An error occurred.');
             }
         } finally {
@@ -41,44 +43,115 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
     
     if (success) {
         return (
-             <div className="bg-surface-2 p-8 rounded-xl text-center">
-                 <h2 className="text-xl font-bold mb-4">Check your email</h2>
-                 <p className="text-on-surface-variant">A confirmation link has been sent to <strong>{email}</strong>. Please click the link to confirm your new email address.</p>
-                 <button onClick={onClose} className="mt-6 w-full bg-primary text-on-primary font-bold py-2 px-4 rounded-full">Close</button>
-            </div>
+             <View style={styles.container}>
+                 <Text style={styles.headerTitle}>Check your email</Text>
+                 <Text style={styles.description}>A confirmation link has been sent to <Text style={{fontWeight: 'bold'}}>{email}</Text>. Please click the link to confirm your new email address.</Text>
+                 <Pressable onPress={onClose} style={styles.button}>
+                     <Text style={styles.buttonText}>Close</Text>
+                 </Pressable>
+            </View>
         )
     }
 
     return (
-        <div className="bg-surface-2 rounded-xl">
-            <div className="p-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold">Update Email</h2>
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-surface-3"><X /></button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-                 <p className="text-sm text-on-surface-variant">Enter your new email address. A verification link will be sent to it.</p>
-                 <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                    <input
-                        type="email"
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Update Email</Text>
+                <Pressable onPress={onClose} style={styles.closeButton}><X color="#E2E2E6"/></Pressable>
+            </View>
+            <View style={styles.content}>
+                 <Text style={styles.description}>Enter your new email address. A verification link will be sent to it.</Text>
+                 <View style={styles.inputContainer}>
+                    <Mail style={styles.inputIcon} color="#C3C6CF" size={20} />
+                    <TextInput
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChangeText={setEmail}
                         placeholder="new-email@example.com"
-                        className="w-full pl-10 pr-4 py-2 bg-surface-3 rounded-lg focus:ring-1 focus:ring-primary outline-none transition"
-                        required
+                        placeholderTextColor="#8A9199"
+                        style={styles.input}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
                     />
-                </div>
-                {error && <p className="text-error text-sm text-center">{error}</p>}
-                <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="w-full bg-primary text-on-primary font-bold py-2 px-6 rounded-full transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                </View>
+                {error && <Text style={styles.errorText}>{error}</Text>}
+                <Pressable
+                    onPress={handleSave}
+                    disabled={isSaving || !email.trim()}
+                    style={[styles.button, (isSaving || !email.trim()) && styles.buttonDisabled]}
                 >
-                    {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Send Verification Email'}
-                </button>
-            </form>
-        </div>
+                    {isSaving ? <ActivityIndicator color="#003258" /> : <Text style={styles.buttonText}>Send Verification Email</Text>}
+                </Pressable>
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        padding: 24,
+        gap: 16,
+        width: '100%',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#E2E2E6',
+    },
+    closeButton: {
+        padding: 8,
+        margin: -8,
+    },
+    content: {
+        gap: 16,
+    },
+    description: {
+        fontSize: 14,
+        color: '#C3C6CF',
+    },
+    inputContainer: {
+        position: 'relative',
+        justifyContent: 'center',
+    },
+    inputIcon: {
+        position: 'absolute',
+        left: 12,
+    },
+    input: {
+        width: '100%',
+        paddingLeft: 40,
+        paddingRight: 12,
+        paddingVertical: 10,
+        backgroundColor: '#2b2d2e',
+        borderRadius: 8,
+        color: '#E2E2E6',
+    },
+    errorText: {
+        color: '#F2B8B5',
+        fontSize: 14,
+        textAlign: 'center',
+    },
+    button: {
+        width: '100%',
+        backgroundColor: '#A8C7FA',
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+        borderRadius: 999,
+        alignItems: 'center',
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+    buttonText: {
+        color: '#003258',
+        fontWeight: 'bold',
+    },
+});
 
 export default UpdateEmailModal;

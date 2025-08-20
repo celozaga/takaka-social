@@ -1,11 +1,11 @@
 
-
 import React from 'react';
 import { Heart, Repeat, MessageCircle } from 'lucide-react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
 import { AppBskyFeedDefs } from '@atproto/api';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 interface PostActionsProps {
   post: AppBskyFeedDefs.PostView;
@@ -27,7 +27,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
     return true;
   }
 
-  const handleReplyClick = (e: React.MouseEvent) => {
+  const handleReplyClick = (e: any) => {
     e.stopPropagation();
     e.preventDefault();
     if (!ensureSession()) return;
@@ -35,31 +35,53 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   };
 
   return (
-    <div className="flex items-center gap-3 text-on-surface-variant">
-      <button onClick={handleReplyClick} className="flex items-center gap-1 hover:text-primary transition-colors">
-        <MessageCircle size={18} />
-        <span className="text-sm font-semibold">{post.replyCount || 0}</span>
-      </button>
-      <button 
-        onClick={handleRepost} 
+    <View style={styles.container}>
+      <Pressable onPress={handleReplyClick} style={styles.actionButton}>
+        <MessageCircle size={18} color="#C3C6CF" />
+        <Text style={styles.actionText}>{post.replyCount || 0}</Text>
+      </Pressable>
+      <Pressable 
+        onPress={(e) => { e.stopPropagation(); e.preventDefault(); handleRepost(e); }}
         disabled={isReposting}
-        className={`flex items-center gap-1 transition-colors ${repostUri ? 'text-primary' : 'hover:text-primary'}`}
-        aria-label="Repost"
+        style={styles.actionButton}
       >
-        <Repeat size={18} />
-        <span className="text-sm font-semibold">{repostCount}</span>
-      </button>
-      <button 
-        onClick={handleLike} 
+        <Repeat size={18} color={repostUri ? '#A8C7FA' : '#C3C6CF'} />
+        <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{repostCount}</Text>
+      </Pressable>
+      <Pressable 
+        onPress={(e) => { e.stopPropagation(); e.preventDefault(); handleLike(e); }}
         disabled={isLiking}
-        className={`flex items-center gap-1 transition-colors ${likeUri ? 'text-pink-500' : 'hover:text-pink-500'}`}
-        aria-label="Like"
+        style={styles.actionButton}
       >
-        <Heart size={18} fill={likeUri ? 'currentColor' : 'none'} />
-        <span className="text-sm font-semibold">{likeCount}</span>
-      </button>
-    </div>
+        <Heart size={18} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? '#ec4899' : 'none'} />
+        <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{likeCount}</Text>
+      </Pressable>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    actionText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#C3C6CF',
+    },
+    repostTextActive: {
+        color: '#A8C7FA',
+    },
+    likeTextActive: {
+        color: '#ec4899',
+    }
+});
 
 export default PostActions;

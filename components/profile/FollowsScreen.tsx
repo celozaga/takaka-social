@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -6,6 +7,7 @@ import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } fr
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from '../shared/Head';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 
 interface FollowsScreenProps {
     actor: string;
@@ -22,7 +24,6 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const loaderRef = useRef<HTMLDivElement>(null);
 
     const title = t(`common.${type}`);
 
@@ -32,11 +33,9 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     }, [setCustomFeedHeaderVisible]);
 
     const fetchList = useCallback(async (currentCursor?: string) => {
-        const fetchFn = type === 'followers'
+        return type === 'followers'
             ? agent.getFollowers({ actor, cursor: currentCursor, limit: 50 })
             : agent.getFollows({ actor, cursor: currentCursor, limit: 50 });
-        
-        return fetchFn;
     }, [agent, actor, type]);
 
     useEffect(() => {
@@ -45,14 +44,13 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
             setError(null);
             try {
                 const { data } = await fetchList();
-                setList(type === 'followers' 
+                const items = type === 'followers' 
                     ? (data as AppBskyGraphGetFollowers.OutputSchema).followers 
-                    : (data as AppBskyGraphGetFollows.OutputSchema).follows
-                );
+                    : (data as AppBskyGraphGetFollows.OutputSchema).follows;
+                setList(items);
                 setCursor(data.cursor);
                 setHasMore(!!data.cursor);
             } catch (err: any) {
-                console.error(`Failed to fetch ${type}:`, err);
                 setError(t('follows.loadingError', { type }));
             } finally {
                 setIsLoading(false);
@@ -76,52 +74,56 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
             } else {
                 setHasMore(false);
             }
-        } catch (err) {
-            console.error('Failed to load more:', err);
         } finally {
             setIsLoadingMore(false);
         }
     }, [cursor, hasMore, isLoadingMore, fetchList, type]);
     
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-                    loadMore();
-                }
-            }, { rootMargin: '400px' }
-        );
-        const currentLoader = loaderRef.current;
-        if (currentLoader) observer.observe(currentLoader);
-        return () => { if (currentLoader) observer.unobserve(currentLoader); };
-    }, [hasMore, isLoading, isLoadingMore, loadMore]);
-    
     return (
         <>
             <Head><title>{title}</title></Head>
-            <div>
-                <ScreenHeader title={title} />
-                <div className="mt-4 space-y-3">
-                    {isLoading && (
-                        [...Array(8)].map((_, i) => (
-                             <div key={i} className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse"></div>
-                        ))
-                    )}
-                    {!isLoading && error && (
-                        <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error}</div>
-                    )}
-                    {!isLoading && !error && list.length === 0 && (
-                        <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('follows.empty')}</div>
-                    )}
-                    {list.map(user => (
-                        <ActorSearchResultCard key={user.did} actor={user} />
-                    ))}
-                    <div ref={loaderRef} className="h-10">
-                        {isLoadingMore && <div className="bg-surface-2 rounded-xl p-3 h-[88px] animate-pulse mt-4"></div>}
-                    </div>
-                </div>
-            </div>
+            <ScreenHeader title={title} />
+            <ScrollView 
+                contentContainerStyle={styles.container}
+                onScroll={({ nativeEvent }) => {
+                    if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) {
+                        loadMore();
+                    }
+                }}
+                scrollEventThrottle={16}
+            >
+                {isLoading && [...Array(8)].map((_, i) => <View key={i} style={styles.skeletonItem} />)}
+                {!isLoading && error && <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>}
+                {!isLoading && !error && list.length === 0 && <View style={styles.messageContainer}><Text style={styles.infoText}>{t('follows.empty')}</Text></View>}
+                {list.map(user => <ActorSearchResultCard key={user.did} actor={user} />)}
+                {isLoadingMore && <ActivityIndicator style={{ marginVertical: 24 }} size="large" />}
+            </ScrollView>
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        padding: 16,
+        gap: 12,
+    },
+    skeletonItem: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        height: 88,
+        opacity: 0.5,
+    },
+    messageContainer: {
+        padding: 32,
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    errorText: {
+        color: '#F2B8B5',
+    },
+    infoText: {
+        color: '#C3C6CF',
+    },
+});
 export default FollowsScreen;

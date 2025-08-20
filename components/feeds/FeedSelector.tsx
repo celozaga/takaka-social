@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 
 interface FeedSelectorProps {
   feeds: AppBskyFeedDefs.GeneratorView[];
@@ -18,10 +20,6 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
   const { openLoginModal } = useUI();
   const { t } = useTranslation();
 
-  const baseClasses = "flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors cursor-pointer whitespace-nowrap";
-  const activeClasses = "bg-primary-container text-on-primary-container";
-  const inactiveClasses = "text-on-surface-variant hover:bg-surface-3";
-
   const handleFollowingClick = () => {
     if (session) {
       onSelectFeed('following');
@@ -30,61 +28,96 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
     }
   };
 
+  const FeedButton = ({ label, feedUri, isActive }: { label: string, feedUri: string, isActive: boolean }) => (
+    <Pressable 
+        onPress={() => feedUri === 'following' ? handleFollowingClick() : onSelectFeed(feedUri)}
+        style={[styles.button, isActive ? styles.activeButton : styles.inactiveButton]}
+    >
+        <Text style={[styles.buttonText, isActive ? styles.activeButtonText : styles.inactiveButtonText]}>{label}</Text>
+    </Pressable>
+  );
+
   return (
-    <div className="no-scrollbar -mx-4 px-4 flex items-center gap-2 overflow-x-auto pb-2">
-      <button 
-        onClick={handleFollowingClick}
-        className={`${baseClasses} ${selectedFeed === 'following' ? activeClasses : inactiveClasses}`}
-      >
-        {t('home.following')}
-      </button>
+    <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.container}
+    >
+      <FeedButton 
+        label={t('home.following')}
+        feedUri='following'
+        isActive={selectedFeed === 'following'}
+      />
       
       {session && (
-        <button 
-          onClick={() => onSelectFeed(DISCOVER_FEED_URI)}
-          className={`${baseClasses} ${selectedFeed === DISCOVER_FEED_URI ? activeClasses : inactiveClasses}`}
-        >
-          {t('home.discover')}
-        </button>
+        <FeedButton 
+          label={t('home.discover')}
+          feedUri={DISCOVER_FEED_URI}
+          isActive={selectedFeed === DISCOVER_FEED_URI}
+        />
       )}
 
       {session && isLoading && [...Array(5)].map((_, i) => (
-        <div key={i} className="h-9 w-24 bg-surface-2 rounded-full animate-pulse flex-shrink-0"></div>
+        <View key={i} style={styles.skeleton} />
       ))}
       
       {session && !isLoading && feeds.map(feed => (
-        <button 
-          key={feed.uri}
-          onClick={() => onSelectFeed(feed.uri)}
-          className={`${baseClasses} ${selectedFeed === feed.uri ? activeClasses : inactiveClasses}`}
-        >
-          {feed.displayName}
-        </button>
+        <FeedButton 
+            key={feed.uri}
+            label={feed.displayName}
+            feedUri={feed.uri}
+            isActive={selectedFeed === feed.uri}
+        />
       ))}
       
       {!session && (
-          <button 
-            onClick={() => onSelectFeed(DISCOVER_FEED_URI)}
-            className={`${baseClasses} ${selectedFeed === DISCOVER_FEED_URI ? activeClasses : inactiveClasses}`}
-           >
-            {t('home.discover')}
-          </button>
+          <FeedButton
+            label={t('home.discover')}
+            feedUri={DISCOVER_FEED_URI}
+            isActive={selectedFeed === DISCOVER_FEED_URI}
+          />
       )}
-    </div>
+    </ScrollView>
   );
 };
 
-// Simple utility to hide scrollbar but keep functionality
-const styles = document.createElement('style');
-styles.textContent = `
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-`;
-document.head.append(styles);
+const styles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingBottom: 8,
+    },
+    button: {
+        flexShrink: 0,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 999,
+    },
+    activeButton: {
+        backgroundColor: '#D1E4FF', // primary-container
+    },
+    inactiveButton: {
+        backgroundColor: 'transparent',
+    },
+    buttonText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    activeButtonText: {
+        color: '#001D35', // on-primary-container
+    },
+    inactiveButtonText: {
+        color: '#C3C6CF', // on-surface-variant
+    },
+    skeleton: {
+        height: 36,
+        width: 96,
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 999,
+        opacity: 0.5,
+        flexShrink: 0,
+    }
+});
 
 export default FeedSelector;

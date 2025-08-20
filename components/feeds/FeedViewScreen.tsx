@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import Timeline from '../shared/Timeline';
 import FeedViewHeader from './FeedViewHeader';
-import { ArrowLeft } from 'lucide-react';
 import Head from '../shared/Head';
 import { useFeedActions } from '../../hooks/useFeedActions';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 
 interface FeedViewScreenProps {
     handle: string;
@@ -20,6 +22,7 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     const [feedUri, setFeedUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const { feedView } = useFeedActions(feedUri || undefined);
 
@@ -48,27 +51,18 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     
     if (isLoading) {
         return (
-             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-sm z-30 animate-pulse">
-                <div className="flex items-center justify-between h-16">
-                    <div className="h-8 w-10 bg-surface-3 rounded-full"></div>
-                    <div className="h-8 w-48 bg-surface-3 rounded-md"></div>
-                    <div className="h-8 w-16 bg-surface-3 rounded-full"></div>
-                </div>
-            </div>
+            <View style={styles.centered}>
+                <ActivityIndicator size="large" color="#A8C7FA" />
+            </View>
         );
     }
 
     if (error || !feedUri) {
          return (
-             <div className="sticky top-0 -mx-4 px-4 bg-surface-1/80 backdrop-blur-sm z-30">
-                <div className="flex items-center justify-between h-16">
-                     <button onClick={() => window.history.back()} className="p-2 -ml-2 rounded-full hover:bg-surface-3">
-                        <ArrowLeft size={20} />
-                    </button>
-                    <p className="text-sm text-error">{error}</p>
-                    <div className="w-8"></div>
-                </div>
-            </div>
+             <>
+                <FeedViewHeader feedUri="" onBack={() => router.back()} />
+                <View style={styles.centered}><Text style={styles.errorText}>{error}</Text></View>
+             </>
         );
     }
 
@@ -79,17 +73,33 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
                 {feedView?.description && <meta name="description" content={feedView.description} />}
                 {feedView?.avatar && <meta property="og:image" content={feedView.avatar} />}
             </Head>
-            <div>
+            <View style={{flex: 1}}>
                 <FeedViewHeader
                     feedUri={feedUri}
-                    onBack={() => window.history.back()}
+                    onBack={() => router.back()}
                 />
-                <div className="mt-4">
+                <View style={styles.timelineContainer}>
                     <Timeline key={feedUri} feedUri={feedUri} />
-                </div>
-            </div>
+                </View>
+            </View>
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#F2B8B5',
+    },
+    timelineContainer: {
+        marginTop: 16,
+        paddingHorizontal: 16,
+    }
+});
 
 export default FeedViewScreen;

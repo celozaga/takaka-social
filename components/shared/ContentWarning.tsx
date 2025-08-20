@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ShieldAlert } from 'lucide-react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 interface ContentWarningProps {
   reason: string;
@@ -9,22 +10,51 @@ interface ContentWarningProps {
 
 const ContentWarning: React.FC<ContentWarningProps> = ({ reason, onShow }) => {
   return (
-    <div className="bg-surface-2 rounded-xl p-4 flex flex-col items-center text-center">
-      <ShieldAlert className="w-10 h-10 text-on-surface-variant mb-3" />
-      <p className="font-semibold">Content Warning</p>
-      <p className="text-sm text-on-surface-variant mb-4 capitalize">{reason}</p>
-      <button
-        onClick={(e) => {
+    <View style={styles.container}>
+      <ShieldAlert color="#C3C6CF" size={40} style={{ marginBottom: 12 }} />
+      <Text style={styles.title}>Content Warning</Text>
+      <Text style={styles.reasonText}>{reason}</Text>
+      <Pressable
+        onPress={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onShow();
         }}
-        className="bg-surface-3 hover:bg-surface-3/80 text-on-surface font-bold py-2 px-6 rounded-full transition duration-200"
+        style={styles.showButton}
       >
-        Show
-      </button>
-    </div>
+        <Text style={styles.showButtonText}>Show</Text>
+      </Pressable>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: '#1E2021', // surface-2
+        borderRadius: 12,
+        padding: 16,
+        alignItems: 'center',
+    },
+    title: {
+        fontWeight: '600',
+        color: '#E2E2E6', // on-surface
+    },
+    reasonText: {
+        fontSize: 14,
+        color: '#C3C6CF', // on-surface-variant
+        marginBottom: 16,
+        textTransform: 'capitalize',
+    },
+    showButton: {
+        backgroundColor: '#2b2d2e', // surface-3
+        paddingVertical: 8,
+        paddingHorizontal: 24,
+        borderRadius: 999,
+    },
+    showButtonText: {
+        color: '#E2E2E6',
+        fontWeight: 'bold',
+    }
+});
 
 export default ContentWarning;

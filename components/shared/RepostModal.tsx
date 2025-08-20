@@ -1,11 +1,11 @@
 
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../ui/use-toast';
 import { usePostActions } from '../../hooks/usePostActions';
 import { AppBskyFeedDefs, AtUri } from '@atproto/api';
-import { Repeat, Share2, Loader2, X } from 'lucide-react';
+import { Repeat, Share2, X } from 'lucide-react';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Share, Platform, Clipboard } from 'react-native';
 
 interface RepostModalProps {
   post: AppBskyFeedDefs.PostView;
@@ -15,24 +15,19 @@ interface RepostModalProps {
 const ActionListItem: React.FC<{
     icon: React.ElementType;
     label: string;
-    onClick: () => void;
+    onPress: () => void;
     disabled?: boolean;
     isDestructive?: boolean;
-}> = ({ icon: Icon, label, onClick, disabled = false, isDestructive = false }) => {
-    const textClass = isDestructive ? 'text-error' : 'text-on-surface';
-    const hoverClass = isDestructive ? 'hover:bg-error/10' : 'hover:bg-surface-3';
-
+}> = ({ icon: Icon, label, onPress, disabled = false, isDestructive = false }) => {
     return (
-        <li>
-            <button 
-                onClick={onClick}
-                disabled={disabled}
-                className={`w-full flex items-center gap-4 px-4 py-3 text-left transition-colors rounded-lg ${hoverClass} disabled:opacity-50`}
-            >
-                <Icon className={`w-6 h-6 ${isDestructive ? 'text-error' : 'text-on-surface-variant'}`} />
-                <span className={`font-semibold ${textClass}`}>{label}</span>
-            </button>
-        </li>
+        <Pressable 
+            onPress={onPress}
+            disabled={disabled}
+            style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed, isDestructive && pressed && styles.actionItemDestructivePressed, disabled && styles.actionItemDisabled]}
+        >
+            <Icon color={isDestructive ? '#F2B8B5' : '#C3C6CF'} size={24} />
+            <Text style={[styles.actionLabel, isDestructive && styles.actionLabelDestructive]}>{label}</Text>
+        </Pressable>
     );
 };
 
@@ -43,66 +38,65 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
 
     const handleRepostAction = async () => {
         const wasReposted = !!repostUri;
-        try {
-            await handleRepost();
-            toast({ title: wasReposted ? t('repostModal.undoSuccess') : t('repostModal.repostSuccess') });
-            onClose();
-        } catch (e) {
-            // Error toast is handled by usePostActions
-        }
+        await handleRepost();
+        toast({ title: wasReposted ? t('repostModal.undoSuccess') : t('repostModal.repostSuccess') });
+        onClose();
     };
 
     const handleShare = async () => {
-        const postUrl = `${window.location.origin}/#/post/${post.author.did}/${new AtUri(post.uri).rkey}`;
-        const shareData = {
-            title: t('post.byline', { user: post.author.handle }),
-            text: (post.record as any)?.text,
-            url: postUrl,
-        };
-
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (error) {
-                console.error('Error sharing:', error);
+        const postUrl = `https://bsky.app/profile/${post.author.did}/post/${new AtUri(post.uri).rkey}`;
+        try {
+            await Share.share({
+                message: postUrl,
+                url: postUrl, // for iOS
+            });
+        } catch (error) {
+            if (Platform.OS === 'web') {
+                Clipboard.setString(postUrl);
+                toast({ title: t('post.linkCopied') });
             }
-        } else {
-            // Fallback for desktop or unsupported browsers
-            await navigator.clipboard.writeText(postUrl);
-            toast({ title: t('post.linkCopied') });
         }
         onClose();
     };
 
     return (
-        <div>
-            <header className="flex items-center justify-between p-4">
-                <h2 className="font-bold text-lg">{t('common.share')}</h2>
-                <button onClick={onClose} className="p-2 -mr-2 rounded-full hover:bg-surface-3">
-                    <X />
-                </button>
-            </header>
+        <View>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>{t('common.share')}</Text>
+                <Pressable onPress={onClose} style={styles.closeButton}><X color="#E2E2E6" /></Pressable>
+            </View>
             
-            <div className="relative p-2">
-                {isReposting && <div className="absolute inset-0 bg-surface-2/50 flex items-center justify-center z-10"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
-                
-                <ul className="space-y-1">
-                    <ActionListItem 
-                        icon={Repeat} 
-                        label={repostUri ? t('repostModal.undoRepost') : t('repostModal.repost')} 
-                        onClick={handleRepostAction}
-                        disabled={isReposting}
-                        isDestructive={!!repostUri}
-                    />
-                    <ActionListItem 
-                        icon={Share2} 
-                        label={t('repostModal.share')} 
-                        onClick={handleShare} 
-                    />
-                </ul>
-            </div>
-        </div>
+            <View style={styles.content}>
+                {isReposting && <View style={styles.loadingOverlay}><ActivityIndicator size="large" /></View>}
+                <ActionListItem 
+                    icon={Repeat} 
+                    label={repostUri ? t('repostModal.undoRepost') : t('repostModal.repost')} 
+                    onPress={handleRepostAction}
+                    disabled={isReposting}
+                    isDestructive={!!repostUri}
+                />
+                <ActionListItem 
+                    icon={Share2} 
+                    label={t('repostModal.share')} 
+                    onPress={handleShare} 
+                />
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
+    headerTitle: { fontWeight: 'bold', fontSize: 18, color: '#E2E2E6' },
+    closeButton: { padding: 8, margin: -8 },
+    content: { padding: 8, gap: 4 },
+    loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30, 32, 33, 0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: 12 },
+    actionItem: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 16, padding: 12, borderRadius: 8 },
+    actionItemPressed: { backgroundColor: '#2b2d2e' },
+    actionItemDestructivePressed: { backgroundColor: 'rgba(242, 184, 181, 0.1)' },
+    actionItemDisabled: { opacity: 0.5 },
+    actionLabel: { fontWeight: '600', color: '#E2E2E6' },
+    actionLabelDestructive: { color: '#F2B8B5' },
+});
 
 export default RepostModal;
