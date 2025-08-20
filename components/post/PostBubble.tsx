@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -28,12 +27,12 @@ interface PostBubbleProps {
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
     if (AppBskyEmbedRecord.isViewRecord(embed)) {
         if (AppBskyFeedDefs.isPostView(embed.record)) {
-            const postView: AppBskyFeedDefs.PostView = embed.record;
+            const postView = embed.record;
             const author = postView.author;
             const postViewRecord = postView.record;
 
             if (AppBskyFeedPost.isRecord(postViewRecord)) {
-                const postRecord = postViewRecord as AppBskyFeedPost.Record;
+                const postRecord = postViewRecord;
 
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
@@ -152,7 +151,15 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
         return null;
     }
     
-    const timeAgo = formatDistanceToNowStrict(new Date(record.createdAt), { addSuffix: false });
+    const timeAgo = formatDistanceToNowStrict(new Date(record.createdAt), { addSuffix: false })
+        .replace(' seconds', 's')
+        .replace(' second', 's')
+        .replace(' minutes', 'm')
+        .replace(' minute', 'm')
+        .replace(' hours', 'h')
+        .replace(' hour', 'h')
+        .replace(' days', 'd')
+        .replace(' day', 'd');
 
     return (
         <div className="bg-surface-2 p-3 rounded-2xl rounded-bl-md shadow-sm">
@@ -194,9 +201,9 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
             )}
             {renderMedia()}
             {renderEmbed()}
-            <div className="flex justify-end items-center gap-4 text-on-surface-variant text-xs mt-2">
+            <div className="flex justify-between items-center text-on-surface-variant text-xs mt-2">
                 <PostActions post={post} />
-                <a href={`#/post/${author.did}/${post.uri.split('/').pop()}`} className="hover:underline">{timeAgo}</a>
+                <a href={`#/post/${author.did}/${post.uri.split('/').pop()}`} className="hover:underline flex-shrink-0">{timeAgo}</a>
             </div>
         </div>
     );

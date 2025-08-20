@@ -1,8 +1,9 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyEmbedRecord, AppBskyFeedPost } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedRecord, AppBskyFeedPost, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import { MessageSquare, Quote } from 'lucide-react';
 
 interface PostContextIndicatorProps {
@@ -34,17 +35,32 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
                         setAuthorHandle(parentAuthor.handle);
                     }
                 }).catch(err => console.error("Failed to fetch parent post for reply context", err));
+                // Reply context found, don't check for quote
+                return () => { isCancelled = true; };
             }
         }
+        
         // Then check for quote
-        else if (AppBskyEmbedRecord.isView(embed) && AppBskyEmbedRecord.isViewRecord(embed)) {
+        let quotedPost: AppBskyFeedDefs.PostView | undefined;
+
+        if (AppBskyEmbedRecord.isViewRecord(embed)) {
+            // It's a simple record embed.
             if (AppBskyFeedDefs.isPostView(embed.record)) {
-                const postView = embed.record as AppBskyFeedDefs.PostView;
-                setType('quote');
-                const quotedAuthor = postView.author;
-                setAuthorName(quotedAuthor.displayName || `@${quotedAuthor.handle}`);
-                setAuthorHandle(quotedAuthor.handle);
+                quotedPost = embed.record;
             }
+        } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+            // It's a record with media.
+            const recordEmbed = embed.record;
+            if (AppBskyEmbedRecord.isViewRecord(recordEmbed) && AppBskyFeedDefs.isPostView(recordEmbed.record)) {
+                quotedPost = recordEmbed.record;
+            }
+        }
+
+        if (quotedPost) {
+            setType('quote');
+            const quotedAuthor = quotedPost.author;
+            setAuthorName(quotedAuthor.displayName || `@${quotedAuthor.handle}`);
+            setAuthorHandle(quotedAuthor.handle);
         }
 
         return () => { isCancelled = true; };
