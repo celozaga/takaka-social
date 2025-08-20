@@ -3,6 +3,7 @@ import { useAtp } from '../../context/AtpContext';
 import {
     AppBskyActorDefs,
     AppBskyFeedDefs,
+    AppBskyFeedPost,
 } from '@atproto/api';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useChannelState } from '../../context/ChannelStateContext';
@@ -131,7 +132,7 @@ const FollowingFeedScreen: React.FC = () => {
                     
                     const lastViewedString = lastViewedTimestamps.get(authorDid);
                     const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
-                    const eventDate = new Date(AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt);
+                    const eventDate = new Date((AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : (item.post.indexedAt || (item.post.record as any)?.createdAt)) || Date.now());
 
                     newFeeds.push({
                         profile: item.post.author,
