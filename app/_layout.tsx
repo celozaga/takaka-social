@@ -1,15 +1,142 @@
-import React from 'react';
-import { AtpProvider } from '@/context/AtpContext';
-import { UIProvider } from '@/context/UIContext';
+import React, { Suspense, lazy } from 'react';
+import { Stack, usePathname } from 'expo-router';
+import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { AtpProvider, useAtp } from '@/context/AtpContext';
+import { UIProvider, useUI } from '@/context/UIContext';
 import { HiddenPostsProvider } from '@/context/HiddenPostsContext';
 import { ModerationProvider } from '@/context/ModerationContext';
 import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
 import { Toaster, ToastProvider } from '@/components/ui/Toaster';
-import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import Navbar from '@/components/layout/Navbar';
+import BottomNavbar from '@/components/layout/BottomNavbar';
+import LoginPrompt from '@/components/auth/LoginPrompt';
 
-// Import i18n configuration
 import '@/lib/i18n';
+
+// Lazy load modals for better initial performance
+const LoginScreen = lazy(() => import('@/components/auth/LoginScreen'));
+const Composer = lazy(() => import('@/components/composer/Composer'));
+const FeedHeaderModal = lazy(() => import('@/components/feeds/FeedHeaderModal'));
+const EditProfileModal = lazy(() => import('@/components/profile/EditProfileModal'));
+const UpdateEmailModal = lazy(() => import('@/components/settings/UpdateEmailModal'));
+const UpdateHandleModal = lazy(() => import('@/components/settings/UpdateHandleModal'));
+const MediaActionsModal = lazy(() => import('@/components/shared/MediaActionsModal'));
+const RepostModal = lazy(() => import('@/components/shared/RepostModal'));
+
+const ModalSuspenseFallback = () => (
+  <View style={styles.modalDialogShell}>
+    <ActivityIndicator size="large" />
+  </View>
+);
+
+function AppLayout() {
+  const { session } = useAtp();
+  const {
+    isLoginModalOpen, closeLoginModal,
+    isComposerOpen, closeComposer, composerReplyTo, composerInitialText,
+    isFeedModalOpen, closeFeedModal,
+    isEditProfileModalOpen, closeEditProfileModal,
+    isUpdateEmailModalOpen, closeUpdateEmailModal,
+    isUpdateHandleModalOpen, closeUpdateHandleModal,
+    isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
+    isRepostModalOpen, closeRepostModal, repostModalPost,
+    isCustomFeedHeaderVisible
+  } = useUI();
+  
+  const pathname = usePathname();
+  const isFullScreenPage = ['/watch'].some(p => pathname.startsWith(p));
+  const showNav = !isFullScreenPage;
+
+  return (
+      <SafeAreaView style={styles.container}>
+        {showNav && <Navbar />}
+        <View style={[styles.mainContent, isFullScreenPage && styles.fullScreenContent]}>
+          <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+        </View>
+        {showNav && <BottomNavbar isHidden={isCustomFeedHeaderVisible} />}
+        {!session && showNav && <LoginPrompt />}
+
+        {/* MODALS */}
+        <Suspense fallback={null}>
+          {isLoginModalOpen && (
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <LoginScreen onSuccess={closeLoginModal} />
+                </Suspense>
+              </View>
+            </View>
+          )}
+          {isComposerOpen && (
+            <View style={[styles.modalBackdrop, styles.composerBackdrop]}>
+              <View style={styles.composerWrapper}>
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <Composer onClose={closeComposer} onPostSuccess={closeComposer} replyTo={composerReplyTo} initialText={composerInitialText} />
+                </Suspense>
+              </View>
+            </View>
+          )}
+          {isFeedModalOpen && (
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <FeedHeaderModal />
+                </Suspense>
+              </View>
+            </View>
+          )}
+          {isEditProfileModalOpen && (
+             <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
+                </Suspense>
+              </View>
+             </View>
+          )}
+          {isUpdateEmailModalOpen && (
+             <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
+                </Suspense>
+              </View>
+             </View>
+          )}
+           {isUpdateHandleModalOpen && (
+             <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
+                </Suspense>
+              </View>
+             </View>
+          )}
+          {isMediaActionsModalOpen && mediaActionsModalPost && (
+             <View style={styles.modalBackdrop} onTouchEnd={closeMediaActionsModal}>
+                <View style={styles.bottomSheet} onTouchEnd={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<ModalSuspenseFallback />}>
+                        <MediaActionsModal post={mediaActionsModalPost} onClose={closeMediaActionsModal} />
+                    </Suspense>
+                </View>
+             </View>
+          )}
+          {isRepostModalOpen && repostModalPost && (
+             <View style={styles.modalBackdrop} onTouchEnd={closeRepostModal}>
+                <View style={styles.bottomSheet} onTouchEnd={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<ModalSuspenseFallback />}>
+                        <RepostModal post={repostModalPost} onClose={closeRepostModal} />
+                    </Suspense>
+                </View>
+             </View>
+          )}
+        </Suspense>
+      </SafeAreaView>
+  );
+}
+
 
 export default function RootLayout() {
   return (
@@ -19,9 +146,11 @@ export default function RootLayout() {
           <UIProvider>
             <HiddenPostsProvider>
               <ProfileCacheProvider>
-                <StatusBar style="light" />
-                <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
-                <Toaster />
+                 <SafeAreaProvider>
+                    <StatusBar style="light" />
+                    <AppLayout />
+                    <Toaster />
+                 </SafeAreaProvider>
               </ProfileCacheProvider>
             </HiddenPostsProvider>
           </UIProvider>
@@ -30,3 +159,70 @@ export default function RootLayout() {
     </ToastProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#111314', // surface-1
+  },
+  mainContent: {
+    flex: 1,
+    paddingLeft: Platform.select({ web: 80, default: 0 }),
+    paddingTop: Platform.select({ web: 64, default: 0 }),
+    paddingBottom: Platform.select({ web: 0, default: 80 }),
+    marginHorizontal: 'auto',
+    width: '100%',
+    maxWidth: 640,
+  },
+  fullScreenContent: {
+    paddingTop: 0,
+    paddingLeft: 0,
+    paddingBottom: 0,
+    maxWidth: '100%',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  composerBackdrop: {
+     justifyContent: 'flex-start',
+     paddingTop: Platform.select({ web: '5%' as any, default: 40 }),
+  },
+  composerWrapper: {
+    width: '100%',
+    maxWidth: 640,
+    height: Platform.select({web: '90%' as any, default: '95%'}),
+    maxHeight: 800,
+    backgroundColor: '#1E2021', // surface-2
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalDialogWrapper: {
+    width: '100%',
+    maxWidth: 448,
+    paddingHorizontal: 16
+  },
+  modalDialogShell: {
+    backgroundColor: '#1E2021',
+    borderRadius: 12,
+    padding: 32,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 120,
+  },
+  bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '90%',
+    backgroundColor: '#1E2021',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 8,
+  }
+});
