@@ -46,18 +46,18 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri, mediaFilter = 'all', ListH
     try {
         if (feedUri === 'following') {
             if (!session) return { data: { feed: [], cursor: undefined } };
-            return agent.getTimeline({ cursor: currentCursor, limit: 30 });
+            return agent.app.bsky.feed.getTimeline({ cursor: currentCursor, limit: 30 });
         }
         if (feedUri.startsWith('at://')) {
-            return agent.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+            return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
         }
         // Assume it's an actor handle/did for getAuthorFeed
-        return agent.getAuthorFeed({ actor: feedUri, cursor: currentCursor, limit: 30 });
+        return agent.app.bsky.feed.getAuthorFeed({ actor: feedUri, cursor: currentCursor, limit: 30 });
     } catch (e: any) {
         // If getAuthorFeed fails for a URI that looked like a handle, it might be a feed URI from a custom domain.
         if (!feedUri.startsWith('at://') && feedUri.includes('/')) {
             try {
-                return agent.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+                return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
             } catch (e2) {
                 console.error("Failed to fetch feed as both author and feed URI:", e2);
                 throw e2; // throw original error
@@ -127,7 +127,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri, mediaFilter = 'all', ListH
     return feed.filter(item => moderatePost(item.post, moderation).visibility !== 'hide');
   }, [feed, moderation]);
 
-  const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${item.reason?.$type === 'app.bsky.feed.defs#reasonRepost' ? item.reason.by.did : ''}`;
+  const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
   
   const renderItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => (
     <PostCard feedViewPost={item} />
