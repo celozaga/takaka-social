@@ -15,8 +15,15 @@ export const resizeImage = (url: string, width: number): string => {
   }
 
   try {
-    // The proxy works best with the URL without the protocol part (e.g., "cdn.bsky.app/...").
     const urlObject = new URL(url);
+
+    // BSKY VIDEO THUMBNAIL FIX: The video.bsky.app domain returns 503 errors when proxied.
+    // To prevent broken thumbnails, we bypass the proxy for these specific URLs.
+    if (urlObject.hostname === 'video.bsky.app') {
+      return url;
+    }
+
+    // The proxy works best with the URL without the protocol part (e.g., "cdn.bsky.app/...").
     const urlWithoutProtocol = urlObject.host + urlObject.pathname + urlObject.search;
 
     // Construct the new URL with width, quality, and webp output for optimization.
