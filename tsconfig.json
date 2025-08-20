@@ -25,5 +25,19 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "vite.config.ts",
+    "App.tsx",
+    "sw.js",
+    "app/home.tsx",
+    "app/(tabs)/messages.tsx",
+    "app/messages/[did].tsx",
+    "components/*.tsx",
+    "components/messages",
+    "components/post/PostActionsModal.tsx",
+    "components/post/PostStats.tsx",
+    "components/post/QuotedPost.tsx"
+  ]
 }
