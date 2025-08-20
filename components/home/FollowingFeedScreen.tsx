@@ -88,8 +88,8 @@ const FollowingFeedScreen: React.FC = () => {
     const [currentHash, setCurrentHash] = React.useState(window.location.hash);
     
     // Using refs to manage state that shouldn't trigger re-renders on its own
-    const timelineCursor = useRef<string | undefined>();
-    const followsCursor = useRef<string | undefined>();
+    const timelineCursor = useRef<string | undefined>(undefined);
+    const followsCursor = useRef<string | undefined>(undefined);
     const seenDids = useRef(new Set<string>());
     const phase = useRef<'timeline' | 'follows'>('timeline');
     const hasMoreTimeline = useRef(true);
@@ -108,73 +108,84 @@ const FollowingFeedScreen: React.FC = () => {
         if (isFetching.current || (!hasMoreTimeline.current && !hasMoreFollows.current)) {
             return;
         }
-        
+    
         isFetching.current = true;
         setIsLoadingMore(true);
-
+    
         try {
-            if (phase.current === 'timeline' && hasMoreTimeline.current) {
-                const timelineRes = await agent.getTimeline({ limit: 50, cursor: timelineCursor.current });
-
-                if (!timelineRes.data.cursor || timelineRes.data.feed.length === 0) {
-                    hasMoreTimeline.current = false;
-                    phase.current = 'follows'; // Transition to next phase
-                } else {
-                    timelineCursor.current = timelineRes.data.cursor;
-                }
-
-                const newFeeds: ProfileFeed[] = [];
-                for (const item of timelineRes.data.feed) {
-                    const authorDid = item.post.author.did;
-                    if (seenDids.current.has(authorDid)) continue;
-
-                    seenDids.current.add(authorDid);
+            let newFeedsFound = false;
+            const maxAttempts = 5; // Fetch up to 5 pages in one go before showing results
+            let attempts = 0;
+    
+            while (!newFeedsFound && attempts < maxAttempts && (hasMoreTimeline.current || hasMoreFollows.current)) {
+                attempts++;
+                let newFeedsOnThisPage: ProfileFeed[] = [];
+    
+                // --- Phase 1: Fetch from timeline ---
+                if (phase.current === 'timeline' && hasMoreTimeline.current) {
+                    const timelineRes = await agent.getTimeline({ limit: 50, cursor: timelineCursor.current });
+    
+                    if (!timelineRes.data.cursor || timelineRes.data.feed.length === 0) {
+                        hasMoreTimeline.current = false;
+                        phase.current = 'follows'; // Transition to next phase
+                    } else {
+                        timelineCursor.current = timelineRes.data.cursor;
+                    }
+    
+                    for (const item of timelineRes.data.feed) {
+                        const authorDid = item.post.author.did;
+                        if (seenDids.current.has(authorDid)) continue;
+    
+                        seenDids.current.add(authorDid);
+                        const lastViewedString = lastViewedTimestamps.get(authorDid);
+                        const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
+                        const eventDate = new Date((AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : (item.post.indexedAt || (item.post.record as any)?.createdAt)) || Date.now());
+    
+                        newFeedsOnThisPage.push({
+                            profile: item.post.author,
+                            latestPost: item,
+                            hasUnread: eventDate > lastViewedDate,
+                            lastActivity: eventDate.toISOString()
+                        });
+                    }
+                } 
+                // --- Phase 2: Fetch from follows list ---
+                else if (phase.current === 'follows' && hasMoreFollows.current) {
+                    const followsRes = await agent.getFollows({ actor: session!.did, limit: 100, cursor: followsCursor.current });
                     
-                    const lastViewedString = lastViewedTimestamps.get(authorDid);
-                    const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
-                    const eventDate = new Date((AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : (item.post.indexedAt || (item.post.record as any)?.createdAt)) || Date.now());
-
-                    newFeeds.push({
-                        profile: item.post.author,
-                        latestPost: item,
-                        hasUnread: eventDate > lastViewedDate,
-                        lastActivity: eventDate.toISOString()
-                    });
+                    if (!followsRes.data.cursor || followsRes.data.follows.length === 0) {
+                        hasMoreFollows.current = false;
+                    } else {
+                        followsCursor.current = followsRes.data.cursor;
+                    }
+    
+                    for (const profile of followsRes.data.follows) {
+                        if (seenDids.current.has(profile.did)) continue;
+    
+                        seenDids.current.add(profile.did);
+                        newFeedsOnThisPage.push({
+                            profile: profile,
+                            hasUnread: false,
+                            lastActivity: profile.indexedAt || new Date(0).toISOString(),
+                        });
+                    }
                 }
-                setProfileFeeds(prev => [...prev, ...newFeeds]);
-
-            } else if (phase.current === 'follows' && hasMoreFollows.current) {
-                const followsRes = await agent.getFollows({ actor: session!.did, limit: 100, cursor: followsCursor.current });
                 
-                if (!followsRes.data.cursor || followsRes.data.follows.length === 0) {
-                    hasMoreFollows.current = false;
-                } else {
-                    followsCursor.current = followsRes.data.cursor;
+                if (newFeedsOnThisPage.length > 0) {
+                    setProfileFeeds(prev => [...prev, ...newFeedsOnThisPage]);
+                    newFeedsFound = true; // Found content, break the loop to show it
                 }
-
-                const inactiveFeeds: ProfileFeed[] = [];
-                for (const profile of followsRes.data.follows) {
-                    if (seenDids.current.has(profile.did)) continue;
-
-                    seenDids.current.add(profile.did);
-                    inactiveFeeds.push({
-                        profile: profile,
-                        hasUnread: false,
-                        lastActivity: profile.indexedAt || new Date(0).toISOString(),
-                    });
-                }
-                setProfileFeeds(prev => [...prev, ...inactiveFeeds]);
-            }
+            } // end of while loop
+    
         } catch (e: any) {
             console.error("Failed to load feed data:", e);
             setError("Could not load data. " + e.message);
+            // Stop trying to fetch more on error
+            hasMoreTimeline.current = false;
+            hasMoreFollows.current = false;
         } finally {
             setIsLoadingMore(false);
             isFetching.current = false;
-            // If timeline phase finished and there's more to load, call again for follows phase
-            if (phase.current === 'follows' && !hasMoreTimeline.current && hasMoreFollows.current) {
-                loadMore();
-            }
         }
     }, [agent, session, lastViewedTimestamps]);
 
