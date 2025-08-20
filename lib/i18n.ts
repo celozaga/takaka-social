@@ -4,9 +4,9 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Importa os arquivos de tradução diretamente para garantir que sejam empacotados com o app.
 // Esta é uma abordagem mais robusta do que buscá-los via HTTP.
-import translationEN from '../locales/en/translation.json';
-import translationES from '../locales/es/translation.json';
-import translationPT from '../locales/pt/translation.json';
+import translationEN from '@/locales/en/translation.json';
+import translationES from '@/locales/es/translation.json';
+import translationPT from '@/locales/pt/translation.json';
 
 export const supportedLanguages = [
   { code: 'en', name: 'English' },
