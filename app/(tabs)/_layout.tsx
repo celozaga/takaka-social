@@ -46,7 +46,7 @@ const MainLayout: React.FC = () => {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         {showNav && <Navbar />}
-        <View style={styles.mainContent}>
+        <View style={[styles.mainContent, !showNav && styles.fullScreenContent]}>
           <Slot />
         </View>
         {showNav && <BottomNavbar isHidden={isCustomFeedHeaderVisible} />}
@@ -56,49 +56,65 @@ const MainLayout: React.FC = () => {
         <Suspense fallback={null}>
           {isLoginModalOpen && (
             <View style={styles.modalBackdrop}>
-              <LoginScreen onSuccess={closeLoginModal} />
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <LoginScreen onSuccess={closeLoginModal} />
+                </Suspense>
             </View>
           )}
           {isComposerOpen && (
             <View style={[styles.modalBackdrop, styles.composerBackdrop]}>
               <View style={styles.composerWrapper}>
-                <Composer onClose={closeComposer} onPostSuccess={closeComposer} replyTo={composerReplyTo} initialText={composerInitialText} />
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <Composer onClose={closeComposer} onPostSuccess={closeComposer} replyTo={composerReplyTo} initialText={composerInitialText} />
+                </Suspense>
               </View>
             </View>
           )}
           {isFeedModalOpen && (
             <View style={styles.modalBackdrop}>
                 <View style={styles.modalContentWrapper}>
-                    <FeedHeaderModal />
+                    <Suspense fallback={<ModalSuspenseFallback />}>
+                        <FeedHeaderModal />
+                    </Suspense>
                 </View>
             </View>
           )}
           {isEditProfileModalOpen && (
              <View style={styles.modalBackdrop}>
-                <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
+                </Suspense>
              </View>
           )}
           {isUpdateEmailModalOpen && (
              <View style={styles.modalBackdrop}>
-                <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
+                </Suspense>
              </View>
           )}
            {isUpdateHandleModalOpen && (
              <View style={styles.modalBackdrop}>
-                <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
+                </Suspense>
              </View>
           )}
           {isMediaActionsModalOpen && mediaActionsModalPost && (
              <View style={styles.modalBackdrop} onTouchEnd={closeMediaActionsModal}>
                 <View style={styles.bottomSheet} onTouchEnd={(e) => e.stopPropagation()}>
-                    <MediaActionsModal post={mediaActionsModalPost} onClose={closeMediaActionsModal} />
+                    <Suspense fallback={<ModalSuspenseFallback />}>
+                        <MediaActionsModal post={mediaActionsModalPost} onClose={closeMediaActionsModal} />
+                    </Suspense>
                 </View>
              </View>
           )}
           {isRepostModalOpen && repostModalPost && (
              <View style={styles.modalBackdrop} onTouchEnd={closeRepostModal}>
                 <View style={styles.bottomSheet} onTouchEnd={(e) => e.stopPropagation()}>
-                    <RepostModal post={repostModalPost} onClose={closeRepostModal} />
+                    <Suspense fallback={<ModalSuspenseFallback />}>
+                        <RepostModal post={repostModalPost} onClose={closeRepostModal} />
+                    </Suspense>
                 </View>
              </View>
           )}
@@ -122,6 +138,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 'auto',
     width: '100%',
     maxWidth: 640,
+  },
+  fullScreenContent: {
+    paddingTop: 0,
+    paddingLeft: 0,
+    paddingBottom: 0,
+    maxWidth: '100%',
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,

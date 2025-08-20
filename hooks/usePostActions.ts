@@ -40,7 +40,7 @@ export const usePostActions = (post: PostActionable) => {
     return true;
   };
 
-  const handleLike = async (e?: React.MouseEvent) => {
+  const handleLike = async (e?: { stopPropagation: () => void; preventDefault: () => void; }) => {
     e?.stopPropagation();
     e?.preventDefault();
     if (!ensureSession('like') || isLiking) return;
@@ -75,7 +75,7 @@ export const usePostActions = (post: PostActionable) => {
     }
   };
 
-  const handleRepost = async (e?: React.MouseEvent) => {
+  const handleRepost = async (e?: { stopPropagation: () => void; preventDefault: () => void; }) => {
     e?.stopPropagation();
     e?.preventDefault();
     if (!ensureSession('repost') || isReposting) return;

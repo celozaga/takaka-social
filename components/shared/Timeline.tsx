@@ -1,13 +1,13 @@
 
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyFeedGetTimeline, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 
 interface TimelineProps {
   feedUri: string; // 'following' or a feed URI
@@ -31,6 +31,9 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const { width } = useWindowDimensions();
+  const isWide = width > 640;
+
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -132,7 +135,7 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
           loadMorePosts();
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '400px' }
     );
 
     const currentLoader = loaderRef.current;
@@ -149,52 +152,94 @@ const Timeline: React.FC<TimelineProps> = ({ feedUri }) => {
 
   if (isLoading) {
     return (
-      <div className="columns-2 gap-4">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="break-inside-avoid mb-4">
-            <PostCardSkeleton />
-          </div>
-        ))}
-      </div>
+        <View style={styles.grid}>
+            {[...Array(8)].map((_, i) => (
+                <View key={i} style={styles.gridItem}>
+                    <PostCardSkeleton />
+                </View>
+            ))}
+        </View>
     );
   }
 
   if (error) {
-    return <div className="text-center text-error p-8 bg-surface-2 rounded-xl">{error}</div>;
+    return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
   }
   
   if (moderatedFeed.length === 0 && !isLoading && !hasMore) {
-    return <div className="text-center text-on-surface-variant p-8 bg-surface-2 rounded-xl">{t('timeline.empty')}</div>;
+    return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('timeline.empty')}</Text></View>;
   }
 
-  return (
-    <div>
-      <div className="columns-2 gap-4">
-        {moderatedFeed.map((feedViewPost) => (
-          <div key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} className="break-inside-avoid mb-4">
-            <PostCard feedViewPost={feedViewPost} />
-          </div>
-        ))}
-      </div>
+  const columns = isWide ? 2 : 1;
+  const columnData: AppBskyFeedDefs.FeedViewPost[][] = Array.from({ length: columns }, () => []);
+  moderatedFeed.forEach((item, index) => {
+    columnData[index % columns].push(item);
+  });
 
-      <div ref={loaderRef} className="h-10"> {/* Sentinel element */}
+  return (
+    <View>
+      <View style={styles.timelineContainer}>
+        {columnData.map((columnItems, colIndex) => (
+          <View key={colIndex} style={{ flex: 1, gap: 16 }}>
+            {columnItems.map((feedViewPost) => (
+              <PostCard key={`${feedViewPost.post.cid}-${AppBskyFeedDefs.isReasonRepost(feedViewPost.reason) ? feedViewPost.reason.by.did : ''}`} feedViewPost={feedViewPost} />
+            ))}
+          </View>
+        ))}
+      </View>
+
+
+      <View ref={loaderRef as any} style={{ height: 40 }}>
         {isLoadingMore && (
-          <div className="columns-2 gap-4 mt-4">
-            <div className="break-inside-avoid mb-4">
+          <View style={[styles.timelineContainer, { marginTop: 16 }]}>
+            <View style={{ flex: 1, gap: 16 }}>
               <PostCardSkeleton />
-            </div>
-            <div className="break-inside-avoid mb-4">
-              <PostCardSkeleton />
-            </div>
-          </div>
+            </View>
+            {isWide && <View style={{ flex: 1, gap: 16 }}><PostCardSkeleton /></View>}
+          </View>
         )}
-      </div>
+      </View>
 
       {!hasMore && moderatedFeed.length > 0 && (
-        <div className="text-center text-on-surface-variant py-8">{t('common.endOfList')}</div>
+        <View style={styles.endMessageContainer}>
+            <Text style={styles.infoText}>{t('common.endOfList')}</Text>
+        </View>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+    grid: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    gridItem: {
+        flex: 1,
+    },
+    messageContainer: {
+        padding: 32,
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    errorText: {
+        color: '#F2B8B5',
+        textAlign: 'center',
+    },
+    infoText: {
+        color: '#C3C6CF',
+        textAlign: 'center',
+    },
+    timelineContainer: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    endMessageContainer: {
+        paddingVertical: 32,
+        alignItems: 'center',
+    }
+});
 
 export default Timeline;

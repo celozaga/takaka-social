@@ -11,6 +11,7 @@ import ContentWarning from '../shared/ContentWarning';
 import PostCardSkeleton from './PostCardSkeleton';
 import ResizedImage from '../shared/ResizedImage';
 import SharedVideoPlayer from '../shared/VideoPlayer';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -87,24 +88,23 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             if (showAllMedia && embed.images.length > 0) {
                 const gridCols = embed.images.length >= 2 ? 'grid-cols-2' : 'grid-cols-1';
                 return (
-                    <div className={`grid ${gridCols} gap-1.5`}>
+                    <View style={styles.imageGrid}>
                         {embed.images.map((image, index) => {
                             return (
-                                <a href={image.fullsize} target="_blank" rel="noopener noreferrer" key={index} className="block relative group bg-surface-3 rounded-md overflow-hidden">
+                                <Link key={index} href={image.fullsize} asChild>
+                                <Pressable style={styles.imageGridItem}>
                                     <ResizedImage
                                         src={image.thumb}
                                         resizeWidth={400}
                                         alt={image.alt || `Post image ${index + 1}`}
-                                        className="w-full h-full object-cover"
+                                        style={styles.image}
                                         loading="lazy"
                                     />
-                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <ExternalLink className="text-white w-6 h-6" />
-                                    </div>
-                                </a>
+                                </Pressable>
+                                </Link>
                             );
                         })}
-                    </div>
+                    </View>
                 );
             }
             
@@ -114,30 +114,30 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const hasMultipleImages = embed.images.length > 1;
             
             return (
-                <div className="relative">
+                <View style={{ position: 'relative' }}>
                     <ResizedImage 
                         src={firstImage.thumb}
                         resizeWidth={400}
                         alt={firstImage.alt || 'Post image'} 
-                        className="w-full h-auto object-cover" 
+                        style={styles.image} 
                         loading="lazy"
                     />
                     {(hasMultipleImages || isRepost) && (
-                         <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                         <View style={styles.mediaBadgeContainer}>
                             {isRepost && (
-                                <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
-                                    <Repeat size={14} />
-                                </div>
+                                <View style={styles.mediaBadge}>
+                                    <Repeat size={14} color="white" />
+                                </View>
                             )}
                             {hasMultipleImages && (
-                                <div className="bg-black/70 text-white text-xs font-bold py-1 px-1.5 rounded-full flex items-center gap-1 backdrop-blur-sm border border-white/20">
-                                    <Images size={14} />
-                                    <span>{embed.images.length}</span>
-                                </div>
+                                <View style={[styles.mediaBadge, { flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                                    <Images size={14} color="white" />
+                                    <Text style={styles.mediaBadgeText}>{embed.images.length}</Text>
+                                </View>
                             )}
-                        </div>
+                        </View>
                     )}
-                </div>
+                </View>
             );
         }
 
@@ -148,7 +148,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const posterUrl = embedView.thumbnail;
             
             if (!authorDid || !videoCid || !agent.service) {
-                return <div className="w-full aspect-video bg-surface-3 flex items-center justify-center text-on-surface-variant">Video data unavailable</div>;
+                return <View style={styles.videoPlaceholder}><Text style={styles.videoPlaceholderText}>Video data unavailable</Text></View>;
             }
             
             const serviceUrl = agent.service.toString();
@@ -170,39 +170,21 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                 };
                 return <SharedVideoPlayer options={playerOptions} className="w-full h-auto bg-black rounded-lg" />;
             }
-
-            if (!posterUrl) {
-                 return (
-                    <div className="relative w-full aspect-video bg-black flex items-center justify-center text-on-surface-variant">
-                        <PlayCircle size={32} className="text-white/50" />
-                        <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                           {isRepost && (
-                                <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
-                                   <Repeat size={14}/>
-                               </div>
-                           )}
-                           <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
-                              <PlayCircle size={14}/>
-                           </div>
-                        </div>
-                    </div>
-                 );
-            }
             
             return (
-                <div className="relative">
-                    <ResizedImage src={posterUrl} resizeWidth={400} className="w-full h-auto object-cover bg-black" />
-                    <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                <View style={{ position: 'relative' }}>
+                    <ResizedImage src={posterUrl || ''} resizeWidth={400} style={{...styles.image, backgroundColor: '#000'}} />
+                    <View style={styles.mediaBadgeContainer}>
                         {isRepost && (
-                            <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
-                                <Repeat size={14}/>
-                            </div>
+                            <View style={styles.mediaBadge}>
+                                <Repeat size={14} color="white" />
+                            </View>
                         )}
-                        <div className="bg-black/70 text-white text-xs font-bold p-1.5 rounded-full backdrop-blur-sm border border-white/20">
-                            <PlayCircle size={14}/>
-                        </div>
-                    </div>
-                </div>
+                        <View style={styles.mediaBadge}>
+                            <PlayCircle size={14} color="white" />
+                        </View>
+                    </View>
+                </View>
             );
         }
 
@@ -212,12 +194,12 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     const renderContext = () => {
         if (reason && AppBskyFeedDefs.isReasonRepost(reason)) {
             return (
-                <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
-                    <Repeat size={14} />
-                    <span className="truncate">
-                        Reposted by <Link href={`/profile/${reason.by.handle}` as any} className="hover:underline" onPress={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</Link>
-                    </span>
-                </div>
+                <View style={styles.contextContainer}>
+                    <Repeat size={14} color="#C3C6CF" />
+                    <Text style={styles.contextText} numberOfLines={1}>
+                        Reposted by <Link href={`/profile/${reason.by.handle}` as any} style={styles.contextLink} onPress={e => e.stopPropagation()}>{reason.by.displayName || `@${reason.by.handle}`}</Link>
+                    </Text>
+                </View>
             );
         }
     
@@ -225,7 +207,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     };
     
     if (!modDecision) {
-        return <div className="break-inside-avoid mb-4"><PostCardSkeleton /></div>;
+        return <View style={styles.container}><PostCardSkeleton /></View>;
     }
     
     if (modDecision.visibility === 'hide') {
@@ -234,64 +216,195 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
     
     if (modDecision.visibility === 'warn' && !isContentVisible) {
         return (
-             <article className="bg-surface-2 rounded-xl overflow-hidden flex flex-col">
+             <View style={styles.card}>
                 <ContentWarning 
                     reason={modDecision.reason!} 
                     onShow={() => setIsContentVisible(true)} 
                 />
-            </article>
+            </View>
         );
     }
 
 
     const mediaElement = renderMedia();
     if (!mediaElement) return null;
+    
+    const Wrapper = ({ children }: { children: React.ReactNode }) => {
+        if(isClickable) {
+            return <Link href={postLink as any} asChild><Pressable>{children}</Pressable></Link>
+        }
+        return <View>{children}</View>;
+    }
 
-    const Wrapper = isClickable ? Link : 'div';
-    const wrapperProps = isClickable ? { href: postLink } : {};
 
     return (
-         <article className="bg-surface-2 rounded-xl overflow-hidden flex flex-col">
-            <Wrapper {...wrapperProps as any} className="w-full block">
-                {mediaElement}
-            </Wrapper>
-            <div className="p-3">
+         <View style={styles.card}>
+            <Wrapper>{mediaElement}</Wrapper>
+            <View style={styles.content}>
                 {renderContext()}
                 {postText && (
-                     <Wrapper {...wrapperProps as any} className="block mb-2">
-                        <p className="text-sm text-on-surface line-clamp-3 break-words">
-                            <RichTextRenderer record={record} />
-                        </p>
+                    <Wrapper>
+                        <View style={{ marginBottom: 8 }}>
+                            <Text style={styles.postText} numberOfLines={3}>
+                                <RichTextRenderer record={record} />
+                            </Text>
+                        </View>
                     </Wrapper>
                 )}
-                 <div className="flex items-center justify-between gap-2 text-sm mt-2">
-                   <Link href={profileLink as any} className="flex items-center gap-2 truncate hover:opacity-80 transition-opacity min-w-0">
-                     <img 
+                 <View style={styles.footer}>
+                   <Link href={profileLink as any} style={styles.authorContainer} asChild>
+                    <Pressable>
+                     <ResizedImage 
                         src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${author.did}/24`} 
                         alt={`${author.displayName}'s avatar`} 
-                        className="w-7 h-7 rounded-full bg-surface-3 flex-shrink-0" 
+                        style={styles.avatar} 
+                        resizeWidth={48}
                         loading="lazy"
                      />
-                     <div className="flex items-center gap-1 truncate">
-                        <span className="text-on-surface font-semibold truncate text-xs">{author.displayName || `@${author.handle}`}</span>
+                     <View style={styles.authorInfo}>
+                        <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
                         {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                            <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
+                            <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" style={{ flexShrink: 0 }} />
                         )}
-                     </div>
+                     </View>
+                    </Pressable>
                    </Link>
-                   <button 
-                        onClick={handleLike} 
+                   <Pressable 
+                        onPress={(e) => { e.stopPropagation(); handleLike(e); }}
                         disabled={isLiking}
-                        className={`flex items-center gap-1.5 transition-colors ${likeUri ? 'text-pink-500' : 'text-on-surface-variant hover:text-pink-500'}`}
-                        aria-label="Like"
+                        style={styles.likeButton}
                     >
-                        <Heart size={16} fill={likeUri ? 'currentColor' : 'none'} />
-                        <span className="font-semibold text-xs">{likeCount}</span>
-                    </button>
-                </div>
-            </div>
-        </article>
+                        <Heart size={16} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? '#ec4899' : 'none'} />
+                        <Text style={[styles.likeCount, !!likeUri && { color: '#ec4899'}]}>{likeCount}</Text>
+                    </Pressable>
+                </View>
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        // @ts-ignore: breakInside is a web-only property for column layout
+        breakInside: 'avoid',
+        marginBottom: 16
+    },
+    card: {
+        backgroundColor: '#1E2021',
+        borderRadius: 12,
+        overflow: 'hidden',
+        flexDirection: 'column'
+    },
+    image: {
+        width: '100%',
+        height: 'auto',
+        aspectRatio: 1,
+        objectFit: 'cover',
+    },
+    imageGrid: {
+        display: 'grid' as any,
+        gap: 6,
+    },
+    imageGridItem: {
+        backgroundColor: '#2b2d2e',
+        borderRadius: 6,
+        overflow: 'hidden',
+        aspectRatio: 1
+    },
+    videoPlaceholder: {
+        width: '100%',
+        aspectRatio: 1,
+        backgroundColor: '#2b2d2e',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    videoPlaceholderText: {
+        color: '#C3C6CF'
+    },
+    mediaBadgeContainer: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        flexDirection: 'row',
+        gap: 6,
+    },
+    mediaBadge: {
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: 6,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    mediaBadgeText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    content: {
+        padding: 12,
+    },
+    contextContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8,
+    },
+    contextText: {
+        color: '#C3C6CF',
+        fontSize: 12,
+    },
+    contextLink: {
+        textDecorationLine: 'underline',
+    },
+    postText: {
+        fontSize: 14,
+        color: '#E2E2E6',
+        lineHeight: 20,
+    },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        marginTop: 8,
+    },
+    authorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        flex: 1,
+        minWidth: 0,
+    },
+    avatar: {
+        width: 28,
+        height: 28,
+        borderRadius: 999,
+        backgroundColor: '#2b2d2e',
+        flexShrink: 0,
+    },
+    authorInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        flex: 1,
+        minWidth: 0,
+    },
+    authorName: {
+        color: '#E2E2E6',
+        fontWeight: '600',
+        fontSize: 12,
+        flex: 1,
+    },
+    likeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    likeCount: {
+        fontWeight: '600',
+        fontSize: 12,
+        color: '#C3C6CF',
+    }
+} as any);
 
 export default React.memo(PostCard);

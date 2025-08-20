@@ -8,6 +8,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Mousewheel, Virtual } from 'swiper/modules';
 import type { Swiper as SwiperCore } from 'swiper';
 import Head from '../shared/Head';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
@@ -116,17 +117,17 @@ const WatchScreen: React.FC = () => {
     };
 
     if (isLoading && videoPosts.length === 0) {
-        return <div className="w-full h-full flex items-center justify-center bg-black"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+        return <View style={styles.fullScreenCentered}><ActivityIndicator size="large" color="#A8C7FA" /></View>;
     }
 
     if (error) {
-        return <div className="w-full h-full flex items-center justify-center text-error p-4 bg-black">{error}</div>;
+        return <View style={styles.fullScreenCentered}><Text style={styles.errorText}>{error}</Text></View>;
     }
 
     return (
         <>
             <Head><title>{t('more.watch')}</title></Head>
-            <div className="w-full h-full relative">
+            <View style={styles.container}>
                 <Swiper
                     direction={'vertical'}
                     slidesPerView={1}
@@ -152,27 +153,70 @@ const WatchScreen: React.FC = () => {
                     })}
                      {(isLoadingMore || (isLoading && videoPosts.length > 0)) && (
                         <SwiperSlide virtualIndex={videoPosts.length}>
-                            <div className="w-full h-full flex items-center justify-center bg-black">
-                                <Loader2 className="w-8 h-8 animate-spin text-white" />
-                            </div>
+                            <View style={styles.fullScreenCentered}>
+                                <ActivityIndicator size="large" color="#FFFFFF" />
+                            </View>
                         </SwiperSlide>
                      )}
                      {!hasMore && videoPosts.length > 0 && !isLoadingMore && (
                         <SwiperSlide virtualIndex={videoPosts.length + 1}>
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white">
-                                <p className="text-lg font-semibold">{t('watch.allSeenTitle')}</p>
-                                <p className="text-sm text-on-surface-variant mt-1">{t('watch.allSeenDescription')}</p>
-                            </div>
+                            <View style={[styles.fullScreenCentered, { paddingHorizontal: 16 }]}>
+                                <Text style={styles.endTextTitle}>{t('watch.allSeenTitle')}</Text>
+                                <Text style={styles.endTextSubtitle}>{t('watch.allSeenDescription')}</Text>
+                            </View>
                         </SwiperSlide>
                      )}
                 </Swiper>
 
-                <button onClick={() => window.history.back()} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
-                    <ArrowLeft size={24} />
-                </button>
-            </div>
+                <Pressable onPress={() => window.history.back()} style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}>
+                    <ArrowLeft size={24} color="#FFFFFF" />
+                </Pressable>
+            </View>
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        backgroundColor: '#000',
+    },
+    fullScreenCentered: {
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#000'
+    },
+    errorText: {
+        color: '#F2B8B5',
+        padding: 16,
+        textAlign: 'center',
+    },
+    backButton: {
+        position: 'absolute',
+        top: 16,
+        left: 16,
+        zIndex: 10,
+        padding: 8,
+        borderRadius: 9999,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    backButtonPressed: {
+        backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    endTextTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+    endTextSubtitle: {
+        fontSize: 14,
+        color: '#C3C6CF',
+        marginTop: 4,
+    }
+});
 
 export default WatchScreen;
