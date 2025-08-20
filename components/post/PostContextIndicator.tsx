@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedRecord, AppBskyFeedPost, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -47,10 +49,9 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
         if (embed && AppBskyEmbedRecord.isViewRecord(embed) && AppBskyFeedDefs.isPostView(embed.record)) {
             quotedPost = embed.record;
         } else if (embed && AppBskyEmbedRecordWithMedia.isView(embed)) {
-            const recordWithMediaViewRecord = embed.record;
-            const embedRecordViewRecord = recordWithMediaViewRecord.record;
-            if (AppBskyEmbedRecord.isViewRecord(embedRecordViewRecord) && AppBskyFeedDefs.isPostView(embedRecordViewRecord.record)) {
-                quotedPost = embedRecordViewRecord.record;
+            const embedRecordView = embed.record;
+            if (AppBskyEmbedRecord.isViewRecord(embedRecordView) && AppBskyFeedDefs.isPostView(embedRecordView.record)) {
+                quotedPost = embedRecordView.record;
             }
         }
 

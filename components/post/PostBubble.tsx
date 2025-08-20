@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -145,10 +147,8 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
             return <QuotedPost embed={post.embed} />;
         }
          if (AppBskyEmbedRecordWithMedia.isView(post.embed)) {
-            const embedRecordView = post.embed.record.record;
-            if (AppBskyEmbedRecord.isView(embedRecordView)) {
-                return <QuotedPost embed={embedRecordView} />;
-            }
+            const embedRecordView = post.embed.record;
+            return <QuotedPost embed={embedRecordView} />;
         }
         return null;
     }

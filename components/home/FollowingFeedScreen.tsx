@@ -1,14 +1,21 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyActorDefs, AppBskyFeedDefs, AtUri, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
-import RichTextRenderer from '../shared/RichTextRenderer';
+import { 
+    AppBskyActorDefs,
+    AppBskyFeedDefs, 
+    RichText,
+    AppBskyEmbedImages,
+    AppBskyEmbedRecordWithMedia,
+    AppBskyEmbedVideo
+} from '@atproto/api';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useChannelState } from '../../context/ChannelStateContext';
 
 type ProfileFeed = {
-  profile: AppBskyActorDefs.ProfileView;
-  latestPost: AppBskyFeedDefs.FeedViewPost | null;
+  profile: AppBskyActorDefs.ProfileViewBasic;
+  latestPost: AppBskyFeedDefs.FeedViewPost;
   unreadCount: number;
 };
 
@@ -23,29 +30,25 @@ const formatTimestamp = (dateString: string) => {
     return format(date, 'MMM d'); // e.g., Jun 12
 };
 
-
-const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost | null): React.ReactNode => {
-    if (!latestPost) return <span className="text-on-surface-variant italic">No posts yet.</span>;
-    
+const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost): React.ReactNode => {
     if (AppBskyFeedDefs.isReasonRepost(latestPost.reason)) {
-        return (
-            <span className="text-on-surface-variant">
-                <span className="font-semibold text-on-surface">{latestPost.reason.by.displayName || `@${latestPost.reason.by.handle}`}</span> reposted
-            </span>
-        );
+        return <span className="text-on-surface-variant italic">Reposted</span>;
     }
     
     const record = latestPost.post.record as any;
-
     if (record.text) {
-        return <RichTextRenderer record={record} />;
+        const rt = new RichText({ text: record.text });
+        return <>{rt.text}</>;
     }
-  
-    if (AppBskyEmbedImages.isView(latestPost.post.embed)) {
-        return <span className="text-on-surface-variant">[Photo]</span>;
-    }
-    if (AppBskyEmbedVideo.isView(latestPost.post.embed)) {
-        return <span className="text-on-surface-variant">[Video]</span>;
+
+    if (latestPost.post.embed) {
+        const embed = latestPost.post.embed;
+        if (AppBskyEmbedImages.isView(embed) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedImages.isView(embed.media))) {
+            return <span className="text-on-surface-variant">[Photo]</span>;
+        }
+        if (AppBskyEmbedVideo.isView(embed) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media))) {
+            return <span className="text-on-surface-variant">[Video]</span>;
+        }
     }
   
     return <span className="text-on-surface-variant">New post</span>;
@@ -55,14 +58,18 @@ const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string 
     const { profile, latestPost, unreadCount } = profileFeed;
     const isActive = `#/profile/${profile.handle}` === currentHash;
 
+    const eventTimestamp = AppBskyFeedDefs.isReasonRepost(latestPost.reason) 
+        ? latestPost.reason.indexedAt 
+        : latestPost.post.indexedAt;
+
     return (
         <li>
             <a href={`#/profile/${profile.handle}`} className={`flex items-start gap-3 p-3 transition-colors ${isActive ? 'bg-surface-2' : 'hover:bg-surface-2'}`}>
-                <img src={profile.avatar} alt={profile.displayName} className="w-14 h-14 rounded-full bg-surface-3 flex-shrink-0" />
+                <img src={profile.avatar} alt={profile.displayName || ''} className="w-14 h-14 rounded-full bg-surface-3 flex-shrink-0" />
                 <div className="flex-1 min-w-0 border-b border-surface-3 pb-3">
                     <div className="flex justify-between items-center">
                         <h2 className="font-bold text-lg truncate">{profile.displayName || profile.handle}</h2>
-                        {latestPost && <p className="text-sm text-on-surface-variant flex-shrink-0 ml-2">{formatTimestamp(latestPost.post.indexedAt)}</p>}
+                        <p className="text-sm text-on-surface-variant flex-shrink-0 ml-2">{formatTimestamp(eventTimestamp)}</p>
                     </div>
                     <div className="flex justify-between items-start mt-0.5">
                         <div className="text-on-surface-variant text-sm line-clamp-2 break-words pr-2">
@@ -97,54 +104,81 @@ const FollowingFeedScreen: React.FC = () => {
     useEffect(() => {
         if (!session) return;
         
-        const fetchFeeds = async () => {
+        const fetchAndProcessTimeline = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                const { data: followsData } = await agent.getFollows({ actor: session.did, limit: 100 });
-                const profiles = followsData.follows;
+                // 1. Fetch main timeline
+                const { data } = await agent.getTimeline({ limit: 100 });
+                const feedItems = data.feed;
 
-                const authorFeedsPromises = profiles.map(profile =>
-                    agent.getAuthorFeed({ actor: profile.did, limit: 25 }) // Fetch up to 25 posts
-                        .then(res => ({ profile, feed: res.data.feed }))
-                        .catch(() => ({ profile, feed: [] })) // Handle errors for individual feeds
-                );
-                const authorFeeds = await Promise.all(authorFeedsPromises);
+                if (feedItems.length === 0) {
+                    setProfileFeeds([]);
+                    setIsLoading(false);
+                    return;
+                }
 
-                const combinedFeeds: ProfileFeed[] = authorFeeds.map(({ profile, feed }) => {
-                    const latestPost = feed[0] || null;
-                    const lastViewedString = lastViewedTimestamps.get(profile.did);
+                // 2. Group items by the actor who performed the action (author or reposter)
+                const activityByActor = new Map<string, {
+                    profile: AppBskyActorDefs.ProfileViewBasic;
+                    items: AppBskyFeedDefs.FeedViewPost[];
+                }>();
+
+                for (const item of feedItems) {
+                    const actor = AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by : item.post.author;
+                    if (!activityByActor.has(actor.did)) {
+                        activityByActor.set(actor.did, { profile: actor, items: [] });
+                    }
+                    activityByActor.get(actor.did)!.items.push(item);
+                }
+
+                // 3. Create ProfileFeed for each actor
+                const processedFeeds: ProfileFeed[] = [];
+                for (const [did, data] of activityByActor.entries()) {
+                    const latestPost = data.items[0]; // Timeline is sorted, so first item is latest activity
+                    const lastViewedString = lastViewedTimestamps.get(did);
                     let unreadCount = 0;
-                    
-                    if (latestPost) { // Only calculate if there are posts
-                        if (lastViewedString) {
-                            const lastViewedDate = new Date(lastViewedString);
-                            unreadCount = feed.filter(item => new Date(item.post.indexedAt) > lastViewedDate).length;
-                        } else {
-                            // If never viewed, all fetched posts are unread.
-                            unreadCount = feed.length;
-                        }
+
+                    if (lastViewedString) {
+                        const lastViewedDate = new Date(lastViewedString);
+                        unreadCount = data.items.filter(item => {
+                            const eventDate = new Date(
+                                AppBskyFeedDefs.isReasonRepost(item.reason) 
+                                ? item.reason.indexedAt 
+                                : item.post.indexedAt
+                            );
+                            return eventDate > lastViewedDate;
+                        }).length;
+                    } else {
+                        // If never viewed, all items from this actor are unread
+                        unreadCount = data.items.length;
                     }
                     
-                    return { profile, latestPost, unreadCount };
-                });
-
-                combinedFeeds.sort((a, b) => {
-                    if (!a.latestPost) return 1;
-                    if (!b.latestPost) return -1;
-                    return new Date(b.latestPost.post.indexedAt).getTime() - new Date(a.latestPost.post.indexedAt).getTime();
+                    processedFeeds.push({
+                        profile: data.profile,
+                        latestPost,
+                        unreadCount
+                    });
+                }
+                
+                // 4. Sort the list of profiles based on their most recent activity
+                processedFeeds.sort((a, b) => {
+                    const dateA = new Date(AppBskyFeedDefs.isReasonRepost(a.latestPost.reason) ? a.latestPost.reason.indexedAt : a.latestPost.post.indexedAt);
+                    const dateB = new Date(AppBskyFeedDefs.isReasonRepost(b.latestPost.reason) ? b.latestPost.reason.indexedAt : b.latestPost.post.indexedAt);
+                    return dateB.getTime() - dateA.getTime();
                 });
                 
-                setProfileFeeds(combinedFeeds);
+                setProfileFeeds(processedFeeds);
+
             } catch (e) {
-                console.error("Failed to fetch followed profiles", e);
+                console.error("Failed to fetch and process timeline:", e);
                 setError("Could not load your feed.");
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchFeeds();
+        fetchAndProcessTimeline();
     }, [agent, session, lastViewedTimestamps]);
 
     if (isLoading) {
