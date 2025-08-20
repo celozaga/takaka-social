@@ -22,7 +22,7 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
         let isCancelled = false;
         
         // Check for reply first, as it's the primary context
-        if (AppBskyFeedPost.isRecord(record) && record.reply) {
+        if (AppBskyFeedPost.isRecord(record) && record.reply?.parent) {
             setType('reply');
             const parentUri = record.reply.parent.uri;
             agent.getPostThread({ uri: parentUri, depth: 0 }).then(({ data }) => {
@@ -34,11 +34,13 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
             }).catch(err => console.error("Failed to fetch parent post for reply context", err));
         } 
         // Then check for quote
-        else if (AppBskyEmbedRecord.isView(embed) && AppBskyEmbedRecord.isViewRecord(embed.record) && AppBskyFeedDefs.isPostView(embed.record.record)) {
-            setType('quote');
-            const quotedAuthor = embed.record.record.author;
-            setAuthorName(quotedAuthor.displayName || `@${quotedAuthor.handle}`);
-            setAuthorHandle(quotedAuthor.handle);
+        else if (AppBskyEmbedRecord.isView(embed) && AppBskyEmbedRecord.isViewRecord(embed)) {
+            if (AppBskyFeedDefs.isPostView(embed.record)) {
+                setType('quote');
+                const quotedAuthor = embed.record.author;
+                setAuthorName(quotedAuthor.displayName || `@${quotedAuthor.handle}`);
+                setAuthorHandle(quotedAuthor.handle);
+            }
         }
 
         return () => { isCancelled = true; };

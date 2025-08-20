@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { 
     AppBskyFeedDefs, 
@@ -16,7 +15,7 @@ import PostActions from './PostActions';
 import { BadgeCheck, ExternalLink, PlayCircle, Repeat } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import ExternalLinkEmbed from './ExternalLinkEmbed';
-import PostContextIndicator from './PostContextIndicator';
+import ReplyPreview from './ReplyPreview';
 
 interface PostBubbleProps {
     post: AppBskyFeedDefs.PostView;
@@ -30,9 +29,10 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
         if (AppBskyFeedDefs.isPostView(embed.record)) {
             const postView = embed.record;
             const author = postView.author;
+            const postViewRecord = postView.record;
 
-            if (AppBskyFeedPost.isRecord(postView.record)) {
-                const postRecord = postView.record;
+            if (AppBskyFeedPost.isRecord(postViewRecord)) {
+                const postRecord = postViewRecord;
 
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
@@ -60,12 +60,13 @@ const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => 
 };
 
 const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = false, profileOwnerActor }) => {
-    const author = post.author;
-    
-    if (!AppBskyFeedPost.isRecord(post.record)) {
+    const { record: unknownRecord } = post;
+    if (!AppBskyFeedPost.isRecord(unknownRecord)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = post.record;
+    const record = unknownRecord;
+    const author = post.author;
+    const isReply = !!(record.reply && record.reply.parent && record.reply.root);
 
     const renderMedia = () => {
         if (!post.embed) return null;
@@ -165,7 +166,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
                     </span>
                 </div>
             )}
-            {!reason && <PostContextIndicator post={post} />}
+
             {showAuthor && (
                  <div className="flex items-center gap-2 mb-2">
                      <a href={`#/profile/${author.handle}`}>
@@ -182,6 +183,9 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
                     </div>
                  </div>
             )}
+
+            {isReply && <ReplyPreview replyRef={record.reply} />}
+
             {record.text && (
                 <div className="text-on-surface whitespace-pre-wrap break-words">
                     <RichTextRenderer record={record} />
