@@ -33,7 +33,6 @@
     "home": "Inicio",
     "search": "Buscar",
     "compose": "Componer",
-    "messages": "Mensajes",
     "notifications": "Notificaciones",
     "more": "Más",
     "feeds": "Feeds",
@@ -54,10 +53,6 @@
     "button": "Iniciar sesión",
     "buttonLoading": "Iniciando sesión...",
     "loginFailed": "Falló el inicio de sesión. Por favor, revisa tu handle y contraseña de aplicación."
-  },
-  "app": {
-    "messagingNotSupported": "Mensajería no compatible",
-    "messagingNotSupportedDescription": "Tu servidor de Bluesky (PDS) no es compatible actualmente con la función de mensajería directa."
   },
   "loginPrompt": {
     "title": "Experimenta Takaka al completo",
@@ -107,16 +102,6 @@
   "feedView": {
     "notFound": "No se pudo encontrar el feed especificado.",
     "loadingError": "No se pudo cargar el feed"
-  },
-  "messages": {
-    "title": "Mensajes",
-    "convoTitle": "Chat con {{peerName}}",
-    "loadingError": "No se pudieron cargar los mensajes.",
-    "emptyTitle": "Aún no hay mensajes",
-    "emptyDescription": "Inicia una conversación desde el perfil de alguien.",
-    "convoLoadingError": "No se pudo cargar la conversación.",
-    "deleted": "Mensaje eliminado",
-    "inputPlaceholder": "Enviar un mensaje..."
   },
   "more": {
     "title": "Más",

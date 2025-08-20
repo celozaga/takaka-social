@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'expo-router';
@@ -6,7 +7,7 @@ import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { 
     Settings, ChevronRight, BadgeCheck, List, Search, 
-    Bell, Users, UserCheck, Clapperboard, MessageSquare
+    Bell, Users, UserCheck, Clapperboard
 } from 'lucide-react';
 import Head from '../shared/Head';
 
@@ -36,7 +37,7 @@ const AppGridItem: React.FC<{
 
 
 const MoreScreen: React.FC = () => {
-    const { session, chatSupported } = useAtp();
+    const { session } = useAtp();
     const { getProfile } = useProfileCache();
     const { t } = useTranslation();
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
@@ -56,9 +57,8 @@ const MoreScreen: React.FC = () => {
     
     const profileLink = `/profile/${session?.handle}`;
 
-    const baseAppGridItems = session ? [
+    const appGridItems = session ? [
         { icon: List, label: t('more.myFeeds'), href: '/(tabs)/feeds', colorClass: 'text-sky-400' },
-        { icon: MessageSquare, label: t('nav.messages'), href: '/(tabs)/messages', colorClass: 'text-fuchsia-400' },
         { icon: Clapperboard, label: t('more.watch'), href: '/(tabs)/watch', colorClass: 'text-rose-400' },
         { icon: Search, label: t('nav.search'), href: '/(tabs)/search', colorClass: 'text-amber-400' },
         { icon: Bell, label: t('nav.notifications'), href: '/(tabs)/notifications', colorClass: 'text-indigo-400' },
@@ -67,7 +67,6 @@ const MoreScreen: React.FC = () => {
         { icon: Settings, label: t('nav.settings'), href: '/(tabs)/settings', colorClass: 'text-slate-400' },
     ] : [];
     
-    const appGridItems = chatSupported ? baseAppGridItems : baseAppGridItems.filter(item => item.label !== t('nav.messages'));
 
     return (
         <>

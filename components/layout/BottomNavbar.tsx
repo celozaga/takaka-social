@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, usePathname } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid, MessageSquare } from 'lucide-react';
+import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid } from 'lucide-react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 
 
@@ -12,24 +13,18 @@ interface BottomNavbarProps {
 }
 
 const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
-  const { session, logout, unreadCount, chatUnreadCount, chatSupported } = useAtp();
+  const { session, logout, unreadCount } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const pathname = usePathname();
   const { t } = useTranslation();
 
-  const baseLoggedInNavItems = [
+  const loggedInNavItems = [
     { href: '/(tabs)/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/(tabs)/home' || pathname === '/' },
     { href: '/(tabs)/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/(tabs)/search') },
     { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
-    { href: '/(tabs)/messages', labelKey: 'nav.messages', icon: MessageSquare, activeCondition: pathname.startsWith('/(tabs)/messages') },
     { href: '/(tabs)/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/(tabs)/notifications') },
     { href: '/(tabs)/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: pathname.startsWith('/(tabs)/more') || pathname.startsWith('/(tabs)/settings') },
   ];
-
-  const loggedInNavItems = chatSupported 
-    ? baseLoggedInNavItems 
-    : baseLoggedInNavItems.filter(item => item.labelKey !== 'nav.messages');
-
 
   const guestNavItems = [
     { href: '/(tabs)/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/(tabs)/home' || pathname === '/' },
@@ -41,9 +36,7 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
 
   const renderNavItem = (item: (typeof navItems)[number]) => {
     const isNotifications = item.labelKey === 'nav.notifications';
-    const isMessages = item.labelKey === 'nav.messages';
     const hasNotificationBadge = isNotifications && unreadCount > 0;
-    const hasMessageBadge = isMessages && chatUnreadCount > 0;
 
     const content = (
       <View style={styles.navItemContainer}>
@@ -52,11 +45,6 @@ const BottomNavbar: React.FC<BottomNavbarProps> = ({ isHidden = false }) => {
            {hasNotificationBadge && (
              <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-            </View>
-           )}
-           {hasMessageBadge && (
-             <View style={styles.badge}>
-                <Text style={styles.badgeText}>{chatUnreadCount > 99 ? '99+' : chatUnreadCount}</Text>
             </View>
            )}
         </View>

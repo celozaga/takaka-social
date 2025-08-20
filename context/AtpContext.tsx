@@ -11,10 +11,7 @@ interface AtpContextType {
   login: (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => Promise<any>;
   logout: () => Promise<void>;
   unreadCount: number;
-  chatUnreadCount: number;
   resetUnreadCount: () => void;
-  resetChatUnreadCount: () => void;
-  chatSupported: boolean | undefined;
 }
 
 const AtpContext = createContext<AtpContextType | undefined>(undefined);
@@ -23,8 +20,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [session, setSession] = useState<AtpSessionData | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [chatUnreadCount, setChatUnreadCount] = useState(0);
-  const [chatSupported, setChatSupported] = useState<boolean | undefined>(undefined);
   const [isPollingPaused, setIsPollingPaused] = useState(false);
   const { toast } = useToast();
 
@@ -62,32 +57,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUnreadCount(0);
   }, []);
 
-  const fetchChatUnreadCount = useCallback(async () => {
-    if (!agent.hasSession) {
-      return;
-    }
-
-    try {
-        const { data } = await agent.chat.bsky.convo.listConvos();
-        const totalUnread = data.convos.reduce((acc, convo) => acc + convo.unreadCount, 0);
-        setChatUnreadCount(totalUnread);
-        setChatSupported(true);
-    } catch (error: any) {
-        if (error.name === 'XRPCNotSupported') {
-            console.warn("Chat feature not supported by this PDS.");
-            setChatSupported(false);
-            setChatUnreadCount(0);
-        } else {
-            console.error("Failed to fetch chat unread count:", error);
-            throw error;
-        }
-    }
-  }, [agent]);
-
-  const resetChatUnreadCount = useCallback(() => {
-    setChatUnreadCount(0);
-  }, []);
-
   useEffect(() => {
     let pollInterval: number | undefined;
     let pauseTimeout: number | undefined;
@@ -95,7 +64,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const pollFunction = async () => {
       if (isPollingPaused || !agent.hasSession) return;
       try {
-        await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]);
+        await fetchUnreadCount();
       } catch (error: any) {
         if (error && error.status === 429) {
           console.warn("Rate limit hit. Pausing polling for 60 seconds.");
@@ -122,7 +91,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
           setSession(parsedSession);
-          await Promise.all([fetchUnreadCount(), fetchChatUnreadCount()]).catch(() => {
+          await fetchUnreadCount().catch(() => {
             // Ignore initial fetch errors, polling will handle it
           });
           pollInterval = window.setInterval(pollFunction, 30000);
@@ -130,10 +99,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.error("Failed to resume session:", error);
           localStorage.removeItem('atp-session');
           setSession(null);
-          setChatSupported(false);
         }
-      } else {
-        setChatSupported(false);
       }
       setIsLoadingSession(false);
     };
@@ -144,15 +110,13 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (pollInterval) clearInterval(pollInterval);
         if (pauseTimeout) clearTimeout(pauseTimeout);
     };
-  }, [agent, fetchUnreadCount, fetchChatUnreadCount, isPollingPaused, toast]);
+  }, [agent, fetchUnreadCount, isPollingPaused, toast]);
 
   const login = async (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => {
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });
     if(agent.session) {
         setSession(agent.session);
-        setChatSupported(undefined); // Reset on new login to re-check
         await fetchUnreadCount();
-        await fetchChatUnreadCount();
     }
     return response;
   };
@@ -161,16 +125,12 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await agent.logout();
     setSession(null);
     setUnreadCount(0);
-    setChatUnreadCount(0);
-    setChatSupported(false);
   };
 
   return (
     <AtpContext.Provider value={{ 
         agent, session, isLoadingSession, login, logout, 
-        unreadCount, resetUnreadCount,
-        chatUnreadCount, resetChatUnreadCount,
-        chatSupported
+        unreadCount, resetUnreadCount
     }}>
       {children}
     </AtpContext.Provider>

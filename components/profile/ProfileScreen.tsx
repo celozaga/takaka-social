@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -6,7 +7,7 @@ import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs, AppBskyFeedDefs,AtUri,RichText,AppBskyEmbedImages,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyEmbedRecord, ComAtprotoLabelDefs } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
-import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, MessageSquare, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserCheck, MicOff, Shield, ShieldOff, BadgeCheck, ArrowLeft, Grid, Image as ImageIcon, Video as VideoIcon, Loader2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from '../shared/Head';
@@ -53,7 +54,7 @@ const filterPosts = (posts: AppBskyFeedDefs.FeedViewPost[], filter: FeedFilter):
 };
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
-    const { agent, session, chatSupported } = useAtp();
+    const { agent, session } = useAtp();
     const { t } = useTranslation();
     const { toast } = useToast();
     const { openEditProfileModal, setCustomFeedHeaderVisible } = useUI();
@@ -422,14 +423,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                                 Edit Profile
                             </button>
                         ) : session && viewerState && (
-                            <>
-                                <FollowButton />
-                                {chatSupported && (
-                                    <a href={`#/messages/${profile.did}`} className="p-3 rounded-lg border border-outline hover:bg-surface-3 transition-colors" aria-label="Send message">
-                                        <MessageSquare size={20} />
-                                    </a>
-                                )}
-                            </>
+                            <FollowButton />
                         )}
                     </div>
                 </div>
