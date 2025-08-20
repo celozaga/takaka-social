@@ -7,12 +7,12 @@ const Head: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         React.Children.forEach(children, child => {
             if (React.isValidElement(child)) {
-                if (child.type === 'title' && typeof child.props.children === 'string') {
-                    document.title = child.props.children;
+                if (child.type === 'title' && typeof (child.props as any).children === 'string') {
+                    document.title = (child.props as any).children;
                 } else if (child.type === 'meta') {
                     const meta = document.createElement('meta');
                     Object.keys(child.props).forEach(prop => {
-                        meta.setAttribute(prop, child.props[prop]);
+                        meta.setAttribute(prop, (child.props as any)[prop]);
                     });
                     document.head.appendChild(meta);
                     metaTags.push(meta);
