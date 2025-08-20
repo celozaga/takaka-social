@@ -1,16 +1,14 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import {
     AppBskyActorDefs,
     AppBskyFeedDefs,
-    BskyAgent
 } from '@atproto/api';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useChannelState } from '../../context/ChannelStateContext';
 
 type ProfileFeed = {
-  profile: AppBskyActorDefs.ProfileView;
+  profile: AppBskyActorDefs.ProfileViewBasic;
   latestPost?: AppBskyFeedDefs.FeedViewPost;
   hasUnread: boolean;
   lastActivity: string; // ISO string for sorting
@@ -39,7 +37,7 @@ const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost): React.ReactNo
         return (
             <div className="flex items-baseline">
                 <span className="text-on-surface-variant italic mr-1.5 flex-shrink-0">Reposted:</span>
-                <span className="truncate">{record?.text}</span>
+                <span className="truncate">{record?.text || '[media]'}</span>
             </div>
         );
     }
@@ -79,26 +77,26 @@ const ProfileFeedItem: React.FC<{ profileFeed: ProfileFeed, currentHash: string 
     );
 });
 
-const fetchAllFollows = async (agent: BskyAgent, actor: string) => {
-    let follows: AppBskyActorDefs.ProfileView[] = [];
-    let cursor: string | undefined;
-    do {
-        const res = await agent.getFollows({ actor, cursor, limit: 100 });
-        if (res.data.follows) {
-            follows = follows.concat(res.data.follows);
-        }
-        cursor = res.data.cursor;
-    } while (cursor);
-    return follows;
-};
-
 const FollowingFeedScreen: React.FC = () => {
     const { agent, session } = useAtp();
     const { lastViewedTimestamps } = useChannelState();
     const [profileFeeds, setProfileFeeds] = useState<ProfileFeed[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentHash, setCurrentHash] = React.useState(window.location.hash);
+    
+    const [phase, setPhase] = useState<'timeline' | 'follows'>('timeline');
+    
+    // Using refs to avoid re-creating useCallback on every state change
+    const timelineCursor = useRef<string | undefined>();
+    const followsCursor = useRef<string | undefined>();
+    const seenDids = useRef(new Set<string>());
+    const hasMoreTimeline = useRef(true);
+    const hasMoreFollows = useRef(true);
+    const isFetching = useRef(false);
+
+    const loaderRef = useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
         const handler = () => setCurrentHash(window.location.hash);
@@ -106,90 +104,124 @@ const FollowingFeedScreen: React.FC = () => {
         return () => window.removeEventListener('hashchange', handler);
     }, []);
 
-    useEffect(() => {
-        if (!session) return;
-        let isCancelled = false;
-    
-        const fetchData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                // Fetch follows and the main timeline concurrently for efficiency.
-                const [followedProfiles, timelineRes] = await Promise.all([
-                    fetchAllFollows(agent, session.did),
-                    agent.getTimeline({ limit: 100 }) // Fetch last 100 posts from followed users.
-                ]);
-    
-                if (isCancelled) return;
-    
-                const timelinePosts = timelineRes.data.feed;
-                
-                // Efficiently determine which authors have unread posts.
-                const unreadAuthors = new Set<string>();
-                for (const item of timelinePosts) {
+    const loadMore = useCallback(async () => {
+        if (isFetching.current || (!hasMoreTimeline.current && !hasMoreFollows.current)) return;
+        
+        isFetching.current = true;
+        setIsLoadingMore(true);
+
+        try {
+            if (phase === 'timeline' && hasMoreTimeline.current) {
+                const timelineRes = await agent.getTimeline({ limit: 50, cursor: timelineCursor.current });
+
+                if (!timelineRes.data.cursor || timelineRes.data.feed.length === 0) {
+                    hasMoreTimeline.current = false;
+                    setPhase('follows');
+                } else {
+                    timelineCursor.current = timelineRes.data.cursor;
+                }
+
+                const newFeeds: ProfileFeed[] = [];
+                for (const item of timelineRes.data.feed) {
                     const authorDid = item.post.author.did;
-                    if (unreadAuthors.has(authorDid)) continue; // Already marked as unread.
-    
+                    if (seenDids.current.has(authorDid)) continue;
+
+                    seenDids.current.add(authorDid);
+                    
                     const lastViewedString = lastViewedTimestamps.get(authorDid);
                     const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
                     const eventDate = new Date(AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt);
-                    
-                    if (eventDate > lastViewedDate) {
-                        unreadAuthors.add(authorDid);
-                    }
+
+                    newFeeds.push({
+                        profile: item.post.author,
+                        latestPost: item,
+                        hasUnread: eventDate > lastViewedDate,
+                        lastActivity: eventDate.toISOString()
+                    });
                 }
-    
-                // Map the latest post for each author from the timeline.
-                const latestPostMap = new Map<string, AppBskyFeedDefs.FeedViewPost>();
-                for (const item of timelinePosts) {
-                    const authorDid = item.post.author.did;
-                    if (!latestPostMap.has(authorDid)) {
-                        latestPostMap.set(authorDid, item);
-                    }
-                }
-    
-                // Combine all data to build the final list for the UI.
-                const finalProfileFeeds: ProfileFeed[] = followedProfiles.map(profile => {
-                    const latestPost = latestPostMap.get(profile.did);
-                    const hasUnread = unreadAuthors.has(profile.did);
-    
-                    // Determine the last activity timestamp for sorting purposes.
-                    const lastActivity = latestPost
-                        ? (AppBskyFeedDefs.isReasonRepost(latestPost.reason) ? latestPost.reason.indexedAt : latestPost.post.indexedAt)
-                        : profile.indexedAt || new Date(0).toISOString();
-    
-                    return {
-                        profile,
-                        latestPost,
-                        hasUnread,
-                        lastActivity,
-                    };
-                });
+                setProfileFeeds(prev => [...prev, ...newFeeds]);
+
+            } else if (phase === 'follows' && hasMoreFollows.current) {
+                const followsRes = await agent.getFollows({ actor: session!.did, limit: 100, cursor: followsCursor.current });
                 
-                if (isCancelled) return;
-                setProfileFeeds(finalProfileFeeds);
-    
-            } catch (e) {
-                if (isCancelled) return;
-                console.error("Failed to fetch following feed data:", e);
-                setError("Could not load your following feed.");
-            } finally {
-                if (!isCancelled) {
-                    setIsLoading(false);
+                if (!followsRes.data.cursor || followsRes.data.follows.length === 0) {
+                    hasMoreFollows.current = false;
+                } else {
+                    followsCursor.current = followsRes.data.cursor;
                 }
+
+                const inactiveFeeds: ProfileFeed[] = [];
+                for (const profile of followsRes.data.follows) {
+                    if (seenDids.current.has(profile.did)) continue;
+
+                    seenDids.current.add(profile.did);
+                    inactiveFeeds.push({
+                        profile: profile,
+                        hasUnread: false,
+                        lastActivity: profile.indexedAt || new Date(0).toISOString(),
+                    });
+                }
+                setProfileFeeds(prev => [...prev, ...inactiveFeeds]);
+            }
+        } catch (e: any) {
+            console.error("Failed to load feed data:", e);
+            setError("Could not load data. " + e.message);
+        } finally {
+            setIsLoadingMore(false);
+            isFetching.current = false;
+        }
+    }, [agent, session, phase, lastViewedTimestamps]);
+
+    // Initial load effect
+    useEffect(() => {
+        if (!session) return;
+
+        // Reset state for initial load or user change
+        setIsLoading(true);
+        setProfileFeeds([]);
+        setPhase('timeline');
+        timelineCursor.current = undefined;
+        followsCursor.current = undefined;
+        seenDids.current.clear();
+        hasMoreTimeline.current = true;
+        hasMoreFollows.current = true;
+        setError(null);
+        isFetching.current = false;
+
+        loadMore().finally(() => {
+            setIsLoading(false)
+        });
+    }, [session, loadMore]);
+
+    // Intersection observer effect
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !isLoading) {
+                    loadMore();
+                }
+            },
+            { rootMargin: '600px' }
+        );
+
+        const currentLoader = loaderRef.current;
+        if (currentLoader) {
+            observer.observe(currentLoader);
+        }
+
+        return () => {
+            if (currentLoader) {
+                observer.unobserve(currentLoader);
             }
         };
-    
-        fetchData();
-    
-        return () => {
-            isCancelled = true;
-        };
-    }, [agent, session, lastViewedTimestamps]);
+    }, [isLoading, loadMore]);
 
-    const sortedData = useMemo(() => {
-        return [...profileFeeds].sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
-    }, [profileFeeds]);
+    // Chaining effect to load follows immediately after timeline finishes
+    useEffect(() => {
+        if (phase === 'follows' && !hasMoreTimeline.current && hasMoreFollows.current && !isLoading && !isLoadingMore) {
+            loadMore();
+        }
+    }, [phase, isLoading, isLoadingMore, loadMore]);
 
     if (isLoading) {
         return (
@@ -214,7 +246,7 @@ const FollowingFeedScreen: React.FC = () => {
         return <div className="text-center text-error p-8 bg-surface-2 rounded-xl mt-4">{error}</div>;
     }
     
-    if (sortedData.length === 0) {
+    if (profileFeeds.length === 0 && !isLoading) {
         return (
             <div className="text-center text-on-surface-variant p-8 mt-4">
                 <h2 className="text-xl font-bold text-on-surface">Your feed is empty</h2>
@@ -229,10 +261,21 @@ const FollowingFeedScreen: React.FC = () => {
     return (
         <div>
             <ul>
-                {sortedData.map(feed => (
+                {profileFeeds.map(feed => (
                     <ProfileFeedItem key={feed.profile.did} profileFeed={feed} currentHash={currentHash} />
                 ))}
             </ul>
+            <div ref={loaderRef} className="h-20">
+                {isLoadingMore && (
+                    <div className="flex items-start gap-3 p-3 animate-pulse">
+                         <div className="w-14 h-14 rounded-full bg-surface-3 flex-shrink-0"></div>
+                         <div className="flex-1 min-w-0 border-b border-surface-3 pb-3">
+                             <div className="h-5 w-1/2 bg-surface-3 rounded"></div>
+                             <div className="mt-2 h-4 w-3/4 bg-surface-3 rounded"></div>
+                         </div>
+                     </div>
+                )}
+            </div>
         </div>
     );
 };
