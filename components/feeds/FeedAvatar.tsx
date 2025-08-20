@@ -1,40 +1,46 @@
 
 import React, { useState } from 'react';
 import { List } from 'lucide-react';
+import { View, Image, StyleSheet, StyleProp, ImageStyle } from 'react-native';
 
 interface FeedAvatarProps {
   src?: string;
   alt: string;
-  className: string;
+  style: StyleProp<ImageStyle>;
 }
 
-const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, className }) => {
-  // Initialize with error if src is falsy from the start
+const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, style }) => {
   const [hasError, setHasError] = useState(!src);
-
-  const handleError = () => {
-    if (!hasError) { // Prevent infinite loops
-        setHasError(true);
-    }
-  };
+  const handleError = () => { if (!hasError) setHasError(true); };
 
   if (hasError) {
     return (
-      <div className={`${className} flex items-center justify-center bg-surface-3`}>
-        <List className="w-1/2 h-1/2 text-on-surface-variant" />
-      </div>
+      <View style={[styles.fallback, style]}>
+        <List style={styles.icon} color="#C3C6CF" />
+      </View>
     );
   }
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
+    <Image
+      source={{ uri: src }}
+      accessibilityLabel={alt}
+      style={style}
       onError={handleError}
-      loading="lazy"
     />
   );
 };
+
+const styles = StyleSheet.create({
+    fallback: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#2b2d2e' // surface-3
+    },
+    icon: {
+        width: '50%',
+        height: '50%'
+    }
+});
 
 export default FeedAvatar;

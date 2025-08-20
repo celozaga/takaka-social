@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs } from '@atproto/api';
+import {AppBskyFeedDefs } from '@atproto/api';
 import { Pin, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import PopularFeeds from './PopularFeeds';
 import { useUI } from '../../context/UIContext';
@@ -29,7 +29,7 @@ const EditableFeedItem: React.FC<{
 
     return (
         <View style={[styles.itemContainer, disabled && styles.itemDisabled]}>
-            <FeedAvatar src={feed.avatar} alt={feed.displayName} className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <FeedAvatar src={feed.avatar} alt={feed.displayName} style={styles.avatar} />
             <View style={styles.itemMain}>
                 <Link href={feedLink as any} asChild>
                     <Pressable>
@@ -201,6 +201,12 @@ const styles = StyleSheet.create({
     sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: '#C3C6CF' },
     itemContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, backgroundColor: '#1E2021', borderRadius: 12 },
     itemDisabled: { opacity: 0.5 },
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        flexShrink: 0,
+    },
     itemMain: { flex: 1, minWidth: 0 },
     itemTitle: { fontWeight: 'bold', color: '#E2E2E6' },
     itemByline: { fontSize: 14, color: '#C3C6CF' },

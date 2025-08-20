@@ -27,7 +27,7 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
     const content = (
         <View style={styles.container}>
             <View style={styles.contentContainer}>
-                <FeedAvatar src={feed.avatar} alt={feed.displayName} className="w-12 h-12 rounded-lg flex-shrink-0" />
+                <FeedAvatar src={feed.avatar} alt={feed.displayName} style={styles.avatar} />
                 <View style={styles.mainContent}>
                     <View style={styles.header}>
                         <View style={styles.headerTextContainer}>
@@ -68,6 +68,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: 12,
+    },
+    avatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        flexShrink: 0,
     },
     mainContent: {
         flex: 1,

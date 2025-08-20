@@ -55,7 +55,7 @@ const FeedHeaderModal: React.FC = () => {
                     </Pressable>
                 </View>
                 <View style={styles.content}>
-                    <FeedAvatar src={feedView.avatar} alt={feedView.displayName} className="w-20 h-20 rounded-lg mb-3" />
+                    <FeedAvatar src={feedView.avatar} alt={feedView.displayName} style={styles.avatarImage} />
                     <Text style={styles.title}>{feedView.displayName}</Text>
                     <Text style={styles.byline}>{t('feedModal.byline', { handle: feedView.creator.handle })}</Text>
                     <Text style={styles.likes}>{t('feedModal.likes', { count: feedView.likeCount || 0 })}</Text>
@@ -125,26 +125,35 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingTop: 48,
         alignItems: 'center',
-        textAlign: 'center' as any,
+    },
+    avatarImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 12,
+        marginBottom: 12,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
         color: '#E2E2E6',
+        textAlign: 'center',
     },
     byline: {
         fontSize: 14,
         color: '#C3C6CF',
+        textAlign: 'center',
     },
     likes: {
         fontSize: 14,
         color: '#C3C6CF',
         marginTop: 8,
+        textAlign: 'center',
     },
     description: {
         marginTop: 12,
         color: '#E2E2E6',
         fontSize: 16,
+        textAlign: 'center',
     },
     actionsGrid: {
         padding: 16,

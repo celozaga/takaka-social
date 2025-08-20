@@ -44,7 +44,7 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({ feedUri, onBack }) => {
                 <ArrowLeft size={20} color="#E2E2E6" />
             </Pressable>
             <View style={styles.titleContainer}>
-                <FeedAvatar src={feedView.avatar} alt="" className="w-7 h-7 rounded-md" />
+                <FeedAvatar src={feedView.avatar} alt="" style={styles.avatar} />
                 <Text style={styles.title} numberOfLines={1}>{feedView.displayName}</Text>
             </View>
             <View style={styles.rightContainer}>
@@ -98,6 +98,11 @@ const styles = StyleSheet.create({
         gap: 8,
         minWidth: 0,
         paddingHorizontal: 16,
+    },
+    avatar: {
+        width: 28,
+        height: 28,
+        borderRadius: 6,
     },
     title: {
         fontWeight: 'bold',

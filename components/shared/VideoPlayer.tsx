@@ -1,8 +1,11 @@
+
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import type Player from 'video.js/dist/types/player';
+import { View, Image, Linking, StyleSheet, Platform, Pressable } from 'react-native';
+import { PlayCircle } from 'lucide-react';
 
 interface VideoPlayerProps {
   options: any; // video.js options
@@ -19,7 +22,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, className, 
   const playerRef = useRef<Player | null>(null);
 
   useEffect(() => {
-    if (!videoRef.current) {
+    if (Platform.OS !== 'web' || !videoRef.current) {
         return;
     }
 
@@ -50,6 +53,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, className, 
 
   // Update props
   useEffect(() => {
+    if (Platform.OS !== 'web') return;
     const player = playerRef.current;
     if (player) {
       player.autoplay(options.autoplay);
@@ -62,6 +66,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, className, 
 
   // Event handlers
   useEffect(() => {
+    if (Platform.OS !== 'web') return;
     const player = playerRef.current;
     if (player) {
         if (onPlay) player.on('play', onPlay);
@@ -77,11 +82,46 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, className, 
     }
   }, [onPlay, onPause, onEnded]);
 
+  if (Platform.OS !== 'web') {
+    const handlePress = () => {
+        if (options.sources && options.sources[0]) {
+            Linking.openURL(options.sources[0].src);
+        }
+    };
+    return (
+        <Pressable onPress={handlePress} style={styles.container}>
+            <Image source={{ uri: options.poster }} style={styles.poster} resizeMode="contain" />
+            <View style={styles.playButtonOverlay}>
+                <PlayCircle size={64} color="rgba(255, 255, 255, 0.8)" />
+            </View>
+        </Pressable>
+    );
+  }
+
   return (
     <div data-vjs-player className={className}>
       <div ref={videoRef} />
     </div>
   );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'black',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    poster: {
+        width: '100%',
+        height: '100%',
+    },
+    playButtonOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
+})
 
 export default VideoPlayer;

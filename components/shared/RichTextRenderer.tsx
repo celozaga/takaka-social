@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Link } from 'expo-router';
 import { RichText } from '@atproto/api';
+import { Pressable, Text, Linking, StyleSheet } from 'react-native';
 
 interface RichTextRendererProps {
   record: {
@@ -20,26 +22,26 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
   for (const segment of rt.segments()) {
     if (segment.isLink()) {
       segments.push(
-        <a
+        <Text
           key={segments.length}
-          href={segment.link!.uri}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-          onClick={(e) => e.stopPropagation()}
+          style={styles.link}
+          onPress={(e) => {
+              e.stopPropagation();
+              Linking.openURL(segment.link!.uri);
+          }}
         >
           {segment.text}
-        </a>
+        </Text>
       );
     } else if (segment.isMention()) {
       segments.push(
         <Link
           key={segments.length}
           href={`/profile/${segment.mention!.did}` as any}
-          className="text-primary hover:underline"
           onPress={(e) => e.stopPropagation()}
+          asChild
         >
-          {segment.text}
+          <Text style={styles.link}>{segment.text}</Text>
         </Link>
       );
     } else if (segment.isTag()) {
@@ -47,18 +49,25 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
         <Link
           key={segments.length}
           href={`/(tabs)/search?q=${encodeURIComponent(segment.tag!.tag)}&filter=top` as any}
-          className="text-primary hover:underline"
           onPress={(e) => e.stopPropagation()}
+          asChild
         >
-          {segment.text}
+          <Text style={styles.link}>{segment.text}</Text>
         </Link>
       );
     } else {
-      segments.push(<span key={segments.length}>{segment.text}</span>);
+      segments.push(<Text key={segments.length}>{segment.text}</Text>);
     }
   }
 
   return <>{segments}</>;
 };
+
+const styles = StyleSheet.create({
+    link: {
+        color: '#A8C7FA', // primary
+        textDecorationLine: 'underline',
+    }
+});
 
 export default RichTextRenderer;
