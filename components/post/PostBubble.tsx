@@ -27,12 +27,12 @@ interface PostBubbleProps {
 const QuotedPost: React.FC<{ embed: AppBskyEmbedRecord.View }> = ({ embed }) => {
     if (AppBskyEmbedRecord.isViewRecord(embed)) {
         if (AppBskyFeedDefs.isPostView(embed.record)) {
-            const postView = embed.record;
+            const postView: AppBskyFeedDefs.PostView = embed.record;
             const author = postView.author;
             const postViewRecord = postView.record;
 
             if (AppBskyFeedPost.isRecord(postViewRecord)) {
-                const postRecord = postViewRecord;
+                const postRecord: AppBskyFeedPost.Record = postViewRecord;
 
                 return (
                     <a href={`#/post/${author.did}/${postView.uri.split('/').pop()}`} className="block border border-outline rounded-lg p-2 mt-2 hover:bg-surface-3/50">
@@ -64,9 +64,9 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
     if (!AppBskyFeedPost.isRecord(unknownRecord)) {
         return null; // This is not a standard post, maybe a list or something else.
     }
-    const record = unknownRecord;
+    const record: AppBskyFeedPost.Record = unknownRecord;
     const author = post.author;
-    const isReply = !!(record.reply && record.reply.parent && record.reply.root);
+    const isReply = !!(record.reply);
 
     const renderMedia = () => {
         if (!post.embed) return null;
@@ -184,7 +184,7 @@ const PostBubble: React.FC<PostBubbleProps> = ({ post, reason, showAuthor = fals
                  </div>
             )}
 
-            {isReply && <ReplyPreview replyRef={record.reply} />}
+            {isReply && record.reply && <ReplyPreview replyRef={record.reply} />}
 
             {record.text && (
                 <div className="text-on-surface whitespace-pre-wrap break-words">

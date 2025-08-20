@@ -22,22 +22,25 @@ const PostContextIndicator: React.FC<PostContextIndicatorProps> = ({ post }) => 
         let isCancelled = false;
         
         // Check for reply first, as it's the primary context
-        if (AppBskyFeedPost.isRecord(record) && record.reply?.parent) {
-            setType('reply');
-            const parentUri = record.reply.parent.uri;
-            agent.getPostThread({ uri: parentUri, depth: 0 }).then(({ data }) => {
-                if (!isCancelled && AppBskyFeedDefs.isThreadViewPost(data.thread)) {
-                    const parentAuthor = data.thread.post.author;
-                    setAuthorName(parentAuthor.displayName || `@${parentAuthor.handle}`);
-                    setAuthorHandle(parentAuthor.handle);
-                }
-            }).catch(err => console.error("Failed to fetch parent post for reply context", err));
-        } 
+        if (AppBskyFeedPost.isRecord(record)) {
+            if (record.reply?.parent) {
+                setType('reply');
+                const parentUri = record.reply.parent.uri;
+                agent.getPostThread({ uri: parentUri, depth: 0 }).then(({ data }) => {
+                    if (!isCancelled && AppBskyFeedDefs.isThreadViewPost(data.thread)) {
+                        const parentAuthor = data.thread.post.author;
+                        setAuthorName(parentAuthor.displayName || `@${parentAuthor.handle}`);
+                        setAuthorHandle(parentAuthor.handle);
+                    }
+                }).catch(err => console.error("Failed to fetch parent post for reply context", err));
+            }
+        }
         // Then check for quote
         else if (AppBskyEmbedRecord.isView(embed) && AppBskyEmbedRecord.isViewRecord(embed)) {
             if (AppBskyFeedDefs.isPostView(embed.record)) {
+                const postView: AppBskyFeedDefs.PostView = embed.record;
                 setType('quote');
-                const quotedAuthor = embed.record.author;
+                const quotedAuthor = postView.author;
                 setAuthorName(quotedAuthor.displayName || `@${quotedAuthor.handle}`);
                 setAuthorHandle(quotedAuthor.handle);
             }
