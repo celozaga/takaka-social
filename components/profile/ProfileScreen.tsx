@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -9,47 +7,100 @@ import { useUI } from '../../context/UIContext';
 import PostBubble from '../post/PostBubble';
 import { useChannelState } from '../../context/ChannelStateContext';
 
-const ProfileFeed: React.FC<{ actor: string, isBlocked: boolean }> = ({ actor, isBlocked }) => {
-    const { agent } = useAtp();
+const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
+    const { agent, session } = useAtp();
+    const { toast } = useToast();
+    const { openEditProfileModal } = useUI();
+    const { markChannelReadUpTo } = useChannelState();
+
+    const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
+    // Feed state, moved from ProfileFeed
     const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [initialLoad, setInitialLoad] = useState(true);
-
+    const [initialFeedLoad, setInitialFeedLoad] = useState(true);
     const loaderRef = useRef<HTMLDivElement>(null);
 
+    const isMe = session?.did === profile?.did;
+    const isBlocked = !!(profile?.viewer?.blocking || profile?.viewer?.blockedBy);
+
+    // Mark channel as read when feed loads
+    useEffect(() => {
+        if (!feed || feed.length === 0 || !profile?.did) return;
+        
+        const top = feed[0];
+        // Prioritize indexedAt, fallback to createdAt
+        const topIso =
+            (top.post as any)?.indexedAt ||
+            (top.post?.record as any)?.createdAt ||
+            new Date().toISOString();
+
+        markChannelReadUpTo(profile.did, topIso).catch(() => {});
+    }, [feed, profile?.did, markChannelReadUpTo]);
+
+
     const fetchFeed = useCallback(async (currentCursor?: string) => {
-        if (isBlocked) {
+        if (isBlocked || !profile?.did) {
             setHasMore(false);
-            setInitialLoad(false);
+            setInitialFeedLoad(false);
             return;
         }
-        if (!currentCursor) setInitialLoad(true);
-        else setIsLoadingMore(true);
+
+        if (currentCursor) {
+            setIsLoadingMore(true);
+        } else {
+            setInitialFeedLoad(true);
+        }
 
         try {
-            const res = await agent.getAuthorFeed({ actor, limit: 30, cursor: currentCursor });
+            const res = await agent.getAuthorFeed({ actor: profile.did, limit: 30, cursor: currentCursor });
             setFeed(prev => currentCursor ? [...prev, ...res.data.feed] : res.data.feed);
             setCursor(res.data.cursor);
             setHasMore(!!res.data.cursor && res.data.feed.length > 0);
         } catch (err) {
             console.error("Failed to load profile feed:", err);
-            setHasMore(false); // Stop trying on error
+            setHasMore(false);
         } finally {
             setIsLoadingMore(false);
-            setInitialLoad(false);
+            setInitialFeedLoad(false);
         }
-    }, [agent, actor, isBlocked]);
+    }, [agent, profile?.did, isBlocked]);
 
+    // Fetch profile data
     useEffect(() => {
-        fetchFeed();
-    }, [fetchFeed]);
+        const fetchProfile = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const profileRes = await agent.getProfile({ actor });
+                setProfile(profileRes.data);
+                localStorage.setItem('takaka-last-viewed-profile', actor);
+            } catch (err: any) {
+                setError(err.message || "Could not load profile.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProfile();
+    }, [agent, actor]);
+
+    // Fetch initial feed once profile is loaded
+    useEffect(() => {
+        if (profile?.did) {
+            fetchFeed();
+        }
+    }, [profile?.did, fetchFeed]);
     
+    // Infinite scroll observer
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && hasMore && !initialLoad && !isLoadingMore) {
+                if (entries[0].isIntersecting && hasMore && !initialFeedLoad && !isLoadingMore) {
                     fetchFeed(cursor);
                 }
             },
@@ -58,70 +109,8 @@ const ProfileFeed: React.FC<{ actor: string, isBlocked: boolean }> = ({ actor, i
         const currentLoader = loaderRef.current;
         if (currentLoader) observer.observe(currentLoader);
         return () => { if (currentLoader) observer.unobserve(currentLoader); };
-    }, [hasMore, initialLoad, isLoadingMore, cursor, fetchFeed]);
+    }, [hasMore, initialFeedLoad, isLoadingMore, cursor, fetchFeed]);
 
-    if (initialLoad) {
-        return (
-            <div className="flex justify-center items-center h-40">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
-    if (isBlocked) {
-        return (
-            <div className="p-4 text-center text-on-surface-variant bg-surface-2 rounded-lg">
-                This user's posts are not available.
-            </div>
-        )
-    }
-
-    return (
-        <div className="space-y-4">
-            {feed.map((feedViewPost) => {
-                const reason = feedViewPost.reason;
-                const isRepost = AppBskyFeedDefs.isReasonRepost(reason);
-                const repostAuthorDid = isRepost ? reason.by.did : '';
-                return (
-                    <PostBubble 
-                        key={`${feedViewPost.post.cid}-${repostAuthorDid}`} 
-                        post={feedViewPost.post}
-                        reason={isRepost ? reason : undefined}
-                        showAuthor={isRepost}
-                        profileOwnerActor={actor}
-                    />
-                );
-            })}
-            <div ref={loaderRef} className="h-10">
-                {isLoadingMore && (
-                    <div className="flex justify-center items-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    </div>
-                )}
-            </div>
-             {!hasMore && feed.length > 0 && (
-                <div className="text-center text-on-surface-variant py-8 text-sm">You've reached the end.</div>
-            )}
-            {!hasMore && feed.length === 0 && (
-                 <div className="text-center text-on-surface-variant py-8 text-sm">This user hasn't posted anything yet.</div>
-            )}
-        </div>
-    );
-};
-
-
-const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
-    const { agent, session } = useAtp();
-    const { toast } = useToast();
-    const { openEditProfileModal } = useUI();
-    const { updateLastViewedTimestamp } = useChannelState();
-
-    const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [isActionLoading, setIsActionLoading] = useState(false);
-    
-    const isMe = session?.did === profile?.did;
 
     const handleFollow = async () => {
         if (!profile || isActionLoading || !session) return;
@@ -157,26 +146,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     };
     
-    useEffect(() => {
-        const fetchProfile = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const profileRes = await agent.getProfile({ actor });
-                setProfile(profileRes.data);
-                updateLastViewedTimestamp(profileRes.data.did);
-                localStorage.setItem('takaka-last-viewed-profile', actor);
-            } catch (err: any) {
-                setError(err.message || "Could not load profile.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchProfile();
-    }, [agent, actor, updateLastViewedTimestamp]);
-    
-
     if (isLoading) {
         return <div className="w-full h-full flex items-center justify-center bg-surface-1"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
     }
@@ -200,7 +169,53 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         </button>
     );
 
-    const isBlocked = !!(profile.viewer?.blocking || profile.viewer?.blockedBy);
+    const renderFeed = () => {
+        if (initialFeedLoad) {
+            return (
+                <div className="flex justify-center items-center h-40">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+            );
+        }
+        if (isBlocked) {
+            return (
+                <div className="p-4 text-center text-on-surface-variant bg-surface-2 rounded-lg">
+                    This user's posts are not available.
+                </div>
+            )
+        }
+        return (
+            <div className="space-y-4">
+                {feed.map((feedViewPost) => {
+                    const reason = feedViewPost.reason;
+                    const isRepost = AppBskyFeedDefs.isReasonRepost(reason);
+                    const repostAuthorDid = isRepost ? reason.by.did : '';
+                    return (
+                        <PostBubble 
+                            key={`${feedViewPost.post.cid}-${repostAuthorDid}`} 
+                            post={feedViewPost.post}
+                            reason={isRepost ? reason : undefined}
+                            showAuthor={isRepost}
+                            profileOwnerActor={actor}
+                        />
+                    );
+                })}
+                <div ref={loaderRef} className="h-10">
+                    {isLoadingMore && (
+                        <div className="flex justify-center items-center">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                    )}
+                </div>
+                 {!hasMore && feed.length > 0 && (
+                    <div className="text-center text-on-surface-variant py-8 text-sm">You've reached the end.</div>
+                )}
+                {!hasMore && feed.length === 0 && (
+                     <div className="text-center text-on-surface-variant py-8 text-sm">This user hasn't posted anything yet.</div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="h-full w-full flex flex-col bg-surface-1 channel-bg">
@@ -234,7 +249,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             </header>
             
             <main className="flex-1 overflow-y-auto p-4">
-                <ProfileFeed actor={actor} isBlocked={isBlocked} />
+                {renderFeed()}
             </main>
         </div>
     );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import {
     AppBskyActorDefs,
@@ -29,16 +29,16 @@ const formatTimestamp = (dateString?: string) => {
 
 const getPreviewText = (latestPost: AppBskyFeedDefs.FeedViewPost): React.ReactNode => {
     const isRepost = AppBskyFeedDefs.isReasonRepost(latestPost.reason);
-    const postToShow = isRepost ? latestPost.post : latestPost.post;
+    const postToShow = latestPost.post;
     const record = postToShow.record as any;
 
-    let textPreview: React.ReactNode = record?.text || null;
+    let textPreview: React.ReactNode = record?.text || '[media]';
 
     if (isRepost) {
         return (
             <div className="flex items-baseline">
                 <span className="text-on-surface-variant italic mr-1.5 flex-shrink-0">Reposted:</span>
-                <span className="truncate">{textPreview}</span>
+                <span className="truncate">{record?.text}</span>
             </div>
         );
     }
@@ -108,44 +108,42 @@ const FollowingFeedScreen: React.FC = () => {
         return () => window.removeEventListener('hashchange', handler);
     }, []);
 
+    const data = useMemo(() => {
+        if (isLoading || error || !profileFeeds) return [];
+        return [...profileFeeds].sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
+    }, [isLoading, error, profileFeeds]);
+
+
     useEffect(() => {
-        if (!session || !lastViewedTimestamps) return;
+        if (!session) return;
         
         const fetchAndProcessFeeds = async () => {
             setIsLoading(true);
             setError(null);
             try {
+                // 1. Get all followed profiles first to ensure the list is complete.
                 const followedProfiles = await fetchAllFollows(agent, session.did);
-                
-                const feedPromises = followedProfiles.map(async (profile) => {
+
+                // 2. Fetch the latest feed for each profile in parallel.
+                const feedPromises = followedProfiles.map(async (profile): Promise<ProfileFeed> => {
                     try {
+                        const lastViewedString = lastViewedTimestamps.get(profile.did);
+                        const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
+
                         const feedRes = await agent.getAuthorFeed({ actor: profile.did, limit: 30 });
                         const posts = feedRes.data.feed;
                         
-                        const lastViewedString = lastViewedTimestamps.get(profile.did);
-                        const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
-                        
-                        let unreadCount = 0;
-                        for (const item of posts) {
+                        const unreadCount = posts.filter(item => {
                             const eventDate = new Date(AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt);
-                            if (eventDate > lastViewedDate) {
-                                unreadCount++;
-                            } else {
-                                break; // Feeds are chronological, so we can stop
-                            }
-                        }
+                            return eventDate > lastViewedDate;
+                        }).length;
 
                         const latestPost = posts[0];
                         const lastActivity = latestPost
                             ? (AppBskyFeedDefs.isReasonRepost(latestPost.reason) ? latestPost.reason.indexedAt : latestPost.post.indexedAt)
-                            : profile.indexedAt;
+                            : profile.indexedAt || new Date(0).toISOString();
 
-                        return {
-                            profile,
-                            latestPost,
-                            unreadCount,
-                            lastActivity,
-                        };
+                        return { profile, latestPost, unreadCount, lastActivity };
                     } catch (e) {
                         console.warn(`Failed to get feed for ${profile.handle}`, e);
                         // Return a default structure for profiles whose feeds fail to load
@@ -153,15 +151,12 @@ const FollowingFeedScreen: React.FC = () => {
                             profile,
                             latestPost: undefined,
                             unreadCount: 0,
-                            lastActivity: profile.indexedAt,
+                            lastActivity: profile.indexedAt || new Date(0).toISOString(),
                         };
                     }
                 });
 
                 const results = await Promise.all(feedPromises);
-                
-                results.sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
-                
                 setProfileFeeds(results);
             } catch (e) {
                 console.error("Failed to fetch followed profiles or feeds:", e);
@@ -197,7 +192,7 @@ const FollowingFeedScreen: React.FC = () => {
         return <div className="text-center text-error p-8 bg-surface-2 rounded-xl mt-4">{error}</div>;
     }
     
-    if (profileFeeds.length === 0) {
+    if (data.length === 0) {
         return (
             <div className="text-center text-on-surface-variant p-8 mt-4">
                 <h2 className="text-xl font-bold text-on-surface">Your feed is empty</h2>
@@ -212,7 +207,7 @@ const FollowingFeedScreen: React.FC = () => {
     return (
         <div>
             <ul>
-                {profileFeeds.map(feed => (
+                {data.map(feed => (
                     <ProfileFeedItem key={feed.profile.did} profileFeed={feed} currentHash={currentHash} />
                 ))}
             </ul>
