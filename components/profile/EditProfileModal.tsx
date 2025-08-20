@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
@@ -149,7 +148,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
 const styles = StyleSheet.create({
     centered: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center' },
     errorText: { color: '#F2B8B5' },
-    container: { backgroundColor: '#1E2021', borderRadius: 12, overflow: 'hidden', maxHeight: '90vh' as any, display: 'flex' as any, flexDirection: 'column' },
+    container: { backgroundColor: '#1E2021', borderRadius: 12, overflow: 'hidden', maxHeight: '90%', display: 'flex' as any, flexDirection: 'column' },
     header: { padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
     closeButton: { padding: 8, marginLeft: -8 },
     headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#E2E2E6' },

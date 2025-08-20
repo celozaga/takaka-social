@@ -19,7 +19,7 @@ const MediaActionsModal = lazy(() => import('@/components/shared/MediaActionsMod
 const RepostModal = lazy(() => import('@/components/shared/RepostModal'));
 
 const ModalSuspenseFallback = () => (
-  <View style={styles.modalContentWrapper}>
+  <View style={styles.modalDialogShell}>
     <ActivityIndicator size="large" />
   </View>
 );
@@ -56,9 +56,11 @@ const MainLayout: React.FC = () => {
         <Suspense fallback={null}>
           {isLoginModalOpen && (
             <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <LoginScreen onSuccess={closeLoginModal} />
                 </Suspense>
+              </View>
             </View>
           )}
           {isComposerOpen && (
@@ -72,32 +74,38 @@ const MainLayout: React.FC = () => {
           )}
           {isFeedModalOpen && (
             <View style={styles.modalBackdrop}>
-                <View style={styles.modalContentWrapper}>
-                    <Suspense fallback={<ModalSuspenseFallback />}>
-                        <FeedHeaderModal />
-                    </Suspense>
-                </View>
+              <View style={styles.modalDialogWrapper}>
+                <Suspense fallback={<ModalSuspenseFallback />}>
+                    <FeedHeaderModal />
+                </Suspense>
+              </View>
             </View>
           )}
           {isEditProfileModalOpen && (
              <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
                 </Suspense>
+              </View>
              </View>
           )}
           {isUpdateEmailModalOpen && (
              <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
                 </Suspense>
+              </View>
              </View>
           )}
            {isUpdateHandleModalOpen && (
              <View style={styles.modalBackdrop}>
+              <View style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
                 </Suspense>
+              </View>
              </View>
           )}
           {isMediaActionsModalOpen && mediaActionsModalPost && (
@@ -154,27 +162,37 @@ const styles = StyleSheet.create({
   },
   composerBackdrop: {
      justifyContent: 'flex-start',
-     paddingTop: Platform.select({ web: '5vh' as any, default: 40 }),
+     paddingTop: Platform.select({ web: '5%' as any, default: 40 }),
   },
   composerWrapper: {
     width: '100%',
     maxWidth: 640,
-    height: Platform.select({web: '90vh' as any, default: '95%'}),
+    height: Platform.select({web: '90%' as any, default: '95%'}),
     maxHeight: 800,
     backgroundColor: '#1E2021', // surface-2
     borderRadius: 16,
     overflow: 'hidden',
   },
-  modalContentWrapper: {
+  modalDialogWrapper: {
     width: '100%',
     maxWidth: 448,
-    padding: 16
+    paddingHorizontal: 16
+  },
+  modalDialogShell: {
+    backgroundColor: '#1E2021',
+    borderRadius: 12,
+    padding: 32,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 120,
   },
   bottomSheet: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
     maxWidth: 500,
+    maxHeight: '90%',
     backgroundColor: '#1E2021',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
