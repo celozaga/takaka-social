@@ -12,6 +12,7 @@ import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import PostCardSkeleton from './PostCardSkeleton';
 import ResizedImage from '../shared/ResizedImage';
+import SharedVideoPlayer from '../shared/VideoPlayer';
 
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -125,18 +126,17 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
 
             if (showAllMedia) {
-                 const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
-                 return (
-                     <video
-                        src={videoUrl}
-                        poster={posterUrl}
-                        controls
-                        muted
-                        autoPlay
-                        loop
-                        className="w-full h-auto bg-black rounded-lg"
-                     />
-                 )
+                const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
+                const playerOptions = {
+                    autoplay: true,
+                    controls: true,
+                    poster: posterUrl,
+                    sources: [{ src: videoUrl, type: 'video/mp4' }],
+                    loop: true,
+                    muted: true,
+                    playsinline: true
+                };
+                return <SharedVideoPlayer options={playerOptions} className="w-full h-auto bg-black rounded-lg" />;
             }
 
             if (!posterUrl) {

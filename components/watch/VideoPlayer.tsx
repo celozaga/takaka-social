@@ -3,8 +3,10 @@ import { useAtp } from '../../context/AtpContext';
 import {AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoActions from './VideoActions';
-import { Volume2, VolumeX, Play, Loader2 } from 'lucide-react';
-import Hls from 'hls.js';
+import { Volume2, VolumeX, Loader2 } from 'lucide-react';
+import SharedVideoPlayer from '../shared/VideoPlayer';
+import type Player from 'video.js/dist/types/player';
+
 
 interface VideoPlayerProps {
     postView: AppBskyFeedDefs.FeedViewPost;
@@ -15,15 +17,10 @@ interface VideoPlayerProps {
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoad, hlsUrl }) => {
     const { agent } = useAtp();
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const hlsRef = useRef<Hls | null>(null);
+    const playerRef = useRef<Player | null>(null);
 
-    const [isMuted, setIsMuted] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isReady, setIsReady] = useState(false);
-    const [isBuffering, setIsBuffering] = useState(false);
-    const [isThumbnailVisible, setIsThumbnailVisible] = useState(true);
-    const [showPlayIcon, setShowPlayIcon] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+    const [isPlayerReady, setIsPlayerReady] = useState(false);
 
     const { post } = postView;
     const record = post.record as any;
@@ -45,138 +42,74 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
     const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
     const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
 
+    const playerOptions = {
+        autoplay: isActive,
+        controls: false, // We use a custom UI
+        poster: embedView.thumbnail,
+        sources: [{
+            src: hlsUrl || blobVideoUrl,
+            type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4'
+        }],
+        loop: true,
+        muted: isMuted,
+        playsinline: true,
+    };
+    
     useEffect(() => {
-        const videoElement = videoRef.current;
-        if (!videoElement) return;
-
-        const cleanup = () => {
-            if (hlsRef.current) {
-                hlsRef.current.destroy();
-                hlsRef.current = null;
-            }
-            if (videoElement.src) {
-                videoElement.removeAttribute('src');
-                videoElement.load();
-            }
-            // Reset state when unloaded
-            setIsReady(false);
-            setIsBuffering(false);
-            setIsPlaying(false);
-            setIsThumbnailVisible(true);
-        };
-
-        const setupPlayer = () => {
-            if (hlsUrl) {
-                if (Hls.isSupported()) {
-                    const hls = new Hls({
-                        // More aggressive config
-                        maxBufferLength: 30,
-                        maxMaxBufferLength: 60,
-                        startLevel: -1, // Auto-start with best quality
-                    });
-                    hlsRef.current = hls;
-                    hls.loadSource(hlsUrl);
-                    hls.attachMedia(videoElement);
-                    hls.on(Hls.Events.ERROR, (event, data) => {
-                        console.error('HLS Error:', data);
-                        if (data.fatal) { // Fallback on fatal error
-                            cleanup();
-                            videoElement.src = blobVideoUrl;
-                        }
-                    });
-                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                    videoElement.src = hlsUrl;
-                } else {
-                    videoElement.src = blobVideoUrl;
-                }
-            } else {
-                videoElement.src = blobVideoUrl; // Fallback if URL is missing
-            }
-        };
-
-        if (shouldLoad) {
-            setupPlayer();
-        } else {
-            cleanup();
-        }
-
-        return cleanup;
-    }, [shouldLoad, hlsUrl, blobVideoUrl]);
-
-    useEffect(() => {
-        const videoElement = videoRef.current;
-        if (videoElement) {
+        const player = playerRef.current;
+        if (player) {
             if (isActive) {
-                videoElement.play().then(() => setIsPlaying(true)).catch(e => {
-                    // Autoplay might be blocked, user interaction will fix it.
-                    setIsPlaying(false);
-                });
+                player.play()?.catch(() => {});
             } else {
-                videoElement.pause();
-                videoElement.currentTime = 0;
-                setIsPlaying(false);
+                player.pause();
+                player.currentTime(0);
             }
         }
     }, [isActive]);
 
-    const handlePlaying = () => {
-        setIsBuffering(false);
-        if (!isReady) {
-            setIsReady(true);
-            // Wait for fade-in transition before hiding thumbnail
-            setTimeout(() => setIsThumbnailVisible(false), 300);
+    const handlePlayerReady = (player: Player) => {
+        playerRef.current = player;
+        setIsPlayerReady(true);
+        if (isActive) {
+            player.play()?.catch(() => {});
         }
     };
     
     const handleVideoClick = () => {
-        const videoElement = videoRef.current;
-        if (!videoElement) return;
+        const player = playerRef.current;
+        if (!player) return;
 
-        if (videoElement.paused) {
-            videoElement.play();
-            setIsPlaying(true);
+        if (player.paused()) {
+            player.play()?.catch(() => {});
         } else {
-            videoElement.pause();
-            setIsPlaying(false);
-            setShowPlayIcon(true);
-            setTimeout(() => setShowPlayIcon(false), 800);
+            player.pause();
         }
     };
 
     const toggleMute = (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsMuted(prev => !prev);
+        if(playerRef.current) {
+            playerRef.current.muted(!isMuted);
+        }
     };
+
+    if (!shouldLoad) {
+        return <div className="w-full h-full bg-black" />;
+    }
 
     return (
         <div className="relative w-full h-full bg-black snap-start" onClick={handleVideoClick}>
-            {isThumbnailVisible && (
-                <img 
-                    src={embedView.thumbnail} 
-                    alt="Video thumbnail"
-                    className="absolute inset-0 w-full h-full object-contain z-0" 
-                    aria-hidden="true"
-                />
-            )}
-            <video
-                ref={videoRef}
-                loop
-                playsInline
-                muted={isMuted}
-                className={`w-full h-full object-contain z-10 transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}
-                onPlaying={handlePlaying}
-                onWaiting={() => setIsBuffering(true)}
+            <SharedVideoPlayer
+                options={playerOptions}
+                onReady={handlePlayerReady}
+                className="w-full h-full"
             />
 
-            {isBuffering && isActive && (
+            {!isPlayerReady && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none z-20">
+                    <img src={embedView.thumbnail} alt="Video thumbnail" className="absolute inset-0 w-full h-full object-contain z-0" aria-hidden="true" />
                     <Loader2 className="w-10 h-10 text-white animate-spin" />
-                </div>
-            )}
-
-            {showPlayIcon && !isPlaying && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none z-20 animate-in fade-in-0 duration-200">
-                    <Play size={80} className="text-white/80" fill="currentColor" />
                 </div>
             )}
             
@@ -191,7 +124,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
             
             <VideoActions post={post} />
             
-            <button onClick={toggleMute} className="absolute top-4 right-4 bg-black/40 p-2 rounded-full text-white hover:bg-black/60 transition-colors z-20">
+            <button onClick={toggleMute} className="absolute top-4 right-4 bg-black/40 p-2 rounded-full text-white hover:bg-black/60 transition-colors z-20 pointer-events-auto">
                 {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
         </div>

@@ -12,10 +12,10 @@ import { ArrowLeft, ExternalLink, Share2, BadgeCheck, ChevronLeft, ChevronRight,
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useHeadManager } from '../../hooks/useHeadManager';
-import Hls from 'hls.js';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
+import SharedVideoPlayer from '../shared/VideoPlayer';
 
 
 const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined => {
@@ -34,59 +34,6 @@ const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined
     }
     return undefined;
 };
-
-const PostVideoPlayer: React.FC<{ hlsSrc?: string | null; blobSrc: string; poster?: string }> = ({ hlsSrc, blobSrc, poster }) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const hlsRef = useRef<Hls | null>(null);
-
-    useEffect(() => {
-        const videoElement = videoRef.current;
-        if (!videoElement) return;
-
-        const cleanup = () => {
-            if (hlsRef.current) {
-                hlsRef.current.destroy();
-                hlsRef.current = null;
-            }
-        };
-
-        if (hlsSrc && Hls.isSupported()) {
-            const hls = new Hls();
-            hlsRef.current = hls;
-            hls.loadSource(hlsSrc);
-            hls.attachMedia(videoElement);
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                if (data.fatal) {
-                    console.error('HLS fatal error, falling back to blob:', data);
-                    cleanup();
-                    if (videoElement) {
-                        videoElement.src = blobSrc;
-                    }
-                }
-            });
-        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl') && hlsSrc) {
-            videoElement.src = hlsSrc;
-        } else {
-            videoElement.src = blobSrc;
-        }
-
-        return cleanup;
-    }, [hlsSrc, blobSrc]);
-
-    return (
-        <video
-            ref={videoRef}
-            poster={poster}
-            controls
-            muted
-            autoPlay
-            loop
-            playsInline
-            className="w-full h-auto bg-black rounded-lg"
-        />
-    );
-};
-
 
 interface PostScreenProps {
   did: string;
@@ -286,11 +233,22 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
             const serviceUrl = agent.service.toString();
             const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
             const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
+            const playerOptions = {
+                autoplay: true,
+                controls: true,
+                poster: embedView.thumbnail,
+                sources: [{
+                    src: hlsUrl || blobVideoUrl,
+                    type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4'
+                }],
+                loop: true,
+                muted: true,
+                playsinline: true,
+            };
             return (
-                <PostVideoPlayer 
-                    hlsSrc={hlsUrl}
-                    blobSrc={blobVideoUrl}
-                    poster={embedView.thumbnail}
+                <SharedVideoPlayer 
+                    options={playerOptions}
+                    className="w-full h-auto bg-black rounded-lg"
                 />
             );
         }
