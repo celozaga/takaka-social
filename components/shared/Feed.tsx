@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -135,20 +133,22 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     <PostCard feedViewPost={item} />
   );
 
-  if (isLoading) {
-    return (
-        <View style={styles.grid}>
-            {ListHeaderComponent}
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-                <View style={styles.gridColumn}>
-                    {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
-                </View>
-                <View style={styles.gridColumn}>
-                    {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
-                </View>
+  const ListSkeleton = () => (
+    <View style={styles.grid}>
+        {ListHeaderComponent}
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={styles.gridColumn}>
+                {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
+            </View>
+            <View style={styles.gridColumn}>
+                {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
             </View>
         </View>
-    );
+    </View>
+  );
+
+  if (isLoading) {
+    return <ListSkeleton />;
   }
 
   return (
@@ -163,7 +163,7 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
         ListHeaderComponent={ListHeaderComponent}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.contentContainer}
-        ListFooterComponent={
+        ListFooterComponent={() => (
           <>
             {isLoadingMore ? (
               <ActivityIndicator size="large" style={{ marginVertical: 20 }} />
@@ -171,8 +171,8 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
               <Text style={styles.endOfList}>{t('common.endOfList')}</Text>
             ) : null}
           </>
-        }
-        ListEmptyComponent={
+        )}
+        ListEmptyComponent={() => (
           <>
             {error ? (
               <View style={styles.messageContainer}>
@@ -185,17 +185,17 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
               <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>
             ) : null}
           </>
-        }
+        )}
     />
   );
 };
 
 const styles = StyleSheet.create({
-    grid: { paddingHorizontal: 16 },
-    gridColumn: { flex: 1, gap: 16 },
-    columnWrapper: { gap: 16 },
-    contentContainer: { paddingHorizontal: 16, paddingTop: 16 },
-    messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16, marginHorizontal: 16, },
+    grid: { paddingHorizontal: 12 },
+    gridColumn: { flex: 1, gap: 12 },
+    columnWrapper: { gap: 12 },
+    contentContainer: { paddingHorizontal: 12, paddingTop: 16 },
+    messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16, marginHorizontal: 12, },
     errorText: { color: '#F2B8B5', textAlign: 'center', marginBottom: 16 },
     infoText: { color: '#C3C6CF', textAlign: 'center' },
     endOfList: { textAlign: 'center', color: '#C3C6CF', padding: 32 },

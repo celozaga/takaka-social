@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -28,29 +27,30 @@ const NotificationsScreen: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState<NotificationFilter>('all');
 
-  useEffect(() => {
-    const fetchInitialNotifications = async () => {
-      setIsLoading(true);
-      setError(null);
-      setNotifications([]);
-      setCursor(undefined);
-      setHasMore(true);
+  const fetchInitialNotifications = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setNotifications([]);
+    setCursor(undefined);
+    setHasMore(true);
 
-      try {
-        await agent.app.bsky.notification.updateSeen({ seenAt: new Date().toISOString() });
-        resetUnreadCount();
-        const response = await agent.app.bsky.notification.listNotifications({ limit: 40 });
-        setNotifications(response.data.notifications);
-        setCursor(response.data.cursor);
-        setHasMore(!!response.data.cursor && response.data.notifications.length > 0);
-      } catch (err) {
-        setError(t('notifications.loadingError'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchInitialNotifications();
+    try {
+      await agent.app.bsky.notification.updateSeen({ seenAt: new Date().toISOString() });
+      resetUnreadCount();
+      const response = await agent.app.bsky.notification.listNotifications({ limit: 40 });
+      setNotifications(response.data.notifications);
+      setCursor(response.data.cursor);
+      setHasMore(!!response.data.cursor && response.data.notifications.length > 0);
+    } catch (err) {
+      setError(t('notifications.loadingError'));
+    } finally {
+      setIsLoading(false);
+    }
   }, [agent, resetUnreadCount, t]);
+
+  useEffect(() => {
+    fetchInitialNotifications();
+  }, [fetchInitialNotifications]);
 
   const loadMoreNotifications = useCallback(async () => {
     if (isLoadingMore || !cursor || !hasMore) return;
@@ -106,6 +106,8 @@ const NotificationsScreen: React.FC = () => {
             keyExtractor={(item) => item.uri}
             ListHeaderComponent={renderListHeader}
             contentContainerStyle={styles.container}
+            onRefresh={fetchInitialNotifications}
+            refreshing={isLoading}
             onEndReached={loadMoreNotifications}
             onEndReachedThreshold={0.5}
             ListFooterComponent={() => {
@@ -115,7 +117,7 @@ const NotificationsScreen: React.FC = () => {
             }}
             ListEmptyComponent={() => {
                 if (isLoading) {
-                    return <View style={{ gap: 8, paddingHorizontal: 16 }}>{[...Array(10)].map((_, i) => <View key={i} style={styles.skeletonItem} />)}</View>;
+                    return null; // Handled by refreshing prop
                 }
                 if (error) {
                     return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
@@ -139,7 +141,6 @@ const styles = StyleSheet.create({
     activeFilter: { backgroundColor: '#D1E4FF' },
     filterText: { fontSize: 14, fontWeight: '500', color: '#C3C6CF' },
     activeFilterText: { color: '#001D35' },
-    skeletonItem: { backgroundColor: '#1E2021', borderRadius: 12, height: 80, opacity: 0.5, marginHorizontal: 16, marginBottom: 8 },
     messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center', margin: 16 },
     errorText: { color: '#F2B8B5' },
     infoText: { color: '#C3C6CF' },

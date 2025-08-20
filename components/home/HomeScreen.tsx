@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -102,8 +101,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   selectorContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingTop: 16,
+    paddingBottom: 8,
   },
   feedContainer: {
     flex: 1,

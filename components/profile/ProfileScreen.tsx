@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -105,7 +104,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             <Pressable onPress={() => setActiveFilter('videos')} style={[styles.filterButton, activeFilter === 'videos' && styles.activeFilter]}><VideoIcon size={22} color={activeFilter === 'videos' ? '#E2E2E6' : '#C3C6CF'} /></Pressable>
         </View>
       </View>
-    ), [profile, actor, t, isMe, viewerState, isActionLoading, descriptionWithFacets, activeFilter, openEditProfileModal]);
+    ), [profile, actor, t, isMe, session, viewerState, isActionLoading, descriptionWithFacets, activeFilter, openEditProfileModal, handleFollow, handleUnfollow]);
 
     if (isLoading) return <View style={styles.centered}><ActivityIndicator size="large" color="#A8C7FA" /></View>;
     if (error || !profile) return <View style={styles.centered}><Text style={styles.errorText}>{error || t('profile.notFound')}</Text></View>;
