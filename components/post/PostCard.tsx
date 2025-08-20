@@ -98,7 +98,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                                         resizeWidth={400}
                                         alt={image.alt || `Post image ${index + 1}`}
                                         style={styles.image}
-                                        loading="lazy"
                                     />
                                 </Pressable>
                                 </Link>
@@ -120,7 +119,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                         resizeWidth={400}
                         alt={firstImage.alt || 'Post image'} 
                         style={styles.image} 
-                        loading="lazy"
                     />
                     {(hasMultipleImages || isRepost) && (
                          <View style={styles.mediaBadgeContainer}>
@@ -173,7 +171,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
             
             return (
                 <View style={{ position: 'relative' }}>
-                    <ResizedImage src={posterUrl || ''} resizeWidth={400} style={{...styles.image, backgroundColor: '#000'}} />
+                    <ResizedImage src={posterUrl || ''} resizeWidth={400} alt="Video poster" style={{...styles.image, backgroundColor: '#000'}} />
                     <View style={styles.mediaBadgeContainer}>
                         {isRepost && (
                             <View style={styles.mediaBadge}>
@@ -259,7 +257,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                         alt={`${author.displayName}'s avatar`} 
                         style={styles.avatar} 
                         resizeWidth={48}
-                        loading="lazy"
                      />
                      <View style={styles.authorInfo}>
                         <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>

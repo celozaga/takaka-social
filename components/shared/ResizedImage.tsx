@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { resizeImage } from '../../lib/image';
+import { Image, ImageProps } from 'react-native';
 
-interface ResizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface ResizedImageProps extends ImageProps {
   src: string;
   resizeWidth: number;
+  alt: string;
 }
 
-const ResizedImage: React.FC<ResizedImageProps> = ({ src, resizeWidth, ...props }) => {
+const ResizedImage: React.FC<ResizedImageProps> = ({ src, resizeWidth, alt, ...props }) => {
   const [imageSrc, setImageSrc] = useState(src ? resizeImage(src, resizeWidth) : '');
   const [hasError, setHasError] = useState(false);
 
@@ -25,11 +28,11 @@ const ResizedImage: React.FC<ResizedImageProps> = ({ src, resizeWidth, ...props 
   };
 
   if (!src) {
-    // Render nothing or a placeholder if no src is provided, matching standard img behavior.
-    return <img {...props} src="" />;
+    // Render nothing or a placeholder if no src is provided.
+    return <Image {...props} source={{ uri: '' }} accessibilityLabel={alt} />;
   }
 
-  return <img src={imageSrc} onError={handleError} {...props} />;
+  return <Image source={{ uri: imageSrc }} onError={handleError} accessibilityLabel={alt} {...props} />;
 };
 
 export default ResizedImage;

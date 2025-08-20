@@ -1,7 +1,8 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {AppBskyFeedDefs, RichText } from '@atproto/api';
+import { AppBskyFeedDefs, RichText } from '@atproto/api';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Loader2, Heart } from 'lucide-react';
@@ -11,7 +12,7 @@ import { useUI } from '../../context/UIContext';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
-
+import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -52,7 +53,6 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const [replyCursor, setReplyCursor] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const loaderRef = useRef<HTMLDivElement>(null);
 
   const date = format(new Date(record.createdAt), 'M/d');
 
@@ -64,18 +64,16 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
     return true;
   };
 
-  const handleReplyClick = (e: React.MouseEvent) => {
+  const handleReplyClick = (e: any) => {
     e.stopPropagation();
     e.preventDefault();
     if (!ensureSession()) return;
     openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
   };
 
-
   const loadMore = useCallback(() => {
     if (isLoadingMore) return;
     setIsLoadingMore(true);
-    // Add a small delay for a better user experience, showing the loader briefly.
     setTimeout(() => {
         const nextReplies = allSubReplies.slice(replyCursor, replyCursor + REPLIES_PER_PAGE);
         setVisibleReplies(prev => [...prev, ...nextReplies]);
@@ -87,7 +85,6 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   }, [replyCursor, allSubReplies, isLoadingMore]);
 
   useEffect(() => {
-    // Load the initial set of replies when a thread is expanded or for the root replies.
     if (isExpanded && hasSubReplies && visibleReplies.length === 0) {
       const initialReplies = allSubReplies.slice(0, REPLIES_PER_PAGE);
       setVisibleReplies(initialReplies);
@@ -96,51 +93,31 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
     }
   }, [isExpanded, hasSubReplies, allSubReplies, visibleReplies.length]);
   
-   useEffect(() => {
-    if (!isExpanded || !hasMore || isLoadingMore) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
-      },
-      { rootMargin: '400px' }
-    );
-
-    const currentLoader = loaderRef.current;
-    if (currentLoader) observer.observe(currentLoader);
-    return () => {
-      if (currentLoader) observer.unobserve(currentLoader);
-    };
-  }, [isExpanded, hasMore, loadMore, isLoadingMore]);
-  
   const ReplyList = () => (
     <>
       {visibleReplies.map((nestedReply) => (
         <Reply key={nestedReply.post.cid} reply={nestedReply} />
       ))}
-      <div ref={loaderRef} className="h-20 flex items-center justify-center">
-        {isLoadingMore && (
-          <div className="flex items-center gap-2 text-on-surface-variant">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <span>{t('post.loadingMoreReplies')}</span>
-          </div>
-        )}
-      </div>
+      {hasMore && (
+        <View style={styles.loadMoreContainer}>
+            <Pressable onPress={loadMore} disabled={isLoadingMore} style={styles.loadMoreButton}>
+                {isLoadingMore ? <ActivityIndicator color="#A8C7FA" /> : <Text style={styles.loadMoreText}>{t('post.viewReplies_other', { count: allSubReplies.length - visibleReplies.length })}</Text>}
+            </Pressable>
+        </View>
+      )}
       {hasSubReplies && !isRoot && (
-        <button onClick={() => setIsExpanded(false)} className="text-sm font-semibold text-primary hover:underline mb-2 -mt-4">
-          Hide replies
-        </button>
+        <Pressable onPress={() => setIsExpanded(false)}>
+            <Text style={styles.toggleRepliesText}>Hide replies</Text>
+        </Pressable>
       )}
     </>
   );
 
   if (isRoot) {
-    // The root component is just a container for the first level of replies.
     return (
-      <div>
+      <View>
         <ReplyList />
-      </div>
+      </View>
     )
   }
 
@@ -150,76 +127,109 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   
   if (modDecision.visibility === 'warn' && !isContentVisible) {
       return (
-          <div className="relative flex gap-3 py-2 px-4">
-              <div className="flex flex-col items-center flex-shrink-0">
-                  <Link href={`/profile/${author.handle}` as any} className="block">
-                      <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName || author.handle} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
+          <View style={styles.replyContainer}>
+              <View style={styles.avatarThreadContainer}>
+                  <Link href={`/profile/${author.handle}` as any} asChild>
+                    <Pressable>
+                      <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                    </Pressable>
                   </Link>
-                  {(hasSubReplies && isExpanded) && <div className="w-0.5 flex-1 grow my-2 bg-surface-3 rounded-full"></div>}
-              </div>
-              <div className="flex-1 min-w-0 pt-1">
+                  {(hasSubReplies && isExpanded) && <View style={styles.threadLine} />}
+              </View>
+              <View style={styles.mainContentWarning}>
                   <ContentWarning reason={modDecision.reason!} onShow={() => setIsContentVisible(true)} />
-              </div>
-          </div>
+              </View>
+          </View>
       )
   }
 
   return (
-    <div className="relative flex gap-3 py-2 px-4">
-      <div className="flex flex-col items-center flex-shrink-0">
-        <Link href={`/profile/${author.handle}` as any} className="block">
-          <img src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} alt={author.displayName || author.handle} className="w-10 h-10 rounded-full bg-surface-3" loading="lazy" />
+    <View style={styles.replyContainer}>
+      <View style={styles.avatarThreadContainer}>
+        <Link href={`/profile/${author.handle}` as any} asChild>
+            <Pressable>
+                <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+            </Pressable>
         </Link>
-        {(hasSubReplies && isExpanded) && <div className="w-0.5 flex-1 grow my-2 bg-surface-3 rounded-full"></div>}
-      </div>
+        {(hasSubReplies && isExpanded) && <View style={styles.threadLine} />}
+      </View>
 
-      <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0 pt-1">
-          <Link href={`/profile/${author.handle}` as any} className="font-bold hover:underline leading-tight text-sm inline-flex items-center gap-1">
-              <span>{author.displayName || `@${author.handle}`}</span>
-              {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                  <BadgeCheck size={14} className="text-primary flex-shrink-0" fill="currentColor" />
-              )}
-          </Link>
+      <View style={styles.mainContentContainer}>
+        <View style={styles.mainContent}>
+          <View style={{paddingTop: 4}}>
+            <Link href={`/profile/${author.handle}` as any} asChild>
+              <Pressable style={styles.authorContainer}>
+                  <Text style={styles.authorName}>{author.displayName || `@${author.handle}`}</Text>
+                  {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                      <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" />
+                  )}
+              </Pressable>
+            </Link>
           
-          <Link href={`/post/${post.author.did}/${post.uri.split('/').pop()}` as any} className="block">
-              <div className="text-on-surface whitespace-pre-wrap mt-0.5 text-sm break-words">
-                  <RichTextRenderer record={record} />
-              </div>
-          </Link>
-          <div className="mt-2 flex items-center gap-4 text-on-surface-variant">
-            <span className="text-xs">{date}</span>
-            <button onClick={handleReplyClick} className="font-semibold text-xs hover:underline">
-                {t('common.reply')}
-            </button>
-          </div>
+            <Link href={`/post/${post.author.did}/${post.uri.split('/').pop()}` as any} asChild>
+                <Pressable>
+                    <Text style={styles.postText}>
+                        <RichTextRenderer record={record} />
+                    </Text>
+                </Pressable>
+            </Link>
+            <View style={styles.footer}>
+                <Text style={styles.footerText}>{date}</Text>
+                <Pressable onPress={handleReplyClick}>
+                    <Text style={styles.replyButtonText}>{t('common.reply')}</Text>
+                </Pressable>
+            </View>
 
-          {hasSubReplies && !isExpanded && (
-              <button onClick={() => setIsExpanded(true)} className="text-sm font-semibold text-on-surface-variant hover:underline mt-2">
-                  View {allSubReplies.length} {allSubReplies.length === 1 ? 'reply' : 'replies'}
-              </button>
-          )}
-          
-          {isExpanded && hasSubReplies && (
-            <div className="mt-2 -ml-[52px]">
-              <ReplyList />
-            </div>
-          )}
+            {hasSubReplies && !isExpanded && (
+                <Pressable onPress={() => setIsExpanded(true)}>
+                    <Text style={styles.toggleRepliesText}>View {allSubReplies.length} {allSubReplies.length === 1 ? 'reply' : 'replies'}</Text>
+                </Pressable>
+            )}
+          </View>
         </div>
         
-        <div className="flex flex-col items-center flex-shrink-0 pt-1">
-            <button 
-                onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleLike(e); }}
+        <View style={styles.likeContainer}>
+            <Pressable 
+                onPress={(e) => handleLike(e as any)}
                 disabled={isLiking}
-                className="p-1"
+                style={{ padding: 4 }}
             >
-                <Heart size={20} className={`transition-colors ${likeUri ? 'text-pink-500' : 'text-on-surface-variant hover:text-pink-500'}`} fill={likeUri ? 'currentColor' : 'none'} />
-            </button>
-            <span className="text-xs text-on-surface-variant font-semibold">{likeCount > 0 ? formatCount(likeCount) : ''}</span>
-        </div>
-      </div>
-    </div>
+                <Heart size={20} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? 'currentColor' : 'none'} />
+            </Pressable>
+            <Text style={styles.likeCount}>{likeCount > 0 ? formatCount(likeCount) : ''}</Text>
+        </View>
+      </View>
+      {isExpanded && hasSubReplies && (
+        <View style={styles.nestedRepliesContainer}>
+          <ReplyList />
+        </View>
+      )}
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+    replyContainer: { flexDirection: 'row', gap: 12, paddingVertical: 8, paddingHorizontal: 16, position: 'relative' },
+    avatarThreadContainer: { alignItems: 'center', flexShrink: 0 },
+    avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#2b2d2e' },
+    threadLine: { width: 2, flex: 1, marginVertical: 8, backgroundColor: '#2b2d2e', borderRadius: 1 },
+    mainContentContainer: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+    mainContent: { flex: 1 },
+    mainContentWarning: { flex: 1, paddingTop: 4 },
+    authorContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    authorName: { fontWeight: 'bold', fontSize: 14 },
+    postText: { color: '#E2E2E6', marginVertical: 2, fontSize: 14, lineHeight: 20 },
+    footer: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 },
+    footerText: { fontSize: 12, color: '#C3C6CF' },
+    replyButtonText: { fontWeight: '600', fontSize: 12, color: '#C3C6CF' },
+    toggleRepliesText: { fontSize: 14, fontWeight: '600', color: '#C3C6CF', marginTop: 8 },
+    likeContainer: { alignItems: 'center', flexShrink: 0, paddingTop: 4 },
+    likeCount: { fontSize: 12, color: '#C3C6CF', fontWeight: '600' },
+    nestedRepliesContainer: { position: 'absolute', top: '100%', left: 52, right: 0, marginTop: 8, paddingTop: 8 },
+    loadMoreContainer: { alignItems: 'center', marginVertical: 16 },
+    loadMoreButton: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#2b2d2e', borderRadius: 999 },
+    loadMoreText: { color: '#A8C7FA', fontWeight: '600' },
+});
+
 
 export default React.memo(Reply);
