@@ -106,102 +106,90 @@ const FollowingFeedScreen: React.FC = () => {
         return () => window.removeEventListener('hashchange', handler);
     }, []);
 
-    const sortedData = useMemo(() => {
-        return [...profileFeeds].sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
-    }, [profileFeeds]);
-
-
     useEffect(() => {
         if (!session) return;
-        
         let isCancelled = false;
-
-        const BATCH_SIZE = 25;
-        const DELAY_BETWEEN_BATCHES = 1000;
-
-        const fetchAndProcessFeeds = async () => {
+    
+        const fetchData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                const followedProfiles = await fetchAllFollows(agent, session.did);
+                // Fetch follows and the main timeline concurrently for efficiency.
+                const [followedProfiles, timelineRes] = await Promise.all([
+                    fetchAllFollows(agent, session.did),
+                    agent.getTimeline({ limit: 100 }) // Fetch last 100 posts from followed users.
+                ]);
+    
                 if (isCancelled) return;
-
-                const initialFeedData: ProfileFeed[] = followedProfiles.map(p => ({
-                    profile: p,
-                    hasUnread: false,
-                    lastActivity: p.indexedAt || new Date(0).toISOString(),
-                }));
-                setProfileFeeds(initialFeedData);
-                setIsLoading(false);
-
-                for (let i = 0; i < followedProfiles.length; i += BATCH_SIZE) {
-                    if (isCancelled) return;
-
-                    const batch = followedProfiles.slice(i, i + BATCH_SIZE);
+    
+                const timelinePosts = timelineRes.data.feed;
+                
+                // Efficiently determine which authors have unread posts.
+                const unreadAuthors = new Set<string>();
+                for (const item of timelinePosts) {
+                    const authorDid = item.post.author.did;
+                    if (unreadAuthors.has(authorDid)) continue; // Already marked as unread.
+    
+                    const lastViewedString = lastViewedTimestamps.get(authorDid);
+                    const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
+                    const eventDate = new Date(AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt);
                     
-                    const feedPromises = batch.map(async (profile): Promise<ProfileFeed> => {
-                        try {
-                            const lastViewedString = lastViewedTimestamps.get(profile.did);
-                            const lastViewedDate = lastViewedString ? new Date(lastViewedString) : new Date(0);
-
-                            const feedRes = await agent.getAuthorFeed({ actor: profile.did, limit: 1 });
-                            const posts = feedRes.data.feed;
-                            
-                            const hasUnread = posts.some(item => {
-                                const eventDate = new Date(AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.indexedAt : item.post.indexedAt);
-                                return eventDate > lastViewedDate;
-                            });
-
-                            const latestPost = posts[0];
-                            const lastActivity = latestPost
-                                ? (AppBskyFeedDefs.isReasonRepost(latestPost.reason) ? latestPost.reason.indexedAt : latestPost.post.indexedAt)
-                                : profile.indexedAt || new Date(0).toISOString();
-
-                            return { profile, latestPost, hasUnread, lastActivity };
-                        } catch (e) {
-                             if (!(e instanceof Error && e.message.includes('RateLimitExceeded'))) {
-                                console.warn(`Failed to get feed for ${profile.handle}`, e);
-                            }
-                            return {
-                                profile,
-                                latestPost: undefined,
-                                hasUnread: false,
-                                lastActivity: profile.indexedAt || new Date(0).toISOString(),
-                            };
-                        }
-                    });
-
-                    const results = await Promise.all(feedPromises);
-                    if (isCancelled) return;
-
-                    setProfileFeeds(prevFeeds => {
-                        const newFeedsMap = new Map(prevFeeds.map(f => [f.profile.did, f]));
-                        results.forEach(result => {
-                            if (result) {
-                                newFeedsMap.set(result.profile.did, result);
-                            }
-                        });
-                        return Array.from(newFeedsMap.values());
-                    });
-
-                    if (i + BATCH_SIZE < followedProfiles.length) {
-                        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+                    if (eventDate > lastViewedDate) {
+                        unreadAuthors.add(authorDid);
                     }
                 }
+    
+                // Map the latest post for each author from the timeline.
+                const latestPostMap = new Map<string, AppBskyFeedDefs.FeedViewPost>();
+                for (const item of timelinePosts) {
+                    const authorDid = item.post.author.did;
+                    if (!latestPostMap.has(authorDid)) {
+                        latestPostMap.set(authorDid, item);
+                    }
+                }
+    
+                // Combine all data to build the final list for the UI.
+                const finalProfileFeeds: ProfileFeed[] = followedProfiles.map(profile => {
+                    const latestPost = latestPostMap.get(profile.did);
+                    const hasUnread = unreadAuthors.has(profile.did);
+    
+                    // Determine the last activity timestamp for sorting purposes.
+                    const lastActivity = latestPost
+                        ? (AppBskyFeedDefs.isReasonRepost(latestPost.reason) ? latestPost.reason.indexedAt : latestPost.post.indexedAt)
+                        : profile.indexedAt || new Date(0).toISOString();
+    
+                    return {
+                        profile,
+                        latestPost,
+                        hasUnread,
+                        lastActivity,
+                    };
+                });
+                
+                if (isCancelled) return;
+                setProfileFeeds(finalProfileFeeds);
+    
             } catch (e) {
                 if (isCancelled) return;
-                console.error("Failed to fetch followed profiles:", e);
+                console.error("Failed to fetch following feed data:", e);
                 setError("Could not load your following feed.");
-                setIsLoading(false);
+            } finally {
+                if (!isCancelled) {
+                    setIsLoading(false);
+                }
             }
         };
-
-        fetchAndProcessFeeds();
-
+    
+        fetchData();
+    
         return () => {
             isCancelled = true;
         };
     }, [agent, session, lastViewedTimestamps]);
+
+    const sortedData = useMemo(() => {
+        return [...profileFeeds].sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
+    }, [profileFeeds]);
 
     if (isLoading) {
         return (
