@@ -8,7 +8,7 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { useChannelState } from '../../context/ChannelStateContext';
 
 type ProfileFeed = {
-  profile: AppBskyActorDefs.ProfileViewBasic;
+  profile: AppBskyActorDefs.ProfileViewBasic | AppBskyActorDefs.ProfileView;
   latestPost?: AppBskyFeedDefs.FeedViewPost;
   hasUnread: boolean;
   lastActivity: string; // ISO string for sorting
