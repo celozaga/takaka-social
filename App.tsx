@@ -139,8 +139,13 @@ const Main: React.FC = () => {
         return <SettingsScreen />;
       case '':
       case 'home':
-      case 'profiles':
+      case 'feed':
         if (session) {
+          const lastViewedProfile = localStorage.getItem('takaka-last-viewed-profile');
+          if (lastViewedProfile) {
+            window.location.hash = `#/profile/${lastViewedProfile}`;
+            return <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+          }
           return (
             <>
               <div className="hidden md:flex h-full w-full items-center justify-center text-on-surface-variant p-8 text-center">

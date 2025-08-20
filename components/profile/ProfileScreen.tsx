@@ -78,14 +78,14 @@ const ProfileFeed: React.FC<{ actor: string, isBlocked: boolean }> = ({ actor, i
     return (
         <div className="space-y-4">
             {feed.map((feedViewPost) => {
-                const isRepost = AppBskyFeedDefs.isReasonRepost(feedViewPost.reason);
-                const reason = isRepost ? feedViewPost.reason : undefined;
-                const repostAuthorDid = reason ? reason.by.did : '';
+                const reason = feedViewPost.reason;
+                const isRepost = AppBskyFeedDefs.isReasonRepost(reason);
+                const repostAuthorDid = isRepost ? reason.by.did : '';
                 return (
                     <PostBubble 
                         key={`${feedViewPost.post.cid}-${repostAuthorDid}`} 
                         post={feedViewPost.post}
-                        reason={reason}
+                        reason={isRepost ? reason : undefined}
                         showAuthor={isRepost}
                         profileOwnerActor={actor}
                     />
@@ -163,6 +163,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 const profileRes = await agent.getProfile({ actor });
                 setProfile(profileRes.data);
                 localStorage.setItem(`channel-last-viewed:${profileRes.data.did}`, new Date().toISOString());
+                localStorage.setItem('takaka-last-viewed-profile', actor);
             } catch (err: any) {
                 setError(err.message || "Could not load profile.");
             } finally {
