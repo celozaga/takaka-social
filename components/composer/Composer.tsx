@@ -81,13 +81,13 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    if (mediaFiles.length + files.length > MAX_IMAGES && !Array.from(files).some(f => f.type.startsWith('video'))) {
+    if (mediaFiles.length + files.length > MAX_IMAGES && !Array.from(files).some((f: File) => f.type.startsWith('video'))) {
         toast({ title: t('composer.toast.maxImages', { max: MAX_IMAGES }), variant: 'destructive' });
         return;
     }
     // ... rest of web-specific file validation
     const newMediaFiles: MediaFile[] = [...mediaFiles];
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach((file: File) => {
         const type = file.type.startsWith('video') ? 'video' : (file.type === 'image/gif' ? 'gif' : 'image');
         newMediaFiles.push({ file, preview: URL.createObjectURL(file), type });
     });
