@@ -1,38 +1,39 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AppBskyFeedDefs, RichText } from '@atproto/api';
+import { AppBskyFeedDefs, RichText, AppBskyEmbedImages, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { BadgeCheck, Loader2, Heart } from 'lucide-react';
+import { BadgeCheck, Heart } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useModeration } from '../../context/ModerationContext';
-import { moderatePost } from '../../lib/moderation';
+import { moderatePost, ModerationDecision } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
-import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
+import QuotedPost from './QuotedPost';
+import ResizedImage from '../shared/ResizedImage';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
-  isRoot?: boolean;
 }
-
-const REPLIES_PER_PAGE = 10;
 
 const formatCount = (count: number): string => {
     if (count > 999) return `${(count/1000).toFixed(1)}k`.replace('.0', '');
     return count.toString();
 }
 
-const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
+const Reply: React.FC<ReplyProps> = ({ reply }) => {
   const { t } = useTranslation();
   const moderation = useModeration();
   const [isContentVisible, setIsContentVisible] = useState(false);
   
   const { post, replies } = reply;
-  const modDecision = moderation.isReady ? moderatePost(post, moderation) : null;
+  if(!post) return null;
+
+  const modDecision: ModerationDecision = moderation.isReady ? moderatePost(post, moderation) : { visibility: 'show' };
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
@@ -40,19 +41,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const { openLoginModal, openComposer } = useUI();
   const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
   
-  const allSubReplies = (replies || []).filter(r => {
-      if (!AppBskyFeedDefs.isThreadViewPost(r)) return false;
-      if (!moderation.isReady) return true; // Show all while loading
-      const decision = moderatePost(r.post, moderation);
-      return decision.visibility !== 'hide';
-    }) as AppBskyFeedDefs.ThreadViewPost[];
-  const hasSubReplies = allSubReplies.length > 0;
-
-  const [isExpanded, setIsExpanded] = useState(isRoot);
-  const [visibleReplies, setVisibleReplies] = useState<AppBskyFeedDefs.ThreadViewPost[]>([]);
-  const [replyCursor, setReplyCursor] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const subReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
 
   const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
 
@@ -70,50 +59,36 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
     if (!ensureSession()) return;
     openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
   };
-
-  const loadMore = useCallback(() => {
-    if (isLoadingMore) return;
-    setIsLoadingMore(true);
-    setTimeout(() => {
-        const nextReplies = allSubReplies.slice(replyCursor, replyCursor + REPLIES_PER_PAGE);
-        setVisibleReplies(prev => [...prev, ...nextReplies]);
-        const newCursor = replyCursor + REPLIES_PER_PAGE;
-        setReplyCursor(newCursor);
-        setHasMore(allSubReplies.length > newCursor);
-        setIsLoadingMore(false);
-    }, 500);
-  }, [replyCursor, allSubReplies, isLoadingMore]);
-
-  useEffect(() => {
-    if (isExpanded && hasSubReplies && visibleReplies.length === 0) {
-      const initialReplies = allSubReplies.slice(0, REPLIES_PER_PAGE);
-      setVisibleReplies(initialReplies);
-      setReplyCursor(REPLIES_PER_PAGE);
-      setHasMore(allSubReplies.length > REPLIES_PER_PAGE);
-    }
-  }, [isExpanded, hasSubReplies, allSubReplies, visibleReplies.length]);
   
-  const ReplyList = () => (
-    <View style={styles.nestedRepliesContainer}>
-      {visibleReplies.map((nestedReply) => (
-        <Reply key={nestedReply.post.cid} reply={nestedReply} />
-      ))}
-      {hasMore && (
-        <View style={styles.loadMoreContainer}>
-            <Pressable onPress={loadMore} disabled={isLoadingMore} style={styles.loadMoreButton}>
-                {isLoadingMore ? <ActivityIndicator color={theme.colors.primary} /> : <Text style={styles.loadMoreText}>{t('post.viewReplies_other', { count: allSubReplies.length - visibleReplies.length })}</Text>}
-            </Pressable>
-        </View>
-      )}
-    </View>
-  );
+  const renderMediaAndQuote = () => {
+    const embed = post.embed;
+    if(!embed) return null;
+    
+    if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) {
+      const image = embed.images[0];
+      return <ResizedImage src={image.thumb} resizeWidth={200} alt={image.alt} style={styles.mediaPreview} />;
+    }
+    
+    if (AppBskyEmbedRecord.isView(embed)) {
+        return <QuotedPost embed={embed} />;
+    }
 
-  if (isRoot) {
-    return (
-      <View>
-        <ReplyList />
-      </View>
-    )
+    if(AppBskyEmbedRecordWithMedia.isView(embed)) {
+        const mediaEmbed = embed.media;
+        const recordEmbed = embed.record;
+        return (
+            <View>
+                {AppBskyEmbedImages.isView(mediaEmbed) && mediaEmbed.images.length > 0 &&
+                    <ResizedImage src={mediaEmbed.images[0].thumb} resizeWidth={200} alt={mediaEmbed.images[0].alt} style={styles.mediaPreview} />
+                }
+                {AppBskyEmbedRecord.isView(recordEmbed) &&
+                    <QuotedPost embed={recordEmbed} />
+                }
+            </View>
+        );
+    }
+    
+    return null;
   }
 
   if (!modDecision || modDecision.visibility === 'hide') {
@@ -135,12 +110,14 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
         </View>
 
         {modDecision.visibility === 'warn' && !isContentVisible ? (
-             <ContentWarning reason={modDecision.reason!} onShow={() => setIsContentVisible(true)} />
+             <ContentWarning reason={modDecision.reason || 'Content Warning'} onShow={() => setIsContentVisible(true)} />
         ) : (
             <>
                 <Text style={styles.postText}>
                     <RichTextRenderer record={record} />
                 </Text>
+                
+                {renderMediaAndQuote()}
 
                 <View style={styles.footer}>
                     <Pressable
@@ -155,19 +132,11 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
                          <Text style={styles.footerText}>{t('common.reply')}</Text>
                     </Pressable>
                 </View>
-
-                {hasSubReplies && !isExpanded && (
-                    <Pressable onPress={() => setIsExpanded(true)} style={styles.toggleButton}>
-                        <View style={styles.threadLineToggle} />
-                        <Text style={styles.toggleText}>{t(allSubReplies.length === 1 ? 'post.viewReplies_one' : 'post.viewReplies_other', { count: allSubReplies.length })}</Text>
-                    </Pressable>
-              )}
             </>
         )}
     </View>
   );
   
-
   return (
     <View>
         <View style={styles.replyContainer}>
@@ -177,11 +146,15 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
                         <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
                     </Pressable>
                 </Link>
-                {hasSubReplies && isExpanded && <View style={styles.threadLine} />}
+                {subReplies.length > 0 && <View style={styles.threadLine} />}
             </View>
             {content}
         </View>
-        {isExpanded && hasSubReplies && <ReplyList />}
+        {subReplies.length > 0 && 
+            <View style={styles.nestedRepliesContainer}>
+                {subReplies.map(nestedReply => <Reply key={nestedReply.post.cid} reply={nestedReply} />)}
+            </View>
+        }
     </View>
   );
 };
@@ -199,14 +172,13 @@ const styles = StyleSheet.create({
     footer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, marginTop: theme.spacing.s },
     footerButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
     footerText: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant },
-    toggleButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.m, marginTop: theme.spacing.m },
-    threadLineToggle: { height: 2, width: 32, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: 1 },
-    toggleText: { ...theme.typography.labelLarge, color: theme.colors.primary },
     nestedRepliesContainer: { paddingLeft: 20 + theme.spacing.m, borderLeftWidth: 2, borderLeftColor: theme.colors.surfaceContainerHigh, marginLeft: 20 },
-    loadMoreContainer: { alignItems: 'center', marginVertical: theme.spacing.l },
-    loadMoreButton: { paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.full },
-    loadMoreText: { ...theme.typography.labelLarge, color: theme.colors.primary },
+    mediaPreview: {
+        width: '100%',
+        aspectRatio: 1.5,
+        borderRadius: theme.shape.medium,
+        marginTop: theme.spacing.s,
+    }
 });
-
 
 export default React.memo(Reply);

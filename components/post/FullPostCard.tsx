@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs, AppBskyEmbedRecord } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,6 +10,7 @@ import RichTextRenderer from '../shared/RichTextRenderer';
 import PostActions from './PostActions';
 import SharedVideoPlayer from '../shared/VideoPlayer';
 import ResizedImage from '../shared/ResizedImage';
+import QuotedPost from './QuotedPost';
 
 interface FullPostCardProps {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -40,7 +41,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 <View style={styles.mediaGrid}>
                     {embed.images.map((image, index) => (
                         <Pressable 
-                            onPress={() => Linking.openURL(image.fullsize)}
+                            onPress={(e) => { e.stopPropagation(); Linking.openURL(image.fullsize); }}
                             key={index} 
                             style={[styles.imageGridItem, { width: embed.images.length > 1 ? '50%' : '100%' }]}
                         >
@@ -65,7 +66,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             const videoAspectRatio = embedView.aspectRatio
                 ? embedView.aspectRatio.width / embedView.aspectRatio.height
                 : 16 / 9;
-            return <SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, backgroundColor: 'black', borderRadius: 8, marginTop: 8, }} />;
+            return <Pressable onPress={(e) => e.stopPropagation()}><SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, backgroundColor: 'black', borderRadius: 8, marginTop: 8, }} /></Pressable>;
         }
 
         const embed = post.embed;
@@ -78,6 +79,18 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         }
         return null;
     };
+    
+    const renderQuotedPost = () => {
+        if (!post.embed) return null;
+        const embed = post.embed;
+        if (AppBskyEmbedRecord.isView(embed)) {
+            return <QuotedPost embed={embed} />;
+        }
+        if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedRecord.isView(embed.record)) {
+            return <QuotedPost embed={embed.record} />;
+        }
+        return null;
+    }
     
      const renderContext = () => {
         if (reason && AppBskyFeedDefs.isReasonRepost(reason)) {
@@ -139,6 +152,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             </Text>
                         )}
                         {renderMedia()}
+                        {renderQuotedPost()}
                         <View style={styles.actionsContainer}>
                             <PostActions post={post} />
                         </View>
