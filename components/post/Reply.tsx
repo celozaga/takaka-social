@@ -1,9 +1,8 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs, RichText } from '@atproto/api';
-import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Loader2, Heart } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
@@ -13,6 +12,7 @@ import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import theme from '@/lib/theme';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -54,7 +54,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const date = format(new Date(record.createdAt), 'M/d');
+  const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
 
   const ensureSession = () => {
     if (!session) {
@@ -94,23 +94,18 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
   }, [isExpanded, hasSubReplies, allSubReplies, visibleReplies.length]);
   
   const ReplyList = () => (
-    <>
+    <View style={styles.nestedRepliesContainer}>
       {visibleReplies.map((nestedReply) => (
         <Reply key={nestedReply.post.cid} reply={nestedReply} />
       ))}
       {hasMore && (
         <View style={styles.loadMoreContainer}>
             <Pressable onPress={loadMore} disabled={isLoadingMore} style={styles.loadMoreButton}>
-                {isLoadingMore ? <ActivityIndicator color="#A8C7FA" /> : <Text style={styles.loadMoreText}>{t('post.viewReplies_other', { count: allSubReplies.length - visibleReplies.length })}</Text>}
+                {isLoadingMore ? <ActivityIndicator color={theme.colors.primary} /> : <Text style={styles.loadMoreText}>{t('post.viewReplies_other', { count: allSubReplies.length - visibleReplies.length })}</Text>}
             </Pressable>
         </View>
       )}
-      {hasSubReplies && !isRoot && (
-        <Pressable onPress={() => setIsExpanded(false)}>
-            <Text style={styles.toggleRepliesText}>Hide replies</Text>
-        </Pressable>
-      )}
-    </>
+    </View>
   );
 
   if (isRoot) {
@@ -125,110 +120,92 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
       return null;
   }
   
-  if (modDecision.visibility === 'warn' && !isContentVisible) {
-      return (
-          <View style={styles.replyContainer}>
-              <View style={styles.avatarThreadContainer}>
-                  <Link href={`/profile/${author.handle}` as any} asChild>
-                    <Pressable>
-                      <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                    </Pressable>
-                  </Link>
-                  {(hasSubReplies) && <View style={styles.threadLine} />}
-              </View>
-              <View style={styles.mainContentWarning}>
-                  <ContentWarning reason={modDecision.reason!} onShow={() => setIsContentVisible(true)} />
-              </View>
-          </View>
-      )
-  }
-
-  return (
-    <View style={styles.replyContainer}>
-      <View style={styles.avatarThreadContainer}>
-        <Link href={`/profile/${author.handle}` as any} asChild>
-            <Pressable>
-                <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-            </Pressable>
-        </Link>
-        {hasSubReplies && <View style={styles.threadLine} />}
-      </View>
-
-      <View style={styles.mainContentColumn}>
-        <View style={styles.mainContentContainer}>
-          <View style={styles.mainContent}>
-            <View style={{paddingTop: 4}}>
-              <Link href={`/profile/${author.handle}` as any} asChild>
+  const content = (
+    <View style={{flex: 1}}>
+        <View style={styles.header}>
+            <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
                 <Pressable style={styles.authorContainer}>
-                    <Text style={styles.authorName}>{author.displayName || `@${author.handle}`}</Text>
-                    {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                        <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" />
+                    <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
+                    {author.labels?.some(l => l.val === 'blue-check') && (
+                        <BadgeCheck size={14} color={theme.colors.primary} fill={theme.colors.primary} />
                     )}
                 </Pressable>
-              </Link>
-            
-              <Text style={styles.postText}>
-                  <RichTextRenderer record={record} />
-              </Text>
-
-              <View style={styles.footer}>
-                  <Text style={styles.footerText}>{date}</Text>
-                  <Pressable onPress={handleReplyClick}>
-                      <Text style={styles.replyButtonText}>{t('common.reply')}</Text>
-                  </Pressable>
-              </View>
-
-              {hasSubReplies && !isExpanded && (
-                  <Pressable onPress={() => setIsExpanded(true)}>
-                      <Text style={styles.toggleRepliesText}>View {allSubReplies.length} {allSubReplies.length === 1 ? 'reply' : 'replies'}</Text>
-                  </Pressable>
-              )}
-            </View>
-          </View>
-          
-          <View style={styles.likeContainer}>
-              <Pressable 
-                  onPress={(e) => handleLike(e as any)}
-                  disabled={isLiking}
-                  style={{ padding: 4 }}
-              >
-                  <Heart size={20} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? 'currentColor' : 'none'} />
-              </Pressable>
-              <Text style={styles.likeCount}>{likeCount > 0 ? formatCount(likeCount) : ''}</Text>
-          </View>
+            </Link>
+            <Text style={styles.timeAgo}>· {timeAgo}</Text>
         </View>
-        {isExpanded && hasSubReplies && (
-          <View style={styles.nestedRepliesContainer}>
-            <ReplyList />
-          </View>
+
+        {modDecision.visibility === 'warn' && !isContentVisible ? (
+             <ContentWarning reason={modDecision.reason!} onShow={() => setIsContentVisible(true)} />
+        ) : (
+            <>
+                <Text style={styles.postText}>
+                    <RichTextRenderer record={record} />
+                </Text>
+
+                <View style={styles.footer}>
+                    <Pressable
+                        onPress={(e) => handleLike(e as any)}
+                        disabled={isLiking}
+                        style={styles.footerButton}
+                    >
+                        <Heart size={16} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? 'currentColor' : 'none'} />
+                        {likeCount > 0 && <Text style={[styles.footerText, !!likeUri && {color: theme.colors.pink}]}>{formatCount(likeCount)}</Text>}
+                    </Pressable>
+                     <Pressable onPress={handleReplyClick} style={styles.footerButton}>
+                         <Text style={styles.footerText}>{t('common.reply')}</Text>
+                    </Pressable>
+                </View>
+
+                {hasSubReplies && !isExpanded && (
+                    <Pressable onPress={() => setIsExpanded(true)} style={styles.toggleButton}>
+                        <View style={styles.threadLineToggle} />
+                        <Text style={styles.toggleText}>{t(allSubReplies.length === 1 ? 'post.viewReplies_one' : 'post.viewReplies_other', { count: allSubReplies.length })}</Text>
+                    </Pressable>
+              )}
+            </>
         )}
-      </View>
+    </View>
+  );
+  
+
+  return (
+    <View>
+        <View style={styles.replyContainer}>
+            <View style={styles.avatarThreadContainer}>
+                <Link href={`/profile/${author.handle}` as any} asChild>
+                    <Pressable>
+                        <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                    </Pressable>
+                </Link>
+                {hasSubReplies && isExpanded && <View style={styles.threadLine} />}
+            </View>
+            {content}
+        </View>
+        {isExpanded && hasSubReplies && <ReplyList />}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-    replyContainer: { flexDirection: 'row', gap: 12, paddingVertical: 12, paddingHorizontal: 16 },
+    replyContainer: { flexDirection: 'row', gap: theme.spacing.m, marginTop: theme.spacing.l },
     avatarThreadContainer: { alignItems: 'center', flexShrink: 0 },
-    avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#2b2d2e' },
-    threadLine: { width: 2, flex: 1, marginVertical: 8, backgroundColor: '#2b2d2e', borderRadius: 1 },
-    mainContentColumn: { flex: 1, flexDirection: 'column' },
-    mainContentContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-    mainContent: { flex: 1 },
-    mainContentWarning: { flex: 1, paddingTop: 4 },
-    authorContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    authorName: { fontWeight: 'bold', fontSize: 14 },
-    postText: { color: '#E2E2E6', marginVertical: 2, fontSize: 14, lineHeight: 20 },
-    footer: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 },
-    footerText: { fontSize: 12, color: '#C3C6CF' },
-    replyButtonText: { fontWeight: '600', fontSize: 12, color: '#C3C6CF' },
-    toggleRepliesText: { fontSize: 14, fontWeight: '600', color: '#C3C6CF', marginTop: 8 },
-    likeContainer: { alignItems: 'center', flexShrink: 0, paddingTop: 4 },
-    likeCount: { fontSize: 12, color: '#C3C6CF', fontWeight: '600' },
-    nestedRepliesContainer: { paddingTop: 8 },
-    loadMoreContainer: { alignItems: 'center', marginVertical: 16 },
-    loadMoreButton: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#2b2d2e', borderRadius: 999 },
-    loadMoreText: { color: '#A8C7FA', fontWeight: '600' },
+    avatar: { width: 40, height: 40, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    threadLine: { width: 2, flex: 1, marginVertical: theme.spacing.s, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: 1 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+    authorContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, flexShrink: 1 },
+    authorName: { ...theme.typography.titleSmall, color: theme.colors.onSurface },
+    timeAgo: { ...theme.typography.bodySmall, color: theme.colors.onSurfaceVariant },
+    postText: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, marginVertical: theme.spacing.xs },
+    footer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, marginTop: theme.spacing.s },
+    footerButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+    footerText: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant },
+    toggleButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.m, marginTop: theme.spacing.m },
+    threadLineToggle: { height: 2, width: 32, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: 1 },
+    toggleText: { ...theme.typography.labelLarge, color: theme.colors.primary },
+    nestedRepliesContainer: { paddingLeft: 20 + theme.spacing.m, borderLeftWidth: 2, borderLeftColor: theme.colors.surfaceContainerHigh, marginLeft: 20 },
+    loadMoreContainer: { alignItems: 'center', marginVertical: theme.spacing.l },
+    loadMoreButton: { paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.full },
+    loadMoreText: { ...theme.typography.labelLarge, color: theme.colors.primary },
 });
 
 

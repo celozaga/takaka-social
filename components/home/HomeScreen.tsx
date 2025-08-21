@@ -6,6 +6,7 @@ import Feed from '../shared/Feed';
 import FeedSelector from '../feeds/FeedSelector';
 import Head from '../shared/Head';
 import { View, StyleSheet } from 'react-native';
+import theme from '@/lib/theme';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
@@ -79,14 +80,12 @@ const HomeScreen: React.FC = () => {
     <>
       <Head><title>{t('nav.home')}</title></Head>
       <View style={styles.container}>
-        <View style={styles.selectorContainer}>
-          <FeedSelector
-            feeds={feeds}
-            selectedFeed={selectedFeed}
-            onSelectFeed={setSelectedFeed}
-            isLoading={isLoadingFeeds}
-          />
-        </View>
+        <FeedSelector
+          feeds={feeds}
+          selectedFeed={selectedFeed}
+          onSelectFeed={setSelectedFeed}
+          isLoading={isLoadingFeeds}
+        />
         <View style={styles.feedContainer}>
           <Feed key={selectedFeed} feedUri={selectedFeed} />
         </View>
@@ -98,12 +97,7 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'column',
-  },
-  selectorContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    backgroundColor: theme.colors.background,
   },
   feedContainer: {
     flex: 1,

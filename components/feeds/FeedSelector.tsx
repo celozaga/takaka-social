@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import theme from '@/lib/theme';
 
 interface FeedSelectorProps {
   feeds: AppBskyFeedDefs.GeneratorView[];
@@ -28,95 +28,84 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
     }
   };
 
-  const FeedButton = ({ label, feedUri, isActive }: { label: string, feedUri: string, isActive: boolean }) => (
+  const Tab: React.FC<{ label: string; feedUri: string; isActive: boolean }> = ({ label, feedUri, isActive }) => (
     <Pressable 
         onPress={() => feedUri === 'following' ? handleFollowingClick() : onSelectFeed(feedUri)}
-        style={[styles.button, isActive ? styles.activeButton : styles.inactiveButton]}
+        style={[styles.tab, isActive && styles.tabActive]}
     >
-        <Text style={[styles.buttonText, isActive ? styles.activeButtonText : styles.inactiveButtonText]}>{label}</Text>
+        <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
     </Pressable>
   );
 
   return (
-    <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.container}
-    >
-      <FeedButton 
-        label={t('home.following')}
-        feedUri='following'
-        isActive={selectedFeed === 'following'}
-      />
-      
-      {session && (
-        <FeedButton 
-          label={t('home.discover')}
-          feedUri={DISCOVER_FEED_URI}
-          isActive={selectedFeed === DISCOVER_FEED_URI}
+    <View style={styles.container}>
+        <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+        >
+        <Tab 
+            label={t('home.following')}
+            feedUri='following'
+            isActive={selectedFeed === 'following'}
         />
-      )}
-
-      {session && isLoading && [...Array(5)].map((_, i) => (
-        <View key={i} style={styles.skeleton} />
-      ))}
-      
-      {session && !isLoading && feeds.map(feed => (
-        <FeedButton 
-            key={feed.uri}
-            label={feed.displayName}
-            feedUri={feed.uri}
-            isActive={selectedFeed === feed.uri}
-        />
-      ))}
-      
-      {!session && (
-          <FeedButton
+        
+        <Tab 
             label={t('home.discover')}
             feedUri={DISCOVER_FEED_URI}
             isActive={selectedFeed === DISCOVER_FEED_URI}
-          />
-      )}
-    </ScrollView>
+        />
+
+        {isLoading && [...Array(3)].map((_, i) => (
+            <View key={i} style={styles.skeleton} />
+        ))}
+        
+        {session && !isLoading && feeds.map(feed => (
+            <Tab 
+                key={feed.uri}
+                label={feed.displayName}
+                feedUri={feed.uri}
+                isActive={selectedFeed === feed.uri}
+            />
+        ))}
+        </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
     container: {
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.surfaceContainerHigh,
+        backgroundColor: theme.colors.surface,
+    },
+    scrollContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        paddingBottom: 8,
+        gap: theme.spacing.l,
+        paddingHorizontal: theme.spacing.l,
     },
-    button: {
-        flexShrink: 0,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 999,
+    tab: {
+        paddingVertical: theme.spacing.l,
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
     },
-    activeButton: {
-        backgroundColor: '#D1E4FF', // primary-container
+    tabActive: {
+        borderBottomColor: theme.colors.primary,
     },
-    inactiveButton: {
-        backgroundColor: 'transparent',
+    tabText: {
+        ...theme.typography.titleSmall,
+        color: theme.colors.onSurfaceVariant,
     },
-    buttonText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    activeButtonText: {
-        color: '#001D35', // on-primary-container
-    },
-    inactiveButtonText: {
-        color: '#C3C6CF', // on-surface-variant
+    tabTextActive: {
+        color: theme.colors.primary,
     },
     skeleton: {
-        height: 36,
+        height: 20,
         width: 96,
-        backgroundColor: '#1E2021', // surface-2
-        borderRadius: 999,
-        opacity: 0.5,
-        flexShrink: 0,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.small,
+        marginVertical: theme.spacing.l,
     }
 });
 

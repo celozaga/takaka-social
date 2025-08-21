@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
-import { View, StyleSheet, Platform, ActivityIndicator, Pressable } from 'react-native';
+import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AtpProvider, useAtp } from '@/context/AtpContext';
 import { UIProvider, useUI } from '@/context/UIContext';
@@ -9,9 +9,9 @@ import { ModerationProvider } from '@/context/ModerationContext';
 import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
 import { Toaster, ToastProvider } from '@/components/ui/Toaster';
 import { StatusBar } from 'expo-status-bar';
-import Navbar from '@/components/layout/Navbar';
 import BottomNavbar from '@/components/layout/BottomNavbar';
 import LoginPrompt from '@/components/auth/LoginPrompt';
+import theme from '@/lib/theme';
 
 import '@/lib/i18n';
 
@@ -42,32 +42,40 @@ function AppLayout() {
     isUpdateHandleModalOpen, closeUpdateHandleModal,
     isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
     isRepostModalOpen, closeRepostModal, repostModalPost,
-    isCustomFeedHeaderVisible
   } = useUI();
   
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
+
   const isFullScreenPage = ['/watch'].some(p => pathname.startsWith(p));
   const showNav = !isFullScreenPage;
 
+  const mainContentStyle = [
+    styles.mainContent,
+    isFullScreenPage && styles.fullScreenContent,
+    showNav && isDesktop && styles.mainContentDesktop,
+    showNav && !isDesktop && styles.mainContentMobile
+  ];
+
   return (
       <SafeAreaView style={styles.container}>
-        {showNav && <Navbar />}
-        <View style={[styles.mainContent, isFullScreenPage && styles.fullScreenContent]}>
+        {showNav && <BottomNavbar />}
+        <View style={mainContentStyle}>
           <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
         </View>
-        {showNav && <BottomNavbar isHidden={isCustomFeedHeaderVisible} />}
         {!session && showNav && <LoginPrompt />}
 
         {/* MODALS */}
         <Suspense fallback={null}>
           {isLoginModalOpen && (
-            <View style={styles.modalBackdrop}>
-              <View style={styles.modalDialogWrapper}>
+            <Pressable style={styles.modalBackdrop} onPress={closeLoginModal}>
+              <Pressable style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <LoginScreen onSuccess={closeLoginModal} />
                 </Suspense>
-              </View>
-            </View>
+              </Pressable>
+            </Pressable>
           )}
           {isComposerOpen && (
             <View style={[styles.modalBackdrop, styles.composerBackdrop]}>
@@ -79,40 +87,40 @@ function AppLayout() {
             </View>
           )}
           {isFeedModalOpen && (
-            <View style={styles.modalBackdrop}>
-              <View style={styles.modalDialogWrapper}>
+            <Pressable style={styles.modalBackdrop} onPress={closeFeedModal}>
+              <Pressable style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <FeedHeaderModal />
                 </Suspense>
-              </View>
-            </View>
+              </Pressable>
+            </Pressable>
           )}
           {isEditProfileModalOpen && (
-             <View style={styles.modalBackdrop}>
-              <View style={styles.modalDialogWrapper}>
+             <Pressable style={styles.modalBackdrop} onPress={closeEditProfileModal}>
+              <Pressable style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
                 </Suspense>
-              </View>
-             </View>
+              </Pressable>
+             </Pressable>
           )}
           {isUpdateEmailModalOpen && (
-             <View style={styles.modalBackdrop}>
-              <View style={styles.modalDialogWrapper}>
+             <Pressable style={styles.modalBackdrop} onPress={closeUpdateEmailModal}>
+              <Pressable style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
                 </Suspense>
-              </View>
-             </View>
+              </Pressable>
+             </Pressable>
           )}
            {isUpdateHandleModalOpen && (
-             <View style={styles.modalBackdrop}>
-              <View style={styles.modalDialogWrapper}>
+             <Pressable style={styles.modalBackdrop} onPress={closeUpdateHandleModal}>
+              <Pressable style={styles.modalDialogWrapper}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
                 </Suspense>
-              </View>
-             </View>
+              </Pressable>
+             </Pressable>
           )}
           {isMediaActionsModalOpen && mediaActionsModalPost && (
              <Pressable style={styles.modalBackdrop} onPress={closeMediaActionsModal}>
@@ -163,21 +171,25 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111314', // surface-1
+    backgroundColor: theme.colors.background,
   },
   mainContent: {
     flex: 1,
-    paddingLeft: Platform.select({ web: 80, default: 0 }),
-    paddingTop: Platform.select({ web: 64, default: 0 }),
-    paddingBottom: Platform.select({ web: 0, default: 80 }),
     marginHorizontal: 'auto',
     width: '100%',
     maxWidth: 640,
+  },
+  mainContentDesktop: {
+    marginLeft: 80, // Width of Navigation Rail
+  },
+  mainContentMobile: {
+    paddingBottom: 80, // Height of Navigation Bar
   },
   fullScreenContent: {
     paddingTop: 0,
     paddingLeft: 0,
     paddingBottom: 0,
+    marginLeft: 0,
     maxWidth: '100%',
   },
   modalBackdrop: {
@@ -196,19 +208,19 @@ const styles = StyleSheet.create({
     maxWidth: 640,
     height: Platform.select({web: '90%' as any, default: '95%'}),
     maxHeight: 800,
-    backgroundColor: '#1E2021', // surface-2
-    borderRadius: 16,
+    backgroundColor: theme.colors.surfaceContainer,
+    borderRadius: theme.shape.large,
     overflow: 'hidden',
   },
   modalDialogWrapper: {
     width: '100%',
     maxWidth: 448,
-    paddingHorizontal: 16
+    paddingHorizontal: theme.spacing.l,
   },
   modalDialogShell: {
-    backgroundColor: '#1E2021',
-    borderRadius: 12,
-    padding: 32,
+    backgroundColor: theme.colors.surfaceContainer,
+    borderRadius: theme.shape.large,
+    padding: theme.spacing.xl,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -218,11 +230,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    maxWidth: 500,
+    maxWidth: 640,
     maxHeight: '90%',
-    backgroundColor: '#1E2021',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 8,
+    backgroundColor: theme.colors.surfaceContainer,
+    borderTopLeftRadius: theme.shape.extraLarge,
+    borderTopRightRadius: theme.shape.extraLarge,
+    padding: theme.spacing.s,
+    paddingBottom: theme.spacing.xl, // For home bar
   }
 });

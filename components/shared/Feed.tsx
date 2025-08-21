@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -8,6 +7,7 @@ import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import theme from '@/lib/theme';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 
@@ -199,55 +199,57 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
 
 const styles = StyleSheet.create({
     columnWrapper: { 
-        gap: 16,
+        gap: theme.spacing.l,
     },
     contentContainer: { 
-        paddingHorizontal: 16, 
-        paddingTop: 16 
+        paddingHorizontal: theme.spacing.l, 
+        paddingTop: theme.spacing.l
     },
     itemContainer: {
         flex: 1 / 2,
     },
     masonryContainer: {
         flexDirection: 'row',
-        gap: 16,
+        gap: theme.spacing.l,
     },
     column: {
         flex: 1,
-        gap: 16,
+        gap: theme.spacing.l,
     },
     messageContainer: { 
-        padding: 32, 
-        backgroundColor: '#1E2021', 
-        borderRadius: 12, 
+        padding: theme.spacing.xxl, 
+        backgroundColor: theme.colors.surfaceContainer, 
+        borderRadius: theme.shape.large, 
         alignItems: 'center', 
         justifyContent: 'center', 
-        marginTop: 16, 
-        marginHorizontal: 0, 
+        marginTop: theme.spacing.l,
     },
     errorText: { 
-        color: '#F2B8B5', 
+        ...theme.typography.bodyLarge,
+        color: theme.colors.error, 
         textAlign: 'center', 
-        marginBottom: 16 
+        marginBottom: theme.spacing.l
     },
     infoText: { 
-        color: '#C3C6CF', 
+        ...theme.typography.bodyLarge,
+        color: theme.colors.onSurfaceVariant, 
         textAlign: 'center' 
     },
     endOfList: { 
+        ...theme.typography.bodyMedium,
         textAlign: 'center', 
-        color: '#C3C6CF', 
-        padding: 32 
+        color: theme.colors.onSurfaceVariant,
+        padding: theme.spacing.xxl 
     },
     tryAgainButton: {
-        backgroundColor: '#2b2d2e',
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 999,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        paddingHorizontal: theme.spacing.xl,
+        paddingVertical: theme.spacing.m,
+        borderRadius: theme.shape.full,
     },
     tryAgainText: {
-        color: '#E2E2E6',
-        fontWeight: 'bold',
+        ...theme.typography.labelLarge,
+        color: theme.colors.onSurface,
     }
 });
 
