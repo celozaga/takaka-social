@@ -67,25 +67,21 @@ export const colors = {
 
 // --- 2. TYPOGRAPHY SYSTEM ---
 
-const fontConfig = {
-  regular: 'Roboto_400Regular',
-  medium: 'Roboto_500Medium',
-  bold: 'Roboto_700Bold',
-};
+const FONT_FAMILY = 'Roboto';
 
 export const typography = {
-  displayLarge: { fontFamily: fontConfig.regular, fontSize: 57, lineHeight: 64 } as TextStyle,
-  headlineLarge: { fontFamily: fontConfig.regular, fontSize: 32, lineHeight: 40 } as TextStyle,
-  headlineMedium: { fontFamily: fontConfig.regular, fontSize: 28, lineHeight: 36 } as TextStyle,
-  titleLarge: { fontFamily: fontConfig.bold, fontSize: 22, lineHeight: 28 } as TextStyle,
-  titleMedium: { fontFamily: fontConfig.bold, fontSize: 16, lineHeight: 24, letterSpacing: 0.15 } as TextStyle,
-  titleSmall: { fontFamily: fontConfig.medium, fontSize: 14, lineHeight: 20, letterSpacing: 0.1 } as TextStyle,
-  labelLarge: { fontFamily: fontConfig.medium, fontSize: 14, lineHeight: 20, letterSpacing: 0.1 } as TextStyle,
-  labelMedium: { fontFamily: fontConfig.medium, fontSize: 12, lineHeight: 16, letterSpacing: 0.5 } as TextStyle,
-  labelSmall: { fontFamily: fontConfig.medium, fontSize: 11, lineHeight: 16, letterSpacing: 0.5 } as TextStyle,
-  bodyLarge: { fontFamily: fontConfig.regular, fontSize: 16, lineHeight: 24, letterSpacing: 0.5 } as TextStyle,
-  bodyMedium: { fontFamily: fontConfig.regular, fontSize: 14, lineHeight: 20, letterSpacing: 0.25 } as TextStyle,
-  bodySmall: { fontFamily: fontConfig.regular, fontSize: 12, lineHeight: 16, letterSpacing: 0.4 } as TextStyle,
+  displayLarge: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 57, lineHeight: 64 } as TextStyle,
+  headlineLarge: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 32, lineHeight: 40 } as TextStyle,
+  headlineMedium: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 28, lineHeight: 36 } as TextStyle,
+  titleLarge: { fontFamily: FONT_FAMILY, fontWeight: '700', fontSize: 22, lineHeight: 28 } as TextStyle,
+  titleMedium: { fontFamily: FONT_FAMILY, fontWeight: '700', fontSize: 16, lineHeight: 24, letterSpacing: 0.15 } as TextStyle,
+  titleSmall: { fontFamily: FONT_FAMILY, fontWeight: '500', fontSize: 14, lineHeight: 20, letterSpacing: 0.1 } as TextStyle,
+  labelLarge: { fontFamily: FONT_FAMILY, fontWeight: '500', fontSize: 14, lineHeight: 20, letterSpacing: 0.1 } as TextStyle,
+  labelMedium: { fontFamily: FONT_FAMILY, fontWeight: '500', fontSize: 12, lineHeight: 16, letterSpacing: 0.5 } as TextStyle,
+  labelSmall: { fontFamily: FONT_FAMILY, fontWeight: '500', fontSize: 11, lineHeight: 16, letterSpacing: 0.5 } as TextStyle,
+  bodyLarge: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 16, lineHeight: 24, letterSpacing: 0.5 } as TextStyle,
+  bodyMedium: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 14, lineHeight: 20, letterSpacing: 0.25 } as TextStyle,
+  bodySmall: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 12, lineHeight: 16, letterSpacing: 0.4 } as TextStyle,
 };
 
 // --- 3. SHAPE SYSTEM ---
