@@ -12,7 +12,7 @@ import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;

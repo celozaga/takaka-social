@@ -12,7 +12,7 @@ import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from '../shared/Head';
 import ScreenHeader from '../layout/ScreenHeader';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();

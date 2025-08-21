@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import TopAppBar from '../ui/TopAppBar';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 interface ScreenHeaderProps {
     title: string;

@@ -6,7 +6,7 @@ import Feed from '../shared/Feed';
 import FeedSelector from '../feeds/FeedSelector';
 import Head from '../shared/Head';
 import { View, StyleSheet } from 'react-native';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 

@@ -8,7 +8,7 @@ import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl } from 'react-native';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';

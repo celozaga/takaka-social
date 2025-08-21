@@ -11,7 +11,7 @@ import { Toaster, ToastProvider } from '@/components/ui/Toaster';
 import { StatusBar } from 'expo-status-bar';
 import BottomNavbar from '@/components/layout/BottomNavbar';
 import LoginPrompt from '@/components/auth/LoginPrompt';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 import '@/lib/i18n';
 

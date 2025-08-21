@@ -5,7 +5,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid, Settings } from 'lucide-react';
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 const NavItem: React.FC<{
   item: any;

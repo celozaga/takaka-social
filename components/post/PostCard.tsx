@@ -12,7 +12,7 @@ import ContentWarning from '../shared/ContentWarning';
 import PostCardSkeleton from './PostCardSkeleton';
 import ResizedImage from '../shared/ResizedImage';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 import Card from '../ui/Card';
 
 type PostCardProps = {

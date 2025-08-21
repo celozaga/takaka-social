@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, TextInput, FlatList, ScrollView, useWindowDimensions, KeyboardAvoidingView, Platform, ActivityIndicator, Animated } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Heart, Repeat, MessageSquare, Bookmark, MoreHorizontal, Send, ChevronRight, Check } from 'lucide-react';
-import theme from '@/lib/theme';
+import { View, Text, StyleSheet, Pressable, Image, TextInput, FlatList, useWindowDimensions, KeyboardAvoidingView, Platform, ActivityIndicator, Animated } from 'react-native';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { Heart, Repeat, MessageSquare, MoreHorizontal, Send } from 'lucide-react';
+import { theme } from '@/lib/theme';
 import { useRouter } from 'expo-router';
 
 // --- TYPE DEFINITIONS ---
@@ -48,87 +48,83 @@ interface PostScreenProps {
 
 // --- HELPER HOOKS & UTILS ---
 const useOptimisticState = <T,>(initialValue: T) => {
-  const [optimisticValue, setOptimisticValue] = useState(initialValue);
-  const [actualValue, setActualValue] = useState(initialValue);
-
-  const setValue = (newValue: T, asyncAction: () => Promise<any>) => {
-    setOptimisticValue(newValue);
-    asyncAction().catch(() => {
-      // Revert on failure
-      setOptimisticValue(actualValue);
-    });
+  const [value, setValue] = useState(initialValue);
+  const setOptimisticValue = (newValue: T, asyncAction: () => Promise<any>) => {
+    const oldValue = value;
+    setValue(newValue);
+    asyncAction().catch(() => setValue(oldValue));
   };
-
-  useEffect(() => {
-    setOptimisticValue(initialValue);
-    setActualValue(initialValue);
-  }, [initialValue]);
-
-  return [optimisticValue, setValue, setActualValue] as const;
+  useEffect(() => setValue(initialValue), [initialValue]);
+  return [value, setOptimisticValue] as const;
 };
 
 const formatDistance = (dateStr: string) => {
     const now = new Date();
     const then = new Date(dateStr);
     const diff = now.getTime() - then.getTime();
-    const diffSeconds = Math.round(diff / 1000);
-    const diffMinutes = Math.round(diffSeconds / 60);
-    const diffHours = Math.round(diffMinutes / 60);
-    const diffDays = Math.round(diffHours / 24);
+    const diffDays = Math.round(diff / (1000 * 60 * 60 * 24));
+    if (diffDays > 0) return `${diffDays} days ago`;
+    const diffHours = Math.round(diff / (1000 * 60 * 60));
+    if (diffHours > 0) return `${diffHours} hours ago`;
+    const diffMinutes = Math.round(diff / (1000 * 60));
+    if (diffMinutes > 0) return `${diffMinutes} minutes ago`;
+    return 'Just now';
+};
 
-    if (diffSeconds < 60) return `${diffSeconds}s ago`;
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+const formatCount = (num: number): string => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return String(num);
 };
 
 
 // --- SUB-COMPONENTS ---
 
-const PostHeader: React.FC<{ post: Post, adapters: Adapters }> = ({ post, adapters }) => {
-    const router = useRouter();
+const PostHeader: React.FC<{ post: Post, adapters: Adapters }> = React.memo(({ post, adapters }) => {
     const [isFollowing, setFollow] = useOptimisticState(post.followedAuthor);
+    const handleFollow = () => setFollow(!isFollowing, () => adapters.onFollow(post.author.did, !isFollowing));
 
     return (
         <View style={styles.header}>
-            <Pressable style={styles.headerAuthor} onPress={() => adapters.onOpenProfile(post.author)}>
+            <Pressable style={styles.headerAuthor} onPress={() => adapters.onOpenProfile(post.author)} accessibilityLabel={`View profile of ${post.author.displayName}`}>
                 <Image source={{ uri: post.author.avatar }} style={styles.headerAvatar} />
-                <View>
-                    <Text style={styles.headerDisplayName}>{post.author.displayName}</Text>
-                    <Text style={styles.headerHandle}>@{post.author.handle}</Text>
-                </View>
+                <Text style={styles.headerDisplayName} numberOfLines={1}>{post.author.displayName}</Text>
             </Pressable>
             <View style={styles.headerActions}>
-                <Pressable onPress={() => setFollow(!isFollowing, () => adapters.onFollow(post.author.did, !isFollowing))} style={[styles.followButton, isFollowing && styles.followingButton]}>
+                <Pressable onPress={handleFollow} style={[styles.followButton, isFollowing && styles.followingButton]} accessibilityLabel={isFollowing ? `Unfollow ${post.author.displayName}` : `Follow ${post.author.displayName}`}>
                     <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>{isFollowing ? 'Following' : 'Follow'}</Text>
                 </Pressable>
-                <Pressable onPress={() => alert('More actions!')}>
+                <Pressable onPress={() => adapters.onShare(post)} accessibilityLabel="Share post">
                     <MoreHorizontal color={theme.color.textSecondary} size={24} />
-                </Pressable>
-                <Pressable onPress={() => router.back()}>
-                    <ChevronRight color={theme.color.textPrimary} size={28} />
                 </Pressable>
             </View>
         </View>
     );
-};
+});
 
-const PostMedia: React.FC<{ post: Post, onLike: () => void }> = ({ post, onLike }) => {
+const PostMedia: React.FC<{ post: Post, onDoubleTapLike: () => void }> = React.memo(({ post, onDoubleTapLike }) => {
     const { width } = useWindowDimensions();
     const [activeIndex, setActiveIndex] = useState(0);
     const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
     
     const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-        if (viewableItems.length > 0) {
-            setActiveIndex(viewableItems[0].index);
-        }
+        if (viewableItems.length > 0) setActiveIndex(viewableItems[0].index);
     }, []);
 
     const mediaAspectRatio = post.media[0] ? post.media[0].width / post.media[0].height : 1;
-    const mediaContainerWidth = Math.min(width, 720) - (theme.spacing.md * 2);
+    const containerWidth = width;
 
+    let lastTap: number | null = null;
+    const handlePress = () => {
+        const now = Date.now();
+        if (lastTap && (now - lastTap) < 300) {
+            onDoubleTapLike();
+        }
+        lastTap = now;
+    };
+    
     return (
-        <View style={{ marginHorizontal: theme.spacing.md }}>
+        <View>
             <FlatList
                 data={post.media}
                 horizontal
@@ -138,29 +134,29 @@ const PostMedia: React.FC<{ post: Post, onLike: () => void }> = ({ post, onLike 
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
                 renderItem={({ item }) => (
-                    <Pressable onPress={onLike}>
-                        <Image source={{ uri: item.url }} style={[styles.mediaImage, { width: mediaContainerWidth, aspectRatio: mediaAspectRatio }]} />
+                    <Pressable onPress={handlePress}>
+                        <Image source={{ uri: item.url }} style={[styles.mediaImage, { width: containerWidth, aspectRatio: mediaAspectRatio }]} />
                     </Pressable>
                 )}
+                style={{ width: containerWidth }}
             />
-            {post.media.length > 1 &&
-                <View style={styles.mediaCounter}>
-                    <Text style={styles.mediaCounterText}>{activeIndex + 1}/{post.media.length}</Text>
+            {post.media.length > 1 && (
+                <View style={styles.mediaDots}>
+                    {post.media.map((_, index) => <View key={index} style={[styles.mediaDot, index === activeIndex && styles.mediaDotActive]} />)}
                 </View>
-            }
+            )}
         </View>
     );
-};
+});
 
-const PostContent: React.FC<{ post: Post }> = ({ post }) => {
+const PostContent: React.FC<{ post: Post, adapters: Adapters }> = React.memo(({ post, adapters }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    // This is a simplified check. A real implementation would use onTextLayout.
-    const isLongText = post.text.length > 150;
+    const isLongText = post.text.length > 120;
     
     return (
         <View style={styles.contentContainer}>
-            {post.title && <Text style={styles.contentTitle}>{post.title}</Text>}
-            <Text style={styles.contentText} numberOfLines={isExpanded ? undefined : 3}>
+            <Text style={styles.contentTitle}>{post.title}</Text>
+            <Text style={styles.contentText} numberOfLines={isExpanded ? undefined : 2}>
                 {post.text}
             </Text>
             {isLongText && !isExpanded &&
@@ -168,12 +164,17 @@ const PostContent: React.FC<{ post: Post }> = ({ post }) => {
                     <Text style={styles.seeMoreText}>... See more</Text>
                 </Pressable>
             }
-            <Text style={styles.timestamp}>{formatDistance(post.createdAt)} in {post.location}</Text>
+            <View style={styles.metaContainer}>
+                <Text style={styles.timestamp}>{`${formatDistance(post.createdAt)} · ${post.location}`}</Text>
+                <Pressable onPress={() => adapters.onTranslate(post.text, post.lang)}>
+                    <Text style={styles.translateLink}>Translate</Text>
+                </Pressable>
+            </View>
         </View>
     );
-};
+});
 
-const CommentCell: React.FC<{ comment: Comment, adapters: Adapters, postAuthorDid: string }> = ({ comment, adapters, postAuthorDid }) => {
+const CommentCell: React.FC<{ comment: Comment, adapters: Adapters }> = React.memo(({ comment, adapters }) => {
     const [isLiked, setLiked] = useOptimisticState(comment.liked);
     const [likeCount, setLikeCount] = useOptimisticState(comment.likeCount);
     const [areRepliesExpanded, setAreRepliesExpanded] = useState(false);
@@ -185,26 +186,24 @@ const CommentCell: React.FC<{ comment: Comment, adapters: Adapters, postAuthorDi
         setLikeCount(nextLikeCount, () => adapters.onLike(comment.uri, nextLiked));
     };
 
-    const isOp = comment.author.did === postAuthorDid;
-
     return (
         <View style={styles.commentCell}>
             <Image source={{ uri: comment.author.avatar }} style={styles.commentAvatar} />
             <View style={styles.commentContent}>
                 <View style={styles.commentHeader}>
                     <Text style={styles.commentAuthorName}>{comment.author.displayName}</Text>
-                    {isOp && <Text style={styles.opBadge}>Author</Text>}
-                    <Text style={styles.commentTimestamp}>{formatDistance(comment.createdAt)}</Text>
+                    {comment.isAuthor && <Text style={styles.opBadge}>Author</Text>}
                 </View>
                 <Text style={styles.commentText}>{comment.text}</Text>
+                <Text style={styles.commentTimestamp}>{formatDistance(comment.createdAt)}</Text>
                 {comment.children && comment.children.length > 0 &&
                     <View style={styles.repliesContainer}>
                         {comment.children.slice(0, areRepliesExpanded ? undefined : 1).map(reply => (
-                           <CommentCell key={reply.uri} comment={reply} adapters={adapters} postAuthorDid={postAuthorDid} />
+                           <CommentCell key={reply.uri} comment={reply} adapters={adapters} />
                         ))}
                         {comment.children.length > 1 && !areRepliesExpanded &&
                             <Pressable onPress={() => setAreRepliesExpanded(true)}>
-                                <Text style={styles.viewRepliesText}>View more replies ({comment.children.length - 1})</Text>
+                                <Text style={styles.viewRepliesText}>View {comment.children.length - 1} more replies</Text>
                             </Pressable>
                         }
                     </View>
@@ -212,20 +211,32 @@ const CommentCell: React.FC<{ comment: Comment, adapters: Adapters, postAuthorDi
             </View>
             <Pressable style={styles.commentLikeButton} onPress={handleLikeToggle}>
                 <Heart size={18} color={isLiked ? theme.color.accent : theme.color.textTertiary} fill={isLiked ? theme.color.accent : 'transparent'} />
-                <Text style={styles.commentLikeCount}>{likeCount > 0 ? likeCount : ''}</Text>
+                {likeCount > 0 && <Text style={styles.commentLikeCount}>{formatCount(likeCount)}</Text>}
             </Pressable>
         </View>
     );
-};
+});
 
-
-const PostComposer: React.FC<{ post: Post, adapters: Adapters }> = ({ post, adapters }) => {
+const PostComposer: React.FC<{ post: Post, adapters: Adapters, onComment: () => void }> = React.memo(({ post, adapters, onComment }) => {
     const insets = useSafeAreaInsets();
     const [text, setText] = useState('');
     const [isSending, setIsSending] = useState(false);
     
     const [isLiked, setLiked] = useOptimisticState(post.liked);
+    const [likeCount, setLikeCount] = useOptimisticState(post.likeCount);
     const [isReposted, setReposted] = useOptimisticState(post.reposted);
+    const [repostCount, setRepostCount] = useOptimisticState(post.repostCount);
+    
+    const handleLike = () => {
+        const next = !isLiked;
+        setLiked(next, () => adapters.onLike(post.uri, next));
+        setLikeCount(likeCount + (next ? 1 : -1), () => Promise.resolve());
+    }
+    const handleRepost = () => {
+        const next = !isReposted;
+        setReposted(next, () => adapters.onRepost(post.uri, next));
+        setRepostCount(repostCount + (next ? 1 : -1), () => Promise.resolve());
+    }
 
     const handleSend = async () => {
         if (!text.trim() || isSending) return;
@@ -236,85 +247,80 @@ const PostComposer: React.FC<{ post: Post, adapters: Adapters }> = ({ post, adap
     };
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
-             <View style={[styles.composerContainer, { paddingBottom: insets.bottom + theme.spacing.sm }]}>
-                <View style={styles.composerInputWrapper}>
-                    <TextInput
-                        style={styles.composerInput}
-                        placeholder="Say something..."
-                        placeholderTextColor={theme.color.textTertiary}
-                        value={text}
-                        onChangeText={setText}
-                        multiline
-                    />
-                </View>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -insets.bottom}>
+             <View style={[styles.composerContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom : theme.spacing.sm }]}>
+                <Pressable style={styles.composerInputWrapper} onPress={onComment}>
+                    <Text style={styles.composerPlaceholder}>Say something...</Text>
+                </Pressable>
+                
                 <View style={styles.composerActions}>
-                     <Pressable style={styles.composerActionButton} onPress={() => setLiked(!isLiked, () => adapters.onLike(post.uri, !isLiked))}>
+                     <Pressable style={styles.composerActionButton} onPress={handleLike}>
                         <Heart size={24} color={isLiked ? theme.color.accent : theme.color.textSecondary} fill={isLiked ? theme.color.accent : 'transparent'}/>
+                        {likeCount > 0 && <Text style={styles.composerActionText}>{formatCount(likeCount)}</Text>}
                     </Pressable>
-                     <Pressable style={styles.composerActionButton} onPress={() => setReposted(!isReposted, () => adapters.onRepost(post.uri, !isReposted))}>
+                     <Pressable style={styles.composerActionButton} onPress={handleRepost}>
                         <Repeat size={24} color={isReposted ? theme.color.accent : theme.color.textSecondary} />
+                        {repostCount > 0 && <Text style={styles.composerActionText}>{formatCount(repostCount)}</Text>}
                     </Pressable>
-                    <Pressable style={styles.composerActionButton} onPress={() => { /* Open comment list */ }}>
+                    <Pressable style={styles.composerActionButton} onPress={onComment}>
                         <MessageSquare size={24} color={theme.color.textSecondary} />
+                        {post.replyCount > 0 && <Text style={styles.composerActionText}>{formatCount(post.replyCount)}</Text>}
                     </Pressable>
-                    {text.trim().length > 0 &&
-                        <Pressable onPress={handleSend} disabled={isSending} style={[styles.sendButton, isSending && { opacity: 0.5 }]}>
-                            {isSending ? <ActivityIndicator color="white" size="small"/> : <Send size={20} color="white" />}
-                        </Pressable>
-                    }
                 </View>
             </View>
         </KeyboardAvoidingView>
     );
-};
+});
 
 
 // --- MAIN SCREEN COMPONENT ---
-
 export default function PostScreen({ post, initialComments, adapters }: PostScreenProps) {
+  const insets = useSafeAreaInsets();
   const [comments, setComments] = useState(initialComments);
   const [isLiked, setLiked] = useOptimisticState(post.liked);
   const likeAnimation = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef<FlatList>(null);
 
   const handleDoubleTapLike = () => {
-      if (!isLiked) {
-          setLiked(true, () => adapters.onLike(post.uri, true));
-      }
+      setLiked(true, () => adapters.onLike(post.uri, true));
       likeAnimation.setValue(1);
-      Animated.sequence([
-        Animated.spring(likeAnimation, { toValue: 1.5, useNativeDriver: true }),
-        Animated.spring(likeAnimation, { toValue: 1, useNativeDriver: true }),
-        Animated.timing(likeAnimation, { toValue: 0, duration: 300, useNativeDriver: true })
-      ]).start();
+      Animated.spring(likeAnimation, { toValue: 1.5, useNativeDriver: true, friction: 3 }).start(() => {
+        Animated.timing(likeAnimation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+      });
+  };
+  
+  const scrollToComments = () => {
+      flatListRef.current?.scrollToIndex({ index: 0, viewOffset: 100, viewPosition: 0 });
   };
 
   const ListHeader = useMemo(() => (
     <View>
-      <PostMedia post={post} onLike={handleDoubleTapLike} />
-      <PostContent post={post} />
+      <PostMedia post={post} onDoubleTapLike={handleDoubleTapLike} />
+      <PostContent post={post} adapters={adapters}/>
       <View style={styles.divider} />
-      <Text style={styles.commentsHeader}>Comments ({post.replyCount})</Text>
+      <Text style={styles.commentsHeader}>Comments ({formatCount(post.replyCount)})</Text>
     </View>
-  ), [post, isLiked]);
+  ), [post, adapters, handleDoubleTapLike]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <PostHeader post={post} adapters={adapters} />
       <FlatList
+        ref={flatListRef}
         data={comments}
         keyExtractor={item => item.uri}
-        renderItem={({ item }) => <CommentCell comment={item} adapters={adapters} postAuthorDid={post.author.did} />}
+        renderItem={({ item }) => <CommentCell comment={item} adapters={adapters} />}
         ListHeaderComponent={ListHeader}
-        contentContainerStyle={{ paddingBottom: 150 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         ItemSeparatorComponent={() => <View style={styles.commentDivider} />}
+        showsVerticalScrollIndicator={false}
       />
-      <PostComposer post={post} adapters={adapters} />
+      <PostComposer post={post} adapters={adapters} onComment={scrollToComments} />
 
-      <Animated.View style={[styles.likeHeartOverlay, { opacity: likeAnimation, transform: [{ scale: likeAnimation }] }]}>
-          <Heart size={100} color="white" fill="white" />
+      <Animated.View style={[styles.likeHeartOverlay, { opacity: likeAnimation, transform: [{ scale: likeAnimation }] }]} pointerEvents="none">
+          <Heart size={100} color="rgba(255,255,255,0.8)" fill="rgba(255,255,255,0.8)" />
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -322,94 +328,53 @@ export default function PostScreen({ post, initialComments, adapters }: PostScre
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.color.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: theme.spacing.md,
-    height: 56,
-  },
-  headerAuthor: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  headerAvatar: { width: 40, height: 40, borderRadius: 20 },
-  headerDisplayName: { color: theme.color.textPrimary, fontWeight: '600', fontSize: 16 },
-  headerHandle: { color: theme.color.textSecondary, fontSize: 13 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  followButton: {
-    backgroundColor: theme.color.brand,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radius.pill,
-  },
-  followingButton: {
-    backgroundColor: 'transparent',
-    borderColor: theme.color.line,
-    borderWidth: 1,
-  },
-  followButtonText: { color: 'white', fontWeight: 'bold' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, },
+  headerAuthor: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, flexShrink: 1 },
+  headerAvatar: { width: 40, height: 40, borderRadius: theme.radius.pill },
+  headerDisplayName: { color: theme.color.textPrimary, fontWeight: '600', fontSize: theme.font.body, flexShrink: 1 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  followButton: { backgroundColor: theme.color.brand, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.xs, borderRadius: theme.radius.pill },
+  followingButton: { backgroundColor: 'transparent', borderColor: theme.color.line, borderWidth: 1 },
+  followButtonText: { color: 'white', fontWeight: 'bold', fontSize: theme.font.small },
   followingButtonText: { color: theme.color.textSecondary },
-  mediaImage: { borderRadius: theme.radius.lg, backgroundColor: theme.color.card },
-  mediaCounter: {
-    position: 'absolute',
-    top: theme.spacing.sm,
-    right: theme.spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xxs,
-  },
-  mediaCounterText: { color: 'white', fontSize: theme.font.tiny, fontWeight: 'bold' },
+  
+  mediaImage: { backgroundColor: theme.color.card },
+  mediaDots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: theme.spacing.sm, left: 0, right: 0 },
+  mediaDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)', marginHorizontal: 3 },
+  mediaDotActive: { backgroundColor: 'rgba(255,255,255,0.9)' },
+  
   contentContainer: { padding: theme.spacing.md },
   contentTitle: { color: theme.color.textPrimary, fontSize: theme.font.title, fontWeight: 'bold', marginBottom: theme.spacing.xs },
   contentText: { color: theme.color.textPrimary, fontSize: theme.font.body, lineHeight: 22 },
   seeMoreText: { color: theme.color.textSecondary, fontWeight: 'bold', marginTop: theme.spacing.xs },
-  timestamp: { color: theme.color.textTertiary, fontSize: theme.font.small, marginTop: theme.spacing.md },
-  divider: { height: 1, backgroundColor: theme.color.line, margin: theme.spacing.md },
-  commentsHeader: {
-    color: theme.color.textSecondary,
-    fontSize: theme.font.small,
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
+  metaContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.sm },
+  timestamp: { color: theme.color.textTertiary, fontSize: theme.font.small },
+  translateLink: { color: theme.color.textSecondary, fontSize: theme.font.small, fontWeight: '600'},
+  
+  divider: { height: 1, backgroundColor: theme.color.line, marginVertical: theme.spacing.lg, marginHorizontal: theme.spacing.md },
+  commentsHeader: { color: theme.color.textSecondary, fontSize: theme.font.small, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
   commentDivider: { height: 1, backgroundColor: theme.color.line, marginLeft: theme.spacing.md + 32 + theme.spacing.sm },
-  composerContainer: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    backgroundColor: theme.color.bg,
-    borderTopWidth: 1,
-    borderTopColor: theme.color.line,
-    padding: theme.spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  composerInputWrapper: { flex: 1, backgroundColor: theme.color.inputBg, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.xs },
-  composerInput: { color: theme.color.textPrimary, fontSize: 16, maxHeight: 100 },
-  composerActions: { flexDirection: 'row', alignItems: 'center', paddingBottom: theme.spacing.xs, marginLeft: theme.spacing.sm },
-  composerActionButton: { padding: theme.spacing.xs },
-  sendButton: {
-    marginLeft: theme.spacing.xs,
-    backgroundColor: theme.color.brand,
-    width: 40, height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
+  composerContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: theme.color.bg, borderTopWidth: 1, borderTopColor: theme.color.line, padding: theme.spacing.sm, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  composerInputWrapper: { flex: 1, backgroundColor: theme.color.inputBg, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.md, height: 44, justifyContent: 'center' },
+  composerPlaceholder: { color: theme.color.textTertiary, fontSize: 16 },
+  composerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
+  composerActionButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  composerActionText: { color: theme.color.textSecondary, fontWeight: '600' },
+
   commentCell: { flexDirection: 'row', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, gap: theme.spacing.sm },
   commentAvatar: { width: 32, height: 32, borderRadius: 16 },
   commentContent: { flex: 1 },
-  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, flexWrap: 'wrap' },
   commentAuthorName: { color: theme.color.textSecondary, fontWeight: '600' },
-  commentTimestamp: { color: theme.color.textTertiary, fontSize: theme.font.tiny },
   opBadge: { backgroundColor: theme.color.badge, color: theme.color.textSecondary, fontSize: 10, borderRadius: 4, paddingHorizontal: 4, overflow: 'hidden'},
-  commentText: { color: theme.color.textPrimary, marginTop: theme.spacing.xxs },
-  commentLikeButton: { alignItems: 'center', gap: theme.spacing.xxs, paddingTop: theme.spacing.xxs },
-  commentLikeCount: { color: theme.color.textTertiary, fontSize: theme.font.tiny },
-  repliesContainer: { marginTop: theme.spacing.sm },
-  viewRepliesText: { color: theme.color.textSecondary, fontWeight: '600', marginTop: theme.spacing.xs },
-  likeHeartOverlay: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    pointerEvents: 'none',
-  }
+  commentText: { color: theme.color.textPrimary, marginTop: theme.spacing.xxs, lineHeight: 20 },
+  commentTimestamp: { color: theme.color.textTertiary, fontSize: theme.font.tiny, marginTop: theme.spacing.xs },
+  commentLikeButton: { alignItems: 'center', gap: theme.spacing.xxs, paddingTop: theme.spacing.xxs, paddingLeft: theme.spacing.sm },
+  commentLikeCount: { color: theme.color.textTertiary, fontSize: theme.font.tiny, fontWeight: '500' },
+  
+  repliesContainer: { marginTop: theme.spacing.sm, paddingLeft: 4, borderLeftWidth: 2, borderLeftColor: theme.color.line },
+  viewRepliesText: { color: theme.color.textSecondary, fontWeight: '600', marginTop: theme.spacing.sm, marginLeft: theme.spacing.sm },
+  
+  likeHeartOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
 });

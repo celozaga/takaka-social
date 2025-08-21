@@ -4,7 +4,7 @@ import { AppBskyFeedDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import theme from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 interface FeedSelectorProps {
   feeds: AppBskyFeedDefs.GeneratorView[];
