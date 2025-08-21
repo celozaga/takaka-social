@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -80,7 +79,7 @@ const WatchScreen: React.FC = () => {
         <>
             <Head><title>{t('more.watch')}</title></Head>
             <View style={styles.container}>
-                <FlatList
+                <FlatList<AppBskyFeedDefs.FeedViewPost>
                     data={videoPosts}
                     renderItem={({ item, index }) => (
                         <View style={{ width, height }}>

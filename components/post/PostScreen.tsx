@@ -95,7 +95,7 @@ const PostHeader: React.FC<{ post: Post, adapters: Adapters }> = React.memo(({ p
                     <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>{isFollowing ? 'Following' : 'Follow'}</Text>
                 </Pressable>
                 <Pressable onPress={() => adapters.onShare(post)} accessibilityLabel="Share post">
-                    <MoreHorizontal color={theme.color.textSecondary} size={24} />
+                    <MoreHorizontal color={theme.colors.textSecondary} size={24} />
                 </Pressable>
             </View>
         </View>
@@ -125,7 +125,7 @@ const PostMedia: React.FC<{ post: Post, onDoubleTapLike: () => void }> = React.m
     
     return (
         <View>
-            <FlatList
+            <FlatList<Media>
                 data={post.media}
                 horizontal
                 pagingEnabled
@@ -210,7 +210,7 @@ const CommentCell: React.FC<{ comment: Comment, adapters: Adapters }> = React.me
                 }
             </View>
             <Pressable style={styles.commentLikeButton} onPress={handleLikeToggle}>
-                <Heart size={18} color={isLiked ? theme.color.accent : theme.color.textTertiary} fill={isLiked ? theme.color.accent : 'transparent'} />
+                <Heart size={18} color={isLiked ? theme.colors.accent : theme.colors.textTertiary} fill={isLiked ? theme.colors.accent : 'transparent'} />
                 {likeCount > 0 && <Text style={styles.commentLikeCount}>{formatCount(likeCount)}</Text>}
             </Pressable>
         </View>
@@ -248,22 +248,22 @@ const PostComposer: React.FC<{ post: Post, adapters: Adapters, onComment: () => 
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -insets.bottom}>
-             <View style={[styles.composerContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom : theme.spacing.sm }]}>
+             <View style={[styles.composerContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom : theme.spacing.m }]}>
                 <Pressable style={styles.composerInputWrapper} onPress={onComment}>
                     <Text style={styles.composerPlaceholder}>Say something...</Text>
                 </Pressable>
                 
                 <View style={styles.composerActions}>
                      <Pressable style={styles.composerActionButton} onPress={handleLike}>
-                        <Heart size={24} color={isLiked ? theme.color.accent : theme.color.textSecondary} fill={isLiked ? theme.color.accent : 'transparent'}/>
+                        <Heart size={24} color={isLiked ? theme.colors.accent : theme.colors.textSecondary} fill={isLiked ? theme.colors.accent : 'transparent'}/>
                         {likeCount > 0 && <Text style={styles.composerActionText}>{formatCount(likeCount)}</Text>}
                     </Pressable>
                      <Pressable style={styles.composerActionButton} onPress={handleRepost}>
-                        <Repeat size={24} color={isReposted ? theme.color.accent : theme.color.textSecondary} />
+                        <Repeat size={24} color={isReposted ? theme.colors.accent : theme.colors.textSecondary} />
                         {repostCount > 0 && <Text style={styles.composerActionText}>{formatCount(repostCount)}</Text>}
                     </Pressable>
                     <Pressable style={styles.composerActionButton} onPress={onComment}>
-                        <MessageSquare size={24} color={theme.color.textSecondary} />
+                        <MessageSquare size={24} color={theme.colors.textSecondary} />
                         {post.replyCount > 0 && <Text style={styles.composerActionText}>{formatCount(post.replyCount)}</Text>}
                     </Pressable>
                 </View>
@@ -279,7 +279,7 @@ export default function PostScreen({ post, initialComments, adapters }: PostScre
   const [comments, setComments] = useState(initialComments);
   const [isLiked, setLiked] = useOptimisticState(post.liked);
   const likeAnimation = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<FlatList<Comment>>(null);
 
   const handleDoubleTapLike = () => {
       setLiked(true, () => adapters.onLike(post.uri, true));
@@ -305,7 +305,7 @@ export default function PostScreen({ post, initialComments, adapters }: PostScre
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <PostHeader post={post} adapters={adapters} />
-      <FlatList
+      <FlatList<Comment>
         ref={flatListRef}
         data={comments}
         keyExtractor={item => item.uri}
@@ -327,54 +327,54 @@ export default function PostScreen({ post, initialComments, adapters }: PostScre
 // --- STYLES ---
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.color.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, },
-  headerAuthor: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, flexShrink: 1 },
-  headerAvatar: { width: 40, height: 40, borderRadius: theme.radius.pill },
-  headerDisplayName: { color: theme.color.textPrimary, fontWeight: '600', fontSize: theme.font.body, flexShrink: 1 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  followButton: { backgroundColor: theme.color.brand, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.xs, borderRadius: theme.radius.pill },
-  followingButton: { backgroundColor: 'transparent', borderColor: theme.color.line, borderWidth: 1 },
-  followButtonText: { color: 'white', fontWeight: 'bold', fontSize: theme.font.small },
-  followingButtonText: { color: theme.color.textSecondary },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.m, },
+  headerAuthor: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.m, flexShrink: 1 },
+  headerAvatar: { width: 40, height: 40, borderRadius: theme.shape.full },
+  headerDisplayName: { color: theme.colors.textPrimary, fontWeight: '600', ...theme.typography.bodyLarge, flexShrink: 1 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.m },
+  followButton: { backgroundColor: theme.colors.brand, paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, borderRadius: theme.shape.full },
+  followingButton: { backgroundColor: 'transparent', borderColor: theme.colors.line, borderWidth: 1 },
+  followButtonText: { color: 'white', fontWeight: 'bold', ...theme.typography.bodySmall },
+  followingButtonText: { color: theme.colors.textSecondary },
   
-  mediaImage: { backgroundColor: theme.color.card },
-  mediaDots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: theme.spacing.sm, left: 0, right: 0 },
+  mediaImage: { backgroundColor: theme.colors.card },
+  mediaDots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'absolute', bottom: theme.spacing.m, left: 0, right: 0 },
   mediaDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)', marginHorizontal: 3 },
   mediaDotActive: { backgroundColor: 'rgba(255,255,255,0.9)' },
   
-  contentContainer: { padding: theme.spacing.md },
-  contentTitle: { color: theme.color.textPrimary, fontSize: theme.font.title, fontWeight: 'bold', marginBottom: theme.spacing.xs },
-  contentText: { color: theme.color.textPrimary, fontSize: theme.font.body, lineHeight: 22 },
-  seeMoreText: { color: theme.color.textSecondary, fontWeight: 'bold', marginTop: theme.spacing.xs },
-  metaContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.sm },
-  timestamp: { color: theme.color.textTertiary, fontSize: theme.font.small },
-  translateLink: { color: theme.color.textSecondary, fontSize: theme.font.small, fontWeight: '600'},
+  contentContainer: { padding: theme.spacing.l },
+  contentTitle: { color: theme.colors.textPrimary, ...theme.typography.titleLarge, marginBottom: theme.spacing.s },
+  contentText: { color: theme.colors.textPrimary, ...theme.typography.bodyLarge },
+  seeMoreText: { color: theme.colors.textSecondary, fontWeight: 'bold', marginTop: theme.spacing.s },
+  metaContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.m },
+  timestamp: { color: theme.colors.textTertiary, ...theme.typography.bodySmall },
+  translateLink: { color: theme.colors.textSecondary, ...theme.typography.bodySmall, fontWeight: '600'},
   
-  divider: { height: 1, backgroundColor: theme.color.line, marginVertical: theme.spacing.lg, marginHorizontal: theme.spacing.md },
-  commentsHeader: { color: theme.color.textSecondary, fontSize: theme.font.small, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  commentDivider: { height: 1, backgroundColor: theme.color.line, marginLeft: theme.spacing.md + 32 + theme.spacing.sm },
+  divider: { height: 1, backgroundColor: theme.colors.line, marginVertical: theme.spacing.xl, marginHorizontal: theme.spacing.l },
+  commentsHeader: { color: theme.colors.textSecondary, ...theme.typography.bodySmall, paddingHorizontal: theme.spacing.l, marginBottom: theme.spacing.m },
+  commentDivider: { height: 1, backgroundColor: theme.colors.line, marginLeft: theme.spacing.l + 32 + theme.spacing.m },
 
-  composerContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: theme.color.bg, borderTopWidth: 1, borderTopColor: theme.color.line, padding: theme.spacing.sm, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  composerInputWrapper: { flex: 1, backgroundColor: theme.color.inputBg, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.md, height: 44, justifyContent: 'center' },
-  composerPlaceholder: { color: theme.color.textTertiary, fontSize: 16 },
-  composerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
+  composerContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: theme.colors.background, borderTopWidth: 1, borderTopColor: theme.colors.line, padding: theme.spacing.m, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.m },
+  composerInputWrapper: { flex: 1, backgroundColor: theme.colors.inputBg, borderRadius: theme.shape.full, paddingHorizontal: theme.spacing.l, height: 44, justifyContent: 'center' },
+  composerPlaceholder: { color: theme.colors.textTertiary, fontSize: 16 },
+  composerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l },
   composerActionButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-  composerActionText: { color: theme.color.textSecondary, fontWeight: '600' },
+  composerActionText: { color: theme.colors.textSecondary, fontWeight: '600' },
 
-  commentCell: { flexDirection: 'row', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, gap: theme.spacing.sm },
+  commentCell: { flexDirection: 'row', paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.m, gap: theme.spacing.m },
   commentAvatar: { width: 32, height: 32, borderRadius: 16 },
   commentContent: { flex: 1 },
-  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, flexWrap: 'wrap' },
-  commentAuthorName: { color: theme.color.textSecondary, fontWeight: '600' },
-  opBadge: { backgroundColor: theme.color.badge, color: theme.color.textSecondary, fontSize: 10, borderRadius: 4, paddingHorizontal: 4, overflow: 'hidden'},
-  commentText: { color: theme.color.textPrimary, marginTop: theme.spacing.xxs, lineHeight: 20 },
-  commentTimestamp: { color: theme.color.textTertiary, fontSize: theme.font.tiny, marginTop: theme.spacing.xs },
-  commentLikeButton: { alignItems: 'center', gap: theme.spacing.xxs, paddingTop: theme.spacing.xxs, paddingLeft: theme.spacing.sm },
-  commentLikeCount: { color: theme.color.textTertiary, fontSize: theme.font.tiny, fontWeight: '500' },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, flexWrap: 'wrap' },
+  commentAuthorName: { color: theme.colors.textSecondary, fontWeight: '600' },
+  opBadge: { backgroundColor: theme.colors.badge, color: theme.colors.textSecondary, fontSize: 10, borderRadius: 4, paddingHorizontal: 4, overflow: 'hidden'},
+  commentText: { color: theme.colors.textPrimary, marginTop: theme.spacing.xs, ...theme.typography.bodyMedium },
+  commentTimestamp: { color: theme.colors.textTertiary, ...theme.typography.labelSmall, marginTop: theme.spacing.s },
+  commentLikeButton: { alignItems: 'center', gap: theme.spacing.xs, paddingTop: theme.spacing.xs, paddingLeft: theme.spacing.m },
+  commentLikeCount: { color: theme.colors.textTertiary, ...theme.typography.labelSmall, fontWeight: '500' },
   
-  repliesContainer: { marginTop: theme.spacing.sm, paddingLeft: 4, borderLeftWidth: 2, borderLeftColor: theme.color.line },
-  viewRepliesText: { color: theme.color.textSecondary, fontWeight: '600', marginTop: theme.spacing.sm, marginLeft: theme.spacing.sm },
+  repliesContainer: { marginTop: theme.spacing.m, paddingLeft: 4, borderLeftWidth: 2, borderLeftColor: theme.colors.line },
+  viewRepliesText: { color: theme.colors.textSecondary, fontWeight: '600', marginTop: theme.spacing.m, marginLeft: theme.spacing.m },
   
   likeHeartOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
 });

@@ -1,66 +1,73 @@
 import { Platform } from 'react-native';
 
-/**
- * ============================================================================
- * Xiaohongshu-Inspired Dark Theme
- * ============================================================================
- *
- * This theme provides design tokens (colors, spacing, fonts, etc.) to
- * replicate the look and feel of Xiaohongshu's dark mode UI.
- * It is used throughout the new PostScreen component.
- * ============================================================================
- */
+const colors = {
+  primary: '#A8C7FA',
+  onPrimary: '#003258',
+  background: '#111314',
+  surface: '#1E2021',
+  surfaceContainer: '#1E2021',
+  surfaceContainerHigh: '#2b2d2e',
+  surfaceContainerHighest: '#3c3f41',
+  onSurface: '#E2E2E6',
+  onSurfaceVariant: '#C3C6CF',
+  outline: '#2b2d2e',
+  error: '#F2B8B5',
+  pink: '#ec4899',
+  // Below are colors for the new PostScreen, mapped from the above
+  textPrimary: '#E2E2E6', // onSurface
+  textSecondary: '#C3C6CF', // onSurfaceVariant
+  textTertiary: '#C3C6CF', // onSurfaceVariant
+  accent: '#ec4899', // pink
+  brand: '#A8C7FA', // primary
+  line: '#2b2d2e', // outline
+  card: '#1E2021', // surface
+  badge: '#2b2d2e', // surfaceContainerHigh
+  inputBg: '#2b2d2e', // surfaceContainerHigh
+};
+
+const shape = {
+  small: 4,
+  medium: 8,
+  large: 12,
+  extraLarge: 16,
+  full: 9999,
+};
+
+const spacing = {
+  xs: 4,
+  s: 8,
+  m: 12,
+  l: 16,
+  xl: 24,
+  xxl: 32,
+};
+
+const typography = {
+  titleLarge: { fontSize: 22, fontWeight: 'bold' as const },
+  titleMedium: { fontSize: 18, fontWeight: 'bold' as const },
+  titleSmall: { fontSize: 16, fontWeight: '600' as const },
+  labelLarge: { fontSize: 14, fontWeight: '600' as const },
+  labelMedium: { fontSize: 12, fontWeight: '500' as const },
+  labelSmall: { fontSize: 11, fontWeight: '500' as const },
+  bodyLarge: { fontSize: 16, lineHeight: 24 },
+  bodyMedium: { fontSize: 14, lineHeight: 20 },
+  bodySmall: { fontSize: 12, lineHeight: 16 },
+  // For PostScreen mapping
+  font: {
+    title: 18,
+    body: 15,
+    small: 13,
+    tiny: 11,
+  },
+};
+
 export const theme = {
-  color: {
-    bg: "#0B0B0F",
-    card: "#141419",
-    line: "rgba(255,255,255,0.06)",
-    textPrimary: "#F1F1F3",
-    textSecondary: "#A3A3AD",
-    textTertiary: "#7E7E88",
-    accent: "#FF5B5B",          // like heart
-    brand: "#FF2442",           // follow button fill
-    badge: "#2B2B33",
-    link: "#7AA2FF",
-    inputBg: "#1A1A22",
-  },
-  radius: { 
-    xs: 6, 
-    sm: 10, 
-    md: 14, 
-    lg: 20, 
-    xl: 28, 
-    pill: 999 
-  },
-  spacing: { 
-    xxs: 4, 
-    xs: 8, 
-    sm: 12, 
-    md: 16, 
-    lg: 20, 
-    xl: 24, 
-    xxl: 32 
-  },
-  font: { 
-    title: 18, 
-    body: 15, 
-    small: 13, 
-    tiny: 11 
-  },
-  shadow: { 
-    card: Platform.select({
-        ios: {
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.1,
-            shadowRadius: 2,
-        },
-        android: {
-            elevation: 2,
-        },
-        web: {
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
-        },
-    }),
-  },
+  colors,
+  shape,
+  spacing,
+  typography,
+  // For PostScreen backwards compatibility
+  color: colors,
+  radius: shape,
+  font: typography.font,
 };

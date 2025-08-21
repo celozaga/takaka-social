@@ -80,7 +80,7 @@ const NotificationsScreen: React.FC = () => {
 
   const renderListHeader = () => (
     <View style={styles.filterScrollContainer}>
-        <FlatList
+        <FlatList<{ id: NotificationFilter; label: string; }>
             horizontal
             showsHorizontalScrollIndicator={false}
             data={filters}
@@ -100,7 +100,7 @@ const NotificationsScreen: React.FC = () => {
       <Head><title>{t('notifications.title')}</title></Head>
       <View style={{flex: 1}}>
         <ScreenHeader title={t('notifications.title')} />
-        <FlatList
+        <FlatList<AppBskyNotificationListNotifications.Notification>
             data={filteredNotifications}
             renderItem={({ item }) => <NotificationItem notification={item} />}
             keyExtractor={(item) => item.uri}
