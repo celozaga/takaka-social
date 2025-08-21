@@ -1,7 +1,13 @@
 import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 
 const Head: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     useEffect(() => {
+        // This component is a no-op on native platforms.
+        if (Platform.OS !== 'web' || typeof document === 'undefined') {
+            return;
+        }
+
         const originalTitle = document.title;
         const metaTags: Element[] = [];
 

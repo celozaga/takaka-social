@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { Platform } from 'react-native';
 
 // Importa os arquivos de tradução diretamente para garantir que sejam empacotados com o app.
 // Esta é uma abordagem mais robusta do que buscá-los via HTTP.
@@ -27,11 +28,21 @@ const resources = {
   },
 };
 
-i18n
-  // Não usa mais o backend HttpApi
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
+const i18nInstance = i18n.use(initReactI18next);
+
+const detectionOptions = {
+  order: ['localStorage', 'navigator'],
+  caches: ['localStorage'],
+  lookupLocalStorage: 'takaka-lang',
+};
+
+// Conditionally add the language detector for web
+if (Platform.OS === 'web') {
+    i18nInstance.use(LanguageDetector);
+}
+
+
+i18nInstance.init({
     resources, // Fornece as traduções diretamente
     supportedLngs: supportedLanguages.map(l => l.code),
     fallbackLng: 'en',
@@ -40,11 +51,10 @@ i18n
     interpolation: {
       escapeValue: false, // O React já protege contra XSS
     },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
-      lookupLocalStorage: 'takaka-lang',
-    },
+    
+    // Only add detection config on web
+    detection: Platform.OS === 'web' ? detectionOptions : undefined,
+
     // Como os recursos são empacotados, não precisamos de Suspense para carregá-los.
     // O Suspense principal do app ainda lida com componentes carregados de forma assíncrona (lazy-loaded).
     react: {

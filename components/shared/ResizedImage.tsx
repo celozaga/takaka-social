@@ -9,7 +9,7 @@ interface ResizedImageProps extends ImageProps {
   alt: string;
 }
 
-const ResizedImage: React.FC<ResizedImageProps> = ({ src, resizeWidth, alt, ...props }) => {
+const ResizedImage: React.FC<ResizedImageProps> = ({ src, resizeWidth, alt, style, ...props }) => {
   const [imageSrc, setImageSrc] = useState(src ? resizeImage(src, resizeWidth) : '');
   const [hasError, setHasError] = useState(false);
 
@@ -29,10 +29,10 @@ const ResizedImage: React.FC<ResizedImageProps> = ({ src, resizeWidth, alt, ...p
 
   if (!src) {
     // Render nothing or a placeholder if no src is provided.
-    return <Image {...props} source={{ uri: '' }} accessibilityLabel={alt} />;
+    return <Image {...props} style={style} source={{ uri: '' }} accessibilityLabel={alt} />;
   }
 
-  return <Image source={{ uri: imageSrc }} onError={handleError} accessibilityLabel={alt} {...props} />;
+  return <Image source={{ uri: imageSrc }} onError={handleError} accessibilityLabel={alt} style={style} {...props} />;
 };
 
 export default ResizedImage;

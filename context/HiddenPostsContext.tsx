@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
+import { Platform } from 'react-native';
 
 interface HiddenPostsContextType {
   hiddenPostUris: Set<string>;
@@ -13,13 +14,15 @@ export const HiddenPostsProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [hiddenPostUris, setHiddenPostUris] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    try {
-      const storedUris = localStorage.getItem(HIDDEN_POSTS_STORAGE_KEY);
-      if (storedUris) {
-        setHiddenPostUris(new Set(JSON.parse(storedUris)));
+    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+      try {
+        const storedUris = localStorage.getItem(HIDDEN_POSTS_STORAGE_KEY);
+        if (storedUris) {
+          setHiddenPostUris(new Set(JSON.parse(storedUris)));
+        }
+      } catch (e) {
+        console.error("Failed to load hidden posts from localStorage", e);
       }
-    } catch (e) {
-      console.error("Failed to load hidden posts from localStorage", e);
     }
   }, []);
 
@@ -27,7 +30,9 @@ export const HiddenPostsProvider: React.FC<{ children: ReactNode }> = ({ childre
     setHiddenPostUris(prev => {
       const newSet = new Set(prev);
       newSet.add(uri);
-      localStorage.setItem(HIDDEN_POSTS_STORAGE_KEY, JSON.stringify(Array.from(newSet)));
+      if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+        localStorage.setItem(HIDDEN_POSTS_STORAGE_KEY, JSON.stringify(Array.from(newSet)));
+      }
       return newSet;
     });
   }, []);

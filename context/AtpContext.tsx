@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode, useCa
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
 import { useToast } from '../components/ui/use-toast';
+import { Platform } from 'react-native';
 
 interface AtpContextType {
   agent: BskyAgent;
@@ -26,6 +27,9 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const agent = useMemo(() => new BskyAgent({
     service: PDS_URL,
     persistSession: (evt: AtpSessionEvent, sess?: AtpSessionData) => {
+      if (Platform.OS !== 'web' || typeof localStorage === 'undefined') {
+        return;
+      }
       switch (evt) {
         case 'create':
         case 'update':
@@ -58,8 +62,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    let pollInterval: number | undefined;
-    let pauseTimeout: number | undefined;
+    let pollInterval: ReturnType<typeof setInterval> | undefined;
+    let pauseTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const pollFunction = async () => {
       if (isPollingPaused || !agent.hasSession) return;
@@ -75,7 +79,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               variant: "destructive"
           });
           if (pauseTimeout) clearTimeout(pauseTimeout);
-          pauseTimeout = window.setTimeout(() => {
+          pauseTimeout = setTimeout(() => {
               setIsPollingPaused(false);
               console.log("Resuming polling.");
           }, 60000);
@@ -85,20 +89,22 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const initialize = async () => {
       setIsLoadingSession(true);
-      const storedSessionString = localStorage.getItem('atp-session');
-      if (storedSessionString) {
-        try {
-          const parsedSession = JSON.parse(storedSessionString);
-          await agent.resumeSession(parsedSession);
-          setSession(parsedSession);
-          await fetchUnreadCount().catch(() => {
-            // Ignore initial fetch errors, polling will handle it
-          });
-          pollInterval = window.setInterval(pollFunction, 30000);
-        } catch (error) {
-          console.error("Failed to resume session:", error);
-          localStorage.removeItem('atp-session');
-          setSession(null);
+      if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+        const storedSessionString = localStorage.getItem('atp-session');
+        if (storedSessionString) {
+          try {
+            const parsedSession = JSON.parse(storedSessionString);
+            await agent.resumeSession(parsedSession);
+            setSession(parsedSession);
+            await fetchUnreadCount().catch(() => {
+              // Ignore initial fetch errors, polling will handle it
+            });
+            pollInterval = setInterval(pollFunction, 30000);
+          } catch (error) {
+            console.error("Failed to resume session:", error);
+            localStorage.removeItem('atp-session');
+            setSession(null);
+          }
         }
       }
       setIsLoadingSession(false);
