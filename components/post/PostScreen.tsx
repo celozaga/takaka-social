@@ -8,7 +8,7 @@ import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, ScrollView
 import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
-import { ArrowLeft, ExternalLink, BadgeCheck, ChevronLeft, ChevronRight, MessageSquareDashed, MoreHorizontal, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, MessageSquareDashed, MoreHorizontal, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import Head from '../shared/Head';
@@ -197,7 +197,8 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
       const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
       const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
       const playerOptions = { autoplay: true, controls: true, poster: embed.thumbnail, sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }], loop: true, muted: true, playsinline: true };
-      return <SharedVideoPlayer options={playerOptions} className="w-full h-auto bg-black rounded-lg" />;
+      const videoAspectRatio = embed.aspectRatio ? embed.aspectRatio.width / embed.aspectRatio.height : 16 / 9;
+      return <SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, borderRadius: 8 }} />;
     }
 
     return null;

@@ -184,7 +184,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
 };
 
 const styles = StyleSheet.create({
-    container: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginVertical: 4 },
+    container: { padding: 16, borderRadius: 12, marginVertical: 4 },
     unreadContainer: { backgroundColor: 'rgba(168, 199, 250, 0.1)' },
     header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', flex: 1 },
     headerContent: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },

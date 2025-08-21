@@ -225,13 +225,13 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
 const styles = StyleSheet.create({
     masonryContainer: {
         flexDirection: 'row',
-        gap: 12,
-        paddingHorizontal: 12,
+        gap: 16,
+        paddingHorizontal: 16,
         paddingTop: 16,
     },
     column: {
         flex: 1,
-        gap: 12,
+        gap: 16,
     },
     messageContainer: { 
         padding: 32, 
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', 
         justifyContent: 'center', 
         marginTop: 16, 
-        marginHorizontal: 12, 
+        marginHorizontal: 16, 
     },
     errorText: { 
         color: '#F2B8B5', 

@@ -205,7 +205,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isRoot = false }) => {
 };
 
 const styles = StyleSheet.create({
-    replyContainer: { flexDirection: 'row', gap: 12, paddingVertical: 8, paddingHorizontal: 16, position: 'relative' },
+    replyContainer: { flexDirection: 'row', gap: 12, paddingVertical: 12, paddingHorizontal: 16, position: 'relative' },
     avatarThreadContainer: { alignItems: 'center', flexShrink: 0 },
     avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#2b2d2e' },
     threadLine: { width: 2, flex: 1, marginVertical: 8, backgroundColor: '#2b2d2e', borderRadius: 1 },

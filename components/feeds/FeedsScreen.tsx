@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
@@ -199,7 +198,7 @@ const styles = StyleSheet.create({
     contentContainer: { padding: 16 },
     description: { color: '#C3C6CF', fontSize: 14, marginBottom: 24 },
     sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: '#C3C6CF' },
-    itemContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, backgroundColor: '#1E2021', borderRadius: 12 },
+    itemContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: '#1E2021', borderRadius: 12 },
     itemDisabled: { opacity: 0.5 },
     avatar: {
         width: 40,

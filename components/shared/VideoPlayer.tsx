@@ -1,127 +1,79 @@
+import React, { useRef, useEffect } from 'react';
+import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
+import { StyleSheet, StyleProp, ViewStyle } from 'react-native';
 
-import React, { useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
-import type Player from 'video.js/dist/types/player';
-import { View, Image, Linking, StyleSheet, Platform, Pressable } from 'react-native';
-import { PlayCircle } from 'lucide-react';
+// The player ref will be an expo-av Video component instance
+export type PlayerRef = Video;
 
 interface VideoPlayerProps {
-  options: any; // video.js options
-  onReady?: (player: Player) => void;
-  className?: string;
+  options: {
+    autoplay?: boolean;
+    controls?: boolean;
+    poster?: string;
+    sources: { src: string; type?: string }[];
+    loop?: boolean;
+    muted?: boolean;
+  };
+  onReady?: (player: PlayerRef) => void;
+  style?: StyleProp<ViewStyle>;
   onPlay?: () => void;
   onPause?: () => void;
   onEnded?: () => void;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, className, onPlay, onPause, onEnded }) => {
-  const { i18n } = useTranslation();
-  const videoRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<Player | null>(null);
+const SharedVideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, style, onPlay, onPause, onEnded }) => {
+  const videoRef = useRef<Video>(null);
+  const onReadyRef = React.useRef(onReady);
+
+  // Keep onReady ref up to date without re-running effect
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   useEffect(() => {
-    if (Platform.OS !== 'web' || !videoRef.current) {
-        return;
+    if (videoRef.current) {
+        onReadyRef.current?.(videoRef.current);
     }
+  }, [videoRef.current]);
 
-    const videoElement = document.createElement("video");
-    videoElement.className = "video-js vjs-theme-city";
-    videoRef.current.appendChild(videoElement);
+  const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (!status.isLoaded) return;
     
-    const playerOptions = {
-      ...options,
-      language: i18n.language.split('-')[0],
-      responsive: true,
-      fluid: true,
-    };
+    const successStatus = status as AVPlaybackStatusSuccess;
+    
+    if (successStatus.isPlaying) onPlay?.();
+    else onPause?.();
+    
+    if (successStatus.didJustFinish && !successStatus.isLooping) onEnded?.();
+  };
 
-    const player = playerRef.current = videojs(videoElement, playerOptions, function() {
-      if (onReady) {
-        onReady(this);
-      }
-    });
-
-    return () => {
-      if (player && !player.isDisposed()) {
-        player.dispose();
-        playerRef.current = null;
-      }
-    };
-  }, []); // Empty deps array means this runs once on mount.
-
-  // Update props
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const player = playerRef.current;
-    if (player) {
-      player.autoplay(options.autoplay);
-      player.src(options.sources);
-      player.poster(options.poster);
-      player.muted(options.muted);
-      player.loop(options.loop);
-    }
-  }, [options]);
-
-  // Event handlers
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const player = playerRef.current;
-    if (player) {
-        if (onPlay) player.on('play', onPlay);
-        if (onPause) player.on('pause', onPause);
-        if (onEnded) player.on('ended', onEnded);
-    }
-    return () => {
-        if (player && !player.isDisposed()) { // Check if player is disposed
-            if (onPlay) player.off('play', onPlay);
-            if (onPause) player.off('pause', onPause);
-            if (onEnded) player.off('ended', onEnded);
-        }
-    }
-  }, [onPlay, onPause, onEnded]);
-
-  if (Platform.OS !== 'web') {
-    const handlePress = () => {
-        if (options.sources && options.sources[0]) {
-            Linking.openURL(options.sources[0].src);
-        }
-    };
-    return (
-        <Pressable onPress={handlePress} style={styles.container}>
-            <Image source={{ uri: options.poster }} style={styles.poster} resizeMode="contain" />
-            <View style={styles.playButtonOverlay}>
-                <PlayCircle size={64} color="rgba(255, 255, 255, 0.8)" />
-            </View>
-        </Pressable>
-    );
+  if (!options.sources || options.sources.length === 0 || !options.sources[0].src) {
+      return null;
   }
-
+  
   return (
-    <div data-vjs-player className={className}>
-      <div ref={videoRef} />
-    </div>
+    <Video
+      ref={videoRef}
+      style={[styles.video, style]}
+      source={{ uri: options.sources[0].src }}
+      posterSource={options.poster ? { uri: options.poster } : undefined}
+      usePoster={!!options.poster}
+      shouldPlay={options.autoplay}
+      isLooping={options.loop}
+      isMuted={options.muted}
+      resizeMode={ResizeMode.CONTAIN}
+      useNativeControls={options.controls}
+      onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'black',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    poster: {
-        width: '100%',
-        height: '100%',
-    },
-    playButtonOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'center',
-        alignItems: 'center',
-    }
-})
+  video: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'black'
+  },
+});
 
-export default VideoPlayer;
+export default SharedVideoPlayer;

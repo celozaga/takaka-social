@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   selectorContainer: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
   },

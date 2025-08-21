@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
-import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Platform, ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AtpProvider, useAtp } from '@/context/AtpContext';
 import { UIProvider, useUI } from '@/context/UIContext';
@@ -115,22 +115,22 @@ function AppLayout() {
              </View>
           )}
           {isMediaActionsModalOpen && mediaActionsModalPost && (
-             <View style={styles.modalBackdrop} onTouchEnd={closeMediaActionsModal}>
-                <View style={styles.bottomSheet} onTouchEnd={(e) => e.stopPropagation()}>
+             <Pressable style={styles.modalBackdrop} onPress={closeMediaActionsModal}>
+                <Pressable style={styles.bottomSheet}>
                     <Suspense fallback={<ModalSuspenseFallback />}>
                         <MediaActionsModal post={mediaActionsModalPost} onClose={closeMediaActionsModal} />
                     </Suspense>
-                </View>
-             </View>
+                </Pressable>
+             </Pressable>
           )}
           {isRepostModalOpen && repostModalPost && (
-             <View style={styles.modalBackdrop} onTouchEnd={closeRepostModal}>
-                <View style={styles.bottomSheet} onTouchEnd={(e) => e.stopPropagation()}>
+             <Pressable style={styles.modalBackdrop} onPress={closeRepostModal}>
+                <Pressable style={styles.bottomSheet}>
                     <Suspense fallback={<ModalSuspenseFallback />}>
                         <RepostModal post={repostModalPost} onClose={closeRepostModal} />
                     </Suspense>
-                </View>
-             </View>
+                </Pressable>
+             </Pressable>
           )}
         </Suspense>
       </SafeAreaView>

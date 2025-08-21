@@ -4,7 +4,7 @@ import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBsky
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
-import { Images, ExternalLink, PlayCircle, Heart, BadgeCheck, Repeat } from 'lucide-react';
+import { Images, PlayCircle, Heart, BadgeCheck, Repeat } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
@@ -81,6 +81,10 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
         if (!embed) return null;
         if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) return { mediaPost: p, mediaEmbed: embed };
         if (AppBskyEmbedVideo.isView(embed)) return { mediaPost: p, mediaEmbed: embed };
+        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+            if (AppBskyEmbedImages.isView(embed.media) && embed.media.images.length > 0) return { mediaPost: p, mediaEmbed: embed.media };
+            if (AppBskyEmbedVideo.isView(embed.media)) return { mediaPost: p, mediaEmbed: embed.media };
+        }
         return null;
     }
     
@@ -182,7 +186,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, s
                     muted: true,
                     playsinline: true
                 };
-                return <SharedVideoPlayer options={playerOptions} className="w-full h-auto bg-black rounded-lg" />;
+                return <SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, borderRadius: 8 }} />;
             }
             
             return (
@@ -343,7 +347,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     content: {
-        padding: 12,
+        padding: 16,
     },
     contextContainer: {
         flexDirection: 'row',

@@ -3,9 +3,8 @@ import { useAtp } from '../../context/AtpContext';
 import {AppBskyFeedDefs,AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia,AppBskyActorDefs } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoActions from './VideoActions';
-import { Volume2, VolumeX, Loader2 } from 'lucide-react';
-import SharedVideoPlayer from '../shared/VideoPlayer';
-import type Player from 'video.js/dist/types/player';
+import { Volume2, VolumeX } from 'lucide-react';
+import SharedVideoPlayer, { PlayerRef } from '../shared/VideoPlayer';
 import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
 
 
@@ -18,7 +17,7 @@ interface VideoPlayerProps {
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoad, hlsUrl }) => {
     const { agent } = useAtp();
-    const playerRef = useRef<Player | null>(null);
+    const playerRef = useRef<PlayerRef | null>(null);
     const [isMuted, setIsMuted] = useState(true);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
 
@@ -43,20 +42,42 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
     
     useEffect(() => {
         if (playerRef.current) {
-            if (isActive) playerRef.current.play()?.catch(() => {});
-            else { playerRef.current.pause(); playerRef.current.currentTime(0); }
+            if (isActive) {
+                playerRef.current.playAsync()?.catch(() => {});
+            } else {
+                playerRef.current.pauseAsync();
+                playerRef.current.setPositionAsync(0);
+            }
         }
     }, [isActive]);
 
-    const handlePlayerReady = (player: Player) => { playerRef.current = player; setIsPlayerReady(true); if (isActive) player.play()?.catch(() => {}); };
-    const handleVideoClick = () => { if (playerRef.current) playerRef.current.paused() ? playerRef.current.play()?.catch(() => {}) : playerRef.current.pause(); };
-    const toggleMute = (e: any) => { e.stopPropagation(); setIsMuted(prev => !prev); if(playerRef.current) playerRef.current.muted(!isMuted); };
+    const handlePlayerReady = (player: PlayerRef) => { 
+        playerRef.current = player;
+        setIsPlayerReady(true);
+        if (isActive) {
+            player.playAsync()?.catch(() => {});
+        }
+    };
+    
+    const handleVideoClick = async () => {
+        if (!playerRef.current) return;
+        const status = await playerRef.current.getStatusAsync();
+        if (status.isLoaded) {
+            if (status.isPlaying) {
+                await playerRef.current.pauseAsync();
+            } else {
+                await playerRef.current.playAsync();
+            }
+        }
+    };
+
+    const toggleMute = (e: any) => { e.stopPropagation(); setIsMuted(prev => !prev); };
 
     if (!shouldLoad) return <View style={styles.container} />;
 
     return (
         <Pressable style={styles.container} onPress={handleVideoClick}>
-            <SharedVideoPlayer options={playerOptions} onReady={handlePlayerReady} className="w-full h-full" />
+            <SharedVideoPlayer options={playerOptions} onReady={handlePlayerReady} style={styles.video} />
 
             {!isPlayerReady && (
                 <View style={styles.loadingOverlay}>
@@ -85,6 +106,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ postView, isActive, shouldLoa
 
 const styles = StyleSheet.create({
     container: { width: '100%', height: '100%', backgroundColor: 'black' },
+    video: { width: '100%', height: '100%' },
     loadingOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 20 },
     thumbnail: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', resizeMode: 'contain', zIndex: -1 },
     infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingBottom: 96, zIndex: 20 },

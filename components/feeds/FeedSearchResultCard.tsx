@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs } from '@atproto/api';
+import {AppBskyFeedDefs } from '@atproto/api';
 import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
@@ -60,7 +59,7 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
 
 const styles = StyleSheet.create({
     container: {
-        padding: 12,
+        padding: 16,
         backgroundColor: '#1E2021', // surface-2
         borderRadius: 12,
     },
@@ -97,9 +96,7 @@ const styles = StyleSheet.create({
         color: '#C3C6CF',
     },
     pinButton: {
-        fontWeight: '600',
-        fontSize: 14,
-        paddingVertical: 6,
+        paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 999,
         flexShrink: 0,

@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     description: { marginTop: 4, color: '#E2E2E6', fontSize: 14, lineHeight: 20 },
     labelsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
     actionsContainer: { marginTop: 16, flexDirection: 'row', gap: 8 },
-    actionButton: { flex: 1, paddingVertical: 10, borderRadius: 8, backgroundColor: '#2b2d2e', alignItems: 'center' },
+    actionButton: { flex: 1, paddingVertical: 10, borderRadius: 999, backgroundColor: '#2b2d2e', alignItems: 'center' },
     actionButtonText: { fontWeight: 'bold', color: '#E2E2E6' },
     followButton: { backgroundColor: '#A8C7FA' },
     followButtonText: { color: '#003258' },

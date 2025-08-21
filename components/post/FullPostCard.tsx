@@ -62,7 +62,10 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
             const videoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
             const playerOptions = { autoplay: true, controls: true, poster: embedView.thumbnail, sources: [{ src: videoUrl, type: 'video/mp4' }], loop: true, muted: true, playsinline: true };
-            return <SharedVideoPlayer options={playerOptions} className="w-full h-auto bg-black rounded-lg mt-2" />;
+            const videoAspectRatio = embedView.aspectRatio
+                ? embedView.aspectRatio.width / embedView.aspectRatio.height
+                : 16 / 9;
+            return <SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, backgroundColor: 'black', borderRadius: 8, marginTop: 8, }} />;
         }
 
         const embed = post.embed;

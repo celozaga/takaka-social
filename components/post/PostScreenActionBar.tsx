@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
@@ -93,7 +92,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#2b2d2e', // surface-3
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 999,
     },
     replyButtonText: {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { AppBskyActorDefs } from '@atproto/api';
@@ -160,15 +159,13 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     followButton: {
-        fontWeight: '600',
-        fontSize: 14,
-        paddingVertical: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
         borderRadius: 999,
         flexShrink: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        width: 96,
-        height: 32,
+        minHeight: 32,
     },
     followingButton: {
         backgroundColor: '#2b2d2e', // surface-3
