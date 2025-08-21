@@ -29,9 +29,10 @@ const Card: React.FC<CardProps> = ({ children, style, onPress }) => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: theme.shape.medium,
+    borderRadius: theme.shape.large,
     overflow: 'hidden',
-    // Add elevation/shadow for platform consistency if needed
+    borderWidth: 1,
+    borderColor: theme.colors.outline,
   },
   pressed: {
     backgroundColor: theme.colors.surfaceContainerHigh,

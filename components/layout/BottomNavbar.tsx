@@ -20,7 +20,7 @@ const NavItem: React.FC<{
   const content = (
     <>
       <View style={[styles.iconContainer, item.activeCondition && styles.iconContainerActive]}>
-        <item.icon size={24} color={item.activeCondition ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant} />
+        <item.icon size={24} color={item.activeCondition ? theme.colors.primary : theme.colors.onSurfaceVariant} />
         {hasNotificationBadge && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     left: 0,
     height: '100%',
     width: 80,
-    backgroundColor: theme.colors.surfaceContainer,
+    backgroundColor: theme.colors.surface,
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -160,14 +160,16 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   iconContainerActive: {
-    backgroundColor: theme.colors.primaryContainer,
+    backgroundColor: theme.colors.surfaceContainerHighest,
   },
   labelText: {
     ...theme.typography.labelMedium,
     color: theme.colors.onSurfaceVariant,
   },
   labelTextActive: {
+    ...theme.typography.labelMedium,
     color: theme.colors.onSurface,
+    fontWeight: '700',
   },
   badge: {
     position: 'absolute',

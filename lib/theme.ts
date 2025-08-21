@@ -9,27 +9,27 @@ import { TextStyle } from 'react-native';
 
 // Base palette (Can be generated from a single seed color)
 const palette = {
-  primary: '#A8C7FA',
-  secondary: '#C2C6DD',
+  primary: '#1D9BF0',
+  secondary: '#8B98A5',
   tertiary: '#E8B9D4',
   neutral: '#909094',
   neutralVariant: '#8D9099',
   error: '#F2B8B5',
-  background: '#111314',
-  surface: '#111314',
+  background: '#15202B', // Dark blue-grey, like the old UI
+  surface: '#15202B',
 };
 
 // Material 3 color roles for a dark theme
 export const colors = {
   primary: palette.primary,
-  onPrimary: '#003258',
-  primaryContainer: '#D1E4FF',
-  onPrimaryContainer: '#001D35',
+  onPrimary: '#FFFFFF',
+  primaryContainer: '#004A7F',
+  onPrimaryContainer: '#D3E5FF',
   
   secondary: palette.secondary,
-  onSecondary: '#2B3141',
-  secondaryContainer: '#424759',
-  onSecondaryContainer: '#DEE2F9',
+  onSecondary: '#FFFFFF',
+  secondaryContainer: '#4A4A4A',
+  onSecondaryContainer: '#E0E0E0',
 
   tertiary: palette.tertiary,
   onTertiary: '#48253A',
@@ -42,23 +42,23 @@ export const colors = {
   onErrorContainer: '#F9DEDC',
 
   background: palette.background,
-  onBackground: '#E2E2E6',
+  onBackground: '#E7E9EA',
 
   surface: palette.surface,
-  onSurface: '#E2E2E6',
+  onSurface: '#E7E9EA', // Main text color
   surfaceVariant: '#43474E',
-  onSurfaceVariant: '#C3C6CF',
+  onSurfaceVariant: '#8B98A5', // Lighter grey for secondary text
   
-  surfaceContainer: '#1E2021', // surface-2
-  surfaceContainerHigh: '#2b2d2e', // surface-3
-  surfaceContainerHighest: '#363739',
+  surfaceContainer: '#15202B', // For cards to match background, border defines them
+  surfaceContainerHigh: '#192734', // A slightly lighter container color for interactions
+  surfaceContainerHighest: '#203449',
 
-  outline: '#8D9099',
-  outlineVariant: '#43474E',
+  outline: '#38444D', // Borders
+  outlineVariant: '#38444D',
 
   inverseSurface: '#E2E2E6',
   inverseOnSurface: '#2F3033',
-  inversePrimary: '#3A6494',
+  inversePrimary: '#00639B',
 
   // Custom
   pink: '#ec4899',
@@ -80,7 +80,7 @@ export const typography = {
   labelMedium: { fontFamily: FONT_FAMILY, fontWeight: '500', fontSize: 12, lineHeight: 16, letterSpacing: 0.5 } as TextStyle,
   labelSmall: { fontFamily: FONT_FAMILY, fontWeight: '500', fontSize: 11, lineHeight: 16, letterSpacing: 0.5 } as TextStyle,
   bodyLarge: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 16, lineHeight: 24, letterSpacing: 0.5 } as TextStyle,
-  bodyMedium: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 14, lineHeight: 20, letterSpacing: 0.25 } as TextStyle,
+  bodyMedium: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 14, lineHeight: 22, letterSpacing: 0.25 } as TextStyle,
   bodySmall: { fontFamily: FONT_FAMILY, fontWeight: '400', fontSize: 12, lineHeight: 16, letterSpacing: 0.4 } as TextStyle,
 };
 

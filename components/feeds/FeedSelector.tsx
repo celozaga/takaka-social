@@ -76,7 +76,7 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
 const styles = StyleSheet.create({
     container: {
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.surfaceContainerHigh,
+        borderBottomColor: theme.colors.outline,
         backgroundColor: theme.colors.surface,
     },
     scrollContainer: {
@@ -95,9 +95,11 @@ const styles = StyleSheet.create({
     },
     tabText: {
         ...theme.typography.titleSmall,
+        fontWeight: '400',
         color: theme.colors.onSurfaceVariant,
     },
     tabTextActive: {
+        fontWeight: '700',
         color: theme.colors.primary,
     },
     skeleton: {

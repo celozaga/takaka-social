@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     mediaBadge: { backgroundColor: 'rgba(0,0,0,0.7)', padding: theme.spacing.xs, borderRadius: theme.shape.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
     mediaBadgeText: { ...theme.typography.labelSmall, color: 'white' },
     content: { padding: theme.spacing.m, gap: theme.spacing.s },
-    postText: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, lineHeight: 18 },
+    postText: { ...theme.typography.bodyMedium, color: theme.colors.onSurface },
     footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.s },
     authorContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, flex: 1, minWidth: 0 },
     avatar: { width: 24, height: 24, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },

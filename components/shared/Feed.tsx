@@ -202,6 +202,13 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     );
   };
 
+  const renderHeader = () => {
+    if (!ListHeaderComponent) return null;
+    if (React.isValidElement(ListHeaderComponent)) return ListHeaderComponent;
+    const Header = ListHeaderComponent as React.ComponentType<any>;
+    return <Header />;
+  };
+
   return (
     <ScrollView
         onScroll={handleScroll}
@@ -209,12 +216,13 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
         refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
-        contentContainerStyle={styles.contentContainer}
     >
-        {ListHeaderComponent}
-        {renderContent()}
-        {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
-        {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
+        <View style={styles.contentContainer}>
+            {renderHeader()}
+            {renderContent()}
+            {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
+            {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
+        </View>
     </ScrollView>
   );
 };
