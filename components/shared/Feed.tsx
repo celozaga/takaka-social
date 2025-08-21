@@ -7,7 +7,7 @@ import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList } from 'react-native';
 import { theme } from '@/lib/theme';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
@@ -171,61 +171,81 @@ const Feed: React.FC<FeedProps> = ({
         loadMorePosts();
     }
   };
+
+  const renderFooter = () => (
+    <>
+      {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
+      {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
+    </>
+  );
   
-  const renderContent = () => {
-    if (isLoading) {
-      if (layout === 'grid') {
-          return (
-            <View style={styles.masonryContainer}>
-              <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-              <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-            </View>
-          );
-      }
-      return <View style={styles.listContainer}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
-    }
-    if (error) {
-      return (
-        <View style={styles.messageContainer}>
+  const renderListEmptyComponent = () => (
+    <View style={styles.messageContainer}>
+      {error ? (
+        <>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}><Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text></Pressable>
-        </View>
-      );
-    }
-    if (moderatedFeed.length === 0) {
-      return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>;
-    }
-    
-    if (layout === 'list') {
-        return (
-            <View style={styles.listContainer}>
-                {moderatedFeed.map(item => <FullPostCard key={keyExtractor(item)} feedViewPost={item} />)}
-            </View>
-        );
-    }
+        </>
+      ) : (
+        <Text style={styles.infoText}>{t('feed.empty')}</Text>
+      )}
+    </View>
+  );
 
+  if (isLoading) {
     return (
-        <View style={styles.masonryContainer}>
-            <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
-            <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
-        </View>
+      <View>
+        {ListHeaderComponent}
+        {layout === 'grid' ? (
+          <View style={styles.masonryContainer}>
+            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+          </View>
+        ) : (
+          <View style={styles.listContainer}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
+        )}
+      </View>
     );
-  };
+  }
 
-  const renderHeader = () => {
-    if (!ListHeaderComponent) return null;
-    if (React.isValidElement(ListHeaderComponent)) return ListHeaderComponent;
-    const Header = ListHeaderComponent as React.ComponentType<any>;
-    return <Header />;
-  };
+  if (moderatedFeed.length === 0 && !isLoading) {
+      return (
+          <ScrollView 
+            contentContainerStyle={{paddingTop: theme.spacing.l}}
+            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+          >
+              {ListHeaderComponent}
+              {renderListEmptyComponent()}
+          </ScrollView>
+      )
+  }
+
+  if (layout === 'list') {
+      return (
+          <FlatList
+              data={moderatedFeed}
+              renderItem={({item}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>}
+              keyExtractor={keyExtractor}
+              ItemSeparatorComponent={() => <View style={{height: theme.spacing.s}} />}
+              ListHeaderComponent={ListHeaderComponent}
+              ListFooterComponent={renderFooter}
+              onEndReached={loadMorePosts}
+              onEndReachedThreshold={0.7}
+              refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+              contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 80}}
+          />
+      )
+  }
 
   return (
     <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
         <View style={styles.contentContainer}>
-            {renderHeader()}
-            {renderContent()}
-            {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
-            {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
+            {ListHeaderComponent}
+            <View style={styles.masonryContainer}>
+                <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
+                <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
+            </View>
+            {renderFooter()}
         </View>
     </ScrollView>
   );
@@ -234,7 +254,7 @@ const Feed: React.FC<FeedProps> = ({
 const styles = StyleSheet.create({
     contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 80 },
     masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
-    listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, },
+    listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, alignItems: 'center' },
     column: { flex: 1, gap: theme.spacing.l, },
     messageContainer: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center', justifyContent: 'center', margin: theme.spacing.l },
     errorText: { ...theme.typography.bodyLarge, color: theme.colors.error, textAlign: 'center', marginBottom: theme.spacing.l },

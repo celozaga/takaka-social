@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, Text } from 'react-native';
+import { View, StyleSheet, FlatList, Text, Platform } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import ScreenHeader from '../layout/ScreenHeader';
 import FullPostCard from './FullPostCard';
@@ -37,6 +37,13 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
       }
       return null;
   }
+  
+  const renderFooter = () => {
+      if (Platform.OS === 'web') {
+          return <PostScreenActionBar post={thread.post} />;
+      }
+      return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -47,10 +54,11 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
         keyExtractor={(item) => item.post.cid}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={ListEmpty}
+        ListFooterComponent={renderFooter}
         contentContainerStyle={styles.listContentContainer}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <PostScreenActionBar post={thread.post} />
+      {Platform.OS !== 'web' && <PostScreenActionBar post={thread.post} />}
     </View>
   );
 };
@@ -65,7 +73,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   listContentContainer: {
-    paddingBottom: 80, // Space for action bar
+    paddingBottom: Platform.select({ web: 0, default: 80 }), // Space for action bar on native
     paddingHorizontal: theme.spacing.l,
   },
   separator: {

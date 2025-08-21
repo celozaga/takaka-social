@@ -35,6 +35,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
   const author = record.author;
   const postRecord = record.value as { text: string, createdAt: string, facets?: any[] };
   const postUri = new AtUri(record.uri);
+  const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
   const timeAgo = formatDistanceToNowStrict(new Date(postRecord.createdAt), { addSuffix: true });
 
   const content = (

@@ -16,8 +16,11 @@ import { theme } from '@/lib/theme';
 import QuotedPost from './QuotedPost';
 import ResizedImage from '../shared/ResizedImage';
 
+const MAX_REPLY_DEPTH = 6;
+
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
+  depth?: number;
 }
 
 const formatCount = (count: number): string => {
@@ -25,7 +28,7 @@ const formatCount = (count: number): string => {
     return count.toString();
 }
 
-const Reply: React.FC<ReplyProps> = ({ reply }) => {
+const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   const { t } = useTranslation();
   const moderation = useModeration();
   const [isContentVisible, setIsContentVisible] = useState(false);
@@ -150,9 +153,9 @@ const Reply: React.FC<ReplyProps> = ({ reply }) => {
             </View>
             {content}
         </View>
-        {subReplies.length > 0 && 
+        {subReplies.length > 0 && depth < MAX_REPLY_DEPTH &&
             <View style={styles.nestedRepliesContainer}>
-                {subReplies.map(nestedReply => <Reply key={nestedReply.post.cid} reply={nestedReply} />)}
+                {subReplies.map(nestedReply => <Reply key={nestedReply.post.cid} reply={nestedReply} depth={depth + 1} />)}
             </View>
         }
     </View>

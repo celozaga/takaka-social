@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
-import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AtpProvider, useAtp } from '@/context/AtpContext';
 import { UIProvider, useUI } from '@/context/UIContext';
@@ -70,7 +70,7 @@ function AppLayout() {
         <Suspense fallback={null}>
           {isLoginModalOpen && (
             <Pressable style={styles.modalBackdrop} onPress={closeLoginModal}>
-              <Pressable style={styles.modalDialogWrapper}>
+              <Pressable style={styles.modalDialogWrapper} onPress={(e) => e.stopPropagation()}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <LoginScreen onSuccess={closeLoginModal} />
                 </Suspense>
@@ -78,17 +78,20 @@ function AppLayout() {
             </Pressable>
           )}
           {isComposerOpen && (
-            <View style={[styles.modalBackdrop, styles.composerBackdrop]}>
-              <View style={styles.composerWrapper}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={[styles.modalBackdrop, styles.composerBackdrop]}
+            >
+              <Pressable style={styles.composerWrapper} onPress={(e) => e.stopPropagation()}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <Composer onClose={closeComposer} onPostSuccess={closeComposer} replyTo={composerReplyTo} initialText={composerInitialText} />
                 </Suspense>
-              </View>
-            </View>
+              </Pressable>
+            </KeyboardAvoidingView>
           )}
           {isFeedModalOpen && (
             <Pressable style={styles.modalBackdrop} onPress={closeFeedModal}>
-              <Pressable style={styles.modalDialogWrapper}>
+              <Pressable style={styles.modalDialogWrapper} onPress={(e) => e.stopPropagation()}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <FeedHeaderModal />
                 </Suspense>
@@ -97,7 +100,7 @@ function AppLayout() {
           )}
           {isEditProfileModalOpen && (
              <Pressable style={styles.modalBackdrop} onPress={closeEditProfileModal}>
-              <Pressable style={styles.modalDialogWrapper}>
+              <Pressable style={styles.modalDialogWrapper} onPress={(e) => e.stopPropagation()}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
                 </Suspense>
@@ -106,7 +109,7 @@ function AppLayout() {
           )}
           {isUpdateEmailModalOpen && (
              <Pressable style={styles.modalBackdrop} onPress={closeUpdateEmailModal}>
-              <Pressable style={styles.modalDialogWrapper}>
+              <Pressable style={styles.modalDialogWrapper} onPress={(e) => e.stopPropagation()}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
                 </Suspense>
@@ -115,7 +118,7 @@ function AppLayout() {
           )}
            {isUpdateHandleModalOpen && (
              <Pressable style={styles.modalBackdrop} onPress={closeUpdateHandleModal}>
-              <Pressable style={styles.modalDialogWrapper}>
+              <Pressable style={styles.modalDialogWrapper} onPress={(e) => e.stopPropagation()}>
                 <Suspense fallback={<ModalSuspenseFallback />}>
                     <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
                 </Suspense>
@@ -124,7 +127,7 @@ function AppLayout() {
           )}
           {isMediaActionsModalOpen && mediaActionsModalPost && (
              <Pressable style={styles.modalBackdrop} onPress={closeMediaActionsModal}>
-                <Pressable style={styles.bottomSheet}>
+                <Pressable style={styles.bottomSheet} onPress={(e) => e.stopPropagation()}>
                     <Suspense fallback={<ModalSuspenseFallback />}>
                         <MediaActionsModal post={mediaActionsModalPost} onClose={closeMediaActionsModal} />
                     </Suspense>
@@ -133,7 +136,7 @@ function AppLayout() {
           )}
           {isRepostModalOpen && repostModalPost && (
              <Pressable style={styles.modalBackdrop} onPress={closeRepostModal}>
-                <Pressable style={styles.bottomSheet}>
+                <Pressable style={styles.bottomSheet} onPress={(e) => e.stopPropagation()}>
                     <Suspense fallback={<ModalSuspenseFallback />}>
                         <RepostModal post={repostModalPost} onClose={closeRepostModal} />
                     </Suspense>
@@ -201,12 +204,13 @@ const styles = StyleSheet.create({
   },
   composerBackdrop: {
      justifyContent: 'flex-start',
-     paddingTop: Platform.select({ web: '5%' as any, default: 40 }),
+     paddingTop: Platform.select({ web: '5vh', default: 40 }),
+     paddingBottom: Platform.select({ web: '5vh', default: 10 }),
   },
   composerWrapper: {
     width: '100%',
     maxWidth: 640,
-    height: Platform.select({web: '90%' as any, default: '95%'}),
+    flex: 1,
     maxHeight: 800,
     backgroundColor: theme.colors.surfaceContainer,
     borderRadius: theme.shape.large,

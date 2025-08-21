@@ -3,13 +3,20 @@ import { useTranslation } from 'react-i18next';
 import { useUI } from '../../context/UIContext';
 import { LogIn } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LoginPrompt: React.FC = () => {
   const { openLoginModal } = useUI();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+
+  const bottomPosition = Platform.select({
+    web: 16,
+    default: 80 + insets.bottom,
+  });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { bottom: bottomPosition }]}>
       <View style={styles.promptBox}>
         <View>
             <Text style={styles.title}>{t('loginPrompt.title')}</Text>
@@ -30,7 +37,6 @@ const LoginPrompt: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: Platform.select({ web: 16, default: 80 }),
     left: 0,
     right: 0,
     alignItems: 'center',
