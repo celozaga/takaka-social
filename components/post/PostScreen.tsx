@@ -1,341 +1,415 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAtp } from '../../context/AtpContext';
-import { useUI } from '../../context/UIContext';
-import { useProfileCache } from '../../context/ProfileCacheContext';
-import { Link, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, ScrollView, FlatList, useWindowDimensions, Linking, Platform } from 'react-native';
-import { AppBskyFeedDefs, AppBskyActorDefs, RichText, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
-import Reply from './Reply';
-import PostScreenActionBar from './PostScreenActionBar';
-import { ArrowLeft, BadgeCheck, MessageSquareDashed, MoreHorizontal, ShieldAlert } from 'lucide-react';
-import { format } from 'date-fns';
-import RichTextRenderer from '../shared/RichTextRenderer';
-import Head from '../shared/Head';
-import { useModeration } from '../../context/ModerationContext';
-import ContentWarning from '../shared/ContentWarning';
-import SharedVideoPlayer from '../shared/VideoPlayer';
-import { moderatePost } from '../../lib/moderation';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, TextInput, FlatList, ScrollView, useWindowDimensions, KeyboardAvoidingView, Platform, ActivityIndicator, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Heart, Repeat, MessageSquare, Bookmark, MoreHorizontal, Send, ChevronRight, Check } from 'lucide-react';
+import theme from '@/lib/theme';
+import { useRouter } from 'expo-router';
 
-const getImageUrlFromPost = (post: AppBskyFeedDefs.PostView): string | undefined => {
-    if (!post.embed) return undefined;
-    
-    let embed = post.embed;
-    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-        embed = embed.media;
-    }
-
-    if (AppBskyEmbedImages.isView(embed) && embed.images[0]) {
-        return embed.images[0].thumb;
-    }
-    if (AppBskyEmbedVideo.isView(embed)) {
-        return embed.thumbnail;
-    }
-    return undefined;
+// --- TYPE DEFINITIONS ---
+export interface ProfileLink { did: string; handle: string; displayName: string; avatar: string; verified?: boolean; }
+export interface Media { type: "image" | "video"; url: string; width: number; height: number; thumbnail?: string; }
+export interface Post {
+  uri: string; cid: string;
+  author: ProfileLink;
+  title?: string;
+  text: string;
+  media: Media[];
+  tags?: string[]; location?: string; lang?: string;
+  createdAt: string;
+  likeCount: number; repostCount: number; replyCount: number; saved?: boolean; liked?: boolean; reposted?: boolean; followedAuthor?: boolean;
+}
+export interface Comment {
+  uri: string; cid: string;
+  author: ProfileLink;
+  text: string; lang?: string;
+  likeCount: number; liked?: boolean;
+  createdAt: string;
+  isAuthor?: boolean;
+  children?: Comment[];
+}
+export type Adapters = {
+  onOpenProfile(p: ProfileLink): void;
+  onFollow(did: string, next: boolean): Promise<void>;
+  onLike(uri: string, next: boolean): Promise<void>;
+  onRepost(uri: string, next: boolean): Promise<void>;
+  onReply(parentUri: string, text: string): Promise<void>;
+  onShare(post: Post): void;
+  onReport(uri: string): void;
+  onTranslate(text: string, lang?: string): Promise<string>;
+  loadMoreComments(cursor?: string): Promise<{ items: Comment[]; cursor?: string }>;
+  loadMoreReplies(parentUri: string, cursor?: string): Promise<{ items: Comment[]; cursor?: string }>;
 };
 
 interface PostScreenProps {
-  did: string;
-  rkey: string;
+  post: Post;
+  initialComments: Comment[];
+  adapters: Adapters;
 }
 
-const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
-  const { agent } = useAtp();
-  const router = useRouter();
-  const { openMediaActionsModal, postForNav, setPostForNav } = useUI();
-  const { t } = useTranslation();
-  const moderation = useModeration();
-  const { getProfile } = useProfileCache();
-  const { width } = useWindowDimensions();
-  
-  const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [postAuthor, setPostAuthor] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [hlsUrl, setHlsUrl] = useState<string | null>(null);
-  const [isContentVisible, setIsContentVisible] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
- 
-  const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
+// --- HELPER HOOKS & UTILS ---
+const useOptimisticState = <T,>(initialValue: T) => {
+  const [optimisticValue, setOptimisticValue] = useState(initialValue);
+  const [actualValue, setActualValue] = useState(initialValue);
 
-  const mainPostFromState = thread?.post;
-  const record = mainPostFromState?.record as { text: string, facets?: RichText['facets'], createdAt: string };
-  const postExcerpt = record?.text ? (record.text.length > 100 ? record.text.substring(0, 100) + '…' : record.text) : '';
-  const title = postAuthor ? `${t('post.byline', { user: `@${postAuthor.handle}`})}${postExcerpt ? `: "${postExcerpt}"` : ''}` : t('common.post');
-  const description = record?.text;
-  const imageUrl = mainPostFromState ? getImageUrlFromPost(mainPostFromState) : undefined;
-
-  useEffect(() => {
-    let isMounted = true;
-    setCurrentImageIndex(0);
-
-    const fetchFullThread = async () => {
-        try {
-            const { data } = await agent.getPostThread({ uri: postUri, depth: 100, parentHeight: 5 });
-            if (!isMounted) return;
-
-            if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
-                setThread(data.thread);
-                if (!postAuthor) { // Only fetch profile if not already set by postForNav
-                    const profileRes = await getProfile(data.thread.post.author.did);
-                    if (isMounted) setPostAuthor(profileRes);
-                }
-            } else {
-                throw new Error(t('post.notFound'));
-            }
-        } catch (err: any) {
-            console.error("Failed to fetch post thread:", err);
-            if (isMounted) setError(err.message || t('post.loadingError'));
-        } finally {
-            if (isMounted) setIsLoading(false);
-        }
-    };
-    
-    if (postForNav && postForNav.post.uri === postUri) {
-        setThread({
-            $type: 'app.bsky.feed.defs#threadViewPost',
-            post: postForNav.post,
-            parent: postForNav.reply?.parent,
-            replies: [], // Replies will be filled by the full fetch
-        });
-        getProfile(postForNav.post.author.did).then(p => {
-            if (isMounted) setPostAuthor(p);
-        });
-        setIsLoading(false); // We have the main content, so stop loading state
-    } else {
-        setIsLoading(true);
-    }
-
-    fetchFullThread();
-
-    return () => {
-        isMounted = false;
-        // Clean up the transient state when the component unmounts
-        setPostForNav(undefined);
-    };
-  }, [agent, postUri, t, getProfile, postForNav, setPostForNav, postAuthor]);
-
-
-  useEffect(() => {
-    if (!thread?.post) return;
-
-    const embed = thread.post.embed;
-    let videoEmbed: AppBskyEmbedVideo.View | undefined;
-
-    if (AppBskyEmbedVideo.isView(embed)) {
-        videoEmbed = embed;
-    } else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) {
-        videoEmbed = embed.media as AppBskyEmbedVideo.View;
-    }
-
-    if (videoEmbed) {
-        const fetchUrl = async () => {
-            try {
-                const result = await (agent.api.app.bsky.video as any).getPlaybackUrl({
-                    did: thread.post.author.did,
-                    cid: videoEmbed!.cid,
-                });
-                setHlsUrl(result.data.url);
-            } catch (error) {
-                console.warn(`Could not get HLS playback URL for ${thread.post.uri}, falling back to blob.`, error);
-                setHlsUrl(null);
-            }
-        };
-        fetchUrl();
-    }
-  }, [thread, agent]);
-
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setCurrentImageIndex(viewableItems[0].index);
-    }
-  }).current;
-
-  const renderMedia = (post:AppBskyFeedDefs.PostView) => {
-    if (!post.embed) return null;
-    let embed = post.embed;
-    if(AppBskyEmbedRecordWithMedia.isView(post.embed)) {
-        embed = post.embed.media;
-    }
-
-    if (AppBskyEmbedImages.isView(embed)) {
-        const images = embed.images;
-        if(images.length === 0) return null;
-
-        return (
-            <View>
-                <FlatList
-                    ref={flatListRef}
-                    data={images}
-                    renderItem={({ item }) => (
-                        <Pressable onPress={() => Linking.openURL(item.fullsize)} style={{ width: width - 32 }}>
-                           <Image source={{ uri: item.thumb }} style={styles.carouselImage} resizeMode="contain" />
-                        </Pressable>
-                    )}
-                    keyExtractor={(item) => item.fullsize}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    onViewableItemsChanged={onViewableItemsChanged}
-                    viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-                />
-                {images.length > 1 && (
-                    <View style={styles.carouselCounter}>
-                        <Text style={styles.carouselCounterText}>{currentImageIndex + 1} / {images.length}</Text>
-                    </View>
-                )}
-            </View>
-        );
-    }
-
-    if (AppBskyEmbedVideo.isView(embed)) {
-      const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
-      const videoCid = embed.cid;
-      if (!authorDid || !videoCid || !agent.service) return null;
-      const serviceUrl = agent.service.toString();
-      const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-      const blobVideoUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
-      const playerOptions = { autoplay: true, controls: true, poster: embed.thumbnail, sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }], loop: true, muted: true, playsinline: true };
-      const videoAspectRatio = embed.aspectRatio ? embed.aspectRatio.width / embed.aspectRatio.height : 16 / 9;
-      return <SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, borderRadius: 8 }} />;
-    }
-
-    return null;
+  const setValue = (newValue: T, asyncAction: () => Promise<any>) => {
+    setOptimisticValue(newValue);
+    asyncAction().catch(() => {
+      // Revert on failure
+      setOptimisticValue(actualValue);
+    });
   };
-  
-  if (isLoading || !moderation.isReady) {
-    return <View style={styles.centered}><ActivityIndicator size="large" color="#A8C7FA" /></View>;
-  }
-  
-  if (error || !thread || !postAuthor) {
-    return <View style={[styles.centered, styles.container]}><Text style={styles.errorText}>{error || t('post.notFound')}</Text></View>;
-  }
 
-  const mainPost = thread.post;
-  const modDecision = moderatePost(mainPost, moderation);
-  
-  const PageHeader = () => (
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-            <Pressable onPress={() => router.back()} style={styles.headerButton}>
-                <ArrowLeft size={20} color="#E2E2E6" />
-            </Pressable>
-            <Link href={`/profile/${postAuthor.handle}` as any} asChild>
-                <Pressable style={styles.authorInfo}>
-                    <Image source={{ uri: postAuthor.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                    <View style={styles.authorTextContainer}>
-                        <View style={styles.authorNameContainer}>
-                           <Text style={styles.authorName} numberOfLines={1}>{postAuthor.displayName || `@${postAuthor.handle}`}</Text>
-                           {postAuthor.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                <BadgeCheck size={16} color="#A8C7FA" fill="currentColor" />
-                            )}
-                        </View>
-                    </View>
-                </Pressable>
-            </Link>
-        </View>
-        <Pressable onPress={() => openMediaActionsModal(mainPost)} style={styles.headerButton}>
-            <MoreHorizontal size={20} color="#E2E2E6"/>
-        </Pressable>
-      </View>
-  );
+  useEffect(() => {
+    setOptimisticValue(initialValue);
+    setActualValue(initialValue);
+  }, [initialValue]);
 
-  if (modDecision.visibility === 'hide') {
-    return (
-        <View style={{flex: 1}}>
-            <PageHeader />
-            <View style={[styles.container, styles.centered, { backgroundColor: '#1E2021', margin: 16, borderRadius: 12}]}>
-                <ShieldAlert size={40} color="#C3C6CF" style={{ marginBottom: 16 }} />
-                <Text style={styles.modTitle}>Post hidden</Text>
-                <Text style={styles.modReason}>{modDecision.reason}</Text>
-            </View>
-        </View>
-    )
-  }
-
-  if (modDecision.visibility === 'warn' && !isContentVisible) {
-    return (
-         <View style={{flex: 1}}>
-            <PageHeader />
-            <View style={styles.container}>
-                <ContentWarning 
-                    reason={modDecision.reason!}
-                    onShow={() => setIsContentVisible(true)}
-                />
-            </View>
-        </View>
-    )
-  }
-
-  const currentRecord = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
-  const allReplies = (thread.replies || []).filter(reply =>AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
-  
-  return (
-    <>
-      <Head>
-        <title>{title}</title>
-        {description && <meta name="description" content={description} />}
-        {imageUrl && <meta property="og:image" content={imageUrl} />}
-        <meta property="og:type" content="article" />
-      </Head>
-      <View style={{ flex: 1, paddingBottom: Platform.OS === 'web' ? 0 : 80 }}>
-        <PageHeader />
-        <ScrollView contentContainerStyle={styles.container}>
-            {renderMedia(mainPost)}
-            {currentRecord.text && (
-                <Text style={styles.postText}>
-                    <RichTextRenderer record={currentRecord} />
-                </Text>
-            )}
-            <Text style={styles.dateText}>{format(new Date(currentRecord.createdAt), "h:mm a · MMM d, yyyy")}</Text>
-            
-            {Platform.OS === 'web' && <PostScreenActionBar post={mainPost} />}
-          
-            <View style={{marginTop: 16}}>
-                {(mainPost.replyCount || 0) > 0 ? (
-                <>
-                    <Text style={styles.repliesHeader}>
-                        {mainPost.replyCount} {t(mainPost.replyCount === 1 ? 'common.reply' : 'common.replies')}
-                    </Text>
-                    {allReplies.length > 0 && <Reply reply={thread} isRoot={true} />}
-                </>
-                ) : (
-                <View style={styles.noRepliesContainer}>
-                    <MessageSquareDashed size={40} color="#8A9199" style={{ marginBottom: 16 }}/>
-                    <Text style={styles.noRepliesText}>{t('post.noReplies')}</Text>
-                </View>
-                )}
-            </View>
-        </ScrollView>
-        {Platform.OS !== 'web' && <PostScreenActionBar post={mainPost} />}
-      </View>
-    </>
-  );
+  return [optimisticValue, setValue, setActualValue] as const;
 };
 
-const styles = StyleSheet.create({
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    container: { padding: 16 },
-    errorText: { color: '#F2B8B5', fontSize: 16 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 64, paddingHorizontal: 16, backgroundColor: '#111314' },
-    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
-    headerButton: { padding: 8, margin: -8, borderRadius: 999 },
-    authorInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 },
-    avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#2b2d2e' },
-    authorTextContainer: { flex: 1, minWidth: 0 },
-    authorNameContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    authorName: { fontWeight: 'bold', color: '#E2E2E6', fontSize: 16 },
-    modTitle: { fontWeight: 'bold', fontSize: 16, color: '#E2E2E6' },
-    modReason: { color: '#C3C6CF', textTransform: 'capitalize' },
-    carouselImage: { height: 350, backgroundColor: 'black' },
-    carouselCounter: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
-    carouselCounterText: { color: 'white', fontSize: 12, fontWeight: '600' },
-    postText: { marginVertical: 12, color: '#E2E2E6', fontSize: 16, lineHeight: 24 },
-    dateText: { fontSize: 14, color: '#C3C6CF', marginVertical: 12 },
-    repliesHeader: { fontSize: 18, fontWeight: 'bold', color: '#E2E2E6', paddingTop: 16, paddingBottom: 8 },
-    noRepliesContainer: { alignItems: 'center', padding: 32, backgroundColor: '#1E2021', borderRadius: 12, marginTop: 16 },
-    noRepliesText: { fontWeight: '600', color: '#E2E2E6' },
-});
+const formatDistance = (dateStr: string) => {
+    const now = new Date();
+    const then = new Date(dateStr);
+    const diff = now.getTime() - then.getTime();
+    const diffSeconds = Math.round(diff / 1000);
+    const diffMinutes = Math.round(diffSeconds / 60);
+    const diffHours = Math.round(diffMinutes / 60);
+    const diffDays = Math.round(diffHours / 24);
 
-export default PostScreen;
+    if (diffSeconds < 60) return `${diffSeconds}s ago`;
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+};
+
+
+// --- SUB-COMPONENTS ---
+
+const PostHeader: React.FC<{ post: Post, adapters: Adapters }> = ({ post, adapters }) => {
+    const router = useRouter();
+    const [isFollowing, setFollow] = useOptimisticState(post.followedAuthor);
+
+    return (
+        <View style={styles.header}>
+            <Pressable style={styles.headerAuthor} onPress={() => adapters.onOpenProfile(post.author)}>
+                <Image source={{ uri: post.author.avatar }} style={styles.headerAvatar} />
+                <View>
+                    <Text style={styles.headerDisplayName}>{post.author.displayName}</Text>
+                    <Text style={styles.headerHandle}>@{post.author.handle}</Text>
+                </View>
+            </Pressable>
+            <View style={styles.headerActions}>
+                <Pressable onPress={() => setFollow(!isFollowing, () => adapters.onFollow(post.author.did, !isFollowing))} style={[styles.followButton, isFollowing && styles.followingButton]}>
+                    <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>{isFollowing ? 'Following' : 'Follow'}</Text>
+                </Pressable>
+                <Pressable onPress={() => alert('More actions!')}>
+                    <MoreHorizontal color={theme.color.textSecondary} size={24} />
+                </Pressable>
+                <Pressable onPress={() => router.back()}>
+                    <ChevronRight color={theme.color.textPrimary} size={28} />
+                </Pressable>
+            </View>
+        </View>
+    );
+};
+
+const PostMedia: React.FC<{ post: Post, onLike: () => void }> = ({ post, onLike }) => {
+    const { width } = useWindowDimensions();
+    const [activeIndex, setActiveIndex] = useState(0);
+    const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+    
+    const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+        if (viewableItems.length > 0) {
+            setActiveIndex(viewableItems[0].index);
+        }
+    }, []);
+
+    const mediaAspectRatio = post.media[0] ? post.media[0].width / post.media[0].height : 1;
+    const mediaContainerWidth = Math.min(width, 720) - (theme.spacing.md * 2);
+
+    return (
+        <View style={{ marginHorizontal: theme.spacing.md }}>
+            <FlatList
+                data={post.media}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.url}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                renderItem={({ item }) => (
+                    <Pressable onPress={onLike}>
+                        <Image source={{ uri: item.url }} style={[styles.mediaImage, { width: mediaContainerWidth, aspectRatio: mediaAspectRatio }]} />
+                    </Pressable>
+                )}
+            />
+            {post.media.length > 1 &&
+                <View style={styles.mediaCounter}>
+                    <Text style={styles.mediaCounterText}>{activeIndex + 1}/{post.media.length}</Text>
+                </View>
+            }
+        </View>
+    );
+};
+
+const PostContent: React.FC<{ post: Post }> = ({ post }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    // This is a simplified check. A real implementation would use onTextLayout.
+    const isLongText = post.text.length > 150;
+    
+    return (
+        <View style={styles.contentContainer}>
+            {post.title && <Text style={styles.contentTitle}>{post.title}</Text>}
+            <Text style={styles.contentText} numberOfLines={isExpanded ? undefined : 3}>
+                {post.text}
+            </Text>
+            {isLongText && !isExpanded &&
+                <Pressable onPress={() => setIsExpanded(true)}>
+                    <Text style={styles.seeMoreText}>... See more</Text>
+                </Pressable>
+            }
+            <Text style={styles.timestamp}>{formatDistance(post.createdAt)} in {post.location}</Text>
+        </View>
+    );
+};
+
+const CommentCell: React.FC<{ comment: Comment, adapters: Adapters, postAuthorDid: string }> = ({ comment, adapters, postAuthorDid }) => {
+    const [isLiked, setLiked] = useOptimisticState(comment.liked);
+    const [likeCount, setLikeCount] = useOptimisticState(comment.likeCount);
+    const [areRepliesExpanded, setAreRepliesExpanded] = useState(false);
+
+    const handleLikeToggle = () => {
+        const nextLiked = !isLiked;
+        const nextLikeCount = likeCount + (nextLiked ? 1 : -1);
+        setLiked(nextLiked, () => adapters.onLike(comment.uri, nextLiked));
+        setLikeCount(nextLikeCount, () => adapters.onLike(comment.uri, nextLiked));
+    };
+
+    const isOp = comment.author.did === postAuthorDid;
+
+    return (
+        <View style={styles.commentCell}>
+            <Image source={{ uri: comment.author.avatar }} style={styles.commentAvatar} />
+            <View style={styles.commentContent}>
+                <View style={styles.commentHeader}>
+                    <Text style={styles.commentAuthorName}>{comment.author.displayName}</Text>
+                    {isOp && <Text style={styles.opBadge}>Author</Text>}
+                    <Text style={styles.commentTimestamp}>{formatDistance(comment.createdAt)}</Text>
+                </View>
+                <Text style={styles.commentText}>{comment.text}</Text>
+                {comment.children && comment.children.length > 0 &&
+                    <View style={styles.repliesContainer}>
+                        {comment.children.slice(0, areRepliesExpanded ? undefined : 1).map(reply => (
+                           <CommentCell key={reply.uri} comment={reply} adapters={adapters} postAuthorDid={postAuthorDid} />
+                        ))}
+                        {comment.children.length > 1 && !areRepliesExpanded &&
+                            <Pressable onPress={() => setAreRepliesExpanded(true)}>
+                                <Text style={styles.viewRepliesText}>View more replies ({comment.children.length - 1})</Text>
+                            </Pressable>
+                        }
+                    </View>
+                }
+            </View>
+            <Pressable style={styles.commentLikeButton} onPress={handleLikeToggle}>
+                <Heart size={18} color={isLiked ? theme.color.accent : theme.color.textTertiary} fill={isLiked ? theme.color.accent : 'transparent'} />
+                <Text style={styles.commentLikeCount}>{likeCount > 0 ? likeCount : ''}</Text>
+            </Pressable>
+        </View>
+    );
+};
+
+
+const PostComposer: React.FC<{ post: Post, adapters: Adapters }> = ({ post, adapters }) => {
+    const insets = useSafeAreaInsets();
+    const [text, setText] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    
+    const [isLiked, setLiked] = useOptimisticState(post.liked);
+    const [isReposted, setReposted] = useOptimisticState(post.reposted);
+
+    const handleSend = async () => {
+        if (!text.trim() || isSending) return;
+        setIsSending(true);
+        await adapters.onReply(post.uri, text);
+        setText('');
+        setIsSending(false);
+    };
+
+    return (
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
+             <View style={[styles.composerContainer, { paddingBottom: insets.bottom + theme.spacing.sm }]}>
+                <View style={styles.composerInputWrapper}>
+                    <TextInput
+                        style={styles.composerInput}
+                        placeholder="Say something..."
+                        placeholderTextColor={theme.color.textTertiary}
+                        value={text}
+                        onChangeText={setText}
+                        multiline
+                    />
+                </View>
+                <View style={styles.composerActions}>
+                     <Pressable style={styles.composerActionButton} onPress={() => setLiked(!isLiked, () => adapters.onLike(post.uri, !isLiked))}>
+                        <Heart size={24} color={isLiked ? theme.color.accent : theme.color.textSecondary} fill={isLiked ? theme.color.accent : 'transparent'}/>
+                    </Pressable>
+                     <Pressable style={styles.composerActionButton} onPress={() => setReposted(!isReposted, () => adapters.onRepost(post.uri, !isReposted))}>
+                        <Repeat size={24} color={isReposted ? theme.color.accent : theme.color.textSecondary} />
+                    </Pressable>
+                    <Pressable style={styles.composerActionButton} onPress={() => { /* Open comment list */ }}>
+                        <MessageSquare size={24} color={theme.color.textSecondary} />
+                    </Pressable>
+                    {text.trim().length > 0 &&
+                        <Pressable onPress={handleSend} disabled={isSending} style={[styles.sendButton, isSending && { opacity: 0.5 }]}>
+                            {isSending ? <ActivityIndicator color="white" size="small"/> : <Send size={20} color="white" />}
+                        </Pressable>
+                    }
+                </View>
+            </View>
+        </KeyboardAvoidingView>
+    );
+};
+
+
+// --- MAIN SCREEN COMPONENT ---
+
+export default function PostScreen({ post, initialComments, adapters }: PostScreenProps) {
+  const [comments, setComments] = useState(initialComments);
+  const [isLiked, setLiked] = useOptimisticState(post.liked);
+  const likeAnimation = useRef(new Animated.Value(0)).current;
+
+  const handleDoubleTapLike = () => {
+      if (!isLiked) {
+          setLiked(true, () => adapters.onLike(post.uri, true));
+      }
+      likeAnimation.setValue(1);
+      Animated.sequence([
+        Animated.spring(likeAnimation, { toValue: 1.5, useNativeDriver: true }),
+        Animated.spring(likeAnimation, { toValue: 1, useNativeDriver: true }),
+        Animated.timing(likeAnimation, { toValue: 0, duration: 300, useNativeDriver: true })
+      ]).start();
+  };
+
+  const ListHeader = useMemo(() => (
+    <View>
+      <PostMedia post={post} onLike={handleDoubleTapLike} />
+      <PostContent post={post} />
+      <View style={styles.divider} />
+      <Text style={styles.commentsHeader}>Comments ({post.replyCount})</Text>
+    </View>
+  ), [post, isLiked]);
+
+  return (
+    <View style={styles.container}>
+      <PostHeader post={post} adapters={adapters} />
+      <FlatList
+        data={comments}
+        keyExtractor={item => item.uri}
+        renderItem={({ item }) => <CommentCell comment={item} adapters={adapters} postAuthorDid={post.author.did} />}
+        ListHeaderComponent={ListHeader}
+        contentContainerStyle={{ paddingBottom: 150 }}
+        ItemSeparatorComponent={() => <View style={styles.commentDivider} />}
+      />
+      <PostComposer post={post} adapters={adapters} />
+
+      <Animated.View style={[styles.likeHeartOverlay, { opacity: likeAnimation, transform: [{ scale: likeAnimation }] }]}>
+          <Heart size={100} color="white" fill="white" />
+      </Animated.View>
+    </View>
+  );
+}
+
+// --- STYLES ---
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.color.bg },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: theme.spacing.md,
+    height: 56,
+  },
+  headerAuthor: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  headerAvatar: { width: 40, height: 40, borderRadius: 20 },
+  headerDisplayName: { color: theme.color.textPrimary, fontWeight: '600', fontSize: 16 },
+  headerHandle: { color: theme.color.textSecondary, fontSize: 13 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
+  followButton: {
+    backgroundColor: theme.color.brand,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radius.pill,
+  },
+  followingButton: {
+    backgroundColor: 'transparent',
+    borderColor: theme.color.line,
+    borderWidth: 1,
+  },
+  followButtonText: { color: 'white', fontWeight: 'bold' },
+  followingButtonText: { color: theme.color.textSecondary },
+  mediaImage: { borderRadius: theme.radius.lg, backgroundColor: theme.color.card },
+  mediaCounter: {
+    position: 'absolute',
+    top: theme.spacing.sm,
+    right: theme.spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xxs,
+  },
+  mediaCounterText: { color: 'white', fontSize: theme.font.tiny, fontWeight: 'bold' },
+  contentContainer: { padding: theme.spacing.md },
+  contentTitle: { color: theme.color.textPrimary, fontSize: theme.font.title, fontWeight: 'bold', marginBottom: theme.spacing.xs },
+  contentText: { color: theme.color.textPrimary, fontSize: theme.font.body, lineHeight: 22 },
+  seeMoreText: { color: theme.color.textSecondary, fontWeight: 'bold', marginTop: theme.spacing.xs },
+  timestamp: { color: theme.color.textTertiary, fontSize: theme.font.small, marginTop: theme.spacing.md },
+  divider: { height: 1, backgroundColor: theme.color.line, margin: theme.spacing.md },
+  commentsHeader: {
+    color: theme.color.textSecondary,
+    fontSize: theme.font.small,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  commentDivider: { height: 1, backgroundColor: theme.color.line, marginLeft: theme.spacing.md + 32 + theme.spacing.sm },
+  composerContainer: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    backgroundColor: theme.color.bg,
+    borderTopWidth: 1,
+    borderTopColor: theme.color.line,
+    padding: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  composerInputWrapper: { flex: 1, backgroundColor: theme.color.inputBg, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.xs },
+  composerInput: { color: theme.color.textPrimary, fontSize: 16, maxHeight: 100 },
+  composerActions: { flexDirection: 'row', alignItems: 'center', paddingBottom: theme.spacing.xs, marginLeft: theme.spacing.sm },
+  composerActionButton: { padding: theme.spacing.xs },
+  sendButton: {
+    marginLeft: theme.spacing.xs,
+    backgroundColor: theme.color.brand,
+    width: 40, height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  commentCell: { flexDirection: 'row', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, gap: theme.spacing.sm },
+  commentAvatar: { width: 32, height: 32, borderRadius: 16 },
+  commentContent: { flex: 1 },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  commentAuthorName: { color: theme.color.textSecondary, fontWeight: '600' },
+  commentTimestamp: { color: theme.color.textTertiary, fontSize: theme.font.tiny },
+  opBadge: { backgroundColor: theme.color.badge, color: theme.color.textSecondary, fontSize: 10, borderRadius: 4, paddingHorizontal: 4, overflow: 'hidden'},
+  commentText: { color: theme.color.textPrimary, marginTop: theme.spacing.xxs },
+  commentLikeButton: { alignItems: 'center', gap: theme.spacing.xxs, paddingTop: theme.spacing.xxs },
+  commentLikeCount: { color: theme.color.textTertiary, fontSize: theme.font.tiny },
+  repliesContainer: { marginTop: theme.spacing.sm },
+  viewRepliesText: { color: theme.color.textSecondary, fontWeight: '600', marginTop: theme.spacing.xs },
+  likeHeartOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    pointerEvents: 'none',
+  }
+});
