@@ -1,23 +1,21 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useProfileCache } from '../../context/ProfileCacheContext';
-import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, FlatList, Modal, Linking, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Modal, Linking, Alert, Platform } from 'react-native';
 import { Link } from 'expo-router';
-import { AppBskyActorDefs, RichText, AtUri, AppBskyFeedDefs } from '@atproto/api';
-import FullPostCard from '../post/FullPostCard';
+import { AppBskyActorDefs, RichText, AtUri } from '@atproto/api';
+import Feed from '../shared/Feed';
 import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from '../shared/Head';
 import ScreenHeader from '../layout/ScreenHeader';
 import theme from '@/lib/theme';
-import { moderatePost } from '@/lib/moderation';
-import { useModeration } from '@/context/ModerationContext';
 
-type ProfileFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
 type ActiveTab = 'posts' | 'replies' | 'media';
+type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -25,17 +23,11 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { toast } = useToast();
     const { getProfile, clearProfile } = useProfileCache();
     const { openEditProfileModal } = useUI();
-    const moderation = useModeration();
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
-
-    const [feed, setFeed] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
-    const [isLoadingFeed, setIsLoadingFeed] = useState(false);
-    const [feedCursor, setFeedCursor] = useState<string | undefined>();
-    const [hasMore, setHasMore] = useState(true);
     const [activeTab, setActiveTab] = useState<ActiveTab>('posts');
 
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -73,53 +65,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [profile?.description, agent]);
 
-    const fetchFeed = useCallback(async (cursor?: string, tab?: ActiveTab) => {
-        if (!profile) return;
-        
-        const currentTab = tab || activeTab;
-        let filter: ProfileFeedFilter = 'posts_no_replies';
-        if (currentTab === 'replies') filter = 'posts_with_replies';
-        if (currentTab === 'media') filter = 'posts_with_media';
-
-        if (!cursor) setIsLoadingFeed(true);
-
-        try {
-            const { data } = await agent.getAuthorFeed({ actor: profile.did, cursor, limit: 30, filter });
-            
-            const newFeed = data.feed.filter(item => {
-                if (currentTab === 'replies' && !item.reply) return false;
-                if (currentTab === 'posts' && item.reply) return false;
-                return true;
-            });
-
-            if (cursor) {
-                setFeed(prev => [...prev, ...newFeed]);
-            } else {
-                setFeed(newFeed);
-            }
-            setFeedCursor(data.cursor);
-            setHasMore(!!data.cursor && data.feed.length > 0);
-        } catch (e) {
-            console.error("Failed to fetch feed", e);
-        } finally {
-            setIsLoadingFeed(false);
-        }
-    }, [agent, profile, activeTab]);
-    
-    useEffect(() => {
-        if (profile) {
-            fetchFeed(undefined, activeTab);
-        }
-    }, [profile?.did, activeTab]);
-
-    const handleTabChange = (tab: ActiveTab) => {
-        if (tab === activeTab) return;
-        setActiveTab(tab);
-        setFeed([]);
-        setFeedCursor(undefined);
-        setHasMore(true);
-    };
-
     const handleFollowToggle = async () => {
         if (isActionLoading || !profile || !session) return;
         setIsActionLoading(true);
@@ -129,7 +74,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             } else {
                 await agent.follow(profile.did);
             }
-            // Invalidate cache and refetch fresh profile data
             clearProfile(actor);
             const newProfile = await getProfile(actor);
             setProfile(newProfile);
@@ -176,7 +120,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     await agent.app.bsky.graph.block.create({ repo: session!.did }, { subject: profile.did, createdAt: new Date().toISOString() });
                 }
                 clearProfile(actor);
-                const newProfile = await getProfile(actor); // Refetch profile to update state
+                const newProfile = await getProfile(actor);
                 setProfile(newProfile);
                 toast({ title: isBlocked ? t('profile.toast.unblockSuccess') : t('profile.toast.blockSuccess') });
             } catch (e) {
@@ -190,11 +134,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     };
     
-    const moderatedFeed = useMemo(() => {
-      if (!moderation.isReady) return [];
-      return feed.filter(item => moderatePost(item.post, moderation).visibility !== 'hide');
-    }, [feed, moderation]);
-
     const ListHeader = () => (
         <View style={styles.headerContainer}>
             {profile?.banner ? <Image source={{ uri: profile.banner }} style={styles.banner} /> : <View style={styles.banner} />}
@@ -226,9 +165,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 </View>
             </View>
             <View style={styles.tabBar}>
-                <Pressable onPress={() => handleTabChange('posts')} style={[styles.tab, activeTab === 'posts' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Posts</Text></Pressable>
-                <Pressable onPress={() => handleTabChange('replies')} style={[styles.tab, activeTab === 'replies' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>Replies</Text></Pressable>
-                <Pressable onPress={() => handleTabChange('media')} style={[styles.tab, activeTab === 'media' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'media' && styles.activeTabText]}>Media</Text></Pressable>
+                <Pressable onPress={() => setActiveTab('posts')} style={[styles.tab, activeTab === 'posts' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Posts</Text></Pressable>
+                <Pressable onPress={() => setActiveTab('replies')} style={[styles.tab, activeTab === 'replies' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>Replies</Text></Pressable>
+                <Pressable onPress={() => setActiveTab('media')} style={[styles.tab, activeTab === 'media' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'media' && styles.activeTabText]}>Media</Text></Pressable>
             </View>
         </View>
     );
@@ -252,6 +191,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             </>
         )
     }
+    
+    const feedLayout = activeTab === 'media' ? 'grid' : 'list';
+    const authorFeedFilter: AuthorFeedFilter = activeTab === 'posts' ? 'posts_no_replies' : activeTab === 'replies' ? 'posts_with_replies' : 'posts_with_media';
 
     return (
         <>
@@ -264,16 +206,12 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         </Pressable>
                     )}
                 </ScreenHeader>
-                <FlatList
-                    data={moderatedFeed}
-                    renderItem={({ item }) => <FullPostCard feedViewPost={item} />}
-                    keyExtractor={(item) => item.post.uri}
+                <Feed
+                    key={activeTab} // Force re-mount on tab change
+                    feedUri={actor}
+                    layout={feedLayout}
+                    authorFeedFilter={authorFeedFilter}
                     ListHeaderComponent={ListHeader}
-                    onEndReached={() => hasMore && !isLoadingFeed && fetchFeed(feedCursor)}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={() => isLoadingFeed && feed.length > 0 ? <ActivityIndicator style={{ margin: 32 }} /> : null}
-                    ListEmptyComponent={() => !isLoadingFeed ? <View style={styles.emptyFeedContainer}><Text style={styles.emptyFeedText}>{t('profile.emptyFeed', { mediaType: activeTab })}</Text></View> : null}
-                    contentContainerStyle={{ paddingBottom: 80 }}
                 />
                  <Modal visible={isActionsModalVisible} transparent={true} animationType="fade" onRequestClose={() => setIsActionsModalVisible(false)}>
                     <Pressable style={styles.modalBackdrop} onPress={() => setIsActionsModalVisible(false)}>
@@ -322,8 +260,6 @@ const styles = StyleSheet.create({
     activeTabText: { color: theme.colors.primary },
     blockedTitle: { ...theme.typography.titleLarge, marginTop: theme.spacing.l, color: theme.colors.onSurface, textAlign: 'center' },
     blockedDescription: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.s, textAlign: 'center' },
-    emptyFeedContainer: { padding: theme.spacing.xxl, alignItems: 'center' },
-    emptyFeedText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant },
     modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     bottomSheet: { backgroundColor: theme.colors.surfaceContainer, borderTopLeftRadius: theme.shape.extraLarge, borderTopRightRadius: theme.shape.extraLarge, padding: theme.spacing.l, paddingTop: theme.spacing.s, gap: theme.spacing.s },
     bottomSheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.m },

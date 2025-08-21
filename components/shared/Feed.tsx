@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
+import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
@@ -10,10 +11,15 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, Refre
 import theme from '@/lib/theme';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
+type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
 
 interface FeedProps {
-  feedUri: string; // 'following', at:// URI, or actor handle/did
+  feedUri?: string;
+  authorFeedFilter?: AuthorFeedFilter;
+  searchQuery?: string;
+  searchSort?: 'latest' | 'top';
   mediaFilter?: MediaFilter;
+  layout?: 'grid' | 'list';
   ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null;
 }
 
@@ -30,8 +36,15 @@ const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
     return post.embed?.$type === 'app.bsky.embed.video#view';
 }
 
-
-const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderComponent }) => {
+const Feed: React.FC<FeedProps> = ({ 
+    feedUri, 
+    authorFeedFilter,
+    searchQuery,
+    searchSort = 'top',
+    mediaFilter = 'all',
+    layout = 'grid', 
+    ListHeaderComponent 
+}) => {
   const { agent, session } = useAtp();
   const { t } = useTranslation();
   const moderation = useModeration();
@@ -44,39 +57,48 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
-    try {
+    if (searchQuery) {
+        const res = await agent.app.bsky.feed.searchPosts({ q: searchQuery, cursor: currentCursor, sort: searchSort, limit: 40 });
+        const feed: AppBskyFeedDefs.FeedViewPost[] = res.data.posts.map(post => ({ post }));
+        return { data: { feed, cursor: res.data.cursor } };
+    }
+    if (feedUri) {
         if (feedUri === 'following') {
             if (!session) return { data: { feed: [], cursor: undefined } };
             return agent.app.bsky.feed.getTimeline({ cursor: currentCursor, limit: 30 });
         }
-        if (feedUri.startsWith('at://')) {
-            return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+        if (authorFeedFilter) {
+            return agent.app.bsky.feed.getAuthorFeed({ actor: feedUri, cursor: currentCursor, limit: 30, filter: authorFeedFilter });
         }
-        // Assume it's an actor handle/did for getAuthorFeed
-        return agent.app.bsky.feed.getAuthorFeed({ actor: feedUri, cursor: currentCursor, limit: 30 });
-    } catch (e: any) {
-        // If getAuthorFeed fails for a URI that looked like a handle, it might be a feed URI from a custom domain.
-        if (!feedUri.startsWith('at://') && feedUri.includes('/')) {
-            try {
-                return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
-            } catch (e2) {
-                console.error("Failed to fetch feed as both author and feed URI:", e2);
-                throw e2; // throw original error
-            }
-        }
-        throw e;
+        return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
     }
-  }, [agent, feedUri, session]);
+    return Promise.resolve({ data: { feed: [], cursor: undefined } });
+  }, [agent, feedUri, session, searchQuery, searchSort, authorFeedFilter]);
 
-  const applyMediaFilter = useCallback((posts: AppBskyFeedDefs.FeedViewPost[]): AppBskyFeedDefs.FeedViewPost[] => {
-    const baseFiltered = posts.filter(item => !item.reply && isPostAMediaPost(item.post));
-     switch (mediaFilter) {
-        case 'all': return baseFiltered;
-        case 'photos': return baseFiltered.filter(item => hasPhotos(item.post));
-        case 'videos': return baseFiltered.filter(item => hasVideos(item.post));
-        default: return baseFiltered;
-    }
-  }, [mediaFilter]);
+  
+  const processAndSetFeed = useCallback((newPosts: AppBskyFeedDefs.FeedViewPost[], currentCursor?: string) => {
+      let processedPosts = newPosts;
+      if (layout === 'grid') {
+          processedPosts = newPosts.filter(item => !item.reply && isPostAMediaPost(item.post));
+          if (mediaFilter === 'photos') processedPosts = processedPosts.filter(item => hasPhotos(item.post));
+          if (mediaFilter === 'videos') processedPosts = processedPosts.filter(item => hasVideos(item.post));
+      } else { // layout === 'list'
+           if (authorFeedFilter === 'posts_no_replies') {
+              processedPosts = newPosts.filter(item => !item.reply);
+           }
+      }
+      
+      if (currentCursor) {
+          setFeed(prevFeed => {
+              const existingUris = new Set(prevFeed.map(p => p.post.uri));
+              const uniqueNewPosts = processedPosts.filter(p => !existingUris.has(p.post.uri));
+              return [...prevFeed, ...uniqueNewPosts];
+          });
+      } else {
+          setFeed(processedPosts);
+      }
+
+  }, [layout, mediaFilter, authorFeedFilter]);
 
   const loadInitialPosts = useCallback(async () => {
     setIsLoading(true);
@@ -86,16 +108,16 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     setHasMore(true);
     try {
         const response = await fetchPosts();
-        const mediaPosts = applyMediaFilter(response.data.feed);
-        setFeed(mediaPosts);
+        const posts = response.data.feed || [];
+        processAndSetFeed(posts);
         setCursor(response.data.cursor);
-        setHasMore(!!response.data.cursor && response.data.feed.length > 0);
+        setHasMore(!!response.data.cursor && posts.length > 0);
     } catch (err: any) {
         setError(t('feed.loadingError'));
     } finally {
         setIsLoading(false);
     }
-  }, [fetchPosts, applyMediaFilter, t]);
+  }, [fetchPosts, processAndSetFeed, t]);
 
   useEffect(() => {
     loadInitialPosts();
@@ -111,13 +133,9 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     setIsLoadingMore(true);
     try {
       const response = await fetchPosts(cursor);
-      if (response.data.feed.length > 0) {
-        const newMediaPosts = applyMediaFilter(response.data.feed);
-        setFeed(prevFeed => {
-            const existingCids = new Set(prevFeed.map(p => p.post.cid));
-            const uniqueNewPosts = newMediaPosts.filter(p => !existingCids.has(p.post.cid));
-            return [...prevFeed, ...uniqueNewPosts];
-        });
+      const posts = response.data.feed || [];
+      if (posts.length > 0) {
+        processAndSetFeed(posts, cursor);
         setCursor(response.data.cursor);
         setHasMore(!!response.data.cursor);
       } else {
@@ -126,7 +144,7 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     } finally {
       setIsLoadingMore(false);
     }
-  }, [cursor, hasMore, isLoadingMore, fetchPosts, applyMediaFilter]);
+  }, [cursor, hasMore, isLoadingMore, fetchPosts, processAndSetFeed]);
   
   const moderatedFeed = useMemo(() => {
     if (!moderation.isReady) return [];
@@ -134,17 +152,15 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   }, [feed, moderation]);
 
   const { column1Items, column2Items } = useMemo(() => {
+    if (layout !== 'grid') return { column1Items: [], column2Items: [] };
     const col1: AppBskyFeedDefs.FeedViewPost[] = [];
     const col2: AppBskyFeedDefs.FeedViewPost[] = [];
     moderatedFeed.forEach((item, index) => {
-        if (index % 2 === 0) {
-            col1.push(item);
-        } else {
-            col2.push(item);
-        }
+        if (index % 2 === 0) col1.push(item);
+        else col2.push(item);
     });
     return { column1Items: col1, column2Items: col2 };
-  }, [moderatedFeed]);
+  }, [moderatedFeed, layout]);
 
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
   
@@ -158,46 +174,40 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <View style={styles.masonryContainer}>
-          <View style={styles.column}>
-            {[...Array(4)].map((_, i) => <PostCardSkeleton key={`L-${i}`} />)}
-          </View>
-          <View style={styles.column}>
-            {[...Array(4)].map((_, i) => <PostCardSkeleton key={`R-${i}`} />)}
-          </View>
-        </View>
-      );
+      if (layout === 'grid') {
+          return (
+            <View style={styles.masonryContainer}>
+              <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+              <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+            </View>
+          );
+      }
+      return <View style={styles.listContainer}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
     }
     if (error) {
       return (
         <View style={styles.messageContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
-            <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
-          </Pressable>
+          <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}><Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text></Pressable>
         </View>
       );
     }
     if (moderatedFeed.length === 0) {
-      return (
-        <View style={styles.messageContainer}>
-          <Text style={styles.infoText}>{t('feed.empty')}</Text>
-        </View>
-      );
+      return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('feed.empty')}</Text></View>;
     }
+    
+    if (layout === 'list') {
+        return (
+            <View style={styles.listContainer}>
+                {moderatedFeed.map(item => <FullPostCard key={keyExtractor(item)} feedViewPost={item} />)}
+            </View>
+        );
+    }
+
     return (
         <View style={styles.masonryContainer}>
-            <View style={styles.column}>
-                {column1Items.map(item => (
-                    <PostCard key={keyExtractor(item)} feedViewPost={item} />
-                ))}
-            </View>
-            <View style={styles.column}>
-                {column2Items.map(item => (
-                    <PostCard key={keyExtractor(item)} feedViewPost={item} />
-                ))}
-            </View>
+            <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
+            <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
         </View>
     );
   };
@@ -210,13 +220,7 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
   };
 
   return (
-    <ScrollView
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
-        }
-    >
+    <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
         <View style={styles.contentContainer}>
             {renderHeader()}
             {renderContent()}
@@ -228,53 +232,16 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
 };
 
 const styles = StyleSheet.create({
-    contentContainer: { 
-        paddingHorizontal: theme.spacing.l, 
-        paddingTop: theme.spacing.l
-    },
-    masonryContainer: {
-        flexDirection: 'row',
-        gap: theme.spacing.l,
-    },
-    column: {
-        flex: 1,
-        gap: theme.spacing.l,
-    },
-    messageContainer: { 
-        padding: theme.spacing.xxl, 
-        backgroundColor: theme.colors.surfaceContainer, 
-        borderRadius: theme.shape.large, 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        marginTop: theme.spacing.l,
-    },
-    errorText: { 
-        ...theme.typography.bodyLarge,
-        color: theme.colors.error, 
-        textAlign: 'center', 
-        marginBottom: theme.spacing.l
-    },
-    infoText: { 
-        ...theme.typography.bodyLarge,
-        color: theme.colors.onSurfaceVariant, 
-        textAlign: 'center' 
-    },
-    endOfList: { 
-        ...theme.typography.bodyMedium,
-        textAlign: 'center', 
-        color: theme.colors.onSurfaceVariant,
-        padding: theme.spacing.xxl 
-    },
-    tryAgainButton: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
-        paddingHorizontal: theme.spacing.xl,
-        paddingVertical: theme.spacing.m,
-        borderRadius: theme.shape.full,
-    },
-    tryAgainText: {
-        ...theme.typography.labelLarge,
-        color: theme.colors.onSurface,
-    }
+    contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 80 },
+    masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
+    listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, },
+    column: { flex: 1, gap: theme.spacing.l, },
+    messageContainer: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center', justifyContent: 'center', margin: theme.spacing.l },
+    errorText: { ...theme.typography.bodyLarge, color: theme.colors.error, textAlign: 'center', marginBottom: theme.spacing.l },
+    infoText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant, textAlign: 'center' },
+    endOfList: { ...theme.typography.bodyMedium, textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
+    tryAgainButton: { backgroundColor: theme.colors.surfaceContainerHigh, paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.m, borderRadius: theme.shape.full, },
+    tryAgainText: { ...theme.typography.labelLarge, color: theme.colors.onSurface, }
 });
 
 export default Feed;
