@@ -106,19 +106,19 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         }
     }, [agent, profile, activeTab]);
     
+    useEffect(() => {
+        if (profile) {
+            fetchFeed(undefined, activeTab);
+        }
+    }, [profile?.did, activeTab]);
+
     const handleTabChange = (tab: ActiveTab) => {
+        if (tab === activeTab) return;
         setActiveTab(tab);
         setFeed([]);
         setFeedCursor(undefined);
         setHasMore(true);
-        fetchFeed(undefined, tab);
-    }
-
-    useEffect(() => {
-        if (profile) {
-            handleTabChange('posts');
-        }
-    }, [profile]);
+    };
 
     const handleFollowToggle = async () => {
         if (isActionLoading || !profile || !session) return;
