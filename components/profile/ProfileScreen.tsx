@@ -14,9 +14,6 @@ import Head from '../shared/Head';
 import ScreenHeader from '../layout/ScreenHeader';
 import theme from '@/lib/theme';
 
-type ActiveTab = 'posts' | 'replies' | 'media';
-type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
-
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { t } = useTranslation();
@@ -28,8 +25,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [descriptionWithFacets, setDescriptionWithFacets] = useState<{ text: string, facets: RichText['facets'] | undefined } | null>(null);
-    const [activeTab, setActiveTab] = useState<ActiveTab>('posts');
-
+    
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
 
@@ -164,11 +160,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     </View>
                 </View>
             </View>
-            <View style={styles.tabBar}>
-                <Pressable onPress={() => setActiveTab('posts')} style={[styles.tab, activeTab === 'posts' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Posts</Text></Pressable>
-                <Pressable onPress={() => setActiveTab('replies')} style={[styles.tab, activeTab === 'replies' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>Replies</Text></Pressable>
-                <Pressable onPress={() => setActiveTab('media')} style={[styles.tab, activeTab === 'media' && styles.activeTab]}><Text style={[styles.tabText, activeTab === 'media' && styles.activeTabText]}>Media</Text></Pressable>
-            </View>
         </View>
     );
 
@@ -191,9 +182,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
             </>
         )
     }
-    
-    const feedLayout = activeTab === 'media' ? 'grid' : 'list';
-    const authorFeedFilter: AuthorFeedFilter = activeTab === 'posts' ? 'posts_no_replies' : activeTab === 'replies' ? 'posts_with_replies' : 'posts_with_media';
 
     return (
         <>
@@ -207,10 +195,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     )}
                 </ScreenHeader>
                 <Feed
-                    key={activeTab} // Force re-mount on tab change
                     feedUri={actor}
-                    layout={feedLayout}
-                    authorFeedFilter={authorFeedFilter}
+                    layout="grid"
+                    authorFeedFilter="posts_with_media"
                     ListHeaderComponent={ListHeader}
                 />
                  <Modal visible={isActionsModalVisible} transparent={true} animationType="fade" onRequestClose={() => setIsActionsModalVisible(false)}>
@@ -253,11 +240,6 @@ const styles = StyleSheet.create({
     statsContainer: { flexDirection: 'row', gap: theme.spacing.l, marginTop: theme.spacing.xs },
     statNumber: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, fontWeight: 'bold' },
     statLabel: { color: theme.colors.onSurfaceVariant, fontWeight: 'normal' },
-    tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: theme.colors.outline },
-    tab: { flex: 1, padding: theme.spacing.m, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    activeTab: { borderBottomColor: theme.colors.primary },
-    tabText: { ...theme.typography.titleSmall, color: theme.colors.onSurfaceVariant },
-    activeTabText: { color: theme.colors.primary },
     blockedTitle: { ...theme.typography.titleLarge, marginTop: theme.spacing.l, color: theme.colors.onSurface, textAlign: 'center' },
     blockedDescription: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.s, textAlign: 'center' },
     modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
