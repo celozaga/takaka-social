@@ -92,7 +92,7 @@ const WatchScreen: React.FC = () => {
                             />
                         </View>
                     )}
-                    keyExtractor={(item, index) => `${item.post.uri}-${index}`}
+                    keyExtractor={(item) => item.post.uri}
                     pagingEnabled
                     showsVerticalScrollIndicator={false}
                     onEndReached={() => fetchVideos(cursor)}
@@ -105,6 +105,10 @@ const WatchScreen: React.FC = () => {
                     onViewableItemsChanged={onViewableItemsChanged}
                     viewabilityConfig={viewabilityConfig}
                     getItemLayout={(_, index) => ({ length: height, offset: height * index, index })}
+                    windowSize={3}
+                    initialNumToRender={1}
+                    maxToRenderPerBatch={2}
+                    removeClippedSubviews={true}
                 />
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <ArrowLeft size={24} color="#FFFFFF" />
