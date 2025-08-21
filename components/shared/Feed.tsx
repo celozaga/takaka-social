@@ -173,19 +173,19 @@ const Feed: React.FC<FeedProps> = ({
   };
 
   const renderFooter = () => (
-    <>
+    <View>
       {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
       {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
-    </>
+    </View>
   );
   
   const renderListEmptyComponent = () => (
     <View style={styles.messageContainer}>
       {error ? (
-        <>
+        <View style={{ alignItems: 'center' }}>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}><Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text></Pressable>
-        </>
+        </View>
       ) : (
         <Text style={styles.infoText}>{t('feed.empty')}</Text>
       )}
