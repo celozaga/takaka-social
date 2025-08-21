@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import {AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl } from 'react-native';
 import theme from '@/lib/theme';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
@@ -133,15 +133,30 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
     return feed.filter(item => moderatePost(item.post, moderation).visibility !== 'hide');
   }, [feed, moderation]);
 
+  const { column1Items, column2Items } = useMemo(() => {
+    const col1: AppBskyFeedDefs.FeedViewPost[] = [];
+    const col2: AppBskyFeedDefs.FeedViewPost[] = [];
+    moderatedFeed.forEach((item, index) => {
+        if (index % 2 === 0) {
+            col1.push(item);
+        } else {
+            col2.push(item);
+        }
+    });
+    return { column1Items: col1, column2Items: col2 };
+  }, [moderatedFeed]);
+
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
   
-  const renderItem = ({ item }: { item:AppBskyFeedDefs.FeedViewPost }) => (
-    <View style={styles.itemContainer}>
-        <PostCard feedViewPost={item} />
-    </View>
-  );
+  const handleScroll = ({ nativeEvent }: { nativeEvent: { layoutMeasurement: any, contentOffset: any, contentSize: any } }) => {
+    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
+    if (isCloseToBottom) {
+        loadMorePosts();
+    }
+  };
   
-  const renderListEmptyComponent = () => {
+  const renderContent = () => {
     if (isLoading) {
       return (
         <View style={styles.masonryContainer}>
@@ -171,42 +186,44 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
         </View>
       );
     }
-    return null;
+    return (
+        <View style={styles.masonryContainer}>
+            <View style={styles.column}>
+                {column1Items.map(item => (
+                    <PostCard key={keyExtractor(item)} feedViewPost={item} />
+                ))}
+            </View>
+            <View style={styles.column}>
+                {column2Items.map(item => (
+                    <PostCard key={keyExtractor(item)} feedViewPost={item} />
+                ))}
+            </View>
+        </View>
+    );
   };
 
   return (
-    <FlatList
-        data={moderatedFeed}
-        numColumns={2}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        onRefresh={onRefresh}
-        refreshing={isRefreshing}
-        onEndReached={loadMorePosts}
-        onEndReachedThreshold={0.8}
-        ListHeaderComponent={ListHeaderComponent}
-        ListEmptyComponent={renderListEmptyComponent}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.contentContainer}
-        ListFooterComponent={() => {
-            if (isLoadingMore) return <ActivityIndicator size="large" style={{ marginVertical: 20 }} />;
-            if (!hasMore && moderatedFeed.length > 0) return <Text style={styles.endOfList}>{t('common.endOfList')}</Text>;
-            return null;
-        }}
-    />
+    <ScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+        }
+    >
+        <View style={styles.contentContainer}>
+            {ListHeaderComponent}
+            {renderContent()}
+            {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
+            {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
+        </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-    columnWrapper: { 
-        gap: theme.spacing.l,
-    },
     contentContainer: { 
         paddingHorizontal: theme.spacing.l, 
         paddingTop: theme.spacing.l
-    },
-    itemContainer: {
-        flex: 1 / 2,
     },
     masonryContainer: {
         flexDirection: 'row',
