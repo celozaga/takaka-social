@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ComAtprotoLabelDefs } from '@atproto/api';
 import { ShieldAlert } from 'lucide-react';

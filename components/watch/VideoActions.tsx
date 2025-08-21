@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'expo-router';
 import { Heart, MessageCircle, Repeat, Share2, BadgeCheck, Plus, Check, MoreHorizontal } from 'lucide-react';

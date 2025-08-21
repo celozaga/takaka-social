@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
-import { AtUri, AppBskyFeedDefs } from '@atproto/api';
+import { AtUri,AppBskyFeedDefs } from '@atproto/api';
 import { EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, ShieldOff } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 

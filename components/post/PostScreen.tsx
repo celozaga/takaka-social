@@ -269,7 +269,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ did, rkey }) => {
   }
 
   const currentRecord = mainPost.record as { text: string, facets?: RichText['facets'], createdAt: string };
-  const allReplies = (thread.replies || []).filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
+  const allReplies = (thread.replies || []).filter(reply =>AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[];
   
   return (
     <>

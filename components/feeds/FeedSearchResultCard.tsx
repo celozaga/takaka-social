@@ -7,7 +7,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
 
 interface FeedSearchResultCardProps {
-  feed: AppBskyFeedDefs.GeneratorView;
+  feed:AppBskyFeedDefs.GeneratorView;
   isPinned: boolean;
   onTogglePin: () => void;
 }

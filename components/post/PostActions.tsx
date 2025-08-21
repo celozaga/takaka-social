@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Heart, Repeat, MessageCircle } from 'lucide-react';
 import { useAtp } from '../../context/AtpContext';

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';

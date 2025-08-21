@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { List } from 'lucide-react';
 import { View, Image, StyleSheet, StyleProp, ImageStyle } from 'react-native';
