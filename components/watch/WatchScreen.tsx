@@ -9,7 +9,7 @@ import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 
-const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
+const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids';
 
 const WatchScreen: React.FC = () => {
     const { agent } = useAtp();
