@@ -209,13 +209,12 @@ const Feed: React.FC<FeedProps> = ({ feedUri, mediaFilter = 'all', ListHeaderCom
         refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
+        contentContainerStyle={styles.contentContainer}
     >
-        <View style={styles.contentContainer}>
-            {ListHeaderComponent}
-            {renderContent()}
-            {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
-            {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
-        </View>
+        {ListHeaderComponent}
+        {renderContent()}
+        {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
+        {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
     </ScrollView>
   );
 };
