@@ -1,8 +1,9 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text } from 'react-native';
 import { Link } from 'expo-router';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -120,19 +121,21 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
               shouldPlay={!isEffectivelyPaused}
               isMuted={isMuted}
               onPlaybackStatusUpdate={(s: AVPlaybackStatus) => {
-                if (s.isLoaded) {
-                  const newProgress = s.positionMillis / s.durationMillis;
-                  setProgress(newProgress || 0);
-                  if (s.isBuffering) {
-                    if (status !== 'loading') setStatus('buffering');
-                  } else {
-                    setStatus('playing');
-                  }
-                } else {
+                if (!s.isLoaded) {
                   if (s.error) {
                     console.error('Video Error:', s.error);
                     setStatus('error');
                   }
+                  return;
+                }
+                
+                const newProgress = s.positionMillis / (s.durationMillis || 1);
+                setProgress(newProgress || 0);
+                
+                if (s.isBuffering) {
+                  if (status !== 'loading') setStatus('buffering');
+                } else {
+                  setStatus('playing');
                 }
               }}
               onLoadStart={() => setStatus('loading')}

@@ -1,17 +1,18 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Modal, Linking, Alert, Platform } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { AppBskyActorDefs, RichText, AtUri } from '@atproto/api';
 import Feed from '../shared/Feed';
-import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X } from 'lucide-react';
+import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X, ArrowLeft } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from '../shared/Head';
-import ScreenHeader from '../layout/ScreenHeader';
+import TopAppBar from '../ui/TopAppBar';
 import { theme } from '@/lib/theme';
 import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';
 import PostCardSkeleton from '../post/PostCardSkeleton';
@@ -20,6 +21,7 @@ import { formatCompactNumber } from '@/lib/formatters';
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
     const { t } = useTranslation();
+    const router = useRouter();
     const { toast } = useToast();
     const { getProfile, clearProfile } = useProfileCache();
     const { openEditProfileModal } = useUI();
@@ -135,40 +137,55 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     const ListHeader = () => (
         <View style={styles.headerContainer}>
-            {profile?.banner ? <Image source={{ uri: profile.banner }} style={styles.banner} /> : <View style={styles.banner} />}
-            <View style={styles.profileInfoContainer}>
-                <View style={styles.avatarActionRow}>
-                    <Image source={{ uri: profile?.avatar }} style={styles.avatar} />
+            <View style={styles.statsRow}>
+                <Image source={{ uri: profile?.avatar }} style={styles.avatar} />
+                <View style={styles.stats}>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statNumber}>{formatCompactNumber(profile?.postsCount ?? 0)}</Text>
+                        <Text style={styles.statLabel}>{t('common.posts')}</Text>
+                    </View>
+                    <Link href={`/profile/${actor}/following`} asChild>
+                        <Pressable style={styles.statItem}>
+                            <Text style={styles.statNumber}>{formatCompactNumber(profile?.followsCount ?? 0)}</Text>
+                            <Text style={styles.statLabel}>{t('common.following')}</Text>
+                        </Pressable>
+                    </Link>
+                    <Link href={`/profile/${actor}/followers`} asChild>
+                        <Pressable style={styles.statItem}>
+                            <Text style={styles.statNumber}>{formatCompactNumber(profile?.followersCount ?? 0)}</Text>
+                            <Text style={styles.statLabel}>{t('common.followers')}</Text>
+                        </Pressable>
+                    </Link>
+                </View>
+            </View>
+            <View style={styles.detailsContainer}>
+                <View style={styles.nameContainer}>
+                    <Text style={styles.displayName}>{profile?.displayName || `@${profile?.handle}`}</Text>
+                    {profile?.labels?.some(l => l.val === 'blue-check') && <BadgeCheck size={20} color={theme.colors.onSurface} fill={theme.colors.onSurface} />}
+                </View>
+                {descriptionWithFacets && <Text style={styles.description}><RichTextRenderer record={descriptionWithFacets} /></Text>}
+            </View>
+             {session && (
+                <View style={styles.actionButtonContainer}>
                     {isMe ? (
                         <Pressable onPress={openEditProfileModal} style={[styles.actionButton, styles.editButton]}>
+                            <Edit size={16} color={theme.colors.onSurface} />
                             <Text style={styles.actionButtonText}>{t('common.editProfile')}</Text>
                         </Pressable>
-                    ) : session && (
+                    ) : (
                         <Pressable onPress={handleFollowToggle} disabled={isActionLoading} style={[styles.actionButton, profile?.viewer?.following ? styles.followingButton : styles.followButton]}>
                             {isActionLoading ? <ActivityIndicator color={profile?.viewer?.following ? theme.colors.onSurface : theme.colors.onPrimary} /> : <Text style={[styles.actionButtonText, !profile?.viewer?.following && styles.followButtonText]}>{t(profile?.viewer?.following ? 'common.following' : 'common.follow')}</Text>}
                         </Pressable>
                     )}
                 </View>
-                <View style={styles.detailsContainer}>
-                    <View style={styles.nameContainer}>
-                        <Text style={styles.displayName}>{profile?.displayName || `@${profile?.handle}`}</Text>
-                        {profile?.labels?.some(l => l.val === 'blue-check') && <BadgeCheck size={20} color={theme.colors.onSurface} fill={theme.colors.onSurface} />}
-                    </View>
-                    <Text style={styles.handle}>@{profile?.handle}</Text>
-                    {descriptionWithFacets && <Text style={styles.description}><RichTextRenderer record={descriptionWithFacets} /></Text>}
-                    <View style={styles.statsContainer}>
-                        <Link href={`/profile/${actor}/following`} asChild><Pressable><Text style={styles.statNumber}>{formatCompactNumber(profile?.followsCount ?? 0)} <Text style={styles.statLabel}>{t('common.following')}</Text></Text></Pressable></Link>
-                        <Link href={`/profile/${actor}/followers`} asChild><Pressable><Text style={styles.statNumber}>{formatCompactNumber(profile?.followersCount ?? 0)} <Text style={styles.statLabel}>{t('common.followers')}</Text></Text></Pressable></Link>
-                    </View>
-                </View>
-            </View>
+             )}
         </View>
     );
 
     if (isLoading) {
         return (
           <>
-            <ScreenHeader title={t('profile.title')} />
+            <TopAppBar title={t('profile.title')} />
             <ProfileHeaderSkeleton />
             <View style={{ flexDirection: 'row', gap: theme.spacing.l, padding: theme.spacing.l, backgroundColor: theme.colors.background }}>
               <View style={{ flex: 1, gap: theme.spacing.l }}><PostCardSkeleton /><PostCardSkeleton /></View>
@@ -177,15 +194,15 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
           </>
         );
     }
-    if (error) return <View><ScreenHeader title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{error}</Text></View></View>;
-    if (!profile) return <View><ScreenHeader title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{t('profile.notFound')}</Text></View></View>;
+    if (error) return <View><TopAppBar title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{error}</Text></View></View>;
+    if (!profile) return <View><TopAppBar title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{t('profile.notFound')}</Text></View></View>;
     
-    if (profile.viewer?.blockedBy) return <><ScreenHeader title={profile.handle} /><View style={styles.centered}><Shield size={48} color={theme.colors.onSurfaceVariant} /><Text style={styles.blockedTitle}>{t('profile.blockedBy')}</Text></View></>;
+    if (profile.viewer?.blockedBy) return <><TopAppBar title={profile.handle} /><View style={styles.centered}><Shield size={48} color={theme.colors.onSurfaceVariant} /><Text style={styles.blockedTitle}>{t('profile.blockedBy')}</Text></View></>;
 
     if (profile.viewer?.blocking) {
         return (
             <>
-                <ScreenHeader title={profile.handle} />
+                <TopAppBar title={`@${profile.handle}`} />
                 <View style={[styles.centered, {justifyContent: 'flex-start', paddingTop: 32}]}>
                     <UserX size={48} color={theme.colors.onSurfaceVariant} />
                     <Text style={styles.blockedTitle}>{t('profile.blockedUser', { handle: profile.handle })}</Text>
@@ -200,13 +217,15 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         <>
             <Head><title>{profile.displayName || `@${profile.handle}`}</title>{profile.description && <meta name="description" content={profile.description} />}{profile.avatar && <meta property="og:image" content={profile.avatar} />}</Head>
             <View style={styles.container}>
-                <ScreenHeader title={profile.displayName || `@${profile.handle}`}>
-                    {!isMe && session && (
+                 <TopAppBar 
+                    title={`@${profile.handle}`}
+                    leading={<Pressable onPress={() => router.back()} style={styles.headerButton}><ArrowLeft size={24} color={theme.colors.onSurface} /></Pressable>}
+                    actions={!isMe && session && (
                         <Pressable onPress={() => setIsActionsModalVisible(true)} style={styles.headerButton}>
                             <MoreHorizontal size={24} color={theme.colors.onSurface} />
                         </Pressable>
                     )}
-                </ScreenHeader>
+                />
                 <Feed
                     feedUri={actor}
                     layout="grid"
@@ -233,26 +252,25 @@ const styles = StyleSheet.create({
     errorText: { color: theme.colors.error, ...theme.typography.bodyLarge },
     container: { flex: 1, backgroundColor: theme.colors.background },
     headerButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
-    headerContainer: { backgroundColor: theme.colors.background },
-    banner: { width: '100%', height: 150, backgroundColor: theme.colors.surfaceContainerHigh },
-    profileInfoContainer: { paddingHorizontal: theme.spacing.l, paddingBottom: theme.spacing.l },
-    avatarActionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: -48, marginBottom: theme.spacing.m },
-    avatar: { width: 96, height: 96, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh, borderWidth: 4, borderColor: theme.colors.background },
-    actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.s, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.l, borderRadius: theme.shape.medium, minWidth: 120 },
+    headerContainer: { backgroundColor: theme.colors.background, padding: theme.spacing.l, gap: theme.spacing.m },
+    statsRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l },
+    avatar: { width: 80, height: 80, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    stats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
+    statItem: { alignItems: 'center', gap: theme.spacing.xs },
+    statNumber: { ...theme.typography.titleMedium, color: theme.colors.onSurface },
+    statLabel: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
+    detailsContainer: { gap: theme.spacing.s },
+    nameContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s },
+    displayName: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
+    description: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, lineHeight: 20 },
+    actionButtonContainer: { marginTop: theme.spacing.m },
+    actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.s, paddingVertical: theme.spacing.m, borderRadius: theme.shape.medium, width: '100%' },
     editButton: { backgroundColor: theme.colors.surfaceContainerHigh },
     followingButton: { backgroundColor: theme.colors.surfaceContainerHigh },
     followButton: { backgroundColor: theme.colors.primary },
     actionButtonText: { ...theme.typography.labelLarge, color: theme.colors.onSurface, fontWeight: 'bold' },
     followButtonText: { color: theme.colors.onPrimary },
     unblockButton: { backgroundColor: theme.colors.surfaceContainerHigh, marginTop: theme.spacing.l },
-    detailsContainer: { gap: theme.spacing.s },
-    nameContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s },
-    displayName: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
-    handle: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant },
-    description: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, lineHeight: 20 },
-    statsContainer: { flexDirection: 'row', gap: theme.spacing.l, marginTop: theme.spacing.xs },
-    statNumber: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, fontWeight: 'bold' },
-    statLabel: { color: theme.colors.onSurfaceVariant, fontWeight: 'normal' },
     blockedTitle: { ...theme.typography.titleLarge, marginTop: theme.spacing.l, color: theme.colors.onSurface, textAlign: 'center' },
     blockedDescription: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.s, textAlign: 'center' },
     modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
