@@ -52,6 +52,11 @@ function AppLayout() {
   const isFullScreenPage = ['/watch'].some(p => pathname.startsWith(p));
   const showNav = !isFullScreenPage;
 
+  const appContainerStyle: StyleProp<ViewStyle> = [
+    styles.appContainer,
+    isDesktop && showNav && styles.appContainerDesktop,
+  ];
+
   const mainContentStyle: StyleProp<ViewStyle> = [
     styles.mainContent,
     isFullScreenPage && styles.fullScreenContent,
@@ -60,21 +65,12 @@ function AppLayout() {
 
   return (
       <SafeAreaView style={styles.container}>
-        {isDesktop && showNav ? (
-          <View style={styles.desktopWrapper}>
-            <BottomNavbar />
-            <View style={mainContentStyle}>
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: theme.colors.background } }} />
-            </View>
+        <View style={appContainerStyle}>
+          {showNav && <BottomNavbar />}
+          <View style={mainContentStyle}>
+            <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: theme.colors.background } }} />
           </View>
-        ) : (
-          <>
-            {showNav && <BottomNavbar />}
-            <View style={mainContentStyle}>
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: theme.colors.background } }} />
-            </View>
-          </>
-        )}
+        </View>
         
         {!session && showNav && <LoginPrompt />}
 
@@ -188,8 +184,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  desktopWrapper: {
+  appContainer: {
     flex: 1,
+    flexDirection: 'column',
+  },
+  appContainerDesktop: {
     flexDirection: 'row',
     width: '100%',
     maxWidth: 720,

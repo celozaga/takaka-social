@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform, StyleProp, ViewStyle, useWindowDimensions } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -26,7 +26,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     const author = post.author;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
-    const [containerWidth, setContainerWidth] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
@@ -34,6 +33,8 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
     const playerRef = useRef<PlayerRef | null>(null);
     const [videoStatus, setVideoStatus] = useState<AVPlaybackStatusSuccess | null>(null);
+    const { width } = useWindowDimensions();
+
 
     const fetchPlaybackUrl = useCallback(async (postUri: string, authorDid: string, videoCid: string) => {
         if (playbackUrls.has(postUri)) return;
@@ -66,11 +67,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             }
         }
     }, [post.embed, post.uri, post.author.did, fetchPlaybackUrl]);
-
-
-    const onLayout = (event: { nativeEvent: { layout: { width: number } } }) => {
-        setContainerWidth(event.nativeEvent.layout.width);
-    };
 
     const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
@@ -122,78 +118,76 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
         
         if (mediaItems.length === 1) {
-            const renderSingleMedia = () => {
-                if (containerWidth === 0) return null;
+            const item = mediaItems[0];
+            const isVideo = 'view' in item;
 
-                const item = mediaItems[0];
-                const isVideo = 'view' in item;
+            const aspectRatio = isVideo
+                ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio
+                    ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio.width / (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio.height
+                    : 16 / 9
+                : (item as AppBskyEmbedImages.ViewImage).aspectRatio
+                    ? (item as AppBskyEmbedImages.ViewImage).aspectRatio.width / (item as AppBskyEmbedImages.ViewImage).aspectRatio.height
+                    : 1.5;
 
-                const aspectRatio = isVideo
-                    ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio
-                        ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio.width / (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio.height
-                        : 16 / 9
-                    : (item as AppBskyEmbedImages.ViewImage).aspectRatio
-                        ? (item as AppBskyEmbedImages.ViewImage).aspectRatio.width / (item as AppBskyEmbedImages.ViewImage).aspectRatio.height
-                        : 1.5;
-                
-                const mediaHeight = Math.min(containerWidth / aspectRatio, 700);
-
-                if (isVideo) {
-                    const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
-                    const hlsUrl = playbackUrls.get(post.uri);
-                    const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
-                    blobUrl.searchParams.set('did', authorDid);
-                    blobUrl.searchParams.set('cid', videoItem.view.cid);
-                    const blobVideoUrl = blobUrl.toString();
-
-                    return (
-                        <Pressable onPress={handleVideoPress} style={[styles.videoContainer, { height: mediaHeight }]}>
-                            <SharedVideoPlayer
-                                onReady={(player) => { playerRef.current = player; }}
-                                onPlaybackStatusUpdate={(status) => { if(status.isLoaded) setVideoStatus(status as AVPlaybackStatusSuccess) }}
-                                options={{
-                                    autoplay: true,
-                                    controls: false,
-                                    poster: videoItem.view.thumbnail,
-                                    sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }],
-                                    loop: true,
-                                    muted: true,
-                                }}
-                                style={{ width: '100%', height: '100%' }}
-                            />
-                            {videoStatus && !videoStatus.isPlaying && (
-                                <View style={styles.playButtonOverlay}>
-                                    <PlayCircle size={64} color="rgba(255, 255, 255, 0.8)" fill="rgba(0,0,0,0.3)" />
-                                </View>
-                            )}
-                            <Pressable onPress={toggleMute} style={styles.muteButton}>
-                                {videoStatus?.isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
-                            </Pressable>
-                        </Pressable>
-                    );
-                } else {
-                    const imageItem = item as AppBskyEmbedImages.ViewImage;
-                    return (
-                        <Pressable 
-                            style={{ marginTop: theme.spacing.s, borderRadius: theme.shape.medium, overflow: 'hidden', height: mediaHeight }} 
-                            onPress={(e) => { e.stopPropagation(); Linking.openURL(imageItem.fullsize); }}
-                            {...(Platform.OS === 'web' && {
-                                onMouseEnter: () => setIsHovered(true),
-                                onMouseLeave: () => setIsHovered(false),
-                            } as any)}
-                        >
-                            <ResizedImage src={imageItem.thumb} resizeWidth={1200} alt={imageItem.alt || 'Post image'} style={styles.singleImage} resizeMode="contain" />
-                            <View style={[styles.imageOverlay, { opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0 }]}><ExternalLink color="white" size={24} /></View>
-                        </Pressable>
-                    );
-                }
+            const mediaStyle = {
+                marginTop: theme.spacing.s,
+                borderRadius: theme.shape.medium,
+                overflow: 'hidden',
+                aspectRatio,
+                maxHeight: 700,
+                width: '100%',
+                backgroundColor: 'black'
             };
-            
-            return (
-                <View onLayout={onLayout}>
-                    {renderSingleMedia()}
-                </View>
-            );
+
+            if (isVideo) {
+                const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
+                const hlsUrl = playbackUrls.get(post.uri);
+                const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
+                blobUrl.searchParams.set('did', authorDid);
+                blobUrl.searchParams.set('cid', videoItem.view.cid);
+                const blobVideoUrl = blobUrl.toString();
+
+                return (
+                    <Pressable onPress={handleVideoPress} style={mediaStyle}>
+                        <SharedVideoPlayer
+                            onReady={(player) => { playerRef.current = player; }}
+                            onPlaybackStatusUpdate={(status) => { if(status.isLoaded) setVideoStatus(status as AVPlaybackStatusSuccess) }}
+                            options={{
+                                autoplay: true,
+                                controls: false,
+                                poster: videoItem.view.thumbnail,
+                                sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }],
+                                loop: true,
+                                muted: true,
+                            }}
+                            style={{ width: '100%', height: '100%' }}
+                        />
+                        {videoStatus && !videoStatus.isPlaying && (
+                            <View style={styles.playButtonOverlay}>
+                                <PlayCircle size={64} color="rgba(255, 255, 255, 0.8)" fill="rgba(0,0,0,0.3)" />
+                            </View>
+                        )}
+                        <Pressable onPress={toggleMute} style={styles.muteButton}>
+                            {videoStatus?.isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
+                        </Pressable>
+                    </Pressable>
+                );
+            } else {
+                const imageItem = item as AppBskyEmbedImages.ViewImage;
+                return (
+                    <Pressable 
+                        style={mediaStyle}
+                        onPress={(e) => { e.stopPropagation(); Linking.openURL(imageItem.fullsize); }}
+                        {...(Platform.OS === 'web' && {
+                            onMouseEnter: () => setIsHovered(true),
+                            onMouseLeave: () => setIsHovered(false),
+                        } as any)}
+                    >
+                        <ResizedImage src={imageItem.thumb} resizeWidth={1200} alt={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                        <View style={[styles.imageOverlay, { opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0 }]}><ExternalLink color="white" size={24} /></View>
+                    </Pressable>
+                );
+            }
         }
 
         const firstItem = mediaItems[0];
@@ -204,12 +198,12 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             slideshowAspectRatio = firstItem.aspectRatio ? firstItem.aspectRatio.width / firstItem.aspectRatio.height : 1.5;
         }
 
-        const slideshowHeight = containerWidth > 0 ? Math.min(containerWidth / slideshowAspectRatio, 700) : 300;
-
         const renderSlideshowItem = ({ item }: { item: MediaItem }) => {
             const isVideo = 'type' in item && item.type === 'video';
+            const itemWidth = width - (theme.spacing.l * 2); // Full width minus container padding
+
             return (
-                <View style={{ width: containerWidth, height: slideshowHeight, justifyContent: 'center' }}>
+                <View style={{ width: itemWidth, height: '100%', justifyContent: 'center' }}>
                     {isVideo ? (
                          (() => {
                             const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
@@ -253,49 +247,48 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
             }
         };
+        const itemWidth = width - (theme.spacing.l * 2);
 
         return (
-            <View style={styles.slideshowOuterContainer} onLayout={onLayout}>
-                {containerWidth > 0 && (
-                    <View 
-                        style={[styles.slideshowInnerContainer, { height: slideshowHeight }]}
-                        {...(Platform.OS === 'web' && {
-                            onMouseEnter: () => setIsHovered(true),
-                            onMouseLeave: () => setIsHovered(false),
-                        } as any)}
-                    >
-                        <FlatList
-                            ref={flatListRef}
-                            data={mediaItems}
-                            renderItem={renderSlideshowItem}
-                            horizontal
-                            pagingEnabled
-                            showsHorizontalScrollIndicator={false}
-                            keyExtractor={(item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index}
-                            onViewableItemsChanged={onViewableItemsChanged}
-                            viewabilityConfig={viewabilityConfig}
-                            style={{ borderRadius: theme.shape.medium }}
-                            getItemLayout={(_, index) => ({
-                                length: containerWidth,
-                                offset: containerWidth * index,
-                                index,
-                            })}
-                        />
-                        <View style={styles.counterOverlay}>
-                            <Text style={styles.counterText}>{currentIndex + 1} / {mediaItems.length}</Text>
-                        </View>
-                         {showArrows && currentIndex > 0 && (
-                            <Pressable style={[styles.arrow, styles.arrowLeft]} onPress={handlePrev}>
-                                <ChevronLeft style={styles.arrowIcon} color="white" size={24} />
-                            </Pressable>
-                        )}
-                        {showArrows && currentIndex < mediaItems.length - 1 && (
-                            <Pressable style={[styles.arrow, styles.arrowRight]} onPress={handleNext}>
-                                <ChevronRight style={styles.arrowIcon} color="white" size={24} />
-                            </Pressable>
-                        )}
+            <View style={styles.slideshowOuterContainer}>
+                <View 
+                    style={[styles.slideshowInnerContainer, { aspectRatio: slideshowAspectRatio, maxHeight: 700 }]}
+                    {...(Platform.OS === 'web' && {
+                        onMouseEnter: () => setIsHovered(true),
+                        onMouseLeave: () => setIsHovered(false),
+                    } as any)}
+                >
+                    <FlatList
+                        ref={flatListRef}
+                        data={mediaItems}
+                        renderItem={renderSlideshowItem}
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        keyExtractor={(item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index}
+                        onViewableItemsChanged={onViewableItemsChanged}
+                        viewabilityConfig={viewabilityConfig}
+                        style={{ borderRadius: theme.shape.medium }}
+                        getItemLayout={(_, index) => ({
+                            length: itemWidth,
+                            offset: itemWidth * index,
+                            index,
+                        })}
+                    />
+                    <View style={styles.counterOverlay}>
+                        <Text style={styles.counterText}>{currentIndex + 1} / {mediaItems.length}</Text>
                     </View>
-                )}
+                        {showArrows && currentIndex > 0 && (
+                        <Pressable style={[styles.arrow, styles.arrowLeft]} onPress={handlePrev}>
+                            <ChevronLeft style={styles.arrowIcon} color="white" size={24} />
+                        </Pressable>
+                    )}
+                    {showArrows && currentIndex < mediaItems.length - 1 && (
+                        <Pressable style={[styles.arrow, styles.arrowRight]} onPress={handleNext}>
+                            <ChevronRight style={styles.arrowIcon} color="white" size={24} />
+                        </Pressable>
+                    )}
+                </View>
                 <View style={styles.dotsContainer}>
                     {mediaItems.map((_, index) => (
                         <View key={index} style={[styles.dot, index === currentIndex && styles.dotActive]} />
@@ -375,16 +368,11 @@ const styles = StyleSheet.create({
         borderRadius: theme.shape.medium,
         overflow: 'hidden',
         backgroundColor: '#000',
+        width: '100%',
     },
     slideshowImage: {
         width: '100%',
         height: '100%',
-    },
-    singleImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: theme.shape.medium,
-        backgroundColor: 'black',
     },
     imageOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -445,14 +433,6 @@ const styles = StyleSheet.create({
     },
     dotActive: {
         backgroundColor: theme.colors.primary,
-    },
-    videoContainer: {
-        position: 'relative',
-        marginTop: theme.spacing.s,
-        width: '100%',
-        borderRadius: theme.shape.medium,
-        overflow: 'hidden',
-        backgroundColor: 'black',
     },
     playButtonOverlay: {
         ...StyleSheet.absoluteFillObject,

@@ -167,7 +167,7 @@ const Feed: React.FC<FeedProps> = ({
   const handleScroll = ({ nativeEvent }: { nativeEvent: { layoutMeasurement: any, contentOffset: any, contentSize: any } }) => {
     const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
-    if (isCloseToBottom) {
+    if (isCloseToBottom && !isLoadingMore && hasMore) {
         loadMorePosts();
     }
   };
