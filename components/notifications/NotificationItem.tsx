@@ -25,13 +25,11 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
     
     const embed = record.embed;
     let mediaEmbed:AppBskyEmbedImages.Main | undefined;
-    let recordEmbed: AppBskyEmbedRecord.Main | undefined;
 
-    if (AppBskyEmbedImages.isMain(embed)) mediaEmbed = embed;
-    else if (AppBskyEmbedRecord.isMain(embed)) recordEmbed = embed;
-    else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
+    if (AppBskyEmbedImages.isMain(embed)) {
+      mediaEmbed = embed;
+    } else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
         const recordWithMediaEmbed = embed;
-        recordEmbed = recordWithMediaEmbed.record;
         if (AppBskyEmbedImages.isMain(recordWithMediaEmbed.media)) {
             mediaEmbed = recordWithMediaEmbed.media;
         }
@@ -48,26 +46,21 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
     const imageElement = renderImage();
     const hasTextContent = record.text && record.text.trim().length > 0;
     const hasVisibleContent = hasTextContent || imageElement;
+    
+    if (!hasVisibleContent) return null;
 
     return (
         <View style={styles.previewContainer}>
-            {hasVisibleContent && (
-                <View style={styles.previewContent}>
-                    {imageElement}
-                    {hasTextContent && (
-                         <View style={{ flex: 1 }}>
-                            <Text style={styles.previewText} numberOfLines={4}>
-                                <RichTextRenderer record={{ text: record.text!, facets: record.facets }} />
-                            </Text>
-                        </View>
-                    )}
-                </View>
-            )}
-            {recordEmbed && (
-                <View style={[styles.quotedContainer, hasVisibleContent && { marginTop: 8 }]}>
-                    <Text style={styles.quotedText}>Quoted from another post.</Text>
-                </View>
-            )}
+            <View style={styles.previewContent}>
+                {imageElement}
+                {hasTextContent && (
+                     <View style={{ flex: 1 }}>
+                        <Text style={styles.previewText} numberOfLines={4}>
+                            <RichTextRenderer record={{ text: record.text!, facets: record.facets }} />
+                        </Text>
+                    </View>
+                )}
+            </View>
         </View>
     );
 };

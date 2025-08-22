@@ -63,35 +63,27 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
   };
   
-  const renderMediaAndQuote = () => {
+  const renderMedia = () => {
     const embed = post.embed;
-    if(!embed) return null;
-    
+    if (!embed) return null;
+
+    let mediaEmbed: AppBskyEmbedImages.View | undefined;
+
     if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) {
-      const image = embed.images[0];
+      mediaEmbed = embed;
+    } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+      const recordWithMediaView = embed;
+      if (AppBskyEmbedImages.isView(recordWithMediaView.media) && recordWithMediaView.media.images.length > 0) {
+        mediaEmbed = recordWithMediaView.media;
+      }
+    }
+    
+    if (mediaEmbed) {
+      const image = mediaEmbed.images[0];
       return <ResizedImage src={image.thumb} resizeWidth={200} alt={image.alt} style={styles.mediaPreview} />;
     }
     
-    if (AppBskyEmbedRecord.isView(embed)) {
-        return <QuotedPost embed={embed} />;
-    }
-
-    if(AppBskyEmbedRecordWithMedia.isView(embed)) {
-        const recordWithMediaView = embed;
-        const mediaEmbed = recordWithMediaView.media;
-        const recordEmbed = recordWithMediaView.record;
-        return (
-            <View>
-                {AppBskyEmbedImages.isView(mediaEmbed) && mediaEmbed.images.length > 0 &&
-                    <ResizedImage src={mediaEmbed.images[0].thumb} resizeWidth={200} alt={mediaEmbed.images[0].alt} style={styles.mediaPreview} />
-                }
-                {AppBskyEmbedRecord.isView(recordEmbed) &&
-                    <QuotedPost embed={recordEmbed} />
-                }
-            </View>
-        );
-    }
-    
+    // Quoted posts are removed as per user request.
     return null;
   }
 
@@ -121,7 +113,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
                     <RichTextRenderer record={record} />
                 </Text>
                 
-                {renderMediaAndQuote()}
+                {renderMedia()}
 
                 <View style={styles.footer}>
                     <Pressable

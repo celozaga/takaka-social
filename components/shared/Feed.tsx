@@ -77,16 +77,15 @@ const Feed: React.FC<FeedProps> = ({
 
   
   const processAndSetFeed = useCallback((newPosts: AppBskyFeedDefs.FeedViewPost[], currentCursor?: string) => {
-      let processedPosts = newPosts;
+      // Per user request, all replies are filtered from feed views.
+      let processedPosts = newPosts.filter(item => !item.reply);
+      
       if (layout === 'grid') {
-          processedPosts = newPosts.filter(item => !item.reply && isPostAMediaPost(item.post));
+          processedPosts = processedPosts.filter(item => isPostAMediaPost(item.post));
           if (mediaFilter === 'photos') processedPosts = processedPosts.filter(item => hasPhotos(item.post));
           if (mediaFilter === 'videos') processedPosts = processedPosts.filter(item => hasVideos(item.post));
-      } else { // layout === 'list'
-           if (authorFeedFilter === 'posts_no_replies') {
-              processedPosts = newPosts.filter(item => !item.reply);
-           }
       }
+      // For list view, no further filtering is needed here as replies are already removed.
       
       if (currentCursor) {
           setFeed(prevFeed => {
@@ -98,7 +97,7 @@ const Feed: React.FC<FeedProps> = ({
           setFeed(processedPosts);
       }
 
-  }, [layout, mediaFilter, authorFeedFilter]);
+  }, [layout, mediaFilter]);
 
   const loadInitialPosts = useCallback(async () => {
     setIsLoading(true);

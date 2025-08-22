@@ -23,7 +23,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     const { agent } = useAtp();
     const { setPostForNav } = useUI();
     const router = useRouter();
-    const { post, reason, reply } = feedViewPost;
+    const { post, reason } = feedViewPost;
     const author = post.author;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
@@ -193,21 +193,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         );
     };
     
-    const renderQuotedPost = () => {
-        if (!post.embed) return null;
-        const embed = post.embed;
-        if (AppBskyEmbedRecord.isView(embed)) {
-            return <QuotedPost embed={embed} />;
-        }
-        if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-            const recordWithMediaEmbed = embed;
-            if (AppBskyEmbedRecord.isView(recordWithMediaEmbed.record)) {
-                return <QuotedPost embed={recordWithMediaEmbed.record} />;
-            }
-        }
-        return null;
-    }
-    
      const renderContext = () => {
         if (reason && AppBskyFeedDefs.isReasonRepost(reason)) {
             return (
@@ -222,20 +207,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 </View>
             );
         }
-    
-        if (reply && AppBskyFeedDefs.isPostView(reply.parent)) {
-            return (
-                <View style={styles.contextContainer}>
-                    <MessageCircle size={14} color={theme.colors.onSurfaceVariant} />
-                     <Text style={styles.contextText} numberOfLines={1}>
-                        Reply to{' '}
-                        <Link href={`/profile/${reply.parent.author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
-                            <Text style={styles.contextLink}>{reply.parent.author.displayName || `@${reply.parent.author.handle}`}</Text>
-                        </Link>
-                    </Text>
-                </View>
-            );
-        }
+        // Reply context is removed as per user request to not show replies in feeds.
         return null;
     };
 
@@ -268,7 +240,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             </Text>
                         )}
                         {renderMedia()}
-                        {renderQuotedPost()}
+                        {/* Quoted posts are removed as per user request */}
                         <View style={styles.actionsContainer}>
                             <PostActions post={post} />
                         </View>
