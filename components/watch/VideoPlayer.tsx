@@ -5,19 +5,18 @@ import Video from 'react-native-video';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Play } from 'lucide-react';
 import { theme } from '@/lib/theme';
 
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;
-  hlsUrl?: string;
   blobUrl: string;
   paused: boolean;
 }
 
 type VideoStatus = 'loading' | 'buffering' | 'playing' | 'error';
 
-const VideoPlayer: React.FC<Props> = ({ postView, hlsUrl, blobUrl, paused: isExternallyPaused }) => {
+const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyPaused }) => {
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
   const [status, setStatus] = useState<VideoStatus>('loading');
   const [isMuted, setIsMuted] = useState(true);
@@ -57,7 +56,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, hlsUrl, blobUrl, paused: isExt
         )}
 
         <Video
-          source={{ uri: hlsUrl || blobUrl }}
+          source={{ uri: blobUrl }}
           style={styles.video}
           resizeMode="contain"
           repeat
@@ -78,6 +77,12 @@ const VideoPlayer: React.FC<Props> = ({ postView, hlsUrl, blobUrl, paused: isExt
           }}
           playInBackground={false}
           playWhenInactive={false}
+          bufferConfig={{
+            minBufferMs: 15000,
+            maxBufferMs: 60000,
+            bufferForPlaybackMs: 2500,
+            bufferForPlaybackAfterRebufferMs: 5000,
+          }}
         />
 
         {/* 2. Spinner: Shown only during mid-playback buffering */}
@@ -95,7 +100,12 @@ const VideoPlayer: React.FC<Props> = ({ postView, hlsUrl, blobUrl, paused: isExt
                 <Text style={styles.errorText}>Could not play video</Text>
             </View>
         )}
-
+        
+        {isInternallyPaused && status === 'playing' && (
+          <View style={styles.playButtonOverlay}>
+            <Play size={80} color="rgba(255, 255, 255, 0.7)" fill="rgba(255, 255, 255, 0.5)" />
+          </View>
+        )}
 
         {/* UI Overlays: Shown when video is visible (not during initial load) */}
         {!showThumbnail && (
@@ -131,7 +141,13 @@ const styles = StyleSheet.create({
   descriptionText: { ...theme.typography.bodyMedium, color: 'white', marginTop: theme.spacing.xs, textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
   muteButton: { position: 'absolute', top: theme.spacing.l, right: theme.spacing.l, backgroundColor: 'rgba(0,0,0,0.4)', padding: theme.spacing.s, borderRadius: theme.shape.full, zIndex: 3 },
   errorOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 4 },
-  errorText: { color: 'white', fontWeight: 'bold' }
+  errorText: { color: 'white', fontWeight: 'bold' },
+  playButtonOverlay: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
+  },
 });
 
 export default React.memo(VideoPlayer);

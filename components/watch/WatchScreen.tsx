@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { AppBskyFeedDefs } from '@atproto/api';
 import WatchFeed from './WatchFeed'; // The new component
 import { ArrowLeft } from 'lucide-react';
 import Head from '../shared/Head';
@@ -10,7 +10,8 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-nati
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
 
-const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
+// Switched to a dedicated video feed for performance
+const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/videos';
 
 /**
  * This is the main screen for the video feed.
@@ -30,42 +31,26 @@ const WatchScreen: React.FC = () => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
 
-    const isPostVideo = (p: AppBskyFeedDefs.PostView) => p.embed && (AppBskyEmbedVideo.isView(p.embed) || (AppBskyEmbedRecordWithMedia.isView(p.embed) && AppBskyEmbedVideo.isView(p.embed.media)));
-
     const fetchVideos = useCallback(async (currentCursor?: string) => {
         if (!currentCursor) setIsLoading(true);
         else setIsLoadingMore(true);
         
         try {
-            let fetchedPosts: AppBskyFeedDefs.FeedViewPost[] = [];
-            let nextCursor = currentCursor;
-            let attempts = 0;
+            const res = await agent.app.bsky.feed.getFeed({ feed: DISCOVER_FEED_URI, cursor: currentCursor, limit: 10 });
 
-            // The video feed might contain non-video posts. We loop until we've found
-            // enough videos to fill the screen, or until we've tried a few times.
-            while (fetchedPosts.filter(p => isPostVideo(p.post)).length < 5 && attempts < 5 && (hasMore || !currentCursor)) {
-                attempts++;
-                const res = await agent.app.bsky.feed.getFeed({ feed: DISCOVER_FEED_URI, cursor: nextCursor, limit: 50 });
-                
-                if (res.data.feed.length > 0) {
-                    fetchedPosts.push(...res.data.feed);
-                }
-
-                nextCursor = res.data.cursor;
-                if (!nextCursor) {
-                    setHasMore(false);
-                    break;
-                }
+            if (res.data.feed.length > 0) {
+                setVideoPosts(prev => {
+                    const existingUris = new Set(prev.map(p => p.post.uri));
+                    const uniqueNewPosts = res.data.feed.filter(p => !existingUris.has(p.post.uri));
+                    return currentCursor ? [...prev, ...uniqueNewPosts] : uniqueNewPosts;
+                });
             }
-            
-            const newVideoPosts = fetchedPosts.filter(p => isPostVideo(p.post));
-            setVideoPosts(prev => {
-                const existingUris = new Set(prev.map(p => p.post.uri));
-                const uniqueNewPosts = newVideoPosts.filter(p => !existingUris.has(p.post.uri));
-                return currentCursor ? [...prev, ...uniqueNewPosts] : uniqueNewPosts;
-            });
+
+            const nextCursor = res.data.cursor;
             setCursor(nextCursor);
-            if (!nextCursor) setHasMore(false);
+            if (!nextCursor || res.data.feed.length === 0) {
+                setHasMore(false);
+            }
 
         } catch (err: any) { 
             setError(t('feed.loadingError')); 
@@ -73,7 +58,7 @@ const WatchScreen: React.FC = () => {
             setIsLoading(false); 
             setIsLoadingMore(false); 
         }
-    }, [agent, hasMore, t]);
+    }, [agent, t]);
 
     // Fetch the initial set of videos when the component mounts.
     useEffect(() => {

@@ -19,38 +19,12 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const { height } = useWindowDimensions();
-  const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
-
-  const prefetchUrls = useCallback(async (posts: AppBskyFeedDefs.FeedViewPost[]) => {
-    for (const post of posts) {
-      if (!post || playbackUrls.has(post.post.uri)) continue;
-      try {
-        const embed = post.post.embed;
-        let videoEmbed: AppBskyEmbedVideo.View | undefined;
-        if (AppBskyEmbedVideo.isView(embed)) videoEmbed = embed;
-        else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) videoEmbed = embed.media as AppBskyEmbedVideo.View;
-        if (!videoEmbed) continue;
-        const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did: post.post.author.did, cid: videoEmbed.cid });
-        if (res.data.url) {
-          setPlaybackUrls(prev => new Map(prev).set(post.post.uri, res.data.url));
-        }
-      } catch (e) { console.warn(`Could not prefetch playback URL for ${post.post.uri}`, e); }
-    }
-  }, [agent, playbackUrls]);
-
-  useEffect(() => {
-    if(videoPosts.length > 0) {
-      prefetchUrls(videoPosts.slice(0, 2));
-    }
-  }, [videoPosts, prefetchUrls]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       const newIndex = viewableItems[0].index;
       if (newIndex !== activeIndex) {
         setActiveIndex(newIndex);
-        const postsToPrefetch = [videoPosts[newIndex + 1], videoPosts[newIndex + 2]].filter(Boolean);
-        if (postsToPrefetch.length > 0) prefetchUrls(postsToPrefetch);
       }
     }
   }).current;
@@ -81,7 +55,6 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
         <View style={{ height }}>
           <VideoPlayer 
             postView={item} 
-            hlsUrl={playbackUrls.get(item.post.uri)}
             blobUrl={getBlobUrl(item.post)}
             paused={index !== activeIndex}
           />
