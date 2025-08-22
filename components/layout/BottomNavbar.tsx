@@ -11,7 +11,7 @@ import { theme } from '@/lib/theme';
 const NavItem: React.FC<{
   item: any;
   isDesktop: boolean;
-}> = ({ item }) => {
+}> = ({ item, isDesktop }) => {
   const { t } = useTranslation();
   const { unreadCount } = useAtp();
 
@@ -21,7 +21,7 @@ const NavItem: React.FC<{
   const content = (
     <>
       <View style={[styles.iconContainer, item.activeCondition && styles.iconContainerActive]}>
-        <item.icon size={24} color={item.activeCondition ? theme.colors.primary : theme.colors.onSurfaceVariant} />
+        <item.icon size={24} color={item.activeCondition ? theme.colors.onSurface : theme.colors.onSurfaceVariant} />
         {hasNotificationBadge && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
@@ -34,6 +34,7 @@ const NavItem: React.FC<{
 
   const style = ({ pressed }: { pressed: boolean }) => [
     styles.navItem,
+    isDesktop ? styles.navItemDesktop : { height: 80 },
     pressed && styles.pressed,
   ];
 
@@ -110,26 +111,78 @@ const BottomNavbar: React.FC = () => {
   }
 
   return (
-    <View style={[styles.navBar, { height: 65 + bottom, paddingBottom: bottom }]}>
+    <View style={[styles.navBar, { height: 80 + bottom, paddingBottom: bottom }]}>
       {navItems.map(item => <NavItem key={item.labelKey} item={item} isDesktop={false} />)}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // Mobile: A bar fixed to the bottom of the screen
+  // Mobile Nav Bar: 80px height, fixed to bottom, respects safe area
   navBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: theme.colors.surfaceContainer,
     flexDirection: 'row',
+    backgroundColor: theme.colors.surfaceContainer,
     borderTopWidth: 1,
     borderTopColor: theme.colors.surfaceContainerHigh,
     zIndex: 50,
   },
-  // Desktop: A rail fixed to the left of the screen
+  // Each item in the mobile nav bar
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: theme.spacing.m, // 12px padding top per M3 spec
+    gap: theme.spacing.xs, // 4px gap between icon and label
+  },
+  // The pill-shaped indicator for the active icon
+  iconContainer: {
+    width: 64,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.shape.full,
+    position: 'relative',
+  },
+  iconContainerActive: {
+    backgroundColor: theme.colors.surfaceContainerHighest,
+  },
+  // Text label styles
+  labelText: {
+    ...theme.typography.labelMedium,
+    color: theme.colors.onSurfaceVariant,
+    fontWeight: '400',
+  },
+  labelTextActive: {
+    color: theme.colors.onSurface,
+    fontWeight: '700',
+  },
+  // Notification badge
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: 12,
+    backgroundColor: theme.colors.error,
+    borderRadius: theme.shape.full,
+    paddingHorizontal: 4,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.surfaceContainer,
+  },
+  badgeText: {
+    ...theme.typography.labelSmall,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  pressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  // Desktop Nav Rail (unchanged from previous state)
   navRail: {
     position: 'absolute',
     top: 0,
@@ -146,60 +199,11 @@ const styles = StyleSheet.create({
     gap: theme.spacing.m,
     width: '100%',
   },
-  // Common styles for each pressable navigation item
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.s,
-    gap: 2,
-    height: '100%',
-  },
   navItemDesktop: {
     flex: 0,
     width: '100%',
     height: 72,
-  },
-  pressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  iconContainer: {
-    width: 64,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: theme.shape.full,
-    position: 'relative',
-  },
-  iconContainerActive: {
-    backgroundColor: theme.colors.surfaceContainerHighest,
-  },
-  labelText: {
-    ...theme.typography.labelMedium,
-    color: theme.colors.onSurfaceVariant,
-    textAlign: 'center',
-  },
-  labelTextActive: {
-    ...theme.typography.labelMedium,
-    color: theme.colors.onSurface,
-    fontWeight: '700',
-  },
-  badge: {
-    position: 'absolute',
-    top: -2,
-    right: 12,
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.shape.full,
-    paddingHorizontal: 4,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    ...theme.typography.labelSmall,
-    color: theme.colors.onPrimary,
-    fontWeight: 'bold',
+    paddingTop: 0,
   },
 });
 

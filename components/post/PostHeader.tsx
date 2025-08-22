@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     minHeight: 36,
   },
   followButtonActive: {
-    backgroundColor: 'yellow',
+    backgroundColor: theme.colors.primary,
   },
   followButtonText: {
     ...theme.typography.labelLarge,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   followButtonTextActive: {
-    color: '#000000',
+    color: theme.colors.onPrimary,
   },
 });
 

@@ -27,7 +27,11 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
     );
   }
 
-  if (!AppBskyEmbedRecord.isViewRecord(embed) || !AppBskyFeedDefs.isPostView(embed.record)) {
+  if (!AppBskyEmbedRecord.isViewRecord(embed)) {
+    return null;
+  }
+  
+  if (!AppBskyFeedDefs.isPostView(embed.record)) {
     return null; // Don't render if it's not a valid record view or not a post
   }
 
@@ -35,7 +39,6 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
   const author = postView.author;
   const postRecord = postView.record as AppBskyFeedPost.Record;
   const postUri = new AtUri(postView.uri);
-  const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
   const timeAgo = formatDistanceToNowStrict(new Date(postRecord.createdAt), { addSuffix: true });
 
   const content = (
