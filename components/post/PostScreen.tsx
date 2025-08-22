@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View, StyleSheet, FlatList, Text, Platform } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -22,7 +23,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
       <FullPostCard feedViewPost={{ post: thread.post }} />
       {thread.post.replyCount > 0 && (
           <View style={styles.repliesHeader}>
-              <Text style={styles.repliesHeaderText}>{t('common.replies')}</Text>
+              <Text style={styles.repliesHeaderText}>{t('common.replies', { count: thread.post.replyCount })}</Text>
           </View>
       )}
     </View>

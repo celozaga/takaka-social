@@ -10,6 +10,8 @@
     "posts": "Posts",
     "reply": "Reply",
     "replies": "Replies",
+    "replies_one": "{{count}} Reply",
+    "replies_other": "{{count}} Replies",
     "follow": "Follow",
     "following": "Following",
     "followers": "Followers",

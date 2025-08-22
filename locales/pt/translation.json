@@ -10,6 +10,8 @@
     "posts": "Publicações",
     "reply": "Responder",
     "replies": "Respostas",
+    "replies_one": "{{count}} Resposta",
+    "replies_other": "{{count}} Respostas",
     "follow": "Seguir",
     "following": "Seguindo",
     "followers": "Seguidores",
