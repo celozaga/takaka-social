@@ -3,6 +3,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AtSign, KeyRound, LogIn } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Linking, Platform } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -42,24 +43,24 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
       </View>
       <View style={styles.formContainer}>
         <View style={styles.inputContainer}>
-          <AtSign style={styles.icon} color="#8A9199" size={20} />
+          <AtSign style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
           <TextInput
             value={identifier}
             onChangeText={setIdentifier}
             placeholder={t('signIn.handlePlaceholder')}
-            placeholderTextColor="#8A9199"
+            placeholderTextColor={theme.colors.onSurfaceVariant}
             style={styles.input}
             autoCapitalize="none"
             autoCorrect={false}
           />
         </View>
         <View style={styles.inputContainer}>
-          <KeyRound style={styles.icon} color="#8A9199" size={20} />
+          <KeyRound style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
           <TextInput
             value={appPassword}
             onChangeText={setAppPassword}
             placeholder={t('signIn.appPasswordPlaceholder')}
-            placeholderTextColor="#8A9199"
+            placeholderTextColor={theme.colors.onSurfaceVariant}
             style={styles.input}
             secureTextEntry
           />
@@ -81,12 +82,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
         >
           {isLoading ? (
             <>
-              <ActivityIndicator size="small" color="#003258" />
+              <ActivityIndicator size="small" color={theme.colors.onPrimary} />
               <Text style={styles.buttonText}>{t('signIn.buttonLoading')}</Text>
             </>
           ) : (
             <>
-              <LogIn color="#003258" size={20} />
+              <LogIn color={theme.colors.onPrimary} size={20} />
               <Text style={styles.buttonText}>{t('signIn.button')}</Text>
             </>
           )}
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     maxWidth: 448,
-    backgroundColor: '#1E2021',
+    backgroundColor: theme.colors.surfaceContainer,
     borderRadius: 16,
     padding: 32,
   },
@@ -109,12 +110,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#A8C7FA',
+    ...theme.typography.titleLarge,
+    color: theme.colors.primary,
   },
   description: {
-    color: '#C3C6CF',
+    color: theme.colors.onSurfaceVariant,
     marginTop: 8,
   },
   formContainer: {
@@ -134,9 +134,9 @@ const styles = StyleSheet.create({
     paddingLeft: 48,
     paddingRight: 16,
     paddingVertical: 12,
-    backgroundColor: '#2b2d2e',
+    backgroundColor: theme.colors.surfaceContainerHigh,
     borderRadius: 8,
-    color: '#E2E2E6',
+    color: theme.colors.onSurface,
     fontSize: 16,
     ...Platform.select({
       web: {
@@ -146,36 +146,36 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     fontSize: 12,
-    color: '#C3C6CF',
+    color: theme.colors.onSurfaceVariant,
     textAlign: 'center',
     paddingHorizontal: 8,
     lineHeight: 16
   },
   link: {
-    color: '#A8C7FA',
+    color: theme.colors.primary,
     textDecorationLine: 'underline',
   },
   errorText: {
-    color: '#F2B8B5',
+    color: theme.colors.error,
     fontSize: 14,
     textAlign: 'center',
   },
   button: {
     width: '100%',
-    backgroundColor: '#A8C7FA',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 999,
+    borderRadius: theme.shape.full,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    color: '#003258',
+    color: theme.colors.onPrimary,
     fontWeight: 'bold',
     fontSize: 16
   },

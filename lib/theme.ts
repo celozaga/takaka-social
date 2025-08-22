@@ -21,6 +21,11 @@ const palette = {
   
   // System Colors
   error: '#FF453A',
+  errorContainer: '#601410',
+  onErrorContainer: '#F9DEDC',
+  
+  // Overlays
+  white_10: 'rgba(255, 255, 255, 0.1)',
 };
 
 /**
@@ -39,12 +44,15 @@ const darkThemeColors = {
   surface: palette.black,
   surfaceContainer: palette.darkGray,
   surfaceContainerHigh: palette.midGray,
-  surfaceContainerHighest: palette.midGray, // Using midGray for highest emphasis as well
+  surfaceContainerHighest: palette.midGray,
+  surfaceContainerHover: palette.white_10,
   onSurface: palette.offWhite,
   onSurfaceVariant: palette.midGray,
   outline: palette.darkGray,
   error: palette.error,
-  pink: palette.brandPrimary, // Legacy accent color, mapped to new primary
+  errorContainer: palette.errorContainer,
+  onErrorContainer: palette.onErrorContainer,
+  pink: '#ec4899',
 };
 
 // Example structure for a future light theme
@@ -56,11 +64,14 @@ const lightThemeColors = {
   surfaceContainer: '#E0E0E0', // Example light gray
   surfaceContainerHigh: '#BDBDBD', // Example mid light gray
   surfaceContainerHighest: '#9E9E9E', // Example dark light gray
+  surfaceContainerHover: 'rgba(0, 0, 0, 0.1)',
   onSurface: palette.black,
   onSurfaceVariant: palette.midGray,
   outline: '#E0E0E0',
   error: palette.error,
-  pink: palette.black,
+  errorContainer: '#F9DEDC',
+  onErrorContainer: '#410E0B',
+  pink: '#ec4899',
 };
 
 /**

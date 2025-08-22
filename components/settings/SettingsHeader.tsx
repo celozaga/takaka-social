@@ -1,8 +1,10 @@
 
+
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 const SettingsHeader: React.FC = () => {
     const router = useRouter();
@@ -10,7 +12,7 @@ const SettingsHeader: React.FC = () => {
         <View style={styles.container}>
             <View style={styles.innerContainer}>
                 <Pressable onPress={() => router.back()} style={styles.button}>
-                    <ArrowLeft size={20} color="#E2E2E6" />
+                    <ArrowLeft size={20} color={theme.colors.onSurface} />
                 </Pressable>
                 <Text style={styles.title}>Settings</Text>
             </View>
@@ -25,7 +27,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         paddingHorizontal: 16,
-        backgroundColor: '#111314', // surface-1
+        backgroundColor: theme.colors.background,
         zIndex: 30,
     },
     innerContainer: {
@@ -42,7 +44,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#E2E2E6',
+        color: theme.colors.onSurface,
     },
 });
 

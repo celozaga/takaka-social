@@ -115,7 +115,7 @@ const BottomNavbar = () => {
 const styles = StyleSheet.create({
   // Common
   pressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.surfaceContainerHover,
   },
   iconContainer: {
     width: 64,

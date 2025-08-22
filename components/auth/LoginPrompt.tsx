@@ -4,6 +4,7 @@ import { useUI } from '../../context/UIContext';
 import { LogIn } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { theme } from '@/lib/theme';
 
 const LoginPrompt: React.FC = () => {
   const { openLoginModal } = useUI();
@@ -26,7 +27,7 @@ const LoginPrompt: React.FC = () => {
             onPress={openLoginModal}
             style={styles.button}
         >
-          <LogIn size={16} color="#003258" />
+          <LogIn size={16} color={theme.colors.onPrimary} />
           <Text style={styles.buttonText}>{t('nav.signIn')}</Text>
         </Pressable>
       </View>
@@ -44,8 +45,8 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   promptBox: {
-    backgroundColor: '#D1E4FF', // primary-container
-    color: '#001D35', // on-primary-container
+    backgroundColor: theme.colors.surfaceContainer,
+    color: theme.colors.onSurface,
     padding: 12,
     borderRadius: 12,
     flexDirection: 'row',
@@ -66,25 +67,25 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: '600',
     fontSize: 14,
-    color: '#001D35',
+    color: theme.colors.onSurface,
   },
   description: {
     fontSize: 12,
-    color: '#001D35',
+    color: theme.colors.onSurface,
     opacity: 0.8,
   },
   button: {
-    backgroundColor: '#A8C7FA',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 999,
+    borderRadius: theme.shape.full,
     flexShrink: 0,
   },
   buttonText: {
-    color: '#003258',
+    color: theme.colors.onPrimary,
     fontWeight: 'bold',
     fontSize: 14,
   },

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'expo-router';
 import { Hash, Feather } from 'lucide-react';
 import { View, StyleSheet, Platform, Pressable } from 'react-native';
+import { theme } from '@/lib/theme';
 
 const Navbar: React.FC = () => {
   return (
@@ -10,12 +11,12 @@ const Navbar: React.FC = () => {
         <View style={styles.innerContainer}>
           <Link href="/(tabs)/home" asChild>
             <Pressable style={styles.link}>
-              <Feather size={28} color="#A8C7FA" />
+              <Feather size={28} color={theme.colors.primary} />
             </Pressable>
           </Link>
           <Link href="/(tabs)/feeds" asChild>
             <Pressable style={styles.link}>
-              <Hash size={24} color="#C3C6CF" />
+              <Hash size={24} color={theme.colors.onSurfaceVariant} />
             </Pressable>
           </Link>
         </View>
@@ -38,7 +39,7 @@ const styles = StyleSheet.create({
         left: 0
       }
     }),
-    backgroundColor: '#111314', // surface-1
+    backgroundColor: theme.colors.background,
     zIndex: 40,
     height: 64,
   },
