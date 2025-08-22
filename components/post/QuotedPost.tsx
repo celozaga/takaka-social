@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
-import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs } from '@atproto/api';
+import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs, AppBskyFeedPost } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { theme } from '@/lib/theme';
@@ -31,10 +31,10 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
     return null; // Don't render if it's not a valid record view or not a post
   }
 
-  const record = embed.record as AppBskyFeedDefs.PostView;
-  const author = record.author;
-  const postRecord = record.record as { text: string, createdAt: string, facets?: any[] };
-  const postUri = new AtUri(record.uri);
+  const postView = embed.record;
+  const author = postView.author;
+  const postRecord = postView.record as AppBskyFeedPost.Record;
+  const postUri = new AtUri(postView.uri);
   const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
   const timeAgo = formatDistanceToNowStrict(new Date(postRecord.createdAt), { addSuffix: true });
 

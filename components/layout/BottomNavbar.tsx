@@ -3,14 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { Link, usePathname } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { Home, Search, Edit3, LogOut, Bell, LogIn, LayoutGrid, Settings } from 'lucide-react';
+import { Home, Search, Edit3, LogOut, Bell, LogIn, Settings } from 'lucide-react';
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/lib/theme';
 
 const NavItem: React.FC<{
   item: any;
   isDesktop: boolean;
-}> = ({ item, isDesktop }) => {
+}> = ({ item }) => {
   const { t } = useTranslation();
   const { unreadCount } = useAtp();
 
@@ -27,18 +28,18 @@ const NavItem: React.FC<{
           </View>
         )}
       </View>
-      <Text style={[styles.labelText, item.activeCondition && styles.labelTextActive]}>{t(item.labelKey)}</Text>
+      <Text style={[styles.labelText, item.activeCondition && styles.labelTextActive]} numberOfLines={1}>{t(item.labelKey)}</Text>
     </>
   );
 
-  const style = [
-    styles.navItemBase,
-    isDesktop ? styles.navItemDesktop : styles.navItemMobile,
+  const style = ({ pressed }: { pressed: boolean }) => [
+    styles.navItem,
+    pressed && styles.pressed,
   ];
 
   if (item.isAction) {
     return (
-      <Pressable onPress={item.action} style={({ pressed }) => [style, pressed && styles.pressed]}>
+      <Pressable onPress={item.action} style={style}>
         {content}
       </Pressable>
     );
@@ -46,7 +47,7 @@ const NavItem: React.FC<{
 
   return (
     <Link href={item.href as any} asChild>
-      <Pressable style={({ pressed }) => [style, pressed && styles.pressed]}>
+      <Pressable style={style}>
         {content}
       </Pressable>
     </Link>
@@ -59,6 +60,7 @@ const BottomNavbar: React.FC = () => {
   const pathname = usePathname();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
+  const { top, bottom } = useSafeAreaInsets();
   const isDesktop = width >= 768;
 
   const navItems = [
@@ -74,19 +76,33 @@ const BottomNavbar: React.FC = () => {
   ];
 
   if (isDesktop) {
+    const desktopNavItems = [
+      { href: '/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/home' || pathname === '/' },
+      { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
+      ...(session ? [
+        { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
+        { href: '/settings', labelKey: 'nav.settings', icon: Settings, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
+      ] : []),
+    ];
     return (
-      <View style={styles.navRail}>
+      <View style={[styles.navRail, { paddingTop: top + theme.spacing.l, paddingBottom: bottom + theme.spacing.l }]}>
         <View style={styles.navRailSection}>
-          {navItems.filter(item => !item.isAction || item.labelKey === 'nav.compose').map(item => <NavItem key={item.labelKey} item={item} isDesktop />)}
+          {desktopNavItems.map(item => <NavItem key={item.labelKey} item={item} isDesktop />)}
         </View>
         <View style={styles.navRailSection}>
           {session ? (
-            <Pressable onPress={logout} style={({ pressed }) => [styles.navItemBase, styles.navItemDesktop, pressed && styles.pressed]}>
-              <View style={styles.iconContainer}><LogOut size={24} color={theme.colors.onSurfaceVariant} /></View>
-              <Text style={styles.labelText}>{t('nav.logout')}</Text>
-            </Pressable>
+            <>
+              <Pressable onPress={() => openComposer()} style={({pressed}) => [styles.navItem, styles.navItemDesktop, pressed && styles.pressed]}>
+                  <View style={styles.iconContainer}><Edit3 size={24} color={theme.colors.onSurfaceVariant} /></View>
+                  <Text style={styles.labelText}>{t('nav.compose')}</Text>
+              </Pressable>
+              <Pressable onPress={logout} style={({ pressed }) => [styles.navItem, styles.navItemDesktop, pressed && styles.pressed]}>
+                <View style={styles.iconContainer}><LogOut size={24} color={theme.colors.onSurfaceVariant} /></View>
+                <Text style={styles.labelText}>{t('nav.logout')}</Text>
+              </Pressable>
+            </>
           ) : (
-             navItems.filter(item => item.isAction && item.labelKey !== 'nav.compose').map(item => <NavItem key={item.labelKey} item={item} isDesktop />)
+             <NavItem item={{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false }} isDesktop />
           )}
         </View>
       </View>
@@ -94,38 +110,35 @@ const BottomNavbar: React.FC = () => {
   }
 
   return (
-    <View style={styles.navBar}>
+    <View style={[styles.navBar, { height: 65 + bottom, paddingBottom: bottom }]}>
       {navItems.map(item => <NavItem key={item.labelKey} item={item} isDesktop={false} />)}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // Mobile Navigation Bar
+  // Mobile: A bar fixed to the bottom of the screen
   navBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
     backgroundColor: theme.colors.surfaceContainer,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.surfaceContainerHigh,
     zIndex: 50,
   },
-  // Desktop Navigation Rail
+  // Desktop: A rail fixed to the left of the screen
   navRail: {
     position: 'absolute',
     top: 0,
     left: 0,
-    height: '100%',
+    bottom: 0,
     width: 80,
     backgroundColor: theme.colors.surface,
-    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.l,
     zIndex: 50,
   },
   navRailSection: {
@@ -133,23 +146,22 @@ const styles = StyleSheet.create({
     gap: theme.spacing.m,
     width: '100%',
   },
-  // Common Nav Item styles
-  navItemBase: {
+  // Common styles for each pressable navigation item
+  navItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.xs,
-    borderRadius: theme.shape.full,
-  },
-  navItemMobile: {
-    flex: 1,
+    paddingVertical: theme.spacing.s,
+    gap: 2,
     height: '100%',
   },
   navItemDesktop: {
-    width: 64,
-    height: 56,
+    flex: 0,
+    width: '100%',
+    height: 72,
   },
   pressed: {
-    backgroundColor: 'rgba(255,255,255,0.1)'
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   iconContainer: {
     width: 64,
@@ -165,6 +177,7 @@ const styles = StyleSheet.create({
   labelText: {
     ...theme.typography.labelMedium,
     color: theme.colors.onSurfaceVariant,
+    textAlign: 'center',
   },
   labelTextActive: {
     ...theme.typography.labelMedium,
