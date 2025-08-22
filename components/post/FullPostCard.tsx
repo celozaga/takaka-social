@@ -189,10 +189,20 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             }
         };
 
+        const showArrows = Platform.OS !== 'web' || isHovered;
+
+        const firstItem = mediaItems[0];
+        let slideshowAspectRatio;
+        if ('view' in firstItem) { // item is a video
+            slideshowAspectRatio = firstItem.view.aspectRatio ? firstItem.view.aspectRatio.width / firstItem.view.aspectRatio.height : 16 / 9;
+        } else { // item is an image
+            slideshowAspectRatio = firstItem.aspectRatio ? firstItem.aspectRatio.width / firstItem.aspectRatio.height : 1.5;
+        }
+
         const renderSlideshowItem = ({ item }: { item: MediaItem }) => {
             const isVideo = 'type' in item && item.type === 'video';
             return (
-                <View style={{ width: containerWidth, height: '100%', justifyContent: 'center' }}>
+                <View style={{ width: containerWidth, aspectRatio: slideshowAspectRatio, justifyContent: 'center' }}>
                     {isVideo ? (
                          (() => {
                             const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
@@ -213,29 +223,19 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             );
                         })()
                     ) : (
-                        <Pressable onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
+                        <Pressable style={{width: '100%', height: '100%'}} onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
                            <ResizedImage src={(item as AppBskyEmbedImages.ViewImage).thumb} resizeWidth={1200} alt={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} resizeMode="contain" />
                         </Pressable>
                     )}
                 </View>
             );
         };
-        
-        const showArrows = Platform.OS !== 'web' || isHovered;
-
-        const firstItem = mediaItems[0];
-        let slideshowAspectRatio;
-        if ('view' in firstItem) { // item is a video
-            slideshowAspectRatio = firstItem.view.aspectRatio ? firstItem.view.aspectRatio.width / firstItem.view.aspectRatio.height : 16 / 9;
-        } else { // item is an image
-            slideshowAspectRatio = firstItem.aspectRatio ? firstItem.aspectRatio.width / firstItem.aspectRatio.height : 1.5;
-        }
 
         return (
             <View style={styles.slideshowOuterContainer} onLayout={onLayout}>
                 {containerWidth > 0 && (
                     <View 
-                        style={[styles.slideshowInnerContainer, { aspectRatio: slideshowAspectRatio }]}
+                        style={styles.slideshowInnerContainer}
                         {...(Platform.OS === 'web' && {
                             onMouseEnter: () => setIsHovered(true),
                             onMouseLeave: () => setIsHovered(false),
@@ -251,7 +251,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             keyExtractor={(item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index}
                             onViewableItemsChanged={onViewableItemsChanged}
                             viewabilityConfig={viewabilityConfig}
-                            style={[StyleSheet.absoluteFill, { borderRadius: theme.shape.medium }]}
+                            style={{ borderRadius: theme.shape.medium }}
                             getItemLayout={(_, index) => ({
                                 length: containerWidth,
                                 offset: containerWidth * index,
@@ -401,7 +401,6 @@ const styles = StyleSheet.create({
     },
     slideshowInnerContainer: {
         position: 'relative',
-        maxHeight: 1000,
         borderRadius: theme.shape.medium,
         overflow: 'hidden',
         backgroundColor: '#000',
