@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Link } from 'expo-router';
 import { RichText } from '@atproto/api';
 import { Pressable, Text, Linking, StyleSheet } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface RichTextRendererProps {
   record: {
@@ -65,7 +65,7 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ record }) => {
 
 const styles = StyleSheet.create({
     link: {
-        color: '#A8C7FA', // primary
+        color: theme.colors.primary,
         textDecorationLine: 'underline',
     }
 });

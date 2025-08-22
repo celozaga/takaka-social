@@ -32,20 +32,6 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surface,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.surfaceContainerHigh,
-        // The following styles are for web to ensure the header is fixed
-        ...Platform.select({
-            web: {
-                position: 'fixed' as any,
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 40,
-                // Account for navigation rail on desktop
-                '@media (min-width: 768px)': {
-                    left: 80,
-                },
-            },
-        }),
     },
     leftSection: {
         flexDirection: 'row',

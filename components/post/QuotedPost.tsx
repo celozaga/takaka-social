@@ -40,6 +40,8 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
   const postRecord = postView.record as AppBskyFeedPost.Record;
   const postUri = new AtUri(postView.uri);
   const timeAgo = formatDistanceToNowStrict(new Date(postRecord.createdAt), { addSuffix: true });
+  const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
+
 
   const content = (
     <View style={styles.container}>

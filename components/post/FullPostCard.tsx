@@ -11,6 +11,7 @@ import PostActions from './PostActions';
 import SharedVideoPlayer from '../shared/VideoPlayer';
 import ResizedImage from '../shared/ResizedImage';
 import QuotedPost from './QuotedPost';
+import { theme } from '@/lib/theme';
 
 interface FullPostCardProps {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -43,9 +44,9 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         <Pressable 
                             onPress={(e) => { e.stopPropagation(); Linking.openURL(image.fullsize); }}
                             key={index} 
-                            style={[styles.imageGridItem, { width: embed.images.length > 1 ? '50%' : '100%' }]}
+                            style={[styles.imageGridItem, { width: embed.images.length > 1 ? '49%' : '100%', aspectRatio: embed.images.length > 1 ? 1 : (image.aspectRatio ? image.aspectRatio.width / image.aspectRatio.height : 1.5) }]}
                         >
-                            <ResizedImage src={image.thumb} resizeWidth={400} alt={image.alt || `Post image ${index + 1}`} style={styles.gridImage} />
+                            <ResizedImage src={image.thumb} resizeWidth={600} alt={image.alt || `Post image ${index + 1}`} style={styles.gridImage} />
                              <View style={styles.imageOverlay}>
                                 <ExternalLink color="white" size={24} />
                             </View>
@@ -66,7 +67,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             const videoAspectRatio = embedView.aspectRatio
                 ? embedView.aspectRatio.width / embedView.aspectRatio.height
                 : 16 / 9;
-            return <Pressable onPress={(e) => e.stopPropagation()}><SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, backgroundColor: 'black', borderRadius: 8, marginTop: 8, }} /></Pressable>;
+            return <Pressable onPress={(e) => e.stopPropagation()}><SharedVideoPlayer options={playerOptions} style={{ width: '100%', aspectRatio: videoAspectRatio, backgroundColor: 'black', borderRadius: theme.shape.medium, marginTop: theme.spacing.s }} /></Pressable>;
         }
 
         const embed = post.embed;
@@ -96,7 +97,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         if (reason && AppBskyFeedDefs.isReasonRepost(reason)) {
             return (
                 <View style={styles.contextContainer}>
-                    <Repeat size={14} color="#C3C6CF" />
+                    <Repeat size={14} color={theme.colors.onSurfaceVariant} />
                     <Text style={styles.contextText} numberOfLines={1}>
                         Reposted by{' '}
                         <Link href={`/profile/${reason.by.handle}` as any} onPress={e => e.stopPropagation()} asChild>
@@ -110,7 +111,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         if (reply && AppBskyFeedDefs.isPostView(reply.parent)) {
             return (
                 <View style={styles.contextContainer}>
-                    <MessageCircle size={14} color="#C3C6CF" />
+                    <MessageCircle size={14} color={theme.colors.onSurfaceVariant} />
                      <Text style={styles.contextText} numberOfLines={1}>
                         Reply to{' '}
                         <Link href={`/profile/${reply.parent.author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
@@ -125,8 +126,8 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
 
     return (
-        <View style={styles.container}>
-            <Pressable onPress={handlePress} style={({pressed}) => [styles.pressableCard, pressed && styles.pressableCardPressed]}>
+        <View>
+            <Pressable onPress={handlePress}>
                 {renderContext()}
                 <View style={styles.mainRow}>
                     <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
@@ -139,8 +140,8 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
                                 <Pressable style={styles.authorNameContainer}>
                                     <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
-                                    {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                        <BadgeCheck size={14} color="#A8C7FA" fill="currentColor" />
+                                    {author.labels?.some(l => l.val === 'blue-check') && (
+                                        <BadgeCheck size={16} color={theme.colors.primary} fill="currentColor" />
                                     )}
                                 </Pressable>
                             </Link>
@@ -164,28 +165,15 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        paddingVertical: 4,
-    },
-    pressableCard: {
-        padding: 16,
-        backgroundColor: '#2b2d2e',
-        borderRadius: 12,
-    },
-    pressableCardPressed: {
-        backgroundColor: '#3c3f41',
-    },
     contextContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        color: '#C3C6CF',
-        fontSize: 12,
-        marginBottom: 8,
+        gap: theme.spacing.s,
+        marginBottom: theme.spacing.s,
     },
     contextText: {
-        color: '#C3C6CF',
-        fontSize: 12,
+        ...theme.typography.bodySmall,
+        color: theme.colors.onSurfaceVariant,
         flexShrink: 1
     },
     contextLink: {
@@ -194,13 +182,13 @@ const styles = StyleSheet.create({
     mainRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 12,
+        gap: theme.spacing.m,
     },
     avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#2b2d2e',
+        width: 48,
+        height: 48,
+        borderRadius: theme.shape.full,
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     postContent: {
         flex: 1,
@@ -209,42 +197,39 @@ const styles = StyleSheet.create({
     authorInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        fontSize: 14,
+        gap: theme.spacing.s,
     },
     authorNameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: theme.spacing.xs,
         flexShrink: 1,
     },
     authorName: {
-        fontWeight: 'bold',
-        color: '#E2E2E6',
+        ...theme.typography.titleMedium,
+        color: theme.colors.onSurface,
         flexShrink: 1,
     },
     timestamp: {
-        color: '#C3C6CF',
+        ...theme.typography.bodySmall,
+        color: theme.colors.onSurfaceVariant,
         flexShrink: 0,
     },
     postText: {
-        color: '#E2E2E6',
-        marginTop: 4,
-        fontSize: 14,
-        lineHeight: 20,
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurface,
+        marginTop: theme.spacing.xs,
     },
     mediaGrid: {
-        marginTop: 8,
+        marginTop: theme.spacing.s,
         flexDirection: 'row',
         flexWrap: 'wrap',
-        margin: -3,
-        borderRadius: 12,
+        gap: theme.spacing.xs,
+        borderRadius: theme.shape.medium,
         overflow: 'hidden',
     },
     imageGridItem: {
-        padding: 3,
-        aspectRatio: 1,
-        backgroundColor: '#2b2d2e',
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     gridImage: {
         width: '100%',
@@ -259,7 +244,7 @@ const styles = StyleSheet.create({
         opacity: 0, // This would need state to handle hover
     },
     actionsContainer: {
-        marginTop: 12,
+        marginTop: theme.spacing.m,
     }
 });
 

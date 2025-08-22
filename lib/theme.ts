@@ -4,25 +4,15 @@ const colors = {
   primary: '#A8C7FA',
   onPrimary: '#003258',
   background: '#111314',
-  surface: '#1E2021',
-  surfaceContainer: '#1E2021',
-  surfaceContainerHigh: '#2b2d2e',
-  surfaceContainerHighest: '#3c3f41',
+  surface: '#1E2021', // Used for main component surfaces like cards, sheets, menus
+  surfaceContainer: '#1E2021', // A bit lighter than background
+  surfaceContainerHigh: '#2b2d2e', // Higher emphasis surface
+  surfaceContainerHighest: '#3c3f41', // Highest emphasis
   onSurface: '#E2E2E6',
   onSurfaceVariant: '#C3C6CF',
-  outline: '#2b2d2e',
+  outline: '#2b2d2e', // Used for borders, dividers
   error: '#F2B8B5',
-  pink: '#ec4899',
-  // Below are colors for the new PostScreen, mapped from the above
-  textPrimary: '#E2E2E6', // onSurface
-  textSecondary: '#C3C6CF', // onSurfaceVariant
-  textTertiary: '#C3C6CF', // onSurfaceVariant
-  accent: '#ec4899', // pink
-  brand: '#A8C7FA', // primary
-  line: '#2b2d2e', // outline
-  card: '#1E2021', // surface
-  badge: '#2b2d2e', // surfaceContainerHigh
-  inputBg: '#2b2d2e', // surfaceContainerHigh
+  pink: '#ec4899', // A custom accent color
 };
 
 const shape = {
@@ -52,13 +42,6 @@ const typography = {
   bodyLarge: { fontSize: 16, lineHeight: 24 },
   bodyMedium: { fontSize: 14, lineHeight: 20 },
   bodySmall: { fontSize: 12, lineHeight: 16 },
-  // For PostScreen mapping
-  font: {
-    title: 18,
-    body: 15,
-    small: 13,
-    tiny: 11,
-  },
 };
 
 export const theme = {
@@ -66,8 +49,4 @@ export const theme = {
   shape,
   spacing,
   typography,
-  // For PostScreen backwards compatibility
-  color: colors,
-  radius: shape,
-  font: typography.font,
 };
