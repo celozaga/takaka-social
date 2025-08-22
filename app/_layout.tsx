@@ -5,7 +5,7 @@ import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDime
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AtpProvider, useAtp } from '@/context/AtpContext';
 import { UIProvider, useUI } from '@/context/UIContext';
-import { HiddenPostsProvider } from '@/context/HiddenPostsContext';
+import { HiddenPostsProvider } from '@/context/HiddenPostsProvider';
 import { ModerationProvider } from '@/context/ModerationContext';
 import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
 import { Toaster, ToastProvider } from '@/components/ui/Toaster';
@@ -49,7 +49,7 @@ function AppLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  const isFullScreenPage = [].some(p => pathname.startsWith(p));
+  const isFullScreenPage = ['/watch'].some(p => pathname.startsWith(p));
   const showNav = !isFullScreenPage;
 
   const appContainerStyle: StyleProp<ViewStyle> = [
