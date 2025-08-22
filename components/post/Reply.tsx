@@ -90,7 +90,10 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
 
     if (AppBskyEmbedVideo.isView(mediaEmbed)) {
         const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
-        const videoUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${mediaEmbed.cid}`;
+        const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
+        blobUrl.searchParams.set('did', authorDid);
+        blobUrl.searchParams.set('cid', mediaEmbed.cid);
+        const videoUrl = blobUrl.toString();
         const aspectRatio = mediaEmbed.aspectRatio ? mediaEmbed.aspectRatio.width / mediaEmbed.aspectRatio.height : 16/9;
         return (
             <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>

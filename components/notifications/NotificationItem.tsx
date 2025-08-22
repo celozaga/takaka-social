@@ -40,7 +40,10 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
         if (!mediaEmbed || mediaEmbed.images.length === 0) return null;
         const firstImage = mediaEmbed.images[0];
         const authorDid = new AtUri(postUri).hostname;
-        const imageUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${firstImage.image.ref.toString()}`;
+        const imageUrlObj = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
+        imageUrlObj.searchParams.set('did', authorDid);
+        imageUrlObj.searchParams.set('cid', firstImage.image.ref.toString());
+        const imageUrl = imageUrlObj.toString();
         return <Image source={{ uri: imageUrl }} style={styles.previewImage} />;
     };
 

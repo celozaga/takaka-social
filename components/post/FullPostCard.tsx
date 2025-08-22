@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
@@ -130,7 +131,10 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             if ('view' in item) { // item is a video
                 const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
                 const hlsUrl = playbackUrls.get(post.uri);
-                const blobVideoUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoItem.view.cid}`;
+                const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
+                blobUrl.searchParams.set('did', authorDid);
+                blobUrl.searchParams.set('cid', videoItem.view.cid);
+                const blobVideoUrl = blobUrl.toString();
                 const aspectRatio = videoItem.view.aspectRatio ? videoItem.view.aspectRatio.width / videoItem.view.aspectRatio.height : 16 / 9;
 
                 return (
@@ -207,7 +211,10 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                          (() => {
                             const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
                             const hlsUrl = playbackUrls.get(post.uri);
-                            const blobVideoUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoItem.view.cid}`;
+                            const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
+                            blobUrl.searchParams.set('did', authorDid);
+                            blobUrl.searchParams.set('cid', videoItem.view.cid);
+                            const blobVideoUrl = blobUrl.toString();
                             return (
                                 <SharedVideoPlayer
                                     options={{
@@ -478,14 +485,13 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.m,
     },
     videoContainer: {
+        position: 'relative',
         maxHeight: 1000,
         marginTop: theme.spacing.s,
         width: '100%',
         borderRadius: theme.shape.medium,
         overflow: 'hidden',
         backgroundColor: 'black',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     playButtonOverlay: {
         ...StyleSheet.absoluteFillObject,
