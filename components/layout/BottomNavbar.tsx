@@ -186,10 +186,6 @@ const styles = StyleSheet.create({
 
   // Desktop: Navigation Rail
   navRail: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
     width: 80,
     backgroundColor: theme.colors.background,
     alignItems: 'center',

@@ -54,16 +54,27 @@ function AppLayout() {
   const mainContentStyle: StyleProp<ViewStyle> = [
     styles.mainContent,
     isFullScreenPage && styles.fullScreenContent,
-    showNav && isDesktop && styles.mainContentDesktop,
     showNav && !isDesktop && styles.mainContentMobile
   ];
 
   return (
       <SafeAreaView style={styles.container}>
-        {showNav && <BottomNavbar />}
-        <View style={mainContentStyle}>
-          <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
-        </View>
+        {isDesktop && showNav ? (
+          <View style={styles.desktopWrapper}>
+            <BottomNavbar />
+            <View style={mainContentStyle}>
+              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+            </View>
+          </View>
+        ) : (
+          <>
+            {showNav && <BottomNavbar />}
+            <View style={mainContentStyle}>
+              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+            </View>
+          </>
+        )}
+        
         {!session && showNav && <LoginPrompt />}
 
         {/* MODALS */}
@@ -176,14 +187,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  desktopWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    width: '100%',
+    maxWidth: 720,
+    marginHorizontal: 'auto',
+  },
   mainContent: {
     flex: 1,
-    marginHorizontal: 'auto',
     width: '100%',
     maxWidth: 640,
-  },
-  mainContentDesktop: {
-    marginLeft: 80, // Width of Navigation Rail
   },
   mainContentMobile: {
     paddingBottom: 80, // Height of Navigation Bar
