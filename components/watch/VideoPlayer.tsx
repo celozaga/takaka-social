@@ -26,46 +26,37 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
   const { post } = postView;
   const record = post.record as any;
 
-  let embedView: AppBskyEmbedVideo.View | undefined;
-  if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
-  else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
-
   useEffect(() => {
     setStatus('loading');
     setIsInternallyPaused(false);
     setVideoUrl(null);
 
-    const fetchVideoUrl = async () => {
-        if (!embedView) return;
+    const { post } = postView;
+    let currentEmbedView: AppBskyEmbedVideo.View | undefined;
+    if (AppBskyEmbedVideo.isView(post.embed)) currentEmbedView = post.embed;
+    else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) currentEmbedView = post.embed.media as AppBskyEmbedVideo.View;
 
-        const did = post.author.did;
-        const cid = embedView.cid;
+    if (!currentEmbedView) {
+      setStatus('error');
+      return;
+    }
 
-        // 1. Try getPlaybackUrl for HLS streams
-        try {
-            const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did, cid });
-            if (res.data.url) {
-                setVideoUrl(res.data.url);
-                return;
-            }
-        } catch (e) {
-            console.warn(`getPlaybackUrl failed for ${post.uri}, falling back to getBlob.`, e);
-        }
+    try {
+      const did = post.author.did;
+      const cid = currentEmbedView.cid;
+      const serviceUrl = agent.service.toString();
+      const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+      const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${did}&cid=${cid}`;
+      setVideoUrl(blobUrl);
+    } catch (e) {
+      console.error('Failed to construct blob URL', e);
+      setStatus('error');
+    }
+  }, [postView, agent]);
 
-        // 2. Fallback to getBlob for direct MP4 download
-        try {
-            const serviceUrl = agent.service.toString();
-            const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-            const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${did}&cid=${cid}`;
-            setVideoUrl(blobUrl);
-        } catch (e) {
-             console.error('Failed to construct blob URL', e);
-             setStatus('error');
-        }
-    };
-    
-    fetchVideoUrl();
-  }, [post.uri, agent]);
+  let embedView: AppBskyEmbedVideo.View | undefined;
+  if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
+  else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
 
   if (!embedView) return null;
   
