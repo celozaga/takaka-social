@@ -7,6 +7,7 @@ import VideoPlayer from './VideoPlayer';
 import { useVideoManager } from './hooks/useVideoManager';
 import { theme } from '@/lib/theme';
 import { useAtp } from '@/context/AtpContext';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   videoPosts: AppBskyFeedDefs.FeedViewPost[];
@@ -24,6 +25,7 @@ interface Props {
  */
 const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMore }) => {
   const { agent } = useAtp();
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const { height } = useWindowDimensions();
   const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
@@ -42,21 +44,30 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
   }, [videoPosts.length, videoRefs]);
 
 
-  const prefetchNextUrl = useCallback(async (post: AppBskyFeedDefs.FeedViewPost) => {
+  const prefetchUrls = useCallback(async (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     // Fetches the high-quality HLS stream URL for a video before it becomes visible.
-    if (!post || playbackUrls.has(post.post.uri)) return;
-    try {
-        const embed = post.post.embed;
-        let videoEmbed: AppBskyEmbedVideo.View | undefined;
-        if (AppBskyEmbedVideo.isView(embed)) videoEmbed = embed;
-        else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) videoEmbed = embed.media as AppBskyEmbedVideo.View;
-        if (!videoEmbed) return;
-        const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did: post.post.author.did, cid: videoEmbed.cid });
-        if (res.data.url) {
-            setPlaybackUrls(prev => new Map(prev).set(post.post.uri, res.data.url));
-        }
-    } catch (e) { console.warn(`Could not prefetch playback URL for ${post.post.uri}`, e); }
+    for (const post of posts) {
+        if (!post || playbackUrls.has(post.post.uri)) continue;
+        try {
+            const embed = post.post.embed;
+            let videoEmbed: AppBskyEmbedVideo.View | undefined;
+            if (AppBskyEmbedVideo.isView(embed)) videoEmbed = embed;
+            else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) videoEmbed = embed.media as AppBskyEmbedVideo.View;
+            if (!videoEmbed) continue;
+            const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did: post.post.author.did, cid: videoEmbed.cid });
+            if (res.data.url) {
+                setPlaybackUrls(prev => new Map(prev).set(post.post.uri, res.data.url));
+            }
+        } catch (e) { console.warn(`Could not prefetch playback URL for ${post.post.uri}`, e); }
+    }
   }, [agent, playbackUrls]);
+
+  // Prefetch first two videos on initial load
+  useEffect(() => {
+      if(videoPosts.length > 0) {
+          prefetchUrls(videoPosts.slice(0, 2));
+      }
+  }, [videoPosts, prefetchUrls])
 
 
   // This callback from FlatList tells us which item is currently visible.
@@ -65,9 +76,9 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
       const newIndex = viewableItems[0].index;
       if (newIndex !== activeIndex) {
           setActiveIndex(newIndex);
-          // When the active video changes, prefetch the next one.
-          const nextPost = videoPosts[newIndex + 1];
-          if (nextPost) prefetchNextUrl(nextPost);
+          // When the active video changes, prefetch the next two.
+          const postsToPrefetch = [videoPosts[newIndex + 1], videoPosts[newIndex + 2]].filter(Boolean);
+          if (postsToPrefetch.length > 0) prefetchUrls(postsToPrefetch);
       }
     }
   }).current;
@@ -117,11 +128,11 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
       onEndReachedThreshold={3} // Load more when 3 items from the end
       ListFooterComponent={() => {
           if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
-          if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>You've seen it all!</Text></View>;
+          if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
           return null;
       }}
       // Performance optimizations for FlatList
-      windowSize={3}
+      windowSize={5}
       initialNumToRender={1}
       maxToRenderPerBatch={1}
       removeClippedSubviews
@@ -137,6 +148,7 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
 const styles = StyleSheet.create({
     fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'black' },
     endText: { ...theme.typography.titleMedium, color: 'white' },
+    endSubText: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.s },
 })
 
 export default WatchFeed;

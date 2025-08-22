@@ -65,14 +65,6 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
   return (
     <TouchableWithoutFeedback onPress={togglePlayPause}>
       <View style={styles.container}>
-        {/* Show thumbnail as a placeholder for a better UX */}
-        { (isLoading || !status) && embedView.thumbnail && (
-            <Image 
-                source={{ uri: embedView.thumbnail }} 
-                style={styles.thumbnail}
-                resizeMode="contain"
-            />
-        )}
         <Video
           ref={videoRef}
           source={{ uri: hlsUrl || blobUrl }}
@@ -111,7 +103,6 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
 const styles = StyleSheet.create({
   container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' },
   video: { width: '100%', height: '100%' },
-  thumbnail: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', zIndex: 1 },
   loader: { position: 'absolute', zIndex: 2 },
   infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: 96, zIndex: 20 },
   authorText: { ...theme.typography.titleSmall, color: 'white', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2, },
