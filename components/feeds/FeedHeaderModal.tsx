@@ -5,6 +5,7 @@ import { useFeedActions } from '../../hooks/useFeedActions';
 import { Heart, Pin, Share2, AlertCircle, X } from 'lucide-react';
 import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();
@@ -29,14 +30,14 @@ const FeedHeaderModal: React.FC = () => {
                 isDestructive ? styles.actionButtonDestructive : (isActive ? styles.actionButtonActive : styles.actionButtonDefault)
             ]}
         >
-            <Icon size={20} color={isDestructive ? '#F2B8B5' : (isActive ? '#001D35' : '#E2E2E6')} fill={isActive && !isDestructive ? '#001D35' : 'none'}/>
+            <Icon size={20} color={isDestructive ? theme.colors.error : (isActive ? theme.colors.onPrimary : theme.colors.onSurface)} fill={isActive && !isDestructive ? theme.colors.onPrimary : 'none'}/>
             <Text style={[styles.actionButtonText, isDestructive ? styles.actionButtonTextDestructive : (isActive ? styles.actionButtonTextActive : styles.actionButtonTextDefault)]}>{text}</Text>
         </Pressable>
     );
 
     const renderContent = () => {
         if (isLoading) {
-            return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#A8C7FA" /></View>;
+            return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
         }
 
         if (error || !feedView) {
@@ -47,10 +48,10 @@ const FeedHeaderModal: React.FC = () => {
             <>
                 <View style={styles.header}>
                     <Pressable onPress={closeFeedModal} style={styles.headerButton} accessibilityLabel={t('common.close')}>
-                        <X size={20} color="#C3C6CF" />
+                        <X size={20} color={theme.colors.onSurfaceVariant} />
                     </Pressable>
                      <Pressable onPress={handleShare} style={styles.headerButton} accessibilityLabel={t('common.share')}>
-                        <Share2 size={20} color="#C3C6CF" />
+                        <Share2 size={20} color={theme.colors.onSurfaceVariant} />
                     </Pressable>
                 </View>
                 <View style={styles.content}>
@@ -73,7 +74,7 @@ const FeedHeaderModal: React.FC = () => {
                         onPress={handlePinToggle}
                     />
                 </View>
-                 <View style={{ padding: 16, paddingTop: 0 }}>
+                 <View style={{ padding: theme.spacing.l, paddingTop: 0 }}>
                     <ActionButton
                         icon={AlertCircle}
                         text={t('feedModal.report')}
@@ -94,8 +95,8 @@ const FeedHeaderModal: React.FC = () => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
     },
     loadingContainer: {
         height: 256,
@@ -104,8 +105,8 @@ const styles = StyleSheet.create({
     },
     errorText: {
         textAlign: 'center',
-        color: '#F2B8B5',
-        padding: 16,
+        color: theme.colors.error,
+        padding: theme.spacing.l,
     },
     header: {
         position: 'absolute',
@@ -114,67 +115,66 @@ const styles = StyleSheet.create({
         right: 0,
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
-        padding: 12,
+        padding: theme.spacing.m,
         zIndex: 10,
     },
     headerButton: {
-        padding: 4,
+        padding: theme.spacing.xs,
     },
     content: {
-        padding: 16,
+        padding: theme.spacing.l,
         paddingTop: 48,
         alignItems: 'center',
     },
     avatarImage: {
         width: 80,
         height: 80,
-        borderRadius: 12,
-        marginBottom: 12,
+        borderRadius: theme.shape.large,
+        marginBottom: theme.spacing.m,
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#E2E2E6',
+        ...theme.typography.titleLarge,
+        color: theme.colors.onSurface,
         textAlign: 'center',
     },
     byline: {
-        fontSize: 14,
-        color: '#C3C6CF',
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
         textAlign: 'center',
     },
     likes: {
-        fontSize: 14,
-        color: '#C3C6CF',
-        marginTop: 8,
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
+        marginTop: theme.spacing.s,
         textAlign: 'center',
     },
     description: {
-        marginTop: 12,
-        color: '#E2E2E6',
-        fontSize: 16,
+        marginTop: theme.spacing.m,
+        color: theme.colors.onSurface,
+        ...theme.typography.bodyLarge,
         textAlign: 'center',
     },
     actionsGrid: {
-        padding: 16,
+        padding: theme.spacing.l,
         flexDirection: 'row',
-        gap: 8,
+        gap: theme.spacing.s,
     },
     actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 12,
+        gap: theme.spacing.m,
         flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: theme.spacing.m,
+        borderRadius: theme.shape.medium,
     },
-    actionButtonDefault: { backgroundColor: '#2b2d2e' },
-    actionButtonActive: { backgroundColor: '#D1E4FF' },
-    actionButtonDestructive: { backgroundColor: '#2b2d2e' },
-    actionButtonText: { fontWeight: '600' },
-    actionButtonTextDefault: { color: '#E2E2E6' },
-    actionButtonTextActive: { color: '#001D35' },
-    actionButtonTextDestructive: { color: '#F2B8B5' },
+    actionButtonDefault: { backgroundColor: theme.colors.surfaceContainerHigh },
+    actionButtonActive: { backgroundColor: theme.colors.primary },
+    actionButtonDestructive: { backgroundColor: theme.colors.surfaceContainerHigh },
+    actionButtonText: { ...theme.typography.labelLarge, fontWeight: '600' },
+    actionButtonTextDefault: { color: theme.colors.onSurface },
+    actionButtonTextActive: { color: theme.colors.onPrimary },
+    actionButtonTextDestructive: { color: theme.colors.error },
 });
 
 export default FeedHeaderModal;

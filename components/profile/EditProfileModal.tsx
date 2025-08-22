@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useProfileCache } from '../../context/ProfileCacheContext';
+import { useTranslation } from 'react-i18next';
 import { AppBskyActorDefs } from '@atproto/api';
-import { X, Camera, Loader2 } from 'lucide-react';
+import { X, Camera } from 'lucide-react';
 import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface EditProfileModalProps {
   onClose: () => void;
@@ -14,6 +16,7 @@ interface EditProfileModalProps {
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { getProfile, clearProfile } = useProfileCache();
 
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
@@ -26,7 +29,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Note: File input is web-specific.
   const avatarInputRef = Platform.OS === 'web' ? useRef<HTMLInputElement>(null) : null;
   
   useEffect(() => {
@@ -39,17 +41,17 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
           setDescription(data.description || '');
           setAvatarPreview(data.avatar);
         })
-        .catch(err => setError("Could not load your profile data."))
+        .catch(err => setError(t('editProfile.loadingError')))
         .finally(() => setIsLoading(false));
     }
-  }, [getProfile, session?.did]);
+  }, [getProfile, session?.did, t]);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 1000000) { // 1MB limit
-        toast({ title: "Image too large", description: "Please select an image smaller than 1MB.", variant: "destructive" });
+        toast({ title: t('editProfile.toast.imageTooLarge'), description: t('editProfile.toast.imageTooLargeDescription'), variant: "destructive" });
         return;
     }
 
@@ -76,17 +78,17 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
         avatar: avatarBlob || existing?.avatar,
       }));
       if (session?.did) clearProfile(session.did);
-      toast({ title: "Profile updated successfully!" });
+      toast({ title: t('editProfile.toast.success') });
       onSuccess();
     } catch (error) {
-      toast({ title: "Error updating profile", variant: "destructive" });
+      toast({ title: t('editProfile.toast.error'), variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
   };
 
   if (isLoading) {
-    return <View style={styles.centered}><ActivityIndicator size="large" color="#A8C7FA" /></View>
+    return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
   }
 
   if (error) {
@@ -96,12 +98,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   return (
     <View style={styles.container}>
         <View style={styles.header}>
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 16}}>
-                <Pressable onPress={onClose} style={styles.closeButton}><X color="#E2E2E6" /></Pressable>
-                <Text style={styles.headerTitle}>Edit Profile</Text>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l}}>
+                <Pressable onPress={onClose} style={styles.closeButton}><X color={theme.colors.onSurface} /></Pressable>
+                <Text style={styles.headerTitle}>{t('editProfile.title')}</Text>
             </View>
             <Pressable onPress={handleSave} disabled={isSaving} style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}>
-                {isSaving ? <ActivityIndicator color="#003258" /> : <Text style={styles.saveButtonText}>Save</Text>}
+                {isSaving ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Text style={styles.saveButtonText}>{t('common.save')}</Text>}
             </Pressable>
         </View>
         
@@ -117,19 +119,19 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
                     {Platform.OS === 'web' && <input type="file" ref={avatarInputRef as any} onChange={handleFileChange} accept="image/jpeg, image/png, image/gif" style={{ display: 'none' }} />}
                 </View>
 
-                <View style={{ gap: 16 }}>
+                <View style={{ gap: theme.spacing.l }}>
                     <View>
-                        <Text style={styles.label}>Display Name</Text>
+                        <Text style={styles.label}>{t('editProfile.displayName')}</Text>
                         <TextInput
                             value={displayName}
                             onChangeText={setDisplayName}
                             maxLength={64}
                             style={styles.input}
-                            placeholderTextColor="#8A9199"
+                            placeholderTextColor={theme.colors.onSurfaceVariant}
                         />
                     </View>
                     <View>
-                        <Text style={styles.label}>Bio</Text>
+                        <Text style={styles.label}>{t('editProfile.bio')}</Text>
                         <TextInput
                             value={description}
                             onChangeText={setDescription}
@@ -137,7 +139,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
                             multiline
                             numberOfLines={4}
                             style={[styles.input, styles.textArea]}
-                            placeholderTextColor="#8A9199"
+                            placeholderTextColor={theme.colors.onSurfaceVariant}
                         />
                     </View>
                 </View>
@@ -148,22 +150,22 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
 };
 
 const styles = StyleSheet.create({
-    centered: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center' },
-    errorText: { color: '#F2B8B5' },
-    container: { backgroundColor: '#1E2021', borderRadius: 12, overflow: 'hidden', maxHeight: '90%', display: 'flex' as any, flexDirection: 'column' },
-    header: { padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
-    closeButton: { padding: 8, marginLeft: -8 },
-    headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#E2E2E6' },
-    saveButton: { backgroundColor: '#A8C7FA', paddingVertical: 8, paddingHorizontal: 24, borderRadius: 999 },
+    centered: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center' },
+    errorText: { color: theme.colors.error },
+    container: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, overflow: 'hidden', maxHeight: '90%', display: 'flex' as any, flexDirection: 'column' },
+    header: { padding: theme.spacing.l, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
+    closeButton: { padding: theme.spacing.s, marginLeft: -theme.spacing.s },
+    headerTitle: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
+    saveButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.xl, borderRadius: theme.shape.full },
     saveButtonDisabled: { opacity: 0.5 },
-    saveButtonText: { color: '#003258', fontWeight: 'bold' },
-    content: { padding: 24 },
-    avatarContainer: { alignItems: 'center', marginBottom: 24 },
-    avatarPressable: { width: 128, height: 128, borderRadius: 64, borderWidth: 4, borderColor: '#1E2021', backgroundColor: '#2b2d2e', overflow: 'hidden' },
+    saveButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
+    content: { padding: theme.spacing.xl },
+    avatarContainer: { alignItems: 'center', marginBottom: theme.spacing.xl },
+    avatarPressable: { width: 128, height: 128, borderRadius: 64, borderWidth: 4, borderColor: theme.colors.surfaceContainer, backgroundColor: theme.colors.surfaceContainerHigh, overflow: 'hidden' },
     avatarImage: { width: '100%', height: '100%', resizeMode: 'cover' },
     avatarOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
-    label: { fontSize: 14, fontWeight: '500', color: '#C3C6CF', marginBottom: 4 },
-    input: { width: '100%', padding: 12, backgroundColor: '#2b2d2e', borderRadius: 8, color: '#E2E2E6' },
+    label: { ...theme.typography.labelLarge, color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.xs },
+    input: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
     textArea: { height: 100, textAlignVertical: 'top' },
 });
 

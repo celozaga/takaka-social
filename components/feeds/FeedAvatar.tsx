@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { List } from 'lucide-react';
 import { View, Image, StyleSheet, StyleProp, ImageStyle } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface FeedAvatarProps {
   src?: string;
@@ -15,7 +16,7 @@ const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, style }) => {
   if (hasError) {
     return (
       <View style={[styles.fallback, style]}>
-        <List style={styles.icon} color="#C3C6CF" />
+        <List style={styles.icon} color={theme.colors.onSurfaceVariant} />
       </View>
     );
   }
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
     fallback: {
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#2b2d2e' // surface-3
+        backgroundColor: theme.colors.surfaceContainerHigh
     },
     icon: {
         width: '50%',

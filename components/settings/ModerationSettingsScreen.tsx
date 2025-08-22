@@ -5,6 +5,7 @@ import { ChevronRight, Shield, Filter, Users, MessageSquare, UserX } from 'lucid
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { Link } from 'expo-router';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 const SettingsItem: React.FC<{
     icon: React.FC<any>;
@@ -16,13 +17,13 @@ const SettingsItem: React.FC<{
     const content = (
         <View style={[styles.settingsItemInner, disabled && styles.disabled]}>
             <View style={styles.settingsItemLeft}>
-                <Icon style={styles.settingsIcon} color="#C3C6CF" />
+                <Icon style={styles.settingsIcon} color={theme.colors.onSurfaceVariant} />
                 <View>
                     <Text style={styles.settingsTitle}>{title}</Text>
                     {subtitle && <Text style={styles.settingsSubtitle}>{subtitle}</Text>}
                 </View>
             </View>
-            <ChevronRight style={styles.settingsChevron} color="#C3C6CF" />
+            <ChevronRight style={styles.settingsChevron} color={theme.colors.onSurfaceVariant} />
         </View>
     );
     
@@ -62,7 +63,7 @@ const ModerationSettingsScreen: React.FC = () => {
                         {isReady ? (
                              <ToggleSwitch checked={adultContentEnabled} onChange={setAdultContentEnabled} />
                         ) : (
-                            <ActivityIndicator color="#C3C6CF" />
+                            <ActivityIndicator color={theme.colors.onSurfaceVariant} />
                         )}
                     </View>
                 </View>
@@ -74,13 +75,13 @@ const ModerationSettingsScreen: React.FC = () => {
                             <Pressable style={({ pressed }) => [pressed && styles.pressed]}>
                                  <View style={styles.settingsItemInner}>
                                     <View style={styles.settingsItemLeft}>
-                                        <Shield style={styles.settingsIcon} color="#A8C7FA" />
+                                        <Shield style={styles.settingsIcon} color={theme.colors.primary} />
                                         <View>
                                             <Text style={styles.settingsTitle}>Bluesky Moderation Service</Text>
                                             <Text style={styles.settingsSubtitle}>Official Bluesky moderation service.</Text>
                                         </View>
                                     </View>
-                                    <ChevronRight style={styles.settingsChevron} color="#C3C6CF" />
+                                    <ChevronRight style={styles.settingsChevron} color={theme.colors.onSurfaceVariant} />
                                 </View>
                             </Pressable>
                         </Link>
@@ -93,42 +94,43 @@ const ModerationSettingsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 16,
-        paddingHorizontal: 16,
-        gap: 24,
+        marginTop: theme.spacing.l,
+        paddingHorizontal: theme.spacing.l,
+        gap: theme.spacing.xl,
     },
     section: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
         overflow: 'hidden',
     },
     settingsItemInner: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        padding: theme.spacing.l,
     },
     disabled: { opacity: 0.5 },
-    pressed: { backgroundColor: '#2b2d2e' },
+    pressed: { backgroundColor: theme.colors.surfaceContainerHigh },
     settingsItemLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: theme.spacing.l,
     },
     settingsIcon: { width: 24, height: 24 },
-    settingsTitle: { fontWeight: '600', color: '#E2E2E6', fontSize: 16 },
-    settingsSubtitle: { fontSize: 14, color: '#C3C6CF' },
+    settingsTitle: { ...theme.typography.bodyLarge, fontWeight: '600', color: theme.colors.onSurface },
+    settingsSubtitle: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
     settingsChevron: { width: 20, height: 20 },
     sectionHeader: {
+        ...theme.typography.labelLarge,
         fontWeight: 'bold',
-        color: '#C3C6CF',
-        paddingHorizontal: 8,
-        marginBottom: 8,
+        color: theme.colors.onSurfaceVariant,
+        paddingHorizontal: theme.spacing.s,
+        marginBottom: theme.spacing.s,
     },
     toggleItem: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
+        padding: theme.spacing.l,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

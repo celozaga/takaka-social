@@ -5,6 +5,7 @@ import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface PostActionsProps {
   post: AppBskyFeedDefs.PostView;
@@ -36,7 +37,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   return (
     <View style={styles.container}>
       <Pressable onPress={handleReplyClick} style={styles.actionButton}>
-        <MessageCircle size={18} color="#C3C6CF" />
+        <MessageCircle size={18} color={theme.colors.onSurfaceVariant} />
         <Text style={styles.actionText}>{post.replyCount || 0}</Text>
       </Pressable>
       <Pressable 
@@ -44,7 +45,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         disabled={isReposting}
         style={styles.actionButton}
       >
-        <Repeat size={18} color={repostUri ? '#A8C7FA' : '#C3C6CF'} />
+        <Repeat size={18} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
         <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{repostCount}</Text>
       </Pressable>
       <Pressable 
@@ -52,7 +53,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         disabled={isLiking}
         style={styles.actionButton}
       >
-        <Heart size={18} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? '#ec4899' : 'none'} />
+        <Heart size={18} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? theme.colors.pink : 'none'} />
         <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{likeCount}</Text>
       </Pressable>
     </View>
@@ -63,23 +64,23 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: theme.spacing.m,
     },
     actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: theme.spacing.xs,
     },
     actionText: {
-        fontSize: 14,
+        ...theme.typography.labelLarge,
         fontWeight: '600',
-        color: '#C3C6CF',
+        color: theme.colors.onSurfaceVariant,
     },
     repostTextActive: {
-        color: '#A8C7FA',
+        color: theme.colors.primary,
     },
     likeTextActive: {
-        color: '#ec4899',
+        color: theme.colors.pink,
     }
 });
 

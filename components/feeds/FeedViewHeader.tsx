@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { useUI } from '../../context/UIContext';
 import { useFeedActions } from '../../hooks/useFeedActions';
 import { ArrowLeft, MoreHorizontal, Heart } from 'lucide-react';
 import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface FeedViewHeaderProps {
     feedUri: string;
@@ -30,7 +30,7 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({ feedUri, onBack }) => {
         return (
             <View style={styles.container}>
                 <Pressable onPress={onBack} style={styles.button}>
-                    <ArrowLeft size={20} color="#E2E2E6" />
+                    <ArrowLeft size={20} color={theme.colors.onSurface} />
                 </Pressable>
                 <Text style={styles.errorText}>Could not load feed</Text>
                 <View style={{ width: 36 }} />
@@ -41,7 +41,7 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({ feedUri, onBack }) => {
     return (
         <View style={styles.container}>
             <Pressable onPress={onBack} style={styles.button}>
-                <ArrowLeft size={20} color="#E2E2E6" />
+                <ArrowLeft size={20} color={theme.colors.onSurface} />
             </Pressable>
             <View style={styles.titleContainer}>
                 <FeedAvatar src={feedView.avatar} alt="" style={styles.avatar} />
@@ -49,11 +49,11 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({ feedUri, onBack }) => {
             </View>
             <View style={styles.rightContainer}>
                 <View style={styles.likeContainer}>
-                    <Heart size={16} color="#ec4899" />
+                    <Heart size={16} color={theme.colors.pink} />
                     <Text style={styles.likeText}>{likeCount}</Text>
                 </View>
                 <Pressable onPress={() => openFeedModal(feedUri)} style={styles.button}>
-                    <MoreHorizontal size={20} color="#E2E2E6" />
+                    <MoreHorizontal size={20} color={theme.colors.onSurface} />
                 </Pressable>
             </View>
         </View>
@@ -66,8 +66,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         height: 64,
-        paddingHorizontal: 16,
-        backgroundColor: 'rgba(17, 19, 20, 0.8)', // surface-1/80
+        paddingHorizontal: theme.spacing.l,
+        backgroundColor: 'rgba(16, 16, 16, 0.8)', // theme.colors.background with transparency
     },
     skeletonContainer: {
         flexDirection: 'row',
@@ -78,50 +78,50 @@ const styles = StyleSheet.create({
     skeletonItem: {
         height: 32,
         width: '40%',
-        backgroundColor: '#2b2d2e',
-        borderRadius: 8,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.medium,
     },
     button: {
-        padding: 8,
-        margin: -8,
-        borderRadius: 999,
+        padding: theme.spacing.s,
+        margin: -theme.spacing.s,
+        borderRadius: theme.shape.full,
     },
     errorText: {
-        fontSize: 14,
-        color: '#F2B8B5',
+        ...theme.typography.bodyMedium,
+        color: theme.colors.error,
     },
     titleContainer: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: theme.spacing.s,
         minWidth: 0,
-        paddingHorizontal: 16,
+        paddingHorizontal: theme.spacing.l,
     },
     avatar: {
         width: 28,
         height: 28,
-        borderRadius: 6,
+        borderRadius: theme.shape.small,
     },
     title: {
-        fontWeight: 'bold',
-        color: '#E2E2E6',
+        ...theme.typography.titleSmall,
+        color: theme.colors.onSurface,
         flexShrink: 1,
     },
     rightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: theme.spacing.xs,
     },
     likeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: theme.spacing.xs,
     },
     likeText: {
-        fontSize: 14,
-        color: '#C3C6CF',
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
     },
 });
 

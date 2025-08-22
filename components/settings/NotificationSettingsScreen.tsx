@@ -1,18 +1,18 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell, Loader2 } from 'lucide-react';
+import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell } from 'lucide-react';
 import Head from '../shared/Head';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
-const APP_ID = 'social.takaka.app'; // A unique identifier for our app
+const APP_ID = 'social.takaka.app';
 
 interface PushNotificationsPref {
     $type: 'app.bsky.actor.defs#pushNotificationsPref';
@@ -40,12 +40,10 @@ const NotificationSettingsScreen: React.FC = () => {
     });
     type SettingsKey = keyof typeof settings;
 
-    // Load initial settings from preferences and browser permissions
     useEffect(() => {
         setCustomFeedHeaderVisible(true);
         const loadSettings = async () => {
             setIsLoading(true);
-            // Check for Notification API availability for web
             if (typeof Notification !== 'undefined') {
               setPushEnabled(Notification.permission === 'granted');
             }
@@ -176,7 +174,7 @@ const NotificationSettingsScreen: React.FC = () => {
             <View style={styles.container}>
                 <ScreenHeader title={t('notificationSettings.title')} />
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#A8C7FA" />
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
                 </View>
             </View>
         )
@@ -191,7 +189,7 @@ const NotificationSettingsScreen: React.FC = () => {
                      <View style={styles.section}>
                         <View style={styles.listItem}>
                             <View style={styles.listItemLeft}>
-                                <Bell size={24} color="#C3C6CF" />
+                                <Bell size={24} color={theme.colors.onSurfaceVariant} />
                                 <View>
                                     <Text style={styles.label}>{t('notificationSettings.enablePush')}</Text>
                                     <Text style={styles.subLabel}>{t('notificationSettings.getAlerts')}</Text>
@@ -207,7 +205,7 @@ const NotificationSettingsScreen: React.FC = () => {
                              {settingsItems.map((item, index) => (
                                 <View key={item.key} style={[styles.listItem, index === settingsItems.length - 1 && styles.lastListItem]}>
                                     <View style={styles.listItemLeft}>
-                                        <item.icon size={24} color="#C3C6CF" />
+                                        <item.icon size={24} color={theme.colors.onSurfaceVariant} />
                                         <Text style={styles.label}>{item.title}</Text>
                                     </View>
                                     <ToggleSwitch
@@ -235,30 +233,31 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scrollContent: {
-        padding: 16,
-        gap: 16,
+        padding: theme.spacing.l,
+        gap: theme.spacing.l,
     },
     section: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
         overflow: 'hidden',
     },
     disabledSection: {
         opacity: 0.5,
     },
     sectionHeader: {
+        ...theme.typography.labelLarge,
         fontWeight: 'bold',
-        color: '#C3C6CF',
-        paddingHorizontal: 8,
-        marginBottom: 8,
+        color: theme.colors.onSurfaceVariant,
+        paddingHorizontal: theme.spacing.s,
+        marginBottom: theme.spacing.s,
     },
     listItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        padding: theme.spacing.l,
         borderBottomWidth: 1,
-        borderBottomColor: '#2b2d2e',
+        borderBottomColor: theme.colors.surfaceContainerHigh,
     },
     lastListItem: {
         borderBottomWidth: 0,
@@ -266,16 +265,16 @@ const styles = StyleSheet.create({
     listItemLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: theme.spacing.l,
     },
     label: {
+        ...theme.typography.bodyLarge,
         fontWeight: '600',
-        color: '#E2E2E6',
-        fontSize: 16,
+        color: theme.colors.onSurface,
     },
     subLabel: {
-        fontSize: 14,
-        color: '#C3C6CF',
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
     },
 });
 

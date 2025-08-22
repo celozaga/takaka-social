@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { ToastContext, useToast, ToastMessage, ToastProps } from './use-toast';
 import { CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { theme } from '@/lib/theme';
 
 let toastId = 0;
 
@@ -41,7 +42,7 @@ const ToastComponent: React.FC<ToastMessage & { onDismiss: () => void }> = ({ id
 
   const isDestructive = variant === 'destructive';
   const Icon = isDestructive ? AlertTriangle : CheckCircle;
-  const iconColor = isDestructive ? '#F2B8B5' : '#A8C7FA';
+  const iconColor = isDestructive ? theme.colors.onErrorContainer : theme.colors.primary;
   const AnimatedView = Animated.View as any;
 
   return (
@@ -52,21 +53,21 @@ const ToastComponent: React.FC<ToastMessage & { onDismiss: () => void }> = ({ id
             {description && <Text style={[styles.description, isDestructive && styles.textDestructive]}>{description}</Text>}
         </View>
         <Pressable onPress={onDismiss} style={styles.closeButton}>
-            <X size={16} color={isDestructive ? '#F2B8B5' : '#C3C6CF'} />
+            <X size={16} color={isDestructive ? theme.colors.onErrorContainer : theme.colors.onSurfaceVariant} />
         </Pressable>
     </AnimatedView>
   );
 };
 
 const styles = StyleSheet.create({
-    toasterContainer: { position: 'absolute', bottom: 16, left: 16, right: 16, zIndex: 100, gap: 12, alignItems: 'center' },
-    toast: { width: '100%', maxWidth: 448, padding: 16, paddingRight: 40, borderRadius: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-    toastDefault: { backgroundColor: '#2b2d2e' },
-    toastDestructive: { backgroundColor: '#601410' },
+    toasterContainer: { position: 'absolute', bottom: theme.spacing.l, left: theme.spacing.l, right: theme.spacing.l, zIndex: 100, gap: theme.spacing.m, alignItems: 'center' },
+    toast: { width: '100%', maxWidth: 448, padding: theme.spacing.l, paddingRight: 40, borderRadius: theme.shape.medium, flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.m },
+    toastDefault: { backgroundColor: theme.colors.surfaceContainerHigh },
+    toastDestructive: { backgroundColor: theme.colors.errorContainer },
     icon: { flexShrink: 0, marginTop: 2 },
     textContainer: { flex: 1 },
-    title: { fontWeight: '600', color: '#E2E2E6' },
-    description: { fontSize: 14, marginTop: 4, color: '#E2E2E6', opacity: 0.9 },
-    textDestructive: { color: '#F2B8B5' },
-    closeButton: { position: 'absolute', top: '50%', right: 8, transform: [{ translateY: -16 }], padding: 8, borderRadius: 999 },
+    title: { ...theme.typography.labelLarge, color: theme.colors.onSurface },
+    description: { ...theme.typography.bodyMedium, marginTop: theme.spacing.xs, color: theme.colors.onSurface, opacity: 0.9 },
+    textDestructive: { color: theme.colors.onErrorContainer },
+    closeButton: { position: 'absolute', top: '50%', right: theme.spacing.s, transform: [{ translateY: -16 }], padding: theme.spacing.s, borderRadius: theme.shape.full },
 });

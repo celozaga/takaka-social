@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { Switch, Platform } from 'react-native';
+import { theme } from '@/lib/theme';
 
 const ToggleSwitch: React.FC<{
   checked: boolean;
@@ -9,9 +9,9 @@ const ToggleSwitch: React.FC<{
 }> = ({ checked, onChange, disabled }) => {
   return (
     <Switch
-      trackColor={{ false: '#2b2d2e', true: '#A8C7FA' }} // surface-3, primary
-      thumbColor={Platform.OS === 'ios' ? undefined : (checked ? '#A8C7FA' : '#C3C6CF')}
-      ios_backgroundColor="#2b2d2e"
+      trackColor={{ false: theme.colors.surfaceContainerHigh, true: theme.colors.primary }}
+      thumbColor={Platform.OS === 'ios' ? undefined : (checked ? theme.colors.primary : theme.colors.onSurfaceVariant)}
+      ios_backgroundColor={theme.colors.surfaceContainerHigh}
       onValueChange={onChange}
       value={checked}
       disabled={disabled}

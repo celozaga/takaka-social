@@ -11,9 +11,10 @@ import FeedAvatar from './FeedAvatar';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 const EditableFeedItem: React.FC<{
-    feed: AppBskyFeedDefs.GeneratorView;
+    feed:AppBskyFeedDefs.GeneratorView;
     isPinned: boolean;
     isFirst: boolean;
     isLast: boolean;
@@ -41,22 +42,22 @@ const EditableFeedItem: React.FC<{
                 {isPinned ? (
                     <>
                         <Pressable onPress={onMoveUp} disabled={isFirst || disabled} style={styles.actionButton}>
-                            <ArrowUp size={18} color="#C3C6CF" />
+                            <ArrowUp size={18} color={theme.colors.onSurfaceVariant} />
                         </Pressable>
                         <Pressable onPress={onMoveDown} disabled={isLast || disabled} style={styles.actionButton}>
-                            <ArrowDown size={18} color="#C3C6CF" />
+                            <ArrowDown size={18} color={theme.colors.onSurfaceVariant} />
                         </Pressable>
                         <Pressable onPress={onTogglePin} disabled={disabled} style={styles.actionButton}>
-                            <Pin size={18} color="#A8C7FA" fill="#A8C7FA" />
+                            <Pin size={18} color={theme.colors.primary} fill={theme.colors.primary} />
                         </Pressable>
                     </>
                 ) : (
                     <>
                          <Pressable onPress={onRemove} disabled={disabled} style={[styles.actionButton, styles.actionButtonDestructive]}>
-                            <Trash2 size={18} color="#C3C6CF" />
+                            <Trash2 size={18} color={theme.colors.onSurfaceVariant} />
                         </Pressable>
                         <Pressable onPress={onTogglePin} disabled={disabled} style={styles.actionButton}>
-                            <Pin size={18} color="#C3C6CF" />
+                            <Pin size={18} color={theme.colors.onSurfaceVariant} />
                         </Pressable>
                     </>
                 )}
@@ -108,7 +109,7 @@ const FeedsScreen: React.FC = () => {
                         <Text style={styles.sectionTitle}>{t('feeds.discover')}</Text>
                         <Link href="/search?filter=feeds" asChild>
                             <Pressable style={styles.searchButton}>
-                                <Search size={20} color="#C3C6CF" />
+                                <Search size={20} color={theme.colors.onSurfaceVariant} />
                             </Pressable>
                         </Link>
                     </View>
@@ -136,11 +137,11 @@ const FeedsScreen: React.FC = () => {
             <ScreenHeader title={t('feeds.title')} />
             <ScrollView contentContainerStyle={styles.contentContainer}>
                 <Text style={styles.description}>{t('feeds.manageDescription')}</Text>
-                <View style={{ gap: 24 }}>
+                <View style={{ gap: theme.spacing.xl }}>
                     <View>
                         <Text style={styles.sectionTitle}>{t('feeds.pinned')}</Text>
                         {pinnedItems.length > 0 ? (
-                            <View style={{ gap: 8 }}>
+                            <View style={{ gap: theme.spacing.s }}>
                                 {pinnedItems.map((item, index) => {
                                     const feed = feedViews.get(item.value);
                                     if (!feed) return null;
@@ -165,7 +166,7 @@ const FeedsScreen: React.FC = () => {
                      <View>
                         <Text style={styles.sectionTitle}>{t('feeds.saved')}</Text>
                         {savedItems.length > 0 ? (
-                            <View style={{ gap: 8 }}>
+                            <View style={{ gap: theme.spacing.s }}>
                                 {savedItems.map((item) => {
                                     const feed = feedViews.get(item.value);
                                     if (!feed) return null;
@@ -195,29 +196,29 @@ const FeedsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    contentContainer: { padding: 16 },
-    description: { color: '#C3C6CF', fontSize: 14, marginBottom: 24 },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: '#C3C6CF' },
-    itemContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: '#1E2021', borderRadius: 12 },
+    contentContainer: { padding: theme.spacing.l },
+    description: { color: theme.colors.onSurfaceVariant, ...theme.typography.bodyMedium, marginBottom: theme.spacing.xl },
+    sectionTitle: { ...theme.typography.titleMedium, marginBottom: theme.spacing.m, color: theme.colors.onSurfaceVariant },
+    itemContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.m, padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large },
     itemDisabled: { opacity: 0.5 },
     avatar: {
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: theme.shape.large,
         flexShrink: 0,
     },
     itemMain: { flex: 1, minWidth: 0 },
-    itemTitle: { fontWeight: 'bold', color: '#E2E2E6' },
-    itemByline: { fontSize: 14, color: '#C3C6CF' },
-    itemActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    actionButton: { padding: 8, borderRadius: 999 },
-    actionButtonDestructive: {}, // Add hover style if needed
-    emptyContainer: { alignItems: 'center', paddingVertical: 16, backgroundColor: '#1E2021', borderRadius: 8 },
-    emptyText: { color: '#C3C6CF', fontSize: 14 },
-    emptyLink: { fontWeight: '600', color: '#A8C7FA', textDecorationLine: 'underline', marginTop: 4 },
-    discoverHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-    searchButton: { padding: 8, marginRight: -8 },
-    skeletonItem: { backgroundColor: '#1E2021', borderRadius: 12, height: 84, opacity: 0.5 },
+    itemTitle: { ...theme.typography.titleSmall, color: theme.colors.onSurface },
+    itemByline: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
+    itemActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+    actionButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
+    actionButtonDestructive: {},
+    emptyContainer: { alignItems: 'center', paddingVertical: theme.spacing.l, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium },
+    emptyText: { color: theme.colors.onSurfaceVariant, ...theme.typography.bodyMedium },
+    emptyLink: { ...theme.typography.labelLarge, fontWeight: '600', color: theme.colors.primary, textDecorationLine: 'underline', marginTop: theme.spacing.xs },
+    discoverHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.l },
+    searchButton: { padding: theme.spacing.s, marginRight: -theme.spacing.s },
+    skeletonItem: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, height: 84, opacity: 0.5 },
 });
 
 export default FeedsScreen;

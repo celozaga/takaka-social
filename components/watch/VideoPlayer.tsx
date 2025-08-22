@@ -6,6 +6,7 @@ import VideoActions from './VideoActions';
 import { Volume2, VolumeX } from 'lucide-react';
 import SharedVideoPlayer, { PlayerRef } from '../shared/VideoPlayer';
 import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 
 interface VideoPlayerProps {
@@ -109,10 +110,10 @@ const styles = StyleSheet.create({
     video: { width: '100%', height: '100%' },
     loadingOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 20 },
     thumbnail: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', resizeMode: 'contain', zIndex: -1 },
-    infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingBottom: 96, zIndex: 20 },
-    authorText: { fontWeight: 'bold', color: 'white' },
-    descriptionText: { fontSize: 14, color: 'white', marginTop: 4 },
-    muteButton: { position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.4)', padding: 8, borderRadius: 999, zIndex: 20 },
+    infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: 96, zIndex: 20 },
+    authorText: { ...theme.typography.titleSmall, color: 'white' },
+    descriptionText: { ...theme.typography.bodyMedium, color: 'white', marginTop: theme.spacing.xs },
+    muteButton: { position: 'absolute', top: theme.spacing.l, right: theme.spacing.l, backgroundColor: 'rgba(0,0,0,0.4)', padding: theme.spacing.s, borderRadius: theme.shape.full, zIndex: 20 },
 });
 
 export default React.memo(VideoPlayer);

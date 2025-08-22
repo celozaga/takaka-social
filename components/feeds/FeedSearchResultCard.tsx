@@ -5,6 +5,7 @@ import {AppBskyFeedDefs } from '@atproto/api';
 import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 interface FeedSearchResultCardProps {
   feed:AppBskyFeedDefs.GeneratorView;
@@ -59,19 +60,19 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
-        backgroundColor: '#1E2021', // surface-2
-        borderRadius: 12,
+        padding: theme.spacing.l,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
     },
     contentContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 12,
+        gap: theme.spacing.m,
     },
     avatar: {
         width: 48,
         height: 48,
-        borderRadius: 12,
+        borderRadius: theme.shape.large,
         flexShrink: 0,
     },
     mainContent: {
@@ -88,39 +89,39 @@ const styles = StyleSheet.create({
         minWidth: 0,
     },
     title: {
-        fontWeight: 'bold',
-        color: '#E2E2E6',
+        ...theme.typography.titleSmall,
+        color: theme.colors.onSurface,
     },
     byline: {
-        fontSize: 14,
-        color: '#C3C6CF',
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
     },
     pinButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 999,
+        paddingVertical: theme.spacing.s,
+        paddingHorizontal: theme.spacing.l,
+        borderRadius: theme.shape.full,
         flexShrink: 0,
     },
     unpinButton: {
-        backgroundColor: '#2b2d2e', // surface-3
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     pinButtonActive: {
-        backgroundColor: '#A8C7FA', // primary
+        backgroundColor: theme.colors.primary,
     },
     pinButtonText: {
-        fontSize: 14,
+        ...theme.typography.labelLarge,
         fontWeight: '600',
     },
     unpinButtonText: {
-        color: '#E2E2E6', // on-surface
+        color: theme.colors.onSurface,
     },
     pinButtonTextActive: {
-        color: '#003258', // on-primary
+        color: theme.colors.onPrimary,
     },
     description: {
-        fontSize: 14,
-        marginTop: 4,
-        color: '#E2E2E6',
+        ...theme.typography.bodyMedium,
+        marginTop: theme.spacing.xs,
+        color: theme.colors.onSurface,
         lineHeight: 20
     },
 });

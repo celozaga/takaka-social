@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldAlert } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface ContentWarningProps {
   reason: string;
@@ -10,7 +11,7 @@ interface ContentWarningProps {
 const ContentWarning: React.FC<ContentWarningProps> = ({ reason, onShow }) => {
   return (
     <View style={styles.container}>
-      <ShieldAlert color="#C3C6CF" size={40} style={{ marginBottom: 12 }} />
+      <ShieldAlert color={theme.colors.onSurfaceVariant} size={40} style={{ marginBottom: theme.spacing.m }} />
       <Text style={styles.title}>Content Warning</Text>
       <Text style={styles.reasonText}>{reason}</Text>
       <Pressable
@@ -29,29 +30,30 @@ const ContentWarning: React.FC<ContentWarningProps> = ({ reason, onShow }) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#1E2021', // surface-2
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
+        padding: theme.spacing.l,
         alignItems: 'center',
     },
     title: {
-        fontWeight: '600',
-        color: '#E2E2E6', // on-surface
+        ...theme.typography.labelLarge,
+        color: theme.colors.onSurface,
     },
     reasonText: {
-        fontSize: 14,
-        color: '#C3C6CF', // on-surface-variant
-        marginBottom: 16,
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
+        marginBottom: theme.spacing.l,
         textTransform: 'capitalize',
     },
     showButton: {
-        backgroundColor: '#2b2d2e', // surface-3
-        paddingVertical: 8,
-        paddingHorizontal: 24,
-        borderRadius: 999,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        paddingVertical: theme.spacing.s,
+        paddingHorizontal: theme.spacing.xl,
+        borderRadius: theme.shape.full,
     },
     showButtonText: {
-        color: '#E2E2E6',
+        ...theme.typography.labelLarge,
+        color: theme.colors.onSurface,
         fontWeight: 'bold',
     }
 });

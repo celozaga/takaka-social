@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { X, AtSign } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 interface UpdateHandleModalProps {
   onClose: () => void;
@@ -43,17 +43,17 @@ const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSucces
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Update Handle</Text>
-                <Pressable onPress={onClose} style={styles.closeButton}><X color="#E2E2E6" /></Pressable>
+                <Pressable onPress={onClose} style={styles.closeButton}><X color={theme.colors.onSurface} /></Pressable>
             </View>
             <View style={styles.content}>
                  <Text style={styles.description}>Enter your new handle. This will log you out and you will need to sign in again.</Text>
                  <View style={styles.inputContainer}>
-                    <AtSign style={styles.inputIcon} color="#C3C6CF" size={20} />
+                    <AtSign style={styles.inputIcon} color={theme.colors.onSurfaceVariant} size={20} />
                     <TextInput
                         value={handle}
                         onChangeText={setHandle}
                         placeholder="new-handle.bsky.social"
-                        placeholderTextColor="#8A9199"
+                        placeholderTextColor={theme.colors.onSurfaceVariant}
                         style={styles.input}
                         autoCapitalize="none"
                     />
@@ -64,7 +64,7 @@ const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSucces
                     disabled={isSaving || !handle.trim()}
                     style={[styles.button, (isSaving || !handle.trim()) && styles.buttonDisabled]}
                 >
-                    {isSaving ? <ActivityIndicator color="#003258" /> : <Text style={styles.buttonText}>Update Handle</Text>}
+                    {isSaving ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Text style={styles.buttonText}>Update Handle</Text>}
                 </Pressable>
             </View>
         </View>
@@ -73,10 +73,10 @@ const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSucces
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
-        padding: 24,
-        gap: 16,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
+        padding: theme.spacing.xl,
+        gap: theme.spacing.l,
         width: '100%',
     },
     header: {
@@ -85,20 +85,19 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#E2E2E6',
+        ...theme.typography.titleLarge,
+        color: theme.colors.onSurface,
     },
     closeButton: {
-        padding: 8,
-        margin: -8,
+        padding: theme.spacing.s,
+        margin: -theme.spacing.s,
     },
     content: {
-        gap: 16,
+        gap: theme.spacing.l,
     },
     description: {
-        fontSize: 14,
-        color: '#C3C6CF',
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
     },
     inputContainer: {
         position: 'relative',
@@ -106,35 +105,35 @@ const styles = StyleSheet.create({
     },
     inputIcon: {
         position: 'absolute',
-        left: 12,
+        left: theme.spacing.m,
     },
     input: {
         width: '100%',
         paddingLeft: 40,
-        paddingRight: 12,
+        paddingRight: theme.spacing.m,
         paddingVertical: 10,
-        backgroundColor: '#2b2d2e',
-        borderRadius: 8,
-        color: '#E2E2E6',
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.medium,
+        color: theme.colors.onSurface,
     },
     errorText: {
-        color: '#F2B8B5',
-        fontSize: 14,
+        color: theme.colors.error,
+        ...theme.typography.bodyMedium,
         textAlign: 'center',
     },
     button: {
         width: '100%',
-        backgroundColor: '#A8C7FA',
+        backgroundColor: theme.colors.primary,
         paddingVertical: 10,
-        paddingHorizontal: 24,
-        borderRadius: 999,
+        paddingHorizontal: theme.spacing.xl,
+        borderRadius: theme.shape.full,
         alignItems: 'center',
     },
     buttonDisabled: {
         opacity: 0.5,
     },
     buttonText: {
-        color: '#003258',
+        color: theme.colors.onPrimary,
         fontWeight: 'bold',
     },
 });

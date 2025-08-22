@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { TrendingUp } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 const TrendingTopics: React.FC = () => {
     const { agent } = useAtp();
@@ -14,14 +14,12 @@ const TrendingTopics: React.FC = () => {
         const fetchTrends = async () => {
             setIsLoading(true);
             try {
-                // The `getTrendingHashtags` method is on the unspecced API namespace.
                 const { data } = await (agent.api.app.bsky.unspecced as any).getTrendingHashtags({ limit: 10 });
                 if (data.hashtags) {
                     setTrends(data.hashtags.map(h => h.tag));
                 }
             } catch (error) {
                 console.error("Failed to fetch trending topics:", error);
-                // Silently fail, don't show an error to the user
             } finally {
                 setIsLoading(false);
             }
@@ -33,7 +31,7 @@ const TrendingTopics: React.FC = () => {
         return (
             <View>
                 <View style={styles.header}>
-                    <TrendingUp size={24} color="#A8C7FA" />
+                    <TrendingUp size={24} color={theme.colors.primary} />
                     <Text style={styles.title}>Trending</Text>
                 </View>
                 <View style={styles.skeletonContainer}>
@@ -46,13 +44,13 @@ const TrendingTopics: React.FC = () => {
     }
     
     if (trends.length === 0) {
-        return null; // Don't render if there are no trends or if the fetch failed
+        return null;
     }
 
     return (
         <View>
             <View style={styles.header}>
-                <TrendingUp size={24} color="#A8C7FA" />
+                <TrendingUp size={24} color={theme.colors.primary} />
                 <Text style={styles.title}>Trending</Text>
             </View>
             <View style={styles.listContainer}>
@@ -76,45 +74,45 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginBottom: 12,
-        paddingHorizontal: 4,
+        gap: theme.spacing.s,
+        marginBottom: theme.spacing.m,
+        paddingHorizontal: theme.spacing.xs,
     },
     title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#E2E2E6'
+        ...theme.typography.titleLarge,
+        color: theme.colors.onSurface
     },
     skeletonContainer: {
-        backgroundColor: '#1E2021', // surface-2
-        borderRadius: 12,
-        padding: 16,
-        gap: 16,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
+        padding: theme.spacing.l,
+        gap: theme.spacing.l,
     },
     skeletonItem: {
         height: 20,
         width: '75%',
-        backgroundColor: '#2b2d2e', // surface-3
-        borderRadius: 4,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.small,
     },
     listContainer: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
         overflow: 'hidden',
     },
     listItem: {
-        padding: 12,
+        padding: theme.spacing.m,
     },
     listItemBorder: {
         borderTopWidth: 1,
-        borderTopColor: '#2b2d2e', // surface-3
+        borderTopColor: theme.colors.surfaceContainerHigh,
     },
     listItemPressed: {
-        backgroundColor: '#2b2d2e',
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     tagText: {
+        ...theme.typography.bodyLarge,
         fontWeight: '600',
-        color: '#E2E2E6'
+        color: theme.colors.onSurface
     }
 });
 

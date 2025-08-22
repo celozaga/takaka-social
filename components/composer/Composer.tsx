@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { RichText, AppBskyActorDefs } from '@atproto/api';
+import { RichText,AppBskyActorDefs } from '@atproto/api';
 import { ImageUp, Send, X, Video } from 'lucide-react';
 import { useToast } from '../ui/use-toast';
 import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, Modal, Platform } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface ComposerProps {
   onPostSuccess: () => void;
@@ -17,8 +18,6 @@ interface ComposerProps {
 }
 
 interface MediaFile {
-    // For native, this would be a URI from a library like expo-image-picker
-    // For web, we keep the File object for upload and a blob URI for preview
     file?: File; 
     preview: string;
     type: 'image' | 'video' | 'gif';
@@ -28,7 +27,6 @@ const MAX_CHARS = 300;
 const MAX_IMAGES = 4;
 const MAX_LANGS = 3;
 
-// A list of common languages for the selector
 const LANGUAGES = [
     { code: 'en', name: 'English' }, { code: 'es', name: 'Español' }, { code: 'pt', name: 'Português' },
     { code: 'fr', name: 'Français' }, { code: 'de', name: 'Deutsch' }, { code: 'it', name: 'Italiano' },
@@ -40,7 +38,7 @@ const LANGUAGES = [
 ];
 
 const CharacterCount: React.FC<{ remainingChars: number }> = ({ remainingChars }) => {
-    const color = remainingChars < 0 ? '#F2B8B5' : (remainingChars < 20 ? '#A8C7FA' : '#C3C6CF');
+    const color = remainingChars < 0 ? theme.colors.error : (remainingChars < 20 ? theme.colors.primary : theme.colors.onSurfaceVariant);
     if (remainingChars > 20) return null;
 
     return (
@@ -62,9 +60,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [langSearchTerm, setLangSearchTerm] = useState('');
   
-  // Note: Direct file input manipulation is not possible in React Native.
-  // This would be replaced by a library like expo-image-picker.
-  // The UI is provided, but the file selection logic is web-only for now.
   const fileInputRef = Platform.OS === 'web' ? useRef<HTMLInputElement>(null) : null;
 
   useEffect(() => {
@@ -85,7 +80,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         toast({ title: t('composer.toast.maxImages', { max: MAX_IMAGES }), variant: 'destructive' });
         return;
     }
-    // ... rest of web-specific file validation
     const newMediaFiles: MediaFile[] = [...mediaFiles];
     Array.from(files).forEach((file: File) => {
         const type = file.type.startsWith('video') ? 'video' : (file.type === 'image/gif' ? 'gif' : 'image');
@@ -96,7 +90,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   
   const removeMedia = (index: number) => {
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    // web-specific cleanup
     if (Platform.OS === 'web' && fileInputRef?.current) {
         fileInputRef.current.value = "";
     }
@@ -116,8 +109,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         return;
     }
     setIsPosting(true);
-    // ... The rest of the post logic remains largely the same
-    // but would need native-specific blob handling if not on web.
     try {
         const rt = new RichText({ text });
         await rt.detectFacets(agent);
@@ -129,9 +120,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
             createdAt: new Date().toISOString(),
         };
         
-        // ... embed logic ...
-        // This part is highly platform-dependent for file uploads.
-        // Assuming web for now.
         if (Platform.OS === 'web' && mediaFiles.length > 0 && mediaFiles[0].file) {
             const imageEmbeds = await Promise.all(mediaFiles.map(async mf => {
                 const fileBytes = new Uint8Array(await mf.file!.arrayBuffer());
@@ -182,7 +170,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                 disabled={isPostButtonDisabled}
                 style={[styles.postButton, isPostButtonDisabled && styles.postButtonDisabled]}
             >
-                {isPosting ? <ActivityIndicator color="#001D35" /> : <Send color="#001D35" size={16} />}
+                {isPosting ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Send color={theme.colors.onPrimary} size={16} />}
                 <Text style={styles.postButtonText}>
                     {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
                 </Text>
@@ -199,7 +187,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                     value={text}
                     onChangeText={setText}
                     placeholder={replyTo ? t('composer.replyPlaceholder') : t('composer.placeholder')}
-                    placeholderTextColor="#8A9199"
+                    placeholderTextColor={theme.colors.onSurfaceVariant}
                     style={styles.textInput}
                     multiline
                     autoFocus
@@ -221,20 +209,20 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         </ScrollView>
         
         <View style={styles.footer}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
                 <Pressable 
                     onPress={() => Platform.OS === 'web' && fileInputRef?.current?.click()} 
                     style={styles.iconButton}
                     disabled={mediaFiles.length >= MAX_IMAGES || hasVideoOrGif}
                 >
-                    <ImageUp color="#A8C7FA" size={24} />
+                    <ImageUp color={theme.colors.primary} size={24} />
                 </Pressable>
                 <Pressable 
                     onPress={() => Platform.OS === 'web' && fileInputRef?.current?.click()} 
                     style={styles.iconButton}
                     disabled={mediaFiles.length > 0}
                 >
-                    <Video color="#A8C7FA" size={24} />
+                    <Video color={theme.colors.primary} size={24} />
                 </Pressable>
                  {Platform.OS === 'web' && (
                     <input 
@@ -248,7 +236,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                  )}
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s }}>
                 <Pressable onPress={() => setIsLangMenuOpen(true)} style={styles.langButton}>
                     <Text style={styles.langButtonText}>
                         {selectedLangs.length > 0 ? LANGUAGES.find(l => l.code === selectedLangs[0])?.name : 'English'}
@@ -296,32 +284,32 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#1E2021' },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 8, flexShrink: 0 },
-    cancelButton: { paddingHorizontal: 16, paddingVertical: 8 },
-    cancelButtonText: { color: '#A8C7FA', fontWeight: '500' },
-    postButton: { backgroundColor: '#A8C7FA', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 20, borderRadius: 999 },
+    container: { flex: 1, backgroundColor: theme.colors.surfaceContainer },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.s, flexShrink: 0 },
+    cancelButton: { paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s },
+    cancelButtonText: { color: theme.colors.primary, fontWeight: '500' },
+    postButton: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingVertical: 6, paddingHorizontal: 20, borderRadius: theme.shape.full },
     postButtonDisabled: { opacity: 0.5 },
-    postButtonText: { color: '#003258', fontWeight: 'bold' },
-    main: { flexDirection: 'row', gap: 16, padding: 16, flexGrow: 1 },
-    avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2b2d2e' },
-    textInput: { color: '#E2E2E6', fontSize: 20, textAlignVertical: 'top', minHeight: 100 },
-    mediaGrid: { marginTop: 16, gap: 8, flexDirection: 'row', flexWrap: 'wrap' },
+    postButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
+    main: { flexDirection: 'row', gap: theme.spacing.l, padding: theme.spacing.l, flexGrow: 1 },
+    avatar: { width: 48, height: 48, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    textInput: { color: theme.colors.onSurface, fontSize: 20, textAlignVertical: 'top', minHeight: 100 },
+    mediaGrid: { marginTop: theme.spacing.l, gap: theme.spacing.s, flexDirection: 'row', flexWrap: 'wrap' },
     mediaItem: { position: 'relative' },
-    mediaPreview: { width: '100%', aspectRatio: 1, borderRadius: 8, resizeMode: 'cover' },
-    removeMediaButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: 999 },
-    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8, borderTopWidth: 1, borderTopColor: '#2b2d2e' },
-    iconButton: { padding: 8 },
-    langButton: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 },
-    langButtonText: { color: '#A8C7FA', fontSize: 14, fontWeight: '500' },
-    divider: { width: 1, height: 20, backgroundColor: '#2b2d2e' },
+    mediaPreview: { width: '100%', aspectRatio: 1, borderRadius: theme.shape.medium, resizeMode: 'cover' },
+    removeMediaButton: { position: 'absolute', top: theme.spacing.s, right: theme.spacing.s, backgroundColor: 'rgba(0,0,0,0.6)', padding: theme.spacing.xs, borderRadius: theme.shape.full },
+    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.s, borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainerHigh },
+    iconButton: { padding: theme.spacing.s },
+    langButton: { paddingHorizontal: theme.spacing.m, paddingVertical: theme.spacing.xs, borderRadius: theme.shape.full },
+    langButtonText: { color: theme.colors.primary, ...theme.typography.labelMedium, fontWeight: '500' },
+    divider: { width: 1, height: 20, backgroundColor: theme.colors.surfaceContainerHigh },
     langModalBackdrop: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-    langModalContent: { width: '100%', maxHeight: '50%', backgroundColor: '#2b2d2e', borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden' },
-    langSearchInput: { width: '100%', padding: 12, backgroundColor: '#1E2021', borderBottomWidth: 1, borderBottomColor: '#2b2d2e', color: '#E2E2E6' },
-    langOption: { width: '100%', padding: 12 },
-    langOptionSelected: { backgroundColor: '#D1E4FF' },
-    langOptionText: { color: '#E2E2E6' },
-    langOptionTextSelected: { color: '#001D35' }
+    langModalContent: { width: '100%', maxHeight: '50%', backgroundColor: theme.colors.surfaceContainerHigh, borderTopLeftRadius: theme.shape.large, borderTopRightRadius: theme.shape.large, overflow: 'hidden' },
+    langSearchInput: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderBottomWidth: 1, borderBottomColor: theme.colors.outline, color: theme.colors.onSurface },
+    langOption: { width: '100%', padding: theme.spacing.m },
+    langOptionSelected: { backgroundColor: theme.colors.primary },
+    langOptionText: { color: theme.colors.onSurface },
+    langOptionTextSelected: { color: theme.colors.onPrimary }
 });
 
 export default Composer;

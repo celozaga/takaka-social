@@ -7,6 +7,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface VideoActionsProps {
   post: AppBskyFeedDefs.PostView;
@@ -47,13 +48,13 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                 </Link>
                 {!isMe && (
                     <Pressable onPress={followUri ? handleUnfollow : handleFollow} disabled={isFollowLoading} style={[styles.followButton, !followUri && styles.followButtonActive]}>
-                        {followUri ? <Check size={16} color="#A8C7FA" strokeWidth={3} /> : <Plus size={16} color="white" />}
+                        {followUri ? <Check size={16} color={theme.colors.primary} strokeWidth={3} /> : <Plus size={16} color="white" />}
                     </Pressable>
                 )}
             </View>
             
             <Pressable onPress={(e) => { e.stopPropagation(); handleLike(e as any); }} disabled={isLiking} style={styles.actionButton}>
-                <Heart size={32} color={likeUri ? '#ec4899' : 'white'} fill={likeUri ? '#ec4899' : 'none'} />
+                <Heart size={32} color={likeUri ? theme.colors.pink : 'white'} fill={likeUri ? theme.colors.pink : 'none'} />
                 <Text style={styles.actionText}>{formatCount(likeCount)}</Text>
             </Pressable>
             <Pressable onPress={handleComment} style={styles.actionButton}>
@@ -61,7 +62,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                 <Text style={styles.actionText}>{formatCount(post.replyCount || 0)}</Text>
             </Pressable>
             <Pressable onPress={(e) => { e.stopPropagation(); handleRepost(e as any); }} disabled={isReposting} style={styles.actionButton}>
-                <Repeat size={32} color={repostUri ? '#A8C7FA' : 'white'} />
+                <Repeat size={32} color={repostUri ? theme.colors.primary : 'white'} />
                 <Text style={styles.actionText}>{formatCount(repostCount)}</Text>
             </Pressable>
             <Pressable onPress={handleMoreClick} style={styles.actionButton}>
@@ -72,13 +73,13 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { position: 'absolute', bottom: 96, right: 8, alignItems: 'center', gap: 20, zIndex: 20 },
-    avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: 'white', backgroundColor: '#2b2d2e' },
-    badgeContainer: { position: 'absolute', bottom: -2, right: -2, backgroundColor: '#A8C7FA', borderRadius: 999, padding: 2, borderWidth: 1, borderColor: 'black' },
-    followButton: { position: 'absolute', bottom: -8, left: '50%', transform: [{ translateX: -12 }], width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'black', backgroundColor: '#374151' },
-    followButtonActive: { backgroundColor: '#ef4444' },
+    container: { position: 'absolute', bottom: 96, right: theme.spacing.s, alignItems: 'center', gap: 20, zIndex: 20 },
+    avatar: { width: 48, height: 48, borderRadius: theme.shape.full, borderWidth: 2, borderColor: 'white', backgroundColor: theme.colors.surfaceContainerHigh },
+    badgeContainer: { position: 'absolute', bottom: -2, right: -2, backgroundColor: theme.colors.primary, borderRadius: theme.shape.full, padding: 2, borderWidth: 1, borderColor: 'black' },
+    followButton: { position: 'absolute', bottom: -8, left: '50%', transform: [{ translateX: -12 }], width: 24, height: 24, borderRadius: theme.shape.full, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'black', backgroundColor: theme.colors.onSurfaceVariant },
+    followButtonActive: { backgroundColor: theme.colors.error },
     actionButton: { alignItems: 'center', gap: 6 },
-    actionText: { fontSize: 14, fontWeight: '600', color: 'white' },
+    actionText: { ...theme.typography.labelLarge, fontWeight: '600', color: 'white' },
 });
 
 export default React.memo(VideoActions);

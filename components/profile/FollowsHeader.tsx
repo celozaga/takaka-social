@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 interface FollowsHeaderProps {
   type: 'followers' | 'following';
@@ -16,7 +16,7 @@ const FollowsHeader: React.FC<FollowsHeaderProps> = ({ type }) => {
         <View style={styles.container}>
             <View style={styles.innerContainer}>
                 <Pressable onPress={() => router.back()} style={styles.button}>
-                    <ArrowLeft size={20} color="#E2E2E6" />
+                    <ArrowLeft size={20} color={theme.colors.onSurface} />
                 </Pressable>
                 <Text style={styles.title}>{title}</Text>
             </View>
@@ -30,25 +30,24 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        paddingHorizontal: 16,
-        backgroundColor: '#111314', // surface-1
+        paddingHorizontal: theme.spacing.l,
+        backgroundColor: theme.colors.background,
         zIndex: 30,
     },
     innerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: theme.spacing.l,
         height: 64,
     },
     button: {
-        padding: 8,
-        marginLeft: -8,
-        borderRadius: 999,
+        padding: theme.spacing.s,
+        marginLeft: -theme.spacing.s,
+        borderRadius: theme.shape.full,
     },
     title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#E2E2E6',
+        ...theme.typography.titleLarge,
+        color: theme.colors.onSurface,
         textTransform: 'capitalize',
     },
 });

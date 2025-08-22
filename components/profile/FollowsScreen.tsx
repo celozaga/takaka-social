@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -8,6 +7,7 @@ import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from '../shared/Head';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface FollowsScreenProps {
     actor: string;
@@ -104,26 +104,26 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
-        gap: 12,
+        padding: theme.spacing.l,
+        gap: theme.spacing.m,
     },
     skeletonItem: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
         height: 88,
         opacity: 0.5,
     },
     messageContainer: {
-        padding: 32,
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
+        padding: theme.spacing.xxl,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
         alignItems: 'center',
     },
     errorText: {
-        color: '#F2B8B5',
+        color: theme.colors.error,
     },
     infoText: {
-        color: '#C3C6CF',
+        color: theme.colors.onSurfaceVariant,
     },
 });
 export default FollowsScreen;

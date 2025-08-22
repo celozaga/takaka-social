@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids';
 
@@ -72,7 +73,7 @@ const WatchScreen: React.FC = () => {
         }
     }).current;
     
-    if (isLoading) return <View style={styles.fullScreenCentered}><ActivityIndicator size="large" color="#A8C7FA" /></View>;
+    if (isLoading) return <View style={styles.fullScreenCentered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
     if (error) return <View style={styles.fullScreenCentered}><Text style={styles.errorText}>{error}</Text></View>;
 
     return (
@@ -118,11 +119,11 @@ const WatchScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#000' },
-    fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' },
-    errorText: { color: '#F2B8B5', padding: 16, textAlign: 'center' },
-    backButton: { position: 'absolute', top: 16, left: 16, zIndex: 10, padding: 8, borderRadius: 9999, backgroundColor: 'rgba(0,0,0,0.4)' },
-    endTextTitle: { fontSize: 18, fontWeight: '600', color: '#FFFFFF' },
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background },
+    errorText: { color: theme.colors.error, padding: theme.spacing.l, textAlign: 'center' },
+    backButton: { position: 'absolute', top: theme.spacing.l, left: theme.spacing.l, zIndex: 10, padding: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: 'rgba(0,0,0,0.4)' },
+    endTextTitle: { ...theme.typography.titleMedium, color: theme.colors.onSurface },
 });
 
 export default WatchScreen;

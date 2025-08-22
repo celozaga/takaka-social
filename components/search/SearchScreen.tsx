@@ -118,13 +118,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
       }
       return (
         <ScrollView onScroll={({ nativeEvent }) => { if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) fetchNonPostResults(debouncedQuery || initialQuery, activeFilter, cursor); }} scrollEventThrottle={16}>
-          <View style={[styles.contentContainer, { gap: 12 }]}>
+          <View style={[styles.contentContainer, { gap: theme.spacing.m }]}>
             {nonPostResults.map(item => {
                 if (activeFilter === 'people') return <ActorSearchResultCard key={(item as any).did} actor={item as any} />;
                 if (activeFilter === 'feeds') return <FeedSearchResultCard key={(item as any).uri} feed={item as any} isPinned={pinnedUris.has((item as any).uri)} onTogglePin={() => handlePinToggle(item as any)} />;
                 return null;
             })}
-             {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 32 }} />}
+             {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: theme.spacing.xxl }} />}
              {!isLoading && !hasMore && nonPostResults.length > 0 && <Text style={styles.endText}>{t('common.endOfList')}</Text>}
           </View>
         </ScrollView>
@@ -137,12 +137,12 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             <View style={styles.container}>
                 <View style={styles.stickyHeader}>
                     <View style={styles.inputContainer}>
-                        <SearchIcon style={styles.searchIcon} color="#C3C6CF" size={20} />
+                        <SearchIcon style={styles.searchIcon} color={theme.colors.onSurfaceVariant} size={20} />
                         <TextInput
                             value={query}
                             onChangeText={setQuery}
                             placeholder={t('search.placeholder')}
-                            placeholderTextColor="#C3C6CF"
+                            placeholderTextColor={theme.colors.onSurfaceVariant}
                             style={styles.input}
                         />
                     </View>
@@ -166,7 +166,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         </ScrollView>
                         
                         {!isPostSearch && isLoading && (
-                            <View style={{ gap: 12, paddingHorizontal: 16 }}>
+                            <View style={{ gap: theme.spacing.m, paddingHorizontal: theme.spacing.l }}>
                                 {[...Array(5)].map((_, i) => <View key={i} style={styles.skeletonItemListView} />)}
                             </View>
                         )}
@@ -181,21 +181,21 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    stickyHeader: { padding: 16, backgroundColor: '#111314' },
+    stickyHeader: { padding: theme.spacing.l, backgroundColor: theme.colors.background },
     inputContainer: { position: 'relative', justifyContent: 'center' },
-    searchIcon: { position: 'absolute', left: 16, zIndex: 1 },
-    input: { width: '100%', paddingLeft: 48, paddingRight: 16, paddingVertical: 12, backgroundColor: '#1E2021', borderRadius: 8, color: '#E2E2E6', fontSize: 16 },
-    discoveryContainer: { padding: 16, gap: 32 },
-    filterContainer: { paddingHorizontal: 16, gap: 8, paddingBottom: 16 },
-    filterButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainer },
+    searchIcon: { position: 'absolute', left: theme.spacing.l, zIndex: 1 },
+    input: { width: '100%', paddingLeft: 48, paddingRight: theme.spacing.l, paddingVertical: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
+    discoveryContainer: { padding: theme.spacing.l, gap: theme.spacing.xxl },
+    filterContainer: { paddingHorizontal: theme.spacing.l, gap: theme.spacing.s, paddingBottom: theme.spacing.l },
+    filterButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainer },
     activeFilterButton: { backgroundColor: theme.colors.onSurface },
-    filterText: { fontSize: 14, fontWeight: '500', color: theme.colors.onSurface },
+    filterText: { ...theme.typography.labelLarge, fontWeight: '500', color: theme.colors.onSurface },
     activeFilterText: { color: theme.colors.background, fontWeight: 'bold' },
-    contentContainer: { paddingTop: 16, paddingHorizontal: 16 },
-    skeletonItemListView: { backgroundColor: '#1E2021', borderRadius: 12, height: 88, opacity: 0.5 },
-    emptyContainer: { padding: 32, marginHorizontal: 16, backgroundColor: '#1E2021', borderRadius: 12, marginTop: 16 },
-    emptyText: { color: '#C3C6CF', textAlign: 'center' },
-    endText: { textAlign: 'center', color: '#C3C6CF', padding: 32 },
+    contentContainer: { paddingTop: theme.spacing.l, paddingHorizontal: theme.spacing.l },
+    skeletonItemListView: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, height: 88, opacity: 0.5 },
+    emptyContainer: { padding: theme.spacing.xxl, marginHorizontal: theme.spacing.l, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, marginTop: theme.spacing.l },
+    emptyText: { color: theme.colors.onSurfaceVariant, textAlign: 'center' },
+    endText: { textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
 });
 
 

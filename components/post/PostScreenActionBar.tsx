@@ -5,6 +5,7 @@ import { usePostActions } from '../../hooks/usePostActions';
 import { MessageSquare, Heart, Repeat } from 'lucide-react';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface PostScreenActionBarProps {
     post: AppBskyFeedDefs.PostView;
@@ -41,7 +42,7 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
                     disabled={isLiking}
                     style={styles.actionItem}
                 >
-                    <Heart size={22} color={likeUri ? '#ec4899' : '#C3C6CF'} fill={likeUri ? 'currentColor' : 'none'} />
+                    <Heart size={22} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? 'currentColor' : 'none'} />
                     <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{formatCount(likeCount)}</Text>
                 </Pressable>
                  <Pressable
@@ -49,11 +50,11 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
                     disabled={isReposting}
                     style={styles.actionItem}
                 >
-                    <Repeat size={22} color={repostUri ? '#A8C7FA' : '#C3C6CF'} />
+                    <Repeat size={22} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
                     <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCount(repostCount)}</Text>
                 </Pressable>
                  <View style={styles.actionItem}>
-                    <MessageSquare size={22} color="#C3C6CF" />
+                    <MessageSquare size={22} color={theme.colors.onSurfaceVariant} />
                     <Text style={styles.actionText}>{formatCount(post.replyCount || 0)}</Text>
                 </View>
             </View>
@@ -65,12 +66,12 @@ const styles = StyleSheet.create({
     container: {
         ...Platform.select({
             web: {
-                paddingVertical: 12,
-                marginVertical: 16,
+                paddingVertical: theme.spacing.m,
+                marginVertical: theme.spacing.l,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: 16,
+                gap: theme.spacing.l,
             },
             default: {
                 position: 'absolute',
@@ -78,31 +79,31 @@ const styles = StyleSheet.create({
                 left: 0,
                 right: 0,
                 height: 80,
-                backgroundColor: '#1E2021', // surface-2
-                paddingHorizontal: 16,
+                backgroundColor: theme.colors.surfaceContainer,
+                paddingHorizontal: theme.spacing.l,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: 16,
+                gap: theme.spacing.l,
                 zIndex: 30,
             }
         }),
     },
     replyButton: {
         flex: 1,
-        backgroundColor: '#2b2d2e', // surface-3
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 999,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        paddingHorizontal: theme.spacing.l,
+        paddingVertical: theme.spacing.m,
+        borderRadius: theme.shape.full,
     },
     replyButtonText: {
-        color: '#C3C6CF', // on-surface-variant
+        color: theme.colors.onSurfaceVariant,
         fontSize: 14,
     },
     actionsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: theme.spacing.l,
     },
     actionItem: {
         flexDirection: 'row',
@@ -112,13 +113,13 @@ const styles = StyleSheet.create({
     actionText: {
         fontWeight: '600',
         fontSize: 14,
-        color: '#C3C6CF',
+        color: theme.colors.onSurfaceVariant,
     },
     likeTextActive: {
-        color: '#ec4899',
+        color: theme.colors.pink,
     },
     repostTextActive: {
-        color: '#A8C7FA',
+        color: theme.colors.primary,
     }
 });
 

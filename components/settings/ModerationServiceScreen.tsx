@@ -5,6 +5,7 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { BadgeCheck } from 'lucide-react';
 import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import ScreenHeader from '../layout/ScreenHeader';
+import { theme } from '@/lib/theme';
 
 interface ModerationServiceScreenProps {
   serviceDid: string;
@@ -40,7 +41,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
     }, [getProfile, serviceDid]);
     
     if (isLoading) {
-        return <View style={styles.centered}><ActivityIndicator size="large" color="#A8C7FA" /></View>;
+        return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
     }
 
     if (!serviceProfile) {
@@ -56,7 +57,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                     <View>
                         <View style={styles.nameContainer}>
                             <Text style={styles.displayName}>{serviceProfile.displayName}</Text>
-                            {serviceProfile.labels?.some(l => l.val === 'blue-check') && <BadgeCheck size={20} color="#A8C7FA" fill="currentColor" />}
+                            {serviceProfile.labels?.some(l => l.val === 'blue-check') && <BadgeCheck size={20} color={theme.colors.primary} fill="currentColor" />}
                         </View>
                         <Text style={styles.handle}>@{serviceProfile.handle}</Text>
                     </View>
@@ -101,26 +102,26 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
 };
 
 const styles = StyleSheet.create({
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-    errorText: { color: '#F2B8B5', textAlign: 'center' },
-    container: { padding: 16 },
-    profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#2b2d2e' },
-    nameContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    displayName: { fontSize: 20, fontWeight: 'bold', color: '#E2E2E6' },
-    handle: { color: '#C3C6CF', fontSize: 14 },
-    description: { marginTop: 16, color: '#E2E2E6', fontSize: 14 },
-    labelsContainer: { marginTop: 16, gap: 16 },
-    labelCard: { backgroundColor: '#1E2021', borderRadius: 12, padding: 16 },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xxl },
+    errorText: { color: theme.colors.error, textAlign: 'center' },
+    container: { padding: theme.spacing.l },
+    profileHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l },
+    avatar: { width: 64, height: 64, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    nameContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s },
+    displayName: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
+    handle: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
+    description: { marginTop: theme.spacing.l, color: theme.colors.onSurface, ...theme.typography.bodyMedium },
+    labelsContainer: { marginTop: theme.spacing.l, gap: theme.spacing.l },
+    labelCard: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, padding: theme.spacing.l },
     disabled: { opacity: 0.5 },
-    labelTitle: { fontWeight: '600', color: '#E2E2E6' },
-    labelDescription: { fontSize: 14, color: '#C3C6CF' },
-    disabledText: { fontSize: 12, color: '#FBBF24', marginTop: 4 },
-    optionsContainer: { marginTop: 12, flexDirection: 'row', gap: 8 },
-    optionButton: { flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#2b2d2e', alignItems: 'center' },
-    optionButtonActive: { backgroundColor: '#A8C7FA' },
-    optionText: { fontSize: 14, fontWeight: '600', color: '#E2E2E6' },
-    optionTextActive: { color: '#003258' },
+    labelTitle: { ...theme.typography.labelLarge, fontWeight: '600', color: theme.colors.onSurface },
+    labelDescription: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
+    disabledText: { ...theme.typography.bodySmall, color: theme.colors.error, marginTop: theme.spacing.xs },
+    optionsContainer: { marginTop: theme.spacing.m, flexDirection: 'row', gap: theme.spacing.s },
+    optionButton: { flex: 1, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.m, borderRadius: theme.shape.medium, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center' },
+    optionButtonActive: { backgroundColor: theme.colors.primary },
+    optionText: { ...theme.typography.labelLarge, fontWeight: '600', color: theme.colors.onSurface },
+    optionTextActive: { color: theme.colors.onPrimary },
 });
 
 export default ModerationServiceScreen;

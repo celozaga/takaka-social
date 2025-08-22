@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'expo-router';
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { theme } from '@/lib/theme';
 
 
 const ListItem: React.FC<{
@@ -21,10 +21,10 @@ const ListItem: React.FC<{
     const content = (
         <View style={styles.listItemContent}>
             <View style={styles.listItemLeft}>
-                <Icon size={24} color="#C3C6CF" />
+                <Icon size={24} color={theme.colors.onSurfaceVariant} />
                 <Text style={styles.listItemLabel}>{label}</Text>
             </View>
-            <ChevronRight size={20} color="#C3C6CF" />
+            <ChevronRight size={20} color={theme.colors.onSurfaceVariant} />
         </View>
     );
     
@@ -75,12 +75,12 @@ const MoreScreen: React.FC = () => {
         <>
             <Head><title>{t('more.title')}</title></Head>
             <View style={styles.container}>
-                <View style={{gap: 32}}>
+                <View style={{gap: theme.spacing.xxl}}>
                     {isLoading ? (
                         <View style={[styles.profileCard, styles.profileCardSkeleton]}>
                             <View style={styles.profileContent}>
                                 <View style={styles.avatarSkeleton} />
-                                <View style={{gap: 8}}>
+                                <View style={{gap: theme.spacing.s}}>
                                     <View style={styles.textSkeletonLg} />
                                     <View style={styles.textSkeletonSm} />
                                 </View>
@@ -90,19 +90,19 @@ const MoreScreen: React.FC = () => {
                         <Link href={profileLink as any} asChild>
                             <Pressable style={({ pressed }) => [styles.profileCard, pressed && styles.profileCardPressed]}>
                                 <View style={styles.profileContent}>
-                                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1}}>
+                                    <View style={{flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, flex: 1}}>
                                         <Image source={{ uri: profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
                                         <View style={{flex: 1}}>
                                             <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
                                                 <Text style={styles.profileName} numberOfLines={1}>{profile.displayName || `@${profile.handle}`}</Text>
                                                 {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                                    <BadgeCheck size={20} color="#A8C7FA" fill="currentColor" />
+                                                    <BadgeCheck size={20} color={theme.colors.primary} fill="currentColor" />
                                                 )}
                                             </View>
                                             <Text style={styles.profileHandle} numberOfLines={1}>@{profile.handle}</Text>
                                         </View>
                                     </View>
-                                    <ChevronRight size={24} color="#C3C6CF" />
+                                    <ChevronRight size={24} color={theme.colors.onSurfaceVariant} />
                                 </View>
                             </Pressable>
                         </Link>
@@ -129,77 +129,76 @@ const MoreScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: 16,
-        paddingHorizontal: 16,
+        paddingTop: theme.spacing.l,
+        paddingHorizontal: theme.spacing.l,
     },
     profileCard: {
-        backgroundColor: '#1E2021', // surface-2
-        borderRadius: 8,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.medium,
     },
     profileCardPressed: {
-        backgroundColor: '#2b2d2e', // surface-3
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     profileCardSkeleton: {
         height: 96,
-        padding: 16,
+        padding: theme.spacing.l,
         justifyContent: 'center'
     },
     profileContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        padding: theme.spacing.l,
     },
     avatar: {
         width: 64,
         height: 64,
-        borderRadius: 32,
-        backgroundColor: '#2b2d2e',
+        borderRadius: theme.shape.full,
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     avatarSkeleton: {
         width: 64,
         height: 64,
-        borderRadius: 32,
-        backgroundColor: '#2b2d2e',
-        marginRight: 16,
+        borderRadius: theme.shape.full,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        marginRight: theme.spacing.l,
     },
     textSkeletonLg: {
         height: 20,
         width: 128,
-        backgroundColor: '#2b2d2e',
-        borderRadius: 4,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.small,
     },
     textSkeletonSm: {
         height: 16,
         width: 96,
-        backgroundColor: '#2b2d2e',
-        borderRadius: 4,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.small,
     },
     profileName: {
-        fontWeight: 'bold',
-        fontSize: 18,
-        color: '#E2E2E6' // on-surface
+        ...theme.typography.titleMedium,
+        color: theme.colors.onSurface
     },
     profileHandle: {
-        color: '#C3C6CF', // on-surface-variant
+        ...theme.typography.bodyLarge,
+        color: theme.colors.onSurfaceVariant,
     },
     sectionTitle: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#C3C6CF',
-        marginBottom: 8,
-        paddingHorizontal: 4,
+        ...theme.typography.labelLarge,
+        color: theme.colors.onSurfaceVariant,
+        marginBottom: theme.spacing.s,
+        paddingHorizontal: theme.spacing.xs,
     },
     listContainer: {
-        backgroundColor: '#1E2021',
-        borderRadius: 12,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
         overflow: 'hidden',
     },
     listItem: {
-        padding: 16,
+        padding: theme.spacing.l,
     },
     listItemPressed: {
-        backgroundColor: '#2b2d2e',
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     listItemContent: {
         flexDirection: 'row',
@@ -209,17 +208,17 @@ const styles = StyleSheet.create({
     listItemLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: theme.spacing.l,
     },
     listItemLabel: {
-        color: '#E2E2E6',
-        fontSize: 16,
+        color: theme.colors.onSurface,
+        ...theme.typography.bodyLarge,
         fontWeight: '500',
     },
     divider: {
         height: 1,
-        backgroundColor: '#2b2d2e', // surface-3
-        marginLeft: 56, // to align with text
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        marginLeft: 56,
     },
 });
 

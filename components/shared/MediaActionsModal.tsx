@@ -6,6 +6,7 @@ import { useHiddenPosts } from '../../context/HiddenPostsContext';
 import { AtUri,AppBskyFeedDefs } from '@atproto/api';
 import { EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, ShieldOff } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface MediaActionsModalProps {
   post: AppBskyFeedDefs.PostView;
@@ -25,7 +26,7 @@ const ActionListItem: React.FC<{
             disabled={disabled}
             style={({ pressed }) => [styles.actionItem, pressed && styles.actionItemPressed, isDestructive && pressed && styles.actionItemDestructivePressed, disabled && styles.actionItemDisabled]}
         >
-            <Icon color={isDestructive ? '#F2B8B5' : '#C3C6CF'} size={24} />
+            <Icon color={isDestructive ? theme.colors.error : theme.colors.onSurfaceVariant} size={24} />
             <Text style={[styles.actionLabel, isDestructive && styles.actionLabelDestructive]}>{label}</Text>
         </Pressable>
     );
@@ -65,7 +66,7 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
         <View>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>{t('mediaActions.title')}</Text>
-                <Pressable onPress={onClose} style={styles.closeButton}><X color="#E2E2E6" /></Pressable>
+                <Pressable onPress={onClose} style={styles.closeButton}><X color={theme.colors.onSurface} /></Pressable>
             </View>
 
             <View style={styles.content}>
@@ -85,17 +86,17 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
 };
 
 const styles = StyleSheet.create({
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-    headerTitle: { fontWeight: 'bold', fontSize: 18, color: '#E2E2E6' },
-    closeButton: { padding: 8, margin: -8 },
-    content: { padding: 8, gap: 4 },
-    loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30, 32, 33, 0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: 12 },
-    actionItem: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 16, padding: 12, borderRadius: 8 },
-    actionItemPressed: { backgroundColor: '#2b2d2e' },
-    actionItemDestructivePressed: { backgroundColor: 'rgba(242, 184, 181, 0.1)' },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.l },
+    headerTitle: { ...theme.typography.titleMedium, color: theme.colors.onSurface },
+    closeButton: { padding: theme.spacing.s, margin: -theme.spacing.s },
+    content: { padding: theme.spacing.s, gap: theme.spacing.xs },
+    loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30, 32, 33, 0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: theme.shape.large },
+    actionItem: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.shape.medium },
+    actionItemPressed: { backgroundColor: theme.colors.surfaceContainerHigh },
+    actionItemDestructivePressed: { backgroundColor: theme.colors.errorContainer },
     actionItemDisabled: { opacity: 0.5 },
-    actionLabel: { fontWeight: '600', color: '#E2E2E6' },
-    actionLabelDestructive: { color: '#F2B8B5' },
+    actionLabel: { ...theme.typography.bodyLarge, fontWeight: '600', color: theme.colors.onSurface },
+    actionLabelDestructive: { color: theme.colors.error },
 });
 
 export default MediaActionsModal;

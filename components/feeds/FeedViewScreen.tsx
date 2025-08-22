@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -9,6 +8,7 @@ import Head from '../shared/Head';
 import { useFeedActions } from '../../hooks/useFeedActions';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 interface FeedViewScreenProps {
     handle: string;
@@ -52,7 +52,7 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     if (isLoading) {
         return (
             <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#A8C7FA" />
+                <ActivityIndicator size="large" color={theme.colors.primary} />
             </View>
         );
     }
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     errorText: {
-        fontSize: 16,
-        color: '#F2B8B5',
+        ...theme.typography.bodyLarge,
+        color: theme.colors.error,
     },
     feedContainer: {
         flex: 1,

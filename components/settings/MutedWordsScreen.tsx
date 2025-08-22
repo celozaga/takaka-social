@@ -3,6 +3,7 @@ import { useModeration } from '../../context/ModerationContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Trash2, Tag, Plus } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 const MutedWordsScreen: React.FC = () => {
     const { isReady, mutedWords, addMutedWord, removeMutedWord } = useModeration();
@@ -33,18 +34,18 @@ const MutedWordsScreen: React.FC = () => {
                 </Text>
                 <View style={styles.formContainer}>
                     <View style={styles.inputContainer}>
-                        <Tag style={styles.inputIcon} color="#C3C6CF" size={20}/>
+                        <Tag style={styles.inputIcon} color={theme.colors.onSurfaceVariant} size={20}/>
                         <TextInput
                             value={newWord}
                             onChangeText={setNewWord}
                             placeholder="Add a word or #tag"
-                            placeholderTextColor="#8A9199"
+                            placeholderTextColor={theme.colors.onSurfaceVariant}
                             style={styles.input}
                             onSubmitEditing={handleAdd}
                         />
                     </View>
                     <Pressable onPress={handleAdd} disabled={isAdding || !newWord.trim()} style={[styles.addButton, (isAdding || !newWord.trim()) && styles.disabledButton]}>
-                        {isAdding ? <ActivityIndicator color="#003258" /> : <Plus color="#003258" />}
+                        {isAdding ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Plus color={theme.colors.onPrimary} />}
                         <Text style={styles.addButtonText}>Add</Text>
                     </Pressable>
                 </View>
@@ -59,7 +60,7 @@ const MutedWordsScreen: React.FC = () => {
                             <View key={word.value} style={[styles.listItem, index > 0 && styles.listItemBorder]}>
                                 <Text style={styles.wordText}>{word.value}</Text>
                                 <Pressable onPress={() => handleRemove(word.value)} style={styles.removeButton}>
-                                    <Trash2 size={18} color="#C3C6CF" />
+                                    <Trash2 size={18} color={theme.colors.onSurfaceVariant} />
                                 </Pressable>
                             </View>
                         ))
@@ -71,22 +72,22 @@ const MutedWordsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { padding: 16 },
-    description: { color: '#C3C6CF', fontSize: 14, marginBottom: 16 },
-    formContainer: { flexDirection: 'row', gap: 8, marginBottom: 24 },
+    container: { padding: theme.spacing.l },
+    description: { color: theme.colors.onSurfaceVariant, ...theme.typography.bodyMedium, marginBottom: theme.spacing.l },
+    formContainer: { flexDirection: 'row', gap: theme.spacing.s, marginBottom: theme.spacing.xl },
     inputContainer: { position: 'relative', flex: 1, justifyContent: 'center' },
-    inputIcon: { position: 'absolute', left: 12 },
-    input: { width: '100%', paddingLeft: 40, paddingRight: 12, paddingVertical: 10, backgroundColor: '#1E2021', borderRadius: 8, color: '#E2E2E6' },
-    addButton: { backgroundColor: '#A8C7FA', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, borderRadius: 8 },
+    inputIcon: { position: 'absolute', left: theme.spacing.m },
+    input: { width: '100%', paddingLeft: 40, paddingRight: theme.spacing.m, paddingVertical: 10, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface },
+    addButton: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, borderRadius: theme.shape.medium },
     disabledButton: { opacity: 0.5 },
-    addButtonText: { color: '#003258', fontWeight: 'bold' },
-    listContainer: { backgroundColor: '#1E2021', borderRadius: 12, overflow: 'hidden' },
-    centered: { padding: 32, alignItems: 'center' },
-    infoText: { color: '#C3C6CF' },
-    listItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 },
-    listItemBorder: { borderTopWidth: 1, borderTopColor: '#2b2d2e' },
-    wordText: { fontWeight: '600', color: '#E2E2E6' },
-    removeButton: { padding: 8, borderRadius: 999 },
+    addButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
+    listContainer: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, overflow: 'hidden' },
+    centered: { padding: theme.spacing.xxl, alignItems: 'center' },
+    infoText: { color: theme.colors.onSurfaceVariant },
+    listItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.m },
+    listItemBorder: { borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainerHigh },
+    wordText: { ...theme.typography.bodyLarge, fontWeight: '600', color: theme.colors.onSurface },
+    removeButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
 });
 
 export default MutedWordsScreen;

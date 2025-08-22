@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyActorDefs } from '@atproto/api';
@@ -20,7 +19,7 @@ const ActorSkeletonCard: React.FC = () => (
                     </View>
                     <View style={styles.skeletonButton} />
                 </View>
-                <View style={[styles.skeletonLine, { marginTop: 12, width: '83.33%' }]} />
+                <View style={[styles.skeletonLine, { marginTop: theme.spacing.m, width: '83.33%' }]} />
             </View>
         </View>
     </View>
@@ -44,7 +43,6 @@ const SuggestedFollows: React.FC = () => {
                 setProfiles(data.actors);
             } catch (error) {
                 console.error(`Failed to fetch suggestions:`, error);
-                // Fail silently
                 setProfiles([]);
             } finally {
                 setIsLoading(false);
@@ -64,7 +62,7 @@ const SuggestedFollows: React.FC = () => {
                 <Text style={styles.title}>Suggested Follows</Text>
                 <Link href="/search?filter=people" asChild>
                     <Pressable style={styles.searchButton}>
-                        <Search size={20} color="#C3C6CF" />
+                        <Search size={20} color={theme.colors.onSurfaceVariant} />
                     </Pressable>
                 </Link>
             </View>
@@ -87,19 +85,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 12,
-        paddingHorizontal: 4,
+        marginBottom: theme.spacing.m,
+        paddingHorizontal: theme.spacing.xs,
     },
     title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#E2E2E6'
+        ...theme.typography.titleLarge,
+        color: theme.colors.onSurface
     },
     searchButton: {
-        padding: 4,
+        padding: theme.spacing.xs,
     },
     listContainer: {
-        gap: 12,
+        gap: theme.spacing.m,
     },
     skeletonContainer: {
         padding: theme.spacing.l,
