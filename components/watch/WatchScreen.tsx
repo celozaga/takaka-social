@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -15,7 +16,7 @@ const WatchScreen: React.FC = () => {
     const { agent } = useAtp();
     const { t } = useTranslation();
     const router = useRouter();
-    const { height, width } = useWindowDimensions();
+    const { height } = useWindowDimensions();
     const [videoPosts, setVideoPosts] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
@@ -83,7 +84,7 @@ const WatchScreen: React.FC = () => {
                 <FlatList<AppBskyFeedDefs.FeedViewPost>
                     data={videoPosts}
                     renderItem={({ item, index }) => (
-                        <View style={{ width, height }}>
+                        <View style={{ height }}>
                             <VideoPlayer 
                                 postView={item} 
                                 isActive={index === activeIndex} 
