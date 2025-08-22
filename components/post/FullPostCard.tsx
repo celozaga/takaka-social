@@ -198,12 +198,15 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             slideshowAspectRatio = firstItem.aspectRatio ? firstItem.aspectRatio.width / firstItem.aspectRatio.height : 1.5;
         }
 
+        const containerWidth = width - (theme.spacing.l * 2);
+        const calculatedHeight = containerWidth / slideshowAspectRatio;
+        const finalHeight = Math.min(calculatedHeight, 700);
+
         const renderSlideshowItem = ({ item }: { item: MediaItem }) => {
             const isVideo = 'type' in item && item.type === 'video';
-            const itemWidth = width - (theme.spacing.l * 2); // Full width minus container padding
-
+            
             return (
-                <View style={{ width: itemWidth, height: '100%', justifyContent: 'center' }}>
+                <View style={{ width: containerWidth, height: finalHeight, justifyContent: 'center' }}>
                     {isVideo ? (
                          (() => {
                             const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
@@ -247,12 +250,11 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
             }
         };
-        const itemWidth = width - (theme.spacing.l * 2);
 
         return (
             <View style={styles.slideshowOuterContainer}>
                 <View 
-                    style={[styles.slideshowInnerContainer, { aspectRatio: slideshowAspectRatio, maxHeight: 700 }]}
+                    style={[styles.slideshowInnerContainer, { height: finalHeight }]}
                 >
                     <FlatList
                         ref={flatListRef}
@@ -266,8 +268,8 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         viewabilityConfig={viewabilityConfig}
                         style={StyleSheet.absoluteFillObject}
                         getItemLayout={(_, index) => ({
-                            length: itemWidth,
-                            offset: itemWidth * index,
+                            length: containerWidth,
+                            offset: containerWidth * index,
                             index,
                         })}
                     />
