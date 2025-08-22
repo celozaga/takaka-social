@@ -13,6 +13,7 @@ import TrendingTopics from './TrendingTopics';
 import Head from '../shared/Head';
 import { useDebounce } from '../../hooks/useDebounce';
 import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { theme } from '@/lib/theme';
 
 type SearchResult = AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -158,7 +159,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
                             {filters.map(filter => (
                                 <Pressable key={filter.id} onPress={() => setActiveFilter(filter.id)} style={[styles.filterButton, activeFilter === filter.id && styles.activeFilterButton]}>
-                                    <filter.icon size={16} color={activeFilter === filter.id ? '#001D35' : '#E2E2E6'} />
+                                    <filter.icon size={16} color={activeFilter === filter.id ? theme.colors.background : theme.colors.onSurface} />
                                     <Text style={[styles.filterText, activeFilter === filter.id && styles.activeFilterText]}>{filter.label}</Text>
                                 </Pressable>
                             ))}
@@ -185,11 +186,11 @@ const styles = StyleSheet.create({
     searchIcon: { position: 'absolute', left: 16, zIndex: 1 },
     input: { width: '100%', paddingLeft: 48, paddingRight: 16, paddingVertical: 12, backgroundColor: '#1E2021', borderRadius: 8, color: '#E2E2E6', fontSize: 16 },
     discoveryContainer: { padding: 16, gap: 32 },
-    filterContainer: { paddingHorizontal: 16, gap: 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#2b2d2e' },
-    filterButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: '#2b2d2e' },
-    activeFilterButton: { backgroundColor: '#D1E4FF' },
-    filterText: { fontSize: 14, fontWeight: '600', color: '#E2E2E6' },
-    activeFilterText: { color: '#001D35' },
+    filterContainer: { paddingHorizontal: 16, gap: 8, paddingBottom: 16 },
+    filterButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    activeFilterButton: { backgroundColor: theme.colors.onSurface },
+    filterText: { fontSize: 14, fontWeight: 'bold', color: theme.colors.onSurface },
+    activeFilterText: { color: theme.colors.background },
     contentContainer: { paddingTop: 16, paddingHorizontal: 16 },
     skeletonItemListView: { backgroundColor: '#1E2021', borderRadius: 12, height: 88, opacity: 0.5 },
     emptyContainer: { padding: 32, marginHorizontal: 16, backgroundColor: '#1E2021', borderRadius: 12, marginTop: 16 },

@@ -75,39 +75,38 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
 
 const styles = StyleSheet.create({
     container: {
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.outline,
         backgroundColor: theme.colors.background,
+        paddingVertical: theme.spacing.m,
     },
     scrollContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.spacing.l,
+        gap: theme.spacing.s,
         paddingHorizontal: theme.spacing.l,
     },
     tab: {
-        paddingVertical: theme.spacing.l,
-        borderBottomWidth: 2,
-        borderBottomColor: 'transparent',
+        paddingVertical: theme.spacing.s,
+        paddingHorizontal: theme.spacing.l,
+        borderRadius: theme.shape.full,
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     tabActive: {
-        borderBottomColor: theme.colors.onSurface,
+        backgroundColor: theme.colors.onSurface,
     },
     tabText: {
         ...theme.typography.titleSmall,
-        fontWeight: '400',
-        color: theme.colors.onSurfaceVariant,
+        fontWeight: '500',
+        color: theme.colors.onSurface,
     },
     tabTextActive: {
         fontWeight: '700',
-        color: theme.colors.onSurface,
+        color: theme.colors.background,
     },
     skeleton: {
-        height: 20,
+        height: 38,
         width: 96,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.small,
-        marginVertical: theme.spacing.l,
+        borderRadius: theme.shape.full,
     }
 });
 
