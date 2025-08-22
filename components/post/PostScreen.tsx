@@ -18,8 +18,13 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
   const replies = thread.replies?.filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[] || [];
 
   const ListHeader = () => (
-    <View style={styles.headerContainer}>
+    <View>
       <FullPostCard feedViewPost={{ post: thread.post }} />
+      {thread.post.replyCount > 0 && (
+          <View style={styles.repliesHeader}>
+              <Text style={styles.repliesHeaderText}>{t('common.replies')}</Text>
+          </View>
+      )}
     </View>
   );
 
@@ -68,13 +73,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  headerContainer: {
-    padding: theme.spacing.l,
-    paddingTop: theme.spacing.l,
-  },
   listContentContainer: {
+    padding: theme.spacing.l,
     paddingBottom: Platform.select({ web: 0, default: 80 }), // Space for action bar on native
-    paddingHorizontal: theme.spacing.l,
+  },
+  repliesHeader: {
+    marginTop: theme.spacing.xl,
+  },
+  repliesHeaderText: {
+      ...theme.typography.titleMedium,
+      color: theme.colors.onSurface,
   },
   separator: {
     height: 1,

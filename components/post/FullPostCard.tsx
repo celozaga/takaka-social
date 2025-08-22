@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
@@ -10,7 +7,6 @@ import { useUI } from '../../context/UIContext';
 import { formatDistanceToNow } from 'date-fns';
 import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, PlayCircle, VolumeX, Volume2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import PostActions from './PostActions';
 import SharedVideoPlayer, { PlayerRef } from '../shared/VideoPlayer';
 import ResizedImage from '../shared/ResizedImage';
 import { theme } from '@/lib/theme';
@@ -307,40 +303,20 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         return null;
     };
 
+    const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
 
     return (
         <View>
             <Pressable onPress={handlePress}>
                 {renderContext()}
-                <View style={styles.mainRow}>
-                    <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
-                        <Pressable>
-                            <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                        </Pressable>
-                    </Link>
-                    <View style={styles.postContent}>
-                        <View style={styles.authorInfo}>
-                            <Link href={`/profile/${author.handle}` as any} onPress={e => e.stopPropagation()} asChild>
-                                <Pressable style={styles.authorNameContainer}>
-                                    <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
-                                    {author.labels?.some(l => l.val === 'blue-check') && (
-                                        <BadgeCheck size={16} color={theme.colors.primary} fill="currentColor" />
-                                    )}
-                                </Pressable>
-                            </Link>
-                             <Text style={styles.timestamp}>· {formatDistanceToNow(new Date(record.createdAt), { addSuffix: true })}</Text>
-                        </View>
-                        {record.text && (
-                            <Text style={styles.postText}>
-                                <RichTextRenderer record={record} />
-                            </Text>
-                        )}
-                        {renderMedia()}
-                        {/* Quoted posts are removed as per user request */}
-                        <View style={styles.actionsContainer}>
-                            <PostActions post={post} />
-                        </View>
-                    </View>
+                <View>
+                    {renderMedia()}
+                    {record.text && (
+                        <Text style={styles.postText}>
+                            <RichTextRenderer record={record} />
+                        </Text>
+                    )}
+                    <Text style={styles.timestamp}>{timeAgo}</Text>
                 </View>
             </Pressable>
         </View>
@@ -362,46 +338,15 @@ const styles = StyleSheet.create({
     contextLink: {
         textDecorationLine: 'underline'
     },
-    mainRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: theme.spacing.m,
-    },
-    avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: theme.shape.full,
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
-    postContent: {
-        flex: 1,
-        minWidth: 0,
-    },
-    authorInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.s,
-    },
-    authorNameContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.xs,
-        flexShrink: 1,
-    },
-    authorName: {
-        ...theme.typography.titleMedium,
-        color: theme.colors.onSurface,
-        flexShrink: 1,
-    },
     timestamp: {
         ...theme.typography.bodySmall,
         color: theme.colors.onSurfaceVariant,
-        flexShrink: 0,
+        marginTop: theme.spacing.s,
     },
     postText: {
         ...theme.typography.bodyMedium,
         color: theme.colors.onSurface,
-        marginTop: theme.spacing.xs,
+        marginTop: theme.spacing.m,
     },
     slideshowOuterContainer: {
         marginTop: theme.spacing.s,
@@ -480,9 +425,6 @@ const styles = StyleSheet.create({
     },
     dotActive: {
         backgroundColor: theme.colors.primary,
-    },
-    actionsContainer: {
-        marginTop: theme.spacing.m,
     },
     videoContainer: {
         position: 'relative',
