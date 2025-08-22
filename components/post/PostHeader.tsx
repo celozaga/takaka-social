@@ -88,7 +88,6 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
             <Image source={{ uri: author.avatar }} style={styles.avatar} />
             <View style={{ flexShrink: 1 }}>
               <Text style={styles.displayName} numberOfLines={1}>{author.displayName || author.handle}</Text>
-              <Text style={styles.handle} numberOfLines={1}>@{author.handle}</Text>
             </View>
           </Pressable>
         </Link>
@@ -145,10 +144,6 @@ const styles = StyleSheet.create({
   displayName: {
     ...theme.typography.titleSmall,
     color: theme.colors.onSurface,
-  },
-  handle: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.onSurfaceVariant,
   },
   followButton: {
     paddingVertical: theme.spacing.s,
