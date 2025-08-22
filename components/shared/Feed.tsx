@@ -9,6 +9,7 @@ import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList } from 'react-native';
 import { theme } from '@/lib/theme';
+import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
@@ -153,7 +154,7 @@ const Feed: React.FC<FeedProps> = ({
   const { column1Items, column2Items } = useMemo(() => {
     if (layout !== 'grid') return { column1Items: [], column2Items: [] };
     const col1: AppBskyFeedDefs.FeedViewPost[] = [];
-    const col2: AppBskyFeedDefs.FeedViewPost[] = [];
+    const col2:AppBskyFeedDefs.FeedViewPost[] = [];
     moderatedFeed.forEach((item, index) => {
         if (index % 2 === 0) col1.push(item);
         else col2.push(item);
@@ -171,12 +172,28 @@ const Feed: React.FC<FeedProps> = ({
     }
   };
 
-  const renderFooter = () => (
-    <View>
-      {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: 20 }} color={theme.colors.primary} />}
-      {!hasMore && moderatedFeed.length > 0 && <Text style={styles.endOfList}>{t('common.endOfList')}</Text>}
-    </View>
-  );
+  const renderFooter = () => {
+    if (isLoadingMore) {
+      if (layout === 'grid') {
+        return (
+          <View style={styles.masonryContainer}>
+            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+          </View>
+        );
+      }
+      return (
+        <View style={{ paddingHorizontal: theme.spacing.l, gap: theme.spacing.s, marginTop: theme.spacing.s }}>
+          <FullPostCardSkeleton />
+          <FullPostCardSkeleton />
+        </View>
+      );
+    }
+    if (!hasMore && moderatedFeed.length > 0) {
+      return <Text style={styles.endOfList}>{t('common.endOfList')}</Text>;
+    }
+    return null;
+  };
   
   const renderListEmptyComponent = () => (
     <View style={styles.messageContainer}>

@@ -7,6 +7,7 @@ import ScreenHeader from '../layout/ScreenHeader';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
 import { theme } from '@/lib/theme';
+import NotificationItemSkeleton from './NotificationItemSkeleton';
 
 type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows';
 
@@ -22,19 +23,15 @@ const NotificationsScreen: React.FC = () => {
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState<AppBskyNotificationListNotifications.Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState<NotificationFilter>('all');
 
-  const fetchInitialNotifications = useCallback(async () => {
-    setIsLoading(true);
+  const fetchNotifications = useCallback(async () => {
     setError(null);
-    setNotifications([]);
-    setCursor(undefined);
-    setHasMore(true);
-
     try {
       await agent.app.bsky.notification.updateSeen({ seenAt: new Date().toISOString() });
       resetUnreadCount();
@@ -44,14 +41,23 @@ const NotificationsScreen: React.FC = () => {
       setHasMore(!!response.data.cursor && response.data.notifications.length > 0);
     } catch (err) {
       setError(t('notifications.loadingError'));
-    } finally {
-      setIsLoading(false);
     }
   }, [agent, resetUnreadCount, t]);
 
   useEffect(() => {
-    fetchInitialNotifications();
-  }, [fetchInitialNotifications]);
+    const loadInitial = async () => {
+      setIsLoading(true);
+      await fetchNotifications();
+      setIsLoading(false);
+    }
+    loadInitial();
+  }, [fetchNotifications]);
+
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await fetchNotifications();
+    setIsRefreshing(false);
+  }, [fetchNotifications]);
 
   const loadMoreNotifications = useCallback(async () => {
     if (isLoadingMore || !cursor || !hasMore) return;
@@ -96,6 +102,26 @@ const NotificationsScreen: React.FC = () => {
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <>
+        <Head><title>{t('notifications.title')}</title></Head>
+        <View style={{flex: 1}}>
+            <ScreenHeader title={t('notifications.title')} />
+            {renderListHeader()}
+            <View>
+                {[...Array(10)].map((_, i) => (
+                    <React.Fragment key={i}>
+                        <NotificationItemSkeleton />
+                        <View style={styles.separator} />
+                    </React.Fragment>
+                ))}
+            </View>
+        </View>
+      </>
+    )
+  }
+
   return (
     <>
       <Head><title>{t('notifications.title')}</title></Head>
@@ -108,8 +134,8 @@ const NotificationsScreen: React.FC = () => {
             ListHeaderComponent={renderListHeader}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             contentContainerStyle={styles.listContentContainer}
-            onRefresh={fetchInitialNotifications}
-            refreshing={isLoading}
+            onRefresh={onRefresh}
+            refreshing={isRefreshing}
             onEndReached={loadMoreNotifications}
             onEndReachedThreshold={0.5}
             ListFooterComponent={() => {
@@ -119,7 +145,7 @@ const NotificationsScreen: React.FC = () => {
             }}
             ListEmptyComponent={() => {
                 if (isLoading) {
-                    return null; // Handled by refreshing prop
+                    return null;
                 }
                 if (error) {
                     return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;

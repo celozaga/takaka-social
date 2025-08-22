@@ -13,6 +13,8 @@ import { useUI } from '../../context/UIContext';
 import Head from '../shared/Head';
 import ScreenHeader from '../layout/ScreenHeader';
 import { theme } from '@/lib/theme';
+import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';
+import PostCardSkeleton from '../post/PostCardSkeleton';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -162,7 +164,18 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
         </View>
     );
 
-    if (isLoading) return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
+    if (isLoading) {
+        return (
+          <>
+            <ScreenHeader title={t('profile.title')} />
+            <ProfileHeaderSkeleton />
+            <View style={{ flexDirection: 'row', gap: theme.spacing.l, padding: theme.spacing.l, backgroundColor: theme.colors.background }}>
+              <View style={{ flex: 1, gap: theme.spacing.l }}><PostCardSkeleton /><PostCardSkeleton /></View>
+              <View style={{ flex: 1, gap: theme.spacing.l }}><PostCardSkeleton /><PostCardSkeleton /></View>
+            </View>
+          </>
+        );
+    }
     if (error) return <View><ScreenHeader title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{error}</Text></View></View>;
     if (!profile) return <View><ScreenHeader title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{t('profile.notFound')}</Text></View></View>;
     

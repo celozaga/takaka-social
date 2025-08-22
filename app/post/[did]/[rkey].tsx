@@ -7,6 +7,8 @@ import ScreenHeader from '@/components/layout/ScreenHeader';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
 import Head from '@/components/shared/Head';
+import FullPostCardSkeleton from '@/components/post/FullPostCardSkeleton';
+import PostHeader from '@/components/post/PostHeader';
 
 export default function PostPage() {
   const { did, rkey } = useLocalSearchParams<{ did: string; rkey: string }>();
@@ -46,8 +48,13 @@ export default function PostPage() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        {/* We can't render the real header since we don't have the post data yet, 
+            so we show a generic one and the skeleton content */}
+        <ScreenHeader title="Post" />
+        <View style={styles.skeletonContainer}>
+          <FullPostCardSkeleton />
+        </View>
       </View>
     );
   }
@@ -91,5 +98,9 @@ const styles = StyleSheet.create({
   errorText: {
     color: theme.colors.error,
     fontSize: 16,
+  },
+  skeletonContainer: {
+    padding: theme.spacing.l,
+    paddingTop: theme.spacing.l,
   },
 });
