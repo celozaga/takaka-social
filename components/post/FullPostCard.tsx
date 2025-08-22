@@ -137,7 +137,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 maxHeight: 700,
                 width: '100%',
                 backgroundColor: 'black'
-            };
+            } as const;
 
             if (isVideo) {
                 const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
