@@ -64,7 +64,7 @@ const SharedVideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, style
       shouldPlay={options.autoplay}
       isLooping={options.loop}
       isMuted={options.muted}
-      resizeMode={ResizeMode.CONTAIN}
+      resizeMode={ResizeMode.COVER}
       useNativeControls={options.controls}
       onPlaybackStatusUpdate={onPlaybackStatusUpdate}
     />
