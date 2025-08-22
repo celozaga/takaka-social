@@ -102,7 +102,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
             
             return (
                 <View>
-                    <ResizedImage src={posterUrl || ''} resizeWidth={400} alt="Video poster" style={[styles.image, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} />
+                    <ResizedImage src={posterUrl || ''} resizeWidth={400} alt="Video poster" style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} />
                     <View style={styles.mediaBadgeContainer}>
                         {isRepost && <View style={styles.mediaBadge}><Repeat size={14} color="white" /></View>}
                         <View style={styles.mediaBadge}><PlayCircle size={14} color="white" /></View>
@@ -159,6 +159,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
 
 const styles = StyleSheet.create({
     image: { width: '100%', resizeMode: 'cover' },
+    videoPoster: { resizeMode: 'contain' },
     mediaBadgeContainer: { position: 'absolute', top: theme.spacing.s, right: theme.spacing.s, flexDirection: 'row', gap: theme.spacing.xs },
     mediaBadge: { backgroundColor: 'rgba(0,0,0,0.7)', padding: theme.spacing.xs, borderRadius: theme.shape.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
     mediaBadgeText: { ...theme.typography.labelSmall, color: 'white' },
