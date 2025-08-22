@@ -197,8 +197,18 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         } else {
             slideshowAspectRatio = firstItem.aspectRatio ? firstItem.aspectRatio.width / firstItem.aspectRatio.height : 1.5;
         }
+        
+        const isDesktop = width >= 768;
+        const mainContentMaxWidth = 640;
+        const navRailWidth = 80;
+        const listPadding = theme.spacing.l * 2;
 
-        const containerWidth = width - (theme.spacing.l * 2);
+        const effectiveContentWidth = isDesktop
+            ? Math.min(width - navRailWidth, mainContentMaxWidth)
+            : width;
+        
+        const containerWidth = effectiveContentWidth - listPadding;
+        
         const calculatedHeight = containerWidth / slideshowAspectRatio;
         const finalHeight = Math.min(calculatedHeight, 700);
 
