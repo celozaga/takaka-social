@@ -141,11 +141,19 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         
         const showArrows = Platform.OS !== 'web' || isHovered;
 
+        const firstItem = mediaItems[0];
+        let slideshowAspectRatio;
+        if ('view' in firstItem) { // item is a video
+            slideshowAspectRatio = firstItem.view.aspectRatio ? firstItem.view.aspectRatio.width / firstItem.view.aspectRatio.height : 16 / 9;
+        } else { // item is an image
+            slideshowAspectRatio = firstItem.aspectRatio ? firstItem.aspectRatio.width / firstItem.aspectRatio.height : 1.5;
+        }
+
         return (
             <View style={styles.slideshowOuterContainer} onLayout={onLayout}>
                 {containerWidth > 0 && (
                     <View 
-                        style={styles.slideshowInnerContainer}
+                        style={[styles.slideshowInnerContainer, { aspectRatio: slideshowAspectRatio }]}
                         {...(Platform.OS === 'web' && {
                             onMouseEnter: () => setIsHovered(true),
                             onMouseLeave: () => setIsHovered(false),

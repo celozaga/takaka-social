@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AppBskyFeedDefs, RichText, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { AppBskyFeedDefs, RichText, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Heart } from 'lucide-react';
@@ -14,6 +14,7 @@ import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
 import ResizedImage from '../shared/ResizedImage';
+import SharedVideoPlayer from '../shared/VideoPlayer';
 
 const MAX_REPLY_DEPTH = 6;
 
@@ -39,7 +40,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
-  const { session } = useAtp();
+  const { session, agent } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
   
@@ -66,20 +67,44 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     const embed = post.embed;
     if (!embed) return null;
 
-    let mediaEmbed: AppBskyEmbedImages.View | undefined;
+    let mediaEmbed: AppBskyEmbedImages.View | AppBskyEmbedVideo.View | undefined;
 
-    if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) {
-      mediaEmbed = embed;
+    if (AppBskyEmbedImages.isView(embed)) {
+        if(embed.images.length > 0) mediaEmbed = embed;
+    } else if (AppBskyEmbedVideo.isView(embed)) {
+        mediaEmbed = embed;
     } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-      const recordWithMediaView = embed;
-      if (AppBskyEmbedImages.isView(recordWithMediaView.media) && recordWithMediaView.media.images.length > 0) {
-        mediaEmbed = recordWithMediaView.media;
-      }
+        const recordWithMediaView = embed;
+        if (AppBskyEmbedImages.isView(recordWithMediaView.media) && recordWithMediaView.media.images.length > 0) {
+            mediaEmbed = recordWithMediaView.media;
+        } else if (AppBskyEmbedVideo.isView(recordWithMediaView.media)) {
+            mediaEmbed = recordWithMediaView.media as AppBskyEmbedVideo.View;
+        }
     }
     
-    if (mediaEmbed) {
-      const image = mediaEmbed.images[0];
-      return <ResizedImage src={image.thumb} resizeWidth={200} alt={image.alt} style={styles.mediaPreview} />;
+    if (AppBskyEmbedImages.isView(mediaEmbed)) {
+        const image = mediaEmbed.images[0]; // Show first image only in replies
+        const imageAspectRatio = image.aspectRatio ? image.aspectRatio.width / image.aspectRatio.height : 1.5;
+        return <ResizedImage src={image.thumb} resizeWidth={400} alt={image.alt || 'Reply image'} style={[styles.mediaPreview, { aspectRatio: imageAspectRatio }]} />;
+    }
+
+    if (AppBskyEmbedVideo.isView(mediaEmbed)) {
+        const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
+        const videoUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${mediaEmbed.cid}`;
+        const aspectRatio = mediaEmbed.aspectRatio ? mediaEmbed.aspectRatio.width / mediaEmbed.aspectRatio.height : 16/9;
+        return (
+            <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>
+                <SharedVideoPlayer 
+                    options={{
+                        autoplay: false,
+                        controls: true,
+                        poster: mediaEmbed.thumbnail,
+                        sources: [{ src: videoUrl, type: 'video/mp4' }]
+                    }}
+                    style={{ width: '100%', height: '100%' }}
+                />
+            </View>
+        );
     }
     
     // Quoted posts are removed as per user request.
@@ -170,9 +195,9 @@ const styles = StyleSheet.create({
     nestedRepliesContainer: { paddingLeft: 20 + theme.spacing.m, borderLeftWidth: 2, borderLeftColor: theme.colors.surfaceContainerHigh, marginLeft: 20 },
     mediaPreview: {
         width: '100%',
-        aspectRatio: 1.5,
         borderRadius: theme.shape.medium,
         marginTop: theme.spacing.s,
+        backgroundColor: theme.colors.surfaceContainerHigh,
     }
 });
 
