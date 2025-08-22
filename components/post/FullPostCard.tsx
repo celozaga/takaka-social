@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
@@ -55,14 +56,14 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     useEffect(() => {
         if (post.embed) {
             let videoEmbed: AppBskyEmbedVideo.View | undefined;
-            const findVideo = (embed: unknown) => {
-                if (AppBskyEmbedVideo.isView(embed)) {
-                    videoEmbed = embed;
-                } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                    findVideo((embed as AppBskyEmbedRecordWithMedia.View).media);
+            if (AppBskyEmbedVideo.isView(post.embed)) {
+                videoEmbed = post.embed;
+            } else if (AppBskyEmbedRecordWithMedia.isView(post.embed)) {
+                if (AppBskyEmbedVideo.isView(post.embed.media)) {
+                    videoEmbed = post.embed.media;
                 }
-            };
-            findVideo(post.embed);
+            }
+
             if (videoEmbed) {
                 fetchPlaybackUrl(post.uri, post.author.did, videoEmbed.cid);
             }
@@ -250,7 +251,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             keyExtractor={(item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index}
                             onViewableItemsChanged={onViewableItemsChanged}
                             viewabilityConfig={viewabilityConfig}
-                            style={{ width: containerWidth, borderRadius: theme.shape.medium }}
+                            style={[StyleSheet.absoluteFill, { borderRadius: theme.shape.medium }]}
                             getItemLayout={(_, index) => ({
                                 length: containerWidth,
                                 offset: containerWidth * index,
@@ -399,11 +400,10 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.s,
     },
     slideshowInnerContainer: {
+        position: 'relative',
         maxHeight: 1000,
         borderRadius: theme.shape.medium,
         overflow: 'hidden',
-        justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: '#000',
     },
     slideshowImage: {
@@ -431,6 +431,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.shape.medium,
         paddingHorizontal: theme.spacing.s,
         paddingVertical: theme.spacing.xs,
+        zIndex: 1,
     },
     counterText: {
         ...theme.typography.bodySmall,
@@ -447,6 +448,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 1,
     },
     arrowLeft: {
         left: theme.spacing.m,
