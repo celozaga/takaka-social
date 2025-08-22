@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions, KeyboardAvoidingView, StyleProp, ViewStyle } from 'react-native';
@@ -63,14 +64,14 @@ function AppLayout() {
           <View style={styles.desktopWrapper}>
             <BottomNavbar />
             <View style={mainContentStyle}>
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: theme.colors.background } }} />
             </View>
           </View>
         ) : (
           <>
             {showNav && <BottomNavbar />}
             <View style={mainContentStyle}>
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: theme.colors.background } }} />
             </View>
           </>
         )}
