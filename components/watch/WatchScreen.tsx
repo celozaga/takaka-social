@@ -2,24 +2,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs } from '@atproto/api';
-import WatchFeed from './WatchFeed'; // The new component
+import { AppBskyFeedDefs, AppBskyEmbedVideo,AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import WatchFeed from './WatchFeed';
 import { ArrowLeft } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
 
-// Switched to a dedicated video feed for performance
-const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/videos';
+const VIDEOS_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/videos';
+const WHATS_HOT_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
-/**
- * This is the main screen for the video feed.
- * It acts as a "container" component, responsible for:
- * - Fetching video posts from the API.
- * - Handling pagination (loading more videos as the user scrolls).
- * - Passing the data down to the `WatchFeed` component, which handles the UI.
- */
+const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
+    const embed = post.embed;
+    if (!embed) return false;
+    if (AppBskyEmbedVideo.isView(embed)) return true;
+    if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+        return AppBskyEmbedVideo.isView(embed.media);
+    }
+    return false;
+}
+
 const WatchScreen: React.FC = () => {
     const { agent } = useAtp();
     const { t } = useTranslation();
@@ -30,18 +33,27 @@ const WatchScreen: React.FC = () => {
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [useFallbackFeed, setUseFallbackFeed] = useState(false);
 
-    const fetchVideos = useCallback(async (currentCursor?: string) => {
+    const fetchVideos = useCallback(async (currentCursor?: string, isFallback = useFallbackFeed) => {
         if (!currentCursor) setIsLoading(true);
         else setIsLoadingMore(true);
         
-        try {
-            const res = await agent.app.bsky.feed.getFeed({ feed: DISCOVER_FEED_URI, cursor: currentCursor, limit: 10 });
+        const feedUri = isFallback ? WHATS_HOT_FEED_URI : VIDEOS_FEED_URI;
+        const limit = isFallback ? 25 : 10;
 
-            if (res.data.feed.length > 0) {
+        try {
+            const res = await agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit });
+            
+            let posts = res.data.feed;
+            if (isFallback) {
+                posts = posts.filter(p => hasVideos(p.post));
+            }
+
+            if (posts.length > 0) {
                 setVideoPosts(prev => {
                     const existingUris = new Set(prev.map(p => p.post.uri));
-                    const uniqueNewPosts = res.data.feed.filter(p => !existingUris.has(p.post.uri));
+                    const uniqueNewPosts = posts.filter(p => !existingUris.has(p.post.uri));
                     return currentCursor ? [...prev, ...uniqueNewPosts] : uniqueNewPosts;
                 });
             }
@@ -52,18 +64,34 @@ const WatchScreen: React.FC = () => {
                 setHasMore(false);
             }
 
-        } catch (err: any) { 
-            setError(t('feed.loadingError')); 
+            // If we are using the fallback and we get an empty page, but there's more content, fetch next page.
+            if (isFallback && posts.length === 0 && nextCursor) {
+                // To avoid infinite loops, we don't call fetchVideos recursively here.
+                // The `loadMore` function will handle fetching the next page.
+            }
+
+        } catch (err: any) {
+            if (!isFallback) {
+                console.warn('Primary video feed failed, trying fallback feed.', err);
+                setUseFallbackFeed(true);
+                // Call fetchVideos again with the fallback
+                fetchVideos(currentCursor, true);
+                return;
+            } else {
+                setError(t('feed.loadingError'));
+            }
         } finally { 
             setIsLoading(false); 
             setIsLoadingMore(false); 
         }
-    }, [agent, t]);
+    }, [agent, t, useFallbackFeed]);
 
-    // Fetch the initial set of videos when the component mounts.
     useEffect(() => {
+        // We only want to run the initial fetch once.
+        // The fetchVideos function is now stable due to useCallback.
         fetchVideos();
-    }, []); // Note: `fetchVideos` is memoized with useCallback, so this is safe.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const loadMore = useCallback(() => {
         if (!isLoadingMore && hasMore && cursor) {

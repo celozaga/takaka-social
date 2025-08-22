@@ -7,16 +7,18 @@ import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { Volume2, VolumeX, Play } from 'lucide-react';
 import { theme } from '@/lib/theme';
+import { useAtp } from '@/context/AtpContext';
 
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;
-  blobUrl: string;
   paused: boolean;
 }
 
 type VideoStatus = 'loading' | 'buffering' | 'playing' | 'error';
 
-const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyPaused }) => {
+const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) => {
+  const { agent } = useAtp();
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
   const [status, setStatus] = useState<VideoStatus>('loading');
   const [isMuted, setIsMuted] = useState(true);
@@ -28,16 +30,47 @@ const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyP
   if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
   else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
 
-  // Reset the state when the video changes
   useEffect(() => {
     setStatus('loading');
     setIsInternallyPaused(false);
-  }, [post.uri]);
+    setVideoUrl(null);
+
+    const fetchVideoUrl = async () => {
+        if (!embedView) return;
+
+        const did = post.author.did;
+        const cid = embedView.cid;
+
+        // 1. Try getPlaybackUrl for HLS streams
+        try {
+            const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did, cid });
+            if (res.data.url) {
+                setVideoUrl(res.data.url);
+                return;
+            }
+        } catch (e) {
+            console.warn(`getPlaybackUrl failed for ${post.uri}, falling back to getBlob.`, e);
+        }
+
+        // 2. Fallback to getBlob for direct MP4 download
+        try {
+            const serviceUrl = agent.service.toString();
+            const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+            const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${did}&cid=${cid}`;
+            setVideoUrl(blobUrl);
+        } catch (e) {
+             console.error('Failed to construct blob URL', e);
+             setStatus('error');
+        }
+    };
+    
+    fetchVideoUrl();
+  }, [post.uri, agent]);
 
   if (!embedView) return null;
   
   const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
-  const showThumbnail = status === 'loading' || status === 'error';
+  const showThumbnail = !videoUrl || status === 'loading' || status === 'error';
   const showSpinner = status === 'buffering';
 
   const toggleInternalPlayPause = () => setIsInternallyPaused(prev => !prev);
@@ -46,7 +79,6 @@ const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyP
   return (
     <TouchableWithoutFeedback onPress={toggleInternalPlayPause}>
       <View style={styles.container}>
-        {/* 1. Thumbnail: Shown during initial load or on error */}
         {showThumbnail && embedView.thumbnail && (
           <Image 
             source={{ uri: embedView.thumbnail }} 
@@ -55,37 +87,37 @@ const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyP
           />
         )}
 
-        <Video
-          source={{ uri: blobUrl }}
-          style={styles.video}
-          resizeMode="contain"
-          repeat
-          paused={isEffectivelyPaused}
-          muted={isMuted}
-          onLoadStart={() => setStatus('loading')}
-          onLoad={() => setStatus('playing')}
-          onReadyForDisplay={() => setStatus('playing')} // For faster start on iOS
-          onBuffer={({ isBuffering }) => {
-            // Only show buffering spinner after initial load
-            if (status !== 'loading') {
-                setStatus(isBuffering ? 'buffering' : 'playing');
-            }
-          }}
-          onError={(e: any) => {
-            console.error('Video Error:', e);
-            setStatus('error');
-          }}
-          playInBackground={false}
-          playWhenInactive={false}
-          bufferConfig={{
-            minBufferMs: 15000,
-            maxBufferMs: 60000,
-            bufferForPlaybackMs: 2500,
-            bufferForPlaybackAfterRebufferMs: 5000,
-          }}
-        />
+        {videoUrl && (
+            <Video
+              source={{ uri: videoUrl }}
+              style={styles.video}
+              resizeMode="contain"
+              repeat
+              paused={isEffectivelyPaused}
+              muted={isMuted}
+              onLoadStart={() => setStatus('loading')}
+              onLoad={() => setStatus('playing')}
+              onReadyForDisplay={() => setStatus('playing')}
+              onBuffer={({ isBuffering }) => {
+                if (status !== 'loading') {
+                    setStatus(isBuffering ? 'buffering' : 'playing');
+                }
+              }}
+              onError={(e: any) => {
+                console.error('Video Error:', e);
+                setStatus('error');
+              }}
+              playInBackground={false}
+              playWhenInactive={false}
+              bufferConfig={{
+                minBufferMs: 15000,
+                maxBufferMs: 60000,
+                bufferForPlaybackMs: 2500,
+                bufferForPlaybackAfterRebufferMs: 5000,
+              }}
+            />
+        )}
 
-        {/* 2. Spinner: Shown only during mid-playback buffering */}
         {showSpinner && (
           <ActivityIndicator
             size="large"
@@ -94,7 +126,6 @@ const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyP
           />
         )}
         
-        {/* 3. Error message */}
         {status === 'error' && (
             <View style={styles.errorOverlay}>
                 <Text style={styles.errorText}>Could not play video</Text>
@@ -107,7 +138,6 @@ const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyP
           </View>
         )}
 
-        {/* UI Overlays: Shown when video is visible (not during initial load) */}
         {!showThumbnail && (
           <>
             <View style={styles.infoOverlay}>
@@ -118,9 +148,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, blobUrl, paused: isExternallyP
                 <RichTextRenderer record={record} />
               </Text>
             </View>
-
             <VideoActions post={post} />
-
             <Pressable onPress={toggleMuteLocal} style={styles.muteButton}>
               {isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
             </Pressable>

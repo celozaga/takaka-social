@@ -1,10 +1,9 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet } from 'react-native';
-import {AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia, AppBskyActorDefs } from '@atproto/api';
+import { AppBskyFeedDefs } from '@atproto/api';
 import VideoPlayer from './VideoPlayer';
 import { theme } from '@/lib/theme';
-import { useAtp } from '@/context/AtpContext';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -15,7 +14,6 @@ interface Props {
 }
 
 const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMore }) => {
-  const { agent } = useAtp();
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const { height } = useWindowDimensions();
@@ -31,22 +29,6 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
 
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
-  const getBlobUrl = (post: AppBskyFeedDefs.PostView) => {
-    let embedView: AppBskyEmbedVideo.View | undefined;
-    if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
-    else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
-    
-    if (!embedView) return '';
-
-    const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
-    const videoCid = embedView.cid;
-    if (!authorDid || !videoCid || !agent.service) return '';
-
-    const serviceUrl = agent.service.toString();
-    const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-    return `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoCid}`;
-  };
-
   return (
     <FlatList
       data={videoPosts}
@@ -55,7 +37,6 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
         <View style={{ height }}>
           <VideoPlayer 
             postView={item} 
-            blobUrl={getBlobUrl(item.post)}
             paused={index !== activeIndex}
           />
         </View>
