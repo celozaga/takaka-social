@@ -1,18 +1,18 @@
 import { Platform } from 'react-native';
 
 const colors = {
-  primary: '#5662F6',
-  onPrimary: '#FFFFFF',
+  primary: '#FFFFFF',
+  onPrimary: '#000000',
   background: '#000000',
-  surface: '#222222',
-  surfaceContainer: '#222222',
-  surfaceContainerHigh: '#333333',
-  surfaceContainerHighest: '#444444',
-  onSurface: '#E5E5E5',
-  onSurfaceVariant: '#A0A0A0',
-  outline: '#333333',
-  error: '#F2B8B5',
-  pink: '#ec4899', // A custom accent color
+  surface: '#000000',
+  surfaceContainer: '#1C1C1E',
+  surfaceContainerHigh: '#2C2C2E',
+  surfaceContainerHighest: '#3A3A3A',
+  onSurface: '#FFFFFF',
+  onSurfaceVariant: '#8E8E93',
+  outline: '#2C2C2E',
+  error: '#FF453A',
+  pink: '#FFFFFF', // A custom accent color
 };
 
 const shape = {

@@ -15,9 +15,10 @@ const SettingsListItem: React.FC<{
     label: string;
     value?: string;
     href: string;
-}> = ({ icon: Icon, label, value, href }) => (
+    isLast?: boolean;
+}> = ({ icon: Icon, label, value, href, isLast = false }) => (
     <Link href={href as any} asChild>
-        <Pressable style={({ pressed }) => [styles.listItem, pressed && styles.listItemPressed]}>
+        <Pressable style={({ pressed }) => [styles.listItem, isLast && styles.lastListItem, pressed && styles.listItemPressed]}>
             <View style={styles.listItemContent}>
                 <View style={styles.listItemLeft}>
                     <Icon size={24} color={theme.colors.onSurfaceVariant} />
@@ -73,11 +74,11 @@ const SettingsScreen: React.FC = () => {
             <Head><title>{t('settings.title')}</title></Head>
             <View style={styles.container}>
                 <ScreenHeader title={t('settings.title')} />
-                <View style={styles.listContainer}>
+                <View style={styles.contentContainer}>
                     <SettingsListItem icon={Shield} label="Moderation" href="/settings/moderation" />
                     <SettingsListItem icon={Globe} label={t('settings.language')} value={currentLanguageName} href="/settings/language" />
                     <SettingsListItem icon={Bell} label={t('settings.notifications')} href="/settings/notifications" />
-                    <SettingsListItem icon={UserCircle} label={t('settings.account')} href="/settings/account" />
+                    <SettingsListItem icon={UserCircle} label={t('settings.account')} href="/settings/account" isLast />
 
                     <Pressable onPress={handleLogout} style={({ pressed }) => [styles.listItem, styles.logoutButton, pressed && styles.listItemPressed]}>
                         <View style={styles.listItemContent}>
@@ -97,16 +98,18 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    listContainer: {
+    contentContainer: {
         marginTop: 16,
         marginHorizontal: 16,
-        gap: 8,
     },
     listItem: {
-        backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.extraLarge,
+        backgroundColor: 'transparent',
         paddingVertical: 16,
-        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.outline,
+    },
+    lastListItem: {
+        borderBottomWidth: 0,
     },
     listItemPressed: {
         backgroundColor: theme.colors.surfaceContainerHigh,
@@ -136,7 +139,8 @@ const styles = StyleSheet.create({
         color: theme.colors.onSurfaceVariant,
     },
     logoutButton: {
-        marginTop: 16,
+        marginTop: 32,
+        borderBottomWidth: 0,
     },
     destructiveText: {
         color: theme.colors.error,

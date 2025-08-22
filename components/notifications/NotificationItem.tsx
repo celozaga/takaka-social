@@ -15,6 +15,7 @@ import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } 
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { View, Text, Image, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface NotificationItemProps {
   notification:AppBskyNotificationListNotifications.Notification;
@@ -114,7 +115,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       <Pressable style={styles.authorLinkContainer}>
         <Text style={styles.authorLinkText}>{author.displayName || `@${author.handle}`}</Text>
         {author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-            <BadgeCheck size={14} color="#A8C7FA" fill="#A8C7FA" style={{ flexShrink: 0, marginLeft: 2 }} />
+            <BadgeCheck size={14} color={theme.colors.onSurface} fill={theme.colors.onSurface} style={{ flexShrink: 0, marginLeft: 2 }} />
         )}
       </Pressable>
     </Link>
@@ -122,36 +123,36 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
 
   switch (reason) {
     case 'like':
-      Icon = <Heart color="#ec4899" size={24} />;
+      Icon = <Heart color="#FFFFFF" size={24} />;
       reasonText = 'liked your post';
       isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     case 'repost':
-      Icon = <Repeat color="#A8C7FA" size={24} />;
+      Icon = <Repeat color="#FFFFFF" size={24} />;
       reasonText = 'reposted your post';
       isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     case 'follow':
-      Icon = <UserPlus color="#A8C7FA" size={24} />;
+      Icon = <UserPlus color="#FFFFFF" size={24} />;
       reasonText = 'followed you';
       isPostLink = false;
       break;
     case 'reply':
-      Icon = <MessageCircle color="#A8C7FA" size={24} />;
+      Icon = <MessageCircle color="#FFFFFF" size={24} />;
       reasonText = 'replied to your post';
       isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     case 'mention':
-      Icon = <AtSign color="#A8C7FA" size={24} />;
+      Icon = <AtSign color="#FFFFFF" size={24} />;
       reasonText = 'mentioned you in a post';
       isPostLink = true;
       if (AppBskyFeedPost.isRecord(record)) content = <PostPreview record={record} postUri={uri} />;
       break;
     default:
-      Icon = <FileText color="#C3C6CF" size={24} />;
+      Icon = <FileText color={theme.colors.onSurfaceVariant} size={24} />;
   }
   
   const timeAgo = formatDistanceToNow(new Date(indexedAt), { addSuffix: true });
@@ -159,15 +160,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   return (
     <Pressable onPress={handlePress} style={[styles.container, !isRead && styles.unreadContainer]}>
       <View style={{ flexDirection: 'row', gap: 16 }}>
-          <View style={{ flexShrink: 0, width: 24, alignItems: 'center' }}>{Icon}</View>
+          <View style={{ flexShrink: 0, width: 32, alignItems: 'center' }}>
+            <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+          </View>
           <View style={{ flex: 1 }}>
               <View style={styles.header}>
-                  <View style={styles.headerContent}>
-                      <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                      <View style={styles.titleContainer}>
-                          <AuthorLink />
-                          <Text style={styles.titleText}> {reasonText}</Text>
-                      </View>
+                  <View style={styles.titleContainer}>
+                      <Text style={styles.titleText} numberOfLines={2}><AuthorLink /> {reasonText}</Text>
                   </View>
                   <Text style={styles.timeAgo}>{timeAgo}</Text>
               </View>
@@ -180,22 +179,19 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
 };
 
 const styles = StyleSheet.create({
-    container: { padding: 16, borderRadius: 12, marginVertical: 4 },
-    unreadContainer: { backgroundColor: 'rgba(168, 199, 250, 0.1)' },
+    container: { paddingHorizontal: 16, paddingVertical: 12 },
+    unreadContainer: { backgroundColor: 'transparent' },
     header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', flex: 1 },
-    headerContent: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-    avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#2b2d2e' },
+    avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.colors.surfaceContainerHigh },
     titleContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, alignItems: 'center' },
-    titleText: { fontSize: 14, color: '#E2E2E6', lineHeight: 20 },
+    titleText: { fontSize: 14, color: theme.colors.onSurface, lineHeight: 20 },
     authorLinkContainer: { flexDirection: 'row', alignItems: 'center' },
-    authorLinkText: { fontWeight: 'bold', color: '#E2E2E6', fontSize: 14, lineHeight: 20 },
-    timeAgo: { fontSize: 12, color: '#C3C6CF', flexShrink: 0, marginLeft: 8, paddingTop: 2 },
-    previewContainer: { borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 8, marginTop: 8, backgroundColor: '#111314' },
+    authorLinkText: { fontWeight: 'bold', color: theme.colors.onSurface, fontSize: 14, lineHeight: 20 },
+    timeAgo: { fontSize: 12, color: theme.colors.onSurfaceVariant, flexShrink: 0, marginLeft: 8, paddingTop: 2 },
+    previewContainer: { borderRadius: 8, padding: 8, marginTop: 8, backgroundColor: theme.colors.surfaceContainerHigh },
     previewContent: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-    previewImage: { width: 64, height: 64, borderRadius: 6, backgroundColor: '#2b2d2e' },
-    previewText: { color: '#E2E2E6', fontSize: 14, flex: 1 },
-    quotedContainer: { borderWidth: 1, borderColor: '#333', borderRadius: 6, padding: 8, backgroundColor: '#1E2021' },
-    quotedText: { fontSize: 12, color: '#C3C6CF' },
+    previewImage: { width: 48, height: 48, borderRadius: 6, backgroundColor: theme.colors.surfaceContainerHighest },
+    previewText: { color: theme.colors.onSurface, fontSize: 14, flex: 1 },
     navigatingOverlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0,0,0,0.2)',

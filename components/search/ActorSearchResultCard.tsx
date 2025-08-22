@@ -5,6 +5,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { BadgeCheck, Loader2 } from 'lucide-react';
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { theme } from '@/lib/theme';
 
 interface ActorSearchResultCardProps {
   actor: AppBskyActorDefs.ProfileView | AppBskyActorDefs.ProfileViewDetailed;
@@ -64,7 +65,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
         style={[styles.followButton, viewerState?.following ? styles.followingButton : styles.followButtonActive, isActionLoading && styles.disabledButton]}
       >
         {isActionLoading ? (
-          <ActivityIndicator size="small" color="#E2E2E6" />
+          <ActivityIndicator size="small" color={viewerState?.following ? theme.colors.onSurface : theme.colors.onPrimary} />
         ) : (
           <Text style={[styles.followButtonText, viewerState?.following ? styles.followingButtonText : styles.followButtonTextActive]}>
             {viewerState?.following ? 'Following' : 'Follow'}
@@ -84,7 +85,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
               <View style={styles.nameContainer}>
                   <Text style={styles.displayName} numberOfLines={1}>{actor.displayName || `@${actor.handle}`}</Text>
                   {actor.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                    <BadgeCheck size={16} color="#A8C7FA" fill="currentColor" style={{ flexShrink: 0 }} />
+                    <BadgeCheck size={16} color={theme.colors.onSurface} fill="currentColor" style={{ flexShrink: 0 }} />
                   )}
               </View>
               <Text style={styles.handle} numberOfLines={1}>@{actor.handle}</Text>
@@ -112,9 +113,8 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
-        backgroundColor: '#1E2021', // surface-2
-        borderRadius: 12,
+        paddingVertical: 12,
+        backgroundColor: theme.colors.background,
     },
     contentContainer: {
         flexDirection: 'row',
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#2b2d2e',
+        backgroundColor: theme.colors.surfaceContainerHigh,
         flexShrink: 0,
     },
     mainContent: {
@@ -148,11 +148,11 @@ const styles = StyleSheet.create({
     },
     displayName: {
         fontWeight: 'bold',
-        color: '#E2E2E6',
+        color: theme.colors.onSurface,
         flexShrink: 1,
     },
     handle: {
-        color: '#C3C6CF',
+        color: theme.colors.onSurfaceVariant,
         fontSize: 14,
     },
     buttonContainer: {
@@ -161,27 +161,27 @@ const styles = StyleSheet.create({
     followButton: {
         paddingVertical: 8,
         paddingHorizontal: 16,
-        borderRadius: 999,
+        borderRadius: theme.shape.medium,
         flexShrink: 0,
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: 32,
     },
     followingButton: {
-        backgroundColor: '#2b2d2e', // surface-3
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     followButtonActive: {
-        backgroundColor: '#A8C7FA', // primary
+        backgroundColor: theme.colors.primary,
     },
     followButtonText: {
         fontSize: 14,
         fontWeight: '600',
     },
     followingButtonText: {
-        color: '#E2E2E6', // on-surface
+        color: theme.colors.onSurface,
     },
     followButtonTextActive: {
-        color: '#003258', // on-primary
+        color: theme.colors.onPrimary,
     },
     disabledButton: {
         opacity: 0.5,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     description: {
         marginTop: 8,
         fontSize: 14,
-        color: '#E2E2E6',
+        color: theme.colors.onSurface,
         lineHeight: 20,
     }
 });

@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   iconContainerActive: {
-    backgroundColor: theme.colors.surfaceContainerHighest,
+    backgroundColor: 'transparent',
   },
   labelText: {
     ...theme.typography.labelMedium,
@@ -167,9 +167,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: theme.colors.surfaceContainer,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.surfaceContainerHigh,
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 0,
     zIndex: 50,
   },
   navBarItem: {
@@ -192,7 +191,7 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     width: 80,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'space-between',
     zIndex: 50,

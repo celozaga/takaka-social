@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -9,6 +8,7 @@ import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ChevronRight, 
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 interface SettingsListItemProps {
     icon: React.ElementType;
@@ -31,15 +31,15 @@ const SettingsListItem: React.FC<SettingsListItemProps> = ({ icon: Icon, label, 
     return (
         <Pressable onPress={handlePress} disabled={disabled} style={({ pressed }) => [styles.listItem, disabled && styles.disabled, pressed && !disabled && styles.listItemPressed]}>
             <View style={styles.listItemContent}>
-                <Icon style={styles.icon} color={isDestructive ? '#F2B8B5' : '#C3C6CF'} size={24} />
+                <Icon style={styles.icon} color={isDestructive ? theme.colors.error : theme.colors.onSurfaceVariant} size={24} />
                 <Text style={[styles.label, isDestructive && styles.destructiveText]}>{label}</Text>
             </View>
             <View style={styles.listItemContent}>
                 {value && <Text style={styles.valueText}>{value}</Text>}
                 {isLoading ? (
-                    <Loader2 color="#C3C6CF" size={20} style={{ animation: 'spin 1s linear infinite' } as any} />
+                    <Loader2 color={theme.colors.onSurfaceVariant} size={20} style={{ animation: 'spin 1s linear infinite' } as any} />
                 ) : (
-                    (href || onPress) && <ChevronRight color="#C3C6CF" size={20} />
+                    (href || onPress) && <ChevronRight color={theme.colors.onSurfaceVariant} size={20} />
                 )}
             </View>
         </Pressable>
@@ -123,7 +123,7 @@ const AccountSettingsScreen: React.FC = () => {
     const emailValue = (
         <View style={styles.emailValueContainer}>
             <Text style={styles.valueText}>{session?.email}</Text>
-            {session?.emailConfirmed && <ShieldCheck color="#A8C7FA" size={16} />}
+            {session?.emailConfirmed && <ShieldCheck color={theme.colors.onSurface} size={16} />}
         </View>
     );
 
@@ -140,7 +140,6 @@ const AccountSettingsScreen: React.FC = () => {
                         <SettingsListItem icon={AtSign} label={t('accountSettings.handle')} value={`@${session?.handle}`} onPress={openUpdateHandleModal} disabled={!!actionInProgress} />
                         <SettingsListItem icon={Cake} label={t('accountSettings.birthday')} href="https://bsky.app/settings/birthday" />
                     </View>
-
                     <View style={styles.section}>
                         <SettingsListItem icon={Download} label={t('accountSettings.exportData')} onPress={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
                         <SettingsListItem icon={Power} label={t('accountSettings.deactivateAccount')} onPress={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
@@ -161,7 +160,8 @@ const styles = StyleSheet.create({
         gap: 24,
     },
     section: {
-        backgroundColor: '#1E2021', // surface-2
+        borderWidth: 1,
+        borderColor: theme.colors.outline,
         borderRadius: 12,
         overflow: 'hidden',
     },
@@ -170,10 +170,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 16,
-        backgroundColor: '#1E2021',
+        backgroundColor: 'transparent',
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.outline,
     },
     listItemPressed: {
-        backgroundColor: '#2b2d2e',
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     disabled: {
         opacity: 0.5,
@@ -189,14 +191,14 @@ const styles = StyleSheet.create({
     },
     label: {
         fontWeight: '600',
-        color: '#E2E2E6',
+        color: theme.colors.onSurface,
         fontSize: 16,
     },
     destructiveText: {
-        color: '#F2B8B5',
+        color: theme.colors.error,
     },
     valueText: {
-        color: '#C3C6CF',
+        color: theme.colors.onSurfaceVariant,
         fontSize: 14,
         marginRight: 8,
     },

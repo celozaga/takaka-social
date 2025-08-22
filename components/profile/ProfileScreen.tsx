@@ -138,7 +138,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     <Image source={{ uri: profile?.avatar }} style={styles.avatar} />
                     {isMe ? (
                         <Pressable onPress={openEditProfileModal} style={[styles.actionButton, styles.editButton]}>
-                            <Edit size={16} color={theme.colors.onSurface} />
                             <Text style={styles.actionButtonText}>{t('common.editProfile')}</Text>
                         </Pressable>
                     ) : session && (
@@ -150,7 +149,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                 <View style={styles.detailsContainer}>
                     <View style={styles.nameContainer}>
                         <Text style={styles.displayName}>{profile?.displayName || `@${profile?.handle}`}</Text>
-                        {profile?.labels?.some(l => l.val === 'blue-check') && <BadgeCheck size={20} color={theme.colors.primary} fill={theme.colors.primary} />}
+                        {profile?.labels?.some(l => l.val === 'blue-check') && <BadgeCheck size={20} color={theme.colors.onSurface} fill={theme.colors.onSurface} />}
                     </View>
                     <Text style={styles.handle}>@{profile?.handle}</Text>
                     {descriptionWithFacets && <Text style={styles.description}><RichTextRenderer record={descriptionWithFacets} /></Text>}
@@ -220,12 +219,12 @@ const styles = StyleSheet.create({
     errorText: { color: theme.colors.error, ...theme.typography.bodyLarge },
     container: { flex: 1, backgroundColor: theme.colors.background },
     headerButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
-    headerContainer: { backgroundColor: theme.colors.surface },
+    headerContainer: { backgroundColor: theme.colors.background },
     banner: { width: '100%', height: 150, backgroundColor: theme.colors.surfaceContainerHigh },
     profileInfoContainer: { paddingHorizontal: theme.spacing.l, paddingBottom: theme.spacing.l },
     avatarActionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: -48, marginBottom: theme.spacing.m },
-    avatar: { width: 96, height: 96, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh, borderWidth: 4, borderColor: theme.colors.surface },
-    actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.s, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.l, borderRadius: theme.shape.full, minWidth: 120 },
+    avatar: { width: 96, height: 96, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh, borderWidth: 4, borderColor: theme.colors.background },
+    actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.s, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.l, borderRadius: theme.shape.medium, minWidth: 120 },
     editButton: { backgroundColor: theme.colors.surfaceContainerHigh },
     followingButton: { backgroundColor: theme.colors.surfaceContainerHigh },
     followButton: { backgroundColor: theme.colors.primary },

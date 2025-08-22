@@ -6,6 +6,7 @@ import NotificationItem from './NotificationItem';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import { theme } from '@/lib/theme';
 
 type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows';
 
@@ -105,6 +106,7 @@ const NotificationsScreen: React.FC = () => {
             renderItem={({ item }) => <NotificationItem notification={item} />}
             keyExtractor={(item) => item.uri}
             ListHeaderComponent={renderListHeader}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
             contentContainerStyle={styles.listContentContainer}
             onRefresh={fetchInitialNotifications}
             refreshing={isLoading}
@@ -135,16 +137,17 @@ const NotificationsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
     listContentContainer: { paddingBottom: 16 },
+    separator: { height: 1, backgroundColor: theme.colors.outline, marginHorizontal: 16 },
     filterScrollContainer: { paddingHorizontal: 16, paddingTop: 16 },
-    filterContainer: { gap: 8, paddingBottom: 8 },
-    filterButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999 },
-    activeFilter: { backgroundColor: '#D1E4FF' },
-    filterText: { fontSize: 14, fontWeight: '500', color: '#C3C6CF' },
-    activeFilterText: { color: '#001D35' },
-    messageContainer: { padding: 32, backgroundColor: '#1E2021', borderRadius: 12, alignItems: 'center', margin: 16 },
-    errorText: { color: '#F2B8B5' },
-    infoText: { color: '#C3C6CF' },
-    endText: { textAlign: 'center', color: '#C3C6CF', paddingVertical: 32 },
+    filterContainer: { gap: 8, paddingBottom: 16 },
+    filterButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: theme.shape.medium, backgroundColor: theme.colors.surfaceContainerHigh },
+    activeFilter: { backgroundColor: theme.colors.onSurface },
+    filterText: { fontSize: 14, fontWeight: '500', color: theme.colors.onSurface },
+    activeFilterText: { color: theme.colors.onPrimary },
+    messageContainer: { padding: 32, backgroundColor: theme.colors.surface, borderRadius: 12, alignItems: 'center', margin: 16 },
+    errorText: { color: theme.colors.error },
+    infoText: { color: theme.colors.onSurfaceVariant },
+    endText: { textAlign: 'center', color: theme.colors.onSurfaceVariant, paddingVertical: 32 },
 });
 
 export default NotificationsScreen;

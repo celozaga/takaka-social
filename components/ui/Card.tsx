@@ -31,8 +31,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceContainer,
     borderRadius: theme.shape.large,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: theme.colors.outline,
   },
   pressed: {
     backgroundColor: theme.colors.surfaceContainerHigh,

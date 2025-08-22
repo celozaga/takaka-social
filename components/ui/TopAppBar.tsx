@@ -29,9 +29,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         height: 64,
         paddingHorizontal: theme.spacing.l,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.surfaceContainerHigh,
+        backgroundColor: theme.colors.background,
     },
     leftSection: {
         flexDirection: 'row',

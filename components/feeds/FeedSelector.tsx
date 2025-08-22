@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     container: {
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.outline,
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.background,
     },
     scrollContainer: {
         flexDirection: 'row',
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     tabActive: {
-        borderBottomColor: theme.colors.primary,
+        borderBottomColor: theme.colors.onSurface,
     },
     tabText: {
         ...theme.typography.titleSmall,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     },
     tabTextActive: {
         fontWeight: '700',
-        color: theme.colors.primary,
+        color: theme.colors.onSurface,
     },
     skeleton: {
         height: 20,
