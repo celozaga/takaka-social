@@ -1,10 +1,8 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet } from 'react-native';
-import { Video } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia, AppBskyActorDefs } from '@atproto/api';
 import VideoPlayer from './VideoPlayer';
-import { useVideoManager } from './hooks/useVideoManager';
 import { theme } from '@/lib/theme';
 import { useAtp } from '@/context/AtpContext';
 import { useTranslation } from 'react-i18next';
@@ -16,13 +14,6 @@ interface Props {
   hasMore: boolean;
 }
 
-/**
- * Renders the vertical, swipeable video feed.
- * - Uses a highly optimized FlatList for performance.
- * - Manages which video is currently active.
- * - Uses the `useVideoManager` hook to control playback.
- * - Handles data prefetching and pagination.
- */
 const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMore }) => {
   const { agent } = useAtp();
   const { t } = useTranslation();
@@ -30,67 +21,43 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
   const { height } = useWindowDimensions();
   const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
 
-  // Create an array of refs, one for each video player.
-  const videoRefs = useRef(videoPosts.map(() => React.createRef<Video>())).current;
-  
-  // As new posts are loaded via pagination, we need to add new refs to our array.
-  useEffect(() => {
-    if (videoPosts.length > videoRefs.length) {
-      const diff = videoPosts.length - videoRefs.length;
-      for (let i = 0; i < diff; i++) {
-        videoRefs.push(React.createRef<Video>());
-      }
-    }
-  }, [videoPosts.length, videoRefs]);
-
-
   const prefetchUrls = useCallback(async (posts: AppBskyFeedDefs.FeedViewPost[]) => {
-    // Fetches the high-quality HLS stream URL for a video before it becomes visible.
     for (const post of posts) {
-        if (!post || playbackUrls.has(post.post.uri)) continue;
-        try {
-            const embed = post.post.embed;
-            let videoEmbed: AppBskyEmbedVideo.View | undefined;
-            if (AppBskyEmbedVideo.isView(embed)) videoEmbed = embed;
-            else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) videoEmbed = embed.media as AppBskyEmbedVideo.View;
-            if (!videoEmbed) continue;
-            const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did: post.post.author.did, cid: videoEmbed.cid });
-            if (res.data.url) {
-                setPlaybackUrls(prev => new Map(prev).set(post.post.uri, res.data.url));
-            }
-        } catch (e) { console.warn(`Could not prefetch playback URL for ${post.post.uri}`, e); }
+      if (!post || playbackUrls.has(post.post.uri)) continue;
+      try {
+        const embed = post.post.embed;
+        let videoEmbed: AppBskyEmbedVideo.View | undefined;
+        if (AppBskyEmbedVideo.isView(embed)) videoEmbed = embed;
+        else if (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media)) videoEmbed = embed.media as AppBskyEmbedVideo.View;
+        if (!videoEmbed) continue;
+        const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did: post.post.author.did, cid: videoEmbed.cid });
+        if (res.data.url) {
+          setPlaybackUrls(prev => new Map(prev).set(post.post.uri, res.data.url));
+        }
+      } catch (e) { console.warn(`Could not prefetch playback URL for ${post.post.uri}`, e); }
     }
   }, [agent, playbackUrls]);
 
-  // Prefetch first two videos on initial load
   useEffect(() => {
-      if(videoPosts.length > 0) {
-          prefetchUrls(videoPosts.slice(0, 2));
-      }
-  }, [videoPosts, prefetchUrls])
+    if(videoPosts.length > 0) {
+      prefetchUrls(videoPosts.slice(0, 2));
+    }
+  }, [videoPosts, prefetchUrls]);
 
-
-  // This callback from FlatList tells us which item is currently visible.
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       const newIndex = viewableItems[0].index;
       if (newIndex !== activeIndex) {
-          setActiveIndex(newIndex);
-          // When the active video changes, prefetch the next two.
-          const postsToPrefetch = [videoPosts[newIndex + 1], videoPosts[newIndex + 2]].filter(Boolean);
-          if (postsToPrefetch.length > 0) prefetchUrls(postsToPrefetch);
+        setActiveIndex(newIndex);
+        const postsToPrefetch = [videoPosts[newIndex + 1], videoPosts[newIndex + 2]].filter(Boolean);
+        if (postsToPrefetch.length > 0) prefetchUrls(postsToPrefetch);
       }
     }
   }).current;
 
-  // Configuration for the onViewableItemsChanged callback.
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
-  // Custom hook that handles playing the active video and pausing the others.
-  useVideoManager(videoRefs, activeIndex, videoPosts);
-
   const getBlobUrl = (post: AppBskyFeedDefs.PostView) => {
-    // Constructs the direct, lower-quality video URL as a fallback.
     let embedView: AppBskyEmbedVideo.View | undefined;
     if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
     else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
@@ -112,12 +79,12 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
       keyExtractor={item => item.post.uri}
       renderItem={({ item, index }) => (
         <View style={{ height }}>
-            <VideoPlayer 
-                ref={videoRefs[index]} 
-                postView={item} 
-                hlsUrl={playbackUrls.get(item.post.uri)}
-                blobUrl={getBlobUrl(item.post)}
-            />
+          <VideoPlayer 
+            postView={item} 
+            hlsUrl={playbackUrls.get(item.post.uri)}
+            blobUrl={getBlobUrl(item.post)}
+            paused={index !== activeIndex}
+          />
         </View>
       )}
       pagingEnabled
@@ -125,13 +92,12 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={viewConfigRef.current}
       onEndReached={loadMore}
-      onEndReachedThreshold={3} // Load more when 3 items from the end
+      onEndReachedThreshold={3}
       ListFooterComponent={() => {
-          if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
-          if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
-          return null;
+        if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
+        if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
+        return null;
       }}
-      // Performance optimizations for FlatList
       windowSize={5}
       initialNumToRender={1}
       maxToRenderPerBatch={1}
