@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, usePathname } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { Home, Search, Edit3, LogOut, Bell, LogIn, Settings } from 'lucide-react';
+import { Home, Search, Edit3, LogOut, Bell, LogIn, MoreHorizontal } from 'lucide-react';
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/lib/theme';
@@ -74,7 +74,7 @@ const BottomNavbar = () => {
       ? [
           { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
           { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
-          { href: '/settings', labelKey: 'nav.settings', icon: Settings, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
+          { href: '/more', labelKey: 'nav.more', icon: MoreHorizontal, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
         ]
       : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false }]),
   ];
