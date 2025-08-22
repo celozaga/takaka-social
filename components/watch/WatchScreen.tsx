@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyFeedDefs } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import WatchFeed from './WatchFeed';
 import { ArrowLeft } from 'lucide-react';
 import Head from '../shared/Head';
@@ -23,6 +23,12 @@ const WatchScreen: React.FC = () => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
 
+    const isVideoPost = (post: AppBskyFeedDefs.PostView) => {
+        const embed = post.embed;
+        if (!embed) return false;
+        return AppBskyEmbedVideo.isView(embed) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media));
+    };
+
     const fetchVideos = useCallback(async (currentCursor?: string) => {
         if (!currentCursor) {
             setIsLoading(true);
@@ -33,7 +39,8 @@ const WatchScreen: React.FC = () => {
         try {
             const res = await agent.app.bsky.feed.getFeed({ feed: VIDEOS_FEED_URI, cursor: currentCursor, limit: 10 });
             
-            const posts = res.data.feed;
+            // Filter to ensure all posts are actually videos, just in case the feed returns other media
+            const posts = res.data.feed.filter(p => isVideoPost(p.post));
 
             if (posts.length > 0) {
                 setVideoPosts(prev => {
@@ -50,6 +57,7 @@ const WatchScreen: React.FC = () => {
             }
         } catch (err: any) {
             setError(t('feed.loadingError'));
+            console.error(err);
         } finally { 
             setIsLoading(false); 
             setIsLoadingMore(false); 
@@ -59,7 +67,7 @@ const WatchScreen: React.FC = () => {
     useEffect(() => {
         fetchVideos();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchVideos]);
+    }, []);
 
     const loadMore = useCallback(() => {
         if (!isLoadingMore && hasMore && cursor) {

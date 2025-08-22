@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import VideoPlayer from './VideoPlayer';
@@ -52,7 +52,7 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
         if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
         return null;
       }}
-      windowSize={5}
+      windowSize={3} // Renders the visible screen, and one item above and below
       initialNumToRender={1}
       maxToRenderPerBatch={1}
       removeClippedSubviews

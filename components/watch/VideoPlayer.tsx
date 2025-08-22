@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text } from 'react-native';
-import Video from 'react-native-video';
+import { Video, ResizeMode, AVPlaybackStatusSuccess } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -18,20 +18,21 @@ type VideoStatus = 'loading' | 'buffering' | 'playing' | 'error';
 
 const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) => {
   const { agent } = useAtp();
+  const videoRef = useRef<Video>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
   const [status, setStatus] = useState<VideoStatus>('loading');
   const [isMuted, setIsMuted] = useState(true);
-
+  
   const { post } = postView;
   const record = post.record as any;
 
   useEffect(() => {
+    // Reset state for new video
     setStatus('loading');
     setIsInternallyPaused(false);
     setVideoUrl(null);
 
-    const { post } = postView;
     let currentEmbedView: AppBskyEmbedVideo.View | undefined;
     if (AppBskyEmbedVideo.isView(post.embed)) currentEmbedView = post.embed;
     else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) currentEmbedView = post.embed.media as AppBskyEmbedVideo.View;
@@ -53,6 +54,19 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
       setStatus('error');
     }
   }, [postView, agent]);
+  
+  const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
+
+  useEffect(() => {
+    const player = videoRef.current;
+    if (!player) return;
+    
+    if (isEffectivelyPaused) {
+      player.pauseAsync();
+    } else {
+      player.playAsync();
+    }
+  }, [isEffectivelyPaused]);
 
   let embedView: AppBskyEmbedVideo.View | undefined;
   if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
@@ -60,7 +74,6 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
 
   if (!embedView) return null;
   
-  const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
   const showThumbnail = !videoUrl || status === 'loading' || status === 'error';
   const showSpinner = status === 'buffering';
 
@@ -80,41 +93,34 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
 
         {videoUrl && (
             <Video
+              ref={videoRef}
               source={{ uri: videoUrl }}
               style={styles.video}
-              resizeMode="contain"
-              repeat
-              paused={isEffectivelyPaused}
-              muted={isMuted}
-              onLoadStart={() => setStatus('loading')}
-              onLoad={() => setStatus('playing')}
-              onReadyForDisplay={() => setStatus('playing')}
-              onBuffer={({ isBuffering }) => {
-                if (status !== 'loading') {
-                    setStatus(isBuffering ? 'buffering' : 'playing');
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping
+              shouldPlay={!isEffectivelyPaused}
+              isMuted={isMuted}
+              onPlaybackStatusUpdate={(s) => {
+                if (s.isLoaded) {
+                  if (s.isBuffering) {
+                    if (status !== 'loading') setStatus('buffering');
+                  } else {
+                    setStatus('playing');
+                  }
+                } else {
+                  if(s.error) {
+                    console.error('Video Error:', s.error);
+                    setStatus('error');
+                  }
                 }
               }}
-              onError={(e: any) => {
-                console.error('Video Error:', e);
-                setStatus('error');
-              }}
-              playInBackground={false}
-              playWhenInactive={false}
-              bufferConfig={{
-                minBufferMs: 15000,
-                maxBufferMs: 60000,
-                bufferForPlaybackMs: 2500,
-                bufferForPlaybackAfterRebufferMs: 5000,
-              }}
+              onLoadStart={() => setStatus('loading')}
+              onReadyForDisplay={() => setStatus('playing')}
             />
         )}
-
+        
         {showSpinner && (
-          <ActivityIndicator
-            size="large"
-            color="white"
-            style={styles.loader}
-          />
+          <ActivityIndicator size="large" color="white" style={styles.loader} />
         )}
         
         {status === 'error' && (
