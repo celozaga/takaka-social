@@ -264,7 +264,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         keyExtractor={(item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index}
                         onViewableItemsChanged={onViewableItemsChanged}
                         viewabilityConfig={viewabilityConfig}
-                        style={{ width: '100%', height: '100%', borderRadius: theme.shape.medium }}
+                        style={StyleSheet.absoluteFillObject}
                         getItemLayout={(_, index) => ({
                             length: itemWidth,
                             offset: itemWidth * index,
