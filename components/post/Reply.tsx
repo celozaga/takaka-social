@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AppBskyFeedDefs, RichText, AppBskyEmbedImages, AppBskyEmbedRecord, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { AppBskyFeedDefs, RichText, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import { formatDistanceToNow } from 'date-fns';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Heart } from 'lucide-react';
@@ -13,7 +13,6 @@ import { moderatePost, ModerationDecision } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
-import QuotedPost from './QuotedPost';
 import ResizedImage from '../shared/ResizedImage';
 
 const MAX_REPLY_DEPTH = 6;

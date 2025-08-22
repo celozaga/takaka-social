@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs, AppBskyEmbedRecord } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,7 +10,6 @@ import RichTextRenderer from '../shared/RichTextRenderer';
 import PostActions from './PostActions';
 import SharedVideoPlayer from '../shared/VideoPlayer';
 import ResizedImage from '../shared/ResizedImage';
-import QuotedPost from './QuotedPost';
 import { theme } from '@/lib/theme';
 
 interface FullPostCardProps {

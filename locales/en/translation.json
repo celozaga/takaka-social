@@ -121,8 +121,7 @@
     "followedYou": "<0>{{author}}</0> followed you",
     "repliedToYourPost": "<0>{{author}}</0> replied to your post",
     "mentionedYou": "<0>{{author}}</0> mentioned you in a post",
-    "newNotification": "New notification: {{reason}}",
-    "quotedPost": "Quoted from another post."
+    "newNotification": "New notification: {{reason}}"
   },
   "post": {
     "byline": "Post by {{user}}",

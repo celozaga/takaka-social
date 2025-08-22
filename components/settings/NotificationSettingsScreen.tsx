@@ -5,7 +5,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Quote, Bell, Loader2 } from 'lucide-react';
+import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell, Loader2 } from 'lucide-react';
 import Head from '../shared/Head';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
@@ -37,7 +37,6 @@ const NotificationSettingsScreen: React.FC = () => {
         follow: true,
         reply: true,
         mention: true,
-        quote: true,
     });
     type SettingsKey = keyof typeof settings;
 
@@ -64,7 +63,6 @@ const NotificationSettingsScreen: React.FC = () => {
                         follow: !disabledSet.has('follow'),
                         reply: !disabledSet.has('reply'),
                         mention: !disabledSet.has('mention'),
-                        quote: !disabledSet.has('quote'),
                     });
                 }
             } catch (error) {
@@ -171,7 +169,6 @@ const NotificationSettingsScreen: React.FC = () => {
         { key: 'follow' as SettingsKey, icon: UserPlus, title: t('notifications.follows') },
         { key: 'reply' as SettingsKey, icon: MessageCircle, title: t('common.replies') },
         { key: 'mention' as SettingsKey, icon: AtSign, title: t('notifications.mentions') },
-        { key: 'quote' as SettingsKey, icon: Quote, title: t('notifications.quotedPost') },
     ];
 
     if (isLoading) {
