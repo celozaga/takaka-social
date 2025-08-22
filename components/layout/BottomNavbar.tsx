@@ -8,18 +8,18 @@ import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/lib/theme';
 
-const NavItem: React.FC<{
-  item: any;
-  isDesktop: boolean;
-}> = ({ item, isDesktop }) => {
+// NavItem component for a single navigation item.
+const NavItem = ({ item, isDesktop }) => {
   const { t } = useTranslation();
   const { unreadCount } = useAtp();
 
   const isNotifications = item.labelKey === 'nav.notifications';
   const hasNotificationBadge = isNotifications && unreadCount > 0;
 
+  // The content (Icon and Text) of the navigation item.
+  // This is shared between Pressable and Link.
   const content = (
-    <>
+    <View style={isDesktop ? styles.navRailItemContent : styles.navBarItemContent}>
       <View style={[styles.iconContainer, item.activeCondition && styles.iconContainerActive]}>
         <item.icon size={24} color={item.activeCondition ? theme.colors.onSurface : theme.colors.onSurfaceVariant} />
         {hasNotificationBadge && (
@@ -28,13 +28,14 @@ const NavItem: React.FC<{
           </View>
         )}
       </View>
-      <Text style={[styles.labelText, item.activeCondition && styles.labelTextActive]} numberOfLines={1}>{t(item.labelKey)}</Text>
-    </>
+      <Text style={[styles.labelText, item.activeCondition && styles.labelTextActive]} numberOfLines={1}>
+        {t(item.labelKey)}
+      </Text>
+    </View>
   );
 
-  const style = ({ pressed }: { pressed: boolean }) => [
-    styles.navItem,
-    isDesktop ? styles.navItemDesktop : { height: 80 },
+  const style = ({ pressed }) => [
+    isDesktop ? styles.navRailItem : styles.navBarItem,
     pressed && styles.pressed,
   ];
 
@@ -47,7 +48,7 @@ const NavItem: React.FC<{
   }
 
   return (
-    <Link href={item.href as any} asChild>
+    <Link href={item.href} asChild>
       <Pressable style={style}>
         {content}
       </Pressable>
@@ -55,7 +56,8 @@ const NavItem: React.FC<{
   );
 };
 
-const BottomNavbar: React.FC = () => {
+// Main Navbar component that handles responsive layout.
+const BottomNavbar = () => {
   const { session, logout } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const pathname = usePathname();
@@ -64,27 +66,23 @@ const BottomNavbar: React.FC = () => {
   const { top, bottom } = useSafeAreaInsets();
   const isDesktop = width >= 768;
 
+  // Define navigation items based on login state
   const navItems = [
     { href: '/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/home' || pathname === '/' },
     { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
-    ...(session ? [
-      { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
-      { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
-      { href: '/settings', labelKey: 'nav.settings', icon: Settings, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
-    ] : [
-      { isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false },
-    ]),
+    ...(session
+      ? [
+          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
+          { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
+          { href: '/settings', labelKey: 'nav.settings', icon: Settings, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
+        ]
+      : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false }]),
   ];
 
+  // Render Navigation Rail for larger screens
   if (isDesktop) {
-    const desktopNavItems = [
-      { href: '/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/home' || pathname === '/' },
-      { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
-      ...(session ? [
-        { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
-        { href: '/settings', labelKey: 'nav.settings', icon: Settings, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
-      ] : []),
-    ];
+    const desktopNavItems = navItems.filter(item => !(item.isAction && item.labelKey === 'nav.compose'));
+
     return (
       <View style={[styles.navRail, { paddingTop: top + theme.spacing.l, paddingBottom: bottom + theme.spacing.l }]}>
         <View style={styles.navRailSection}>
@@ -93,51 +91,32 @@ const BottomNavbar: React.FC = () => {
         <View style={styles.navRailSection}>
           {session ? (
             <>
-              <Pressable onPress={() => openComposer()} style={({pressed}) => [styles.navItem, styles.navItemDesktop, pressed && styles.pressed]}>
-                  <View style={styles.iconContainer}><Edit3 size={24} color={theme.colors.onSurfaceVariant} /></View>
-                  <Text style={styles.labelText}>{t('nav.compose')}</Text>
-              </Pressable>
-              <Pressable onPress={logout} style={({ pressed }) => [styles.navItem, styles.navItemDesktop, pressed && styles.pressed]}>
-                <View style={styles.iconContainer}><LogOut size={24} color={theme.colors.onSurfaceVariant} /></View>
-                <Text style={styles.labelText}>{t('nav.logout')}</Text>
-              </Pressable>
+              <NavItem item={{ isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false }} isDesktop />
+              <NavItem item={{ isAction: true, action: logout, labelKey: 'nav.logout', icon: LogOut, activeCondition: false }} isDesktop />
             </>
-          ) : (
-             <NavItem item={{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false }} isDesktop />
-          )}
+          ) : null }
         </View>
       </View>
     );
   }
 
+  // Render Bottom Navigation Bar for smaller screens
   return (
     <View style={[styles.navBar, { height: 80 + bottom, paddingBottom: bottom }]}>
-      {navItems.map(item => <NavItem key={item.labelKey} item={item} isDesktop={false} />)}
+      {navItems.map(item => (
+        <NavItem key={item.labelKey} item={item} isDesktop={false} />
+      ))}
     </View>
   );
 };
 
+
+// Styles rewritten for clarity and to fix alignment issues.
 const styles = StyleSheet.create({
-  // Mobile Nav Bar: 80px height, fixed to bottom, respects safe area
-  navBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    backgroundColor: theme.colors.surfaceContainer,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.surfaceContainerHigh,
-    zIndex: 50,
+  // Common
+  pressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  // Each item in the mobile nav bar
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: theme.spacing.m, // 12px padding top per M3 spec
-    gap: theme.spacing.xs, // 4px gap between icon and label
-  },
-  // The pill-shaped indicator for the active icon
   iconContainer: {
     width: 64,
     height: 32,
@@ -149,17 +128,18 @@ const styles = StyleSheet.create({
   iconContainerActive: {
     backgroundColor: theme.colors.surfaceContainerHighest,
   },
-  // Text label styles
   labelText: {
     ...theme.typography.labelMedium,
     color: theme.colors.onSurfaceVariant,
     fontWeight: '400',
+    textAlign: 'center',
+    // Add padding to prevent text from touching edges on small screens
+    paddingHorizontal: 2,
   },
   labelTextActive: {
     color: theme.colors.onSurface,
     fontWeight: '700',
   },
-  // Notification badge
   badge: {
     position: 'absolute',
     top: -2,
@@ -179,10 +159,33 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  pressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+
+  // Mobile: Bottom Navigation Bar
+  navBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: theme.colors.surfaceContainer,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.surfaceContainerHigh,
+    zIndex: 50,
   },
-  // Desktop Nav Rail (unchanged from previous state)
+  navBarItem: {
+    flex: 1, // Each item takes equal width
+    height: '100%',
+    justifyContent: 'flex-start', // Align content to the top
+    alignItems: 'center',
+    paddingTop: theme.spacing.m, // 12px padding top per M3 spec
+  },
+  navBarItemContent: {
+    // This view ensures icon and text are stacked vertically
+    alignItems: 'center',
+    gap: theme.spacing.xs, // 4px gap between icon and label
+  },
+
+  // Desktop: Navigation Rail
   navRail: {
     position: 'absolute',
     top: 0,
@@ -199,11 +202,15 @@ const styles = StyleSheet.create({
     gap: theme.spacing.m,
     width: '100%',
   },
-  navItemDesktop: {
-    flex: 0,
+  navRailItem: {
     width: '100%',
     height: 72,
-    paddingTop: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navRailItemContent: {
+    alignItems: 'center',
+    gap: theme.spacing.xs,
   },
 });
 
