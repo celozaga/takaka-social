@@ -55,14 +55,13 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         if (!post.embed) return null;
 
         const mediaItems: MediaItem[] = [];
-        const processEmbed = (embed: any) => {
+        const processEmbed = (embed: unknown) => {
             if (AppBskyEmbedImages.isView(embed)) {
                 mediaItems.push(...embed.images);
             } else if (AppBskyEmbedVideo.isView(embed)) {
                 mediaItems.push({ type: 'video', view: embed });
             } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                const recordWithMediaEmbed = embed;
-                processEmbed(recordWithMediaEmbed.media);
+                processEmbed(embed.media);
             }
         };
         processEmbed(post.embed);
@@ -73,18 +72,17 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         
         if (mediaItems.length === 1) {
             const item = mediaItems[0];
-            const isVideo = 'type' in item && item.type === 'video';
-
+            
             let aspectRatio;
-            if (isVideo) {
+            if ('view' in item) { // item is a video
                 aspectRatio = item.view.aspectRatio ? item.view.aspectRatio.width / item.view.aspectRatio.height : 16 / 9;
-            } else {
+            } else { // item is an image
                 aspectRatio = item.aspectRatio ? item.aspectRatio.width / item.aspectRatio.height : 1.5;
             }
 
             return (
                 <View style={{ maxHeight: 1000, marginTop: theme.spacing.s, aspectRatio: aspectRatio, width: '100%' }}>
-                    {isVideo ? (
+                    {'view' in item ? (
                         <SharedVideoPlayer
                             options={{
                                 autoplay: true,

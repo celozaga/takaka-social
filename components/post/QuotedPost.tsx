@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
-import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs, AppBskyFeedPost } from '@atproto/api';
+import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs, AppBskyFeedPost, AppBskyEmbedImages } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { theme } from '@/lib/theme';
+import ResizedImage from '../shared/ResizedImage';
 
 interface QuotedPostProps {
   embed: AppBskyEmbedRecord.View;
@@ -33,17 +34,26 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
   
   const recordEmbed = embed;
 
-  if (!AppBskyFeedDefs.isPostView(recordEmbed.record)) {
-    return null; // Don't render if it's not a valid record view or not a post
+  if (!AppBskyFeedPost.isRecord(recordEmbed.value)) {
+    return null; // It's a quote of something other than a post
   }
 
-  const postView = recordEmbed.record;
-  const author = postView.author;
-  const postRecord = postView.record as AppBskyFeedPost.Record;
-  const postUri = new AtUri(postView.uri);
-  const timeAgo = formatDistanceToNowStrict(new Date(postRecord.createdAt), { addSuffix: true });
+  const author = recordEmbed.author;
+  const postRecord = recordEmbed.value as AppBskyFeedPost.Record;
+  const postUri = new AtUri(recordEmbed.uri);
+  const timeAgo = formatDistanceToNowStrict(new Date(recordEmbed.indexedAt), { addSuffix: true });
   const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
 
+  const renderMediaPreview = () => {
+    if (recordEmbed.embeds && recordEmbed.embeds.length > 0) {
+      const firstEmbed = recordEmbed.embeds[0];
+      if (AppBskyEmbedImages.isView(firstEmbed) && firstEmbed.images.length > 0) {
+        const image = firstEmbed.images[0];
+        return <ResizedImage src={image.thumb} resizeWidth={500} alt={image.alt || 'Quoted post image'} style={styles.mediaPreview} />;
+      }
+    }
+    return null;
+  }
 
   const content = (
     <View style={styles.container}>
@@ -57,6 +67,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
           <RichTextRenderer record={postRecord} />
         </Text>
       )}
+      {renderMediaPreview()}
     </View>
   );
 
@@ -111,6 +122,13 @@ const styles = StyleSheet.create({
     ...theme.typography.bodyMedium,
     color: theme.colors.onSurface,
   },
+  mediaPreview: {
+    width: '100%',
+    aspectRatio: 1.5,
+    borderRadius: theme.shape.medium,
+    marginTop: theme.spacing.s,
+    backgroundColor: theme.colors.surfaceContainerHigh,
+  }
 });
 
 export default QuotedPost;
