@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text } from 'react-native';
 import { Link } from 'expo-router';
@@ -122,7 +120,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
               isMuted={isMuted}
               onPlaybackStatusUpdate={(s: AVPlaybackStatus) => {
                 if (!s.isLoaded) {
-                  if (s.error) {
+                  if ('error' in s && s.error) {
                     console.error('Video Error:', s.error);
                     setStatus('error');
                   }

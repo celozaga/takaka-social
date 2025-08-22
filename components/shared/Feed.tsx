@@ -162,6 +162,18 @@ const Feed: React.FC<FeedProps> = ({
     return { column1Items: col1, column2Items: col2 };
   }, [moderatedFeed, layout]);
 
+  const renderHeader = () => {
+    if (!ListHeaderComponent) {
+      return null;
+    }
+    // Handle both Component and Element types
+    if (typeof ListHeaderComponent === 'function') {
+      const Header = ListHeaderComponent;
+      return <Header />;
+    }
+    return ListHeaderComponent;
+  };
+
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
   
   const handleScroll = ({ nativeEvent }: { nativeEvent: { layoutMeasurement: any, contentOffset: any, contentSize: any } }) => {
@@ -212,7 +224,7 @@ const Feed: React.FC<FeedProps> = ({
     return (
       <View>
         <>
-          {ListHeaderComponent}
+          {renderHeader()}
           {layout === 'grid' ? (
             <View style={styles.masonryContainer}>
               <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
@@ -234,7 +246,7 @@ const Feed: React.FC<FeedProps> = ({
           >
               <View>
                 <>
-                  {ListHeaderComponent}
+                  {renderHeader()}
                   {renderListEmptyComponent()}
                 </>
               </View>
@@ -263,7 +275,7 @@ const Feed: React.FC<FeedProps> = ({
     <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
         <View style={styles.contentContainer}>
             <>
-              {ListHeaderComponent}
+              {renderHeader()}
               <View style={styles.masonryContainer}>
                   <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
                   <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
