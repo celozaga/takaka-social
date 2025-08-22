@@ -19,9 +19,10 @@ interface VideoPlayerProps {
   onPlay?: () => void;
   onPause?: () => void;
   onEnded?: () => void;
+  onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
 }
 
-const SharedVideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, style, onPlay, onPause, onEnded }) => {
+const SharedVideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, style, onPlay, onPause, onEnded, onPlaybackStatusUpdate: onStatusUpdateProp }) => {
   const videoRef = useRef<Video>(null);
   const onReadyRef = React.useRef(onReady);
 
@@ -37,6 +38,8 @@ const SharedVideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, style
   }, [videoRef.current]);
 
   const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    onStatusUpdateProp?.(status);
+
     if (!status.isLoaded) return;
     
     const successStatus = status as AVPlaybackStatusSuccess;
