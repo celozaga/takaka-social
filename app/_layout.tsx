@@ -5,7 +5,7 @@ import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDime
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AtpProvider, useAtp } from '@/context/AtpContext';
 import { UIProvider, useUI } from '@/context/UIContext';
-import { HiddenPostsProvider } from '@/context/HiddenPostsProvider';
+import { HiddenPostsProvider } from '@/context/HiddenPostsContext';
 import { ModerationProvider } from '@/context/ModerationContext';
 import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
 import { Toaster, ToastProvider } from '@/components/ui/Toaster';
