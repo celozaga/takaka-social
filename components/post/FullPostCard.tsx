@@ -57,11 +57,11 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         const mediaItems: MediaItem[] = [];
         const processEmbed = (embed: unknown) => {
             if (AppBskyEmbedImages.isView(embed)) {
-                mediaItems.push(...embed.images);
+                mediaItems.push(...(embed as AppBskyEmbedImages.View).images);
             } else if (AppBskyEmbedVideo.isView(embed)) {
-                mediaItems.push({ type: 'video', view: embed });
+                mediaItems.push({ type: 'video', view: embed as AppBskyEmbedVideo.View });
             } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                processEmbed(embed.media);
+                processEmbed((embed as AppBskyEmbedRecordWithMedia.View).media);
             }
         };
         processEmbed(post.embed);

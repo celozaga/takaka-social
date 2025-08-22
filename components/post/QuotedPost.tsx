@@ -28,54 +28,52 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
     );
   }
 
-  if (!AppBskyEmbedRecord.isViewRecord(embed)) {
-    return null;
-  }
-  
-  const recordEmbed = embed;
-
-  if (!AppBskyFeedPost.isRecord(recordEmbed.value)) {
-    return null; // It's a quote of something other than a post
-  }
-
-  const author = recordEmbed.author;
-  const postRecord = recordEmbed.value as AppBskyFeedPost.Record;
-  const postUri = new AtUri(recordEmbed.uri);
-  const timeAgo = formatDistanceToNowStrict(new Date(recordEmbed.indexedAt), { addSuffix: true });
-  const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
-
-  const renderMediaPreview = () => {
-    if (recordEmbed.embeds && recordEmbed.embeds.length > 0) {
-      const firstEmbed = recordEmbed.embeds[0];
-      if (AppBskyEmbedImages.isView(firstEmbed) && firstEmbed.images.length > 0) {
-        const image = firstEmbed.images[0];
-        return <ResizedImage src={image.thumb} resizeWidth={500} alt={image.alt || 'Quoted post image'} style={styles.mediaPreview} />;
-      }
+  if (AppBskyEmbedRecord.isViewRecord(embed)) {
+    if (!AppBskyFeedPost.isRecord(embed.value)) {
+      return null; // It's a quote of something other than a post
     }
-    return null;
+  
+    const author = embed.author;
+    const postRecord = embed.value as AppBskyFeedPost.Record;
+    const postUri = new AtUri(embed.uri);
+    const timeAgo = formatDistanceToNowStrict(new Date(embed.indexedAt), { addSuffix: true });
+    const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
+  
+    const renderMediaPreview = () => {
+      if (embed.embeds && embed.embeds.length > 0) {
+        const firstEmbed = embed.embeds[0];
+        if (AppBskyEmbedImages.isView(firstEmbed) && firstEmbed.images.length > 0) {
+          const image = firstEmbed.images[0];
+          return <ResizedImage src={image.thumb} resizeWidth={500} alt={image.alt || 'Quoted post image'} style={styles.mediaPreview} />;
+        }
+      }
+      return null;
+    }
+  
+    const content = (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Image source={{ uri: author.avatar }} style={styles.avatar} />
+          <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
+          <Text style={styles.timeAgo}>· {timeAgo}</Text>
+        </View>
+        {postRecord.text && (
+          <Text style={styles.postText} numberOfLines={4}>
+            <RichTextRenderer record={postRecord} />
+          </Text>
+        )}
+        {renderMediaPreview()}
+      </View>
+    );
+  
+    return (
+      <Link href={postLink as any} asChild>
+        <Pressable>{content}</Pressable>
+      </Link>
+    );
   }
 
-  const content = (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Image source={{ uri: author.avatar }} style={styles.avatar} />
-        <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
-        <Text style={styles.timeAgo}>· {timeAgo}</Text>
-      </View>
-      {postRecord.text && (
-        <Text style={styles.postText} numberOfLines={4}>
-          <RichTextRenderer record={postRecord} />
-        </Text>
-      )}
-      {renderMediaPreview()}
-    </View>
-  );
-
-  return (
-    <Link href={postLink as any} asChild>
-      <Pressable>{content}</Pressable>
-    </Link>
-  );
+  return null;
 };
 
 const styles = StyleSheet.create({
