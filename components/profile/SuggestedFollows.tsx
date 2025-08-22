@@ -6,6 +6,7 @@ import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import { Search } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
+import { theme } from '@/lib/theme';
 
 const ActorSkeletonCard: React.FC = () => (
     <View style={styles.skeletonContainer}>
@@ -101,22 +102,21 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     skeletonContainer: {
-        padding: 16,
-        backgroundColor: '#1E2021', // surface-2
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#2b2d2e', // surface-3
+        padding: theme.spacing.l,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.large,
+        borderWidth: 0,
     },
     skeletonContent: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 16,
+        gap: theme.spacing.l,
     },
     skeletonAvatar: {
         width: 48,
         height: 48,
-        borderRadius: 24,
-        backgroundColor: '#2b2d2e',
+        borderRadius: theme.shape.full,
+        backgroundColor: theme.colors.surfaceContainerHigh,
         flexShrink: 0,
     },
     skeletonMain: {
@@ -130,19 +130,19 @@ const styles = StyleSheet.create({
     },
     skeletonHeaderText: {
         minWidth: 0,
-        gap: 8,
+        gap: theme.spacing.s,
     },
     skeletonLine: {
         height: 12,
-        backgroundColor: '#2b2d2e',
-        borderRadius: 4,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.small,
     },
     skeletonButton: {
         height: 32,
         width: 96,
-        backgroundColor: '#2b2d2e',
-        borderRadius: 999,
-        marginLeft: 8,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.full,
+        marginLeft: theme.spacing.s,
     }
 });
 

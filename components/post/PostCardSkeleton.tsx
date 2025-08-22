@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { theme } from '@/lib/theme';
 
 const PostCardSkeleton: React.FC = () => {
   return (
@@ -25,55 +26,55 @@ const PostCardSkeleton: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1E2021', // surface-2
-    borderRadius: 12,
+    backgroundColor: theme.colors.surfaceContainer,
+    borderRadius: theme.shape.large,
     overflow: 'hidden',
     flexDirection: 'column',
   },
   mediaPlaceholder: {
     width: '100%',
-    backgroundColor: '#2b2d2e', // surface-3
+    backgroundColor: theme.colors.surfaceContainerHigh,
     height: 250,
   },
   contentPlaceholder: {
-    padding: 12,
+    padding: theme.spacing.m,
   },
   textLineLg: {
     height: 16,
     width: '83.3333%', // w-5/6
-    backgroundColor: '#2b2d2e',
-    borderRadius: 4,
-    marginBottom: 12,
+    backgroundColor: theme.colors.surfaceContainerHigh,
+    borderRadius: theme.shape.small,
+    marginBottom: theme.spacing.m,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
-    marginTop: 16,
+    gap: theme.spacing.s,
+    marginTop: theme.spacing.l,
   },
   authorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: theme.spacing.s,
   },
   avatar: {
     width: 28,
     height: 28,
-    borderRadius: 999,
-    backgroundColor: '#2b2d2e',
+    borderRadius: theme.shape.full,
+    backgroundColor: theme.colors.surfaceContainerHigh,
   },
   textLineSm: {
     height: 16,
     width: 96, // w-24
-    backgroundColor: '#2b2d2e',
-    borderRadius: 4,
+    backgroundColor: theme.colors.surfaceContainerHigh,
+    borderRadius: theme.shape.small,
   },
   likeInfo: {
     height: 20,
     width: 80, // w-20
-    backgroundColor: '#2b2d2e',
-    borderRadius: 4,
+    backgroundColor: theme.colors.surfaceContainerHigh,
+    borderRadius: theme.shape.small,
   },
 });
 

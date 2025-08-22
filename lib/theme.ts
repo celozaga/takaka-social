@@ -1,20 +1,76 @@
 import { Platform } from 'react-native';
 
-const colors = {
-  primary: '#FFFFFF',
-  onPrimary: '#000000',
-  background: '#000000',
-  surface: '#000000',
-  surfaceContainer: '#1C1C1E',
-  surfaceContainerHigh: '#2C2C2E',
-  surfaceContainerHighest: '#3A3A3A',
-  onSurface: '#FFFFFF',
-  onSurfaceVariant: '#8E8E93',
-  outline: '#2C2C2E',
+/**
+ * ============================================================================
+ * Color Palette
+ * ============================================================================
+ *
+ * This section defines the base colors used throughout the application.
+ * Naming is abstract to allow for easy theming (e.g., light vs. dark).
+ *
+ */
+const palette = {
+  // Brand Colors
+  brandPrimary: '#F3F5F7',
+
+  // Grayscale
+  black: '#101010',
+  darkGray: '#1E1E1E',
+  midGray: '#616161',
+  offWhite: '#F3F5F7',
+  
+  // System Colors
   error: '#FF453A',
-  pink: '#FFFFFF', // A custom accent color
 };
 
+/**
+ * ============================================================================
+ * Theme Colors
+ * ============================================================================
+ *
+ * Maps the abstract palette colors to semantic theme roles.
+ * This makes it easy to swap out themes.
+ *
+ */
+const darkThemeColors = {
+  primary: palette.brandPrimary,
+  onPrimary: palette.black,
+  background: palette.black,
+  surface: palette.black,
+  surfaceContainer: palette.darkGray,
+  surfaceContainerHigh: palette.midGray,
+  surfaceContainerHighest: palette.midGray, // Using midGray for highest emphasis as well
+  onSurface: palette.offWhite,
+  onSurfaceVariant: palette.midGray,
+  outline: palette.darkGray,
+  error: palette.error,
+  pink: palette.brandPrimary, // Legacy accent color, mapped to new primary
+};
+
+// Example structure for a future light theme
+const lightThemeColors = {
+  primary: palette.black,
+  onPrimary: palette.offWhite,
+  background: palette.offWhite,
+  surface: palette.offWhite,
+  surfaceContainer: '#E0E0E0', // Example light gray
+  surfaceContainerHigh: '#BDBDBD', // Example mid light gray
+  surfaceContainerHighest: '#9E9E9E', // Example dark light gray
+  onSurface: palette.black,
+  onSurfaceVariant: palette.midGray,
+  outline: '#E0E0E0',
+  error: palette.error,
+  pink: palette.black,
+};
+
+/**
+ * ============================================================================
+ * Design Tokens
+ * ============================================================================
+ *
+ * Consistent spacing, shapes, and typography for the entire app.
+ *
+ */
 const shape = {
   small: 4,
   medium: 8,
@@ -44,8 +100,17 @@ const typography = {
   bodySmall: { fontSize: 12, lineHeight: 16 },
 };
 
+/**
+ * ============================================================================
+ * Exported Theme
+ * ============================================================================
+ *
+ * The final theme object that is imported by components.
+ * To switch themes, change `colors` to `lightThemeColors`.
+ *
+ */
 export const theme = {
-  colors,
+  colors: darkThemeColors,
   shape,
   spacing,
   typography,
