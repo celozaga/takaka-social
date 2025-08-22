@@ -6,17 +6,11 @@ import { MessageSquare, Heart, Repeat } from 'lucide-react';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
+import { formatCompactNumber } from '@/lib/formatters';
 
 interface PostScreenActionBarProps {
     post: AppBskyFeedDefs.PostView;
 }
-
-const formatCount = (count: number): string => {
-    if (count >= 1000) {
-        return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    }
-    return count.toString();
-};
 
 const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
     const { session } = useAtp();
@@ -43,7 +37,7 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
                     style={styles.actionItem}
                 >
                     <Heart size={22} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? 'currentColor' : 'none'} />
-                    <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{formatCount(likeCount)}</Text>
+                    <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{formatCompactNumber(likeCount)}</Text>
                 </Pressable>
                  <Pressable
                     onPress={() => openRepostModal(post)}
@@ -51,11 +45,11 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
                     style={styles.actionItem}
                 >
                     <Repeat size={22} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
-                    <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCount(repostCount)}</Text>
+                    <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCompactNumber(repostCount)}</Text>
                 </Pressable>
                  <View style={styles.actionItem}>
                     <MessageSquare size={22} color={theme.colors.onSurfaceVariant} />
-                    <Text style={styles.actionText}>{formatCount(post.replyCount || 0)}</Text>
+                    <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
                 </View>
             </View>
         </View>

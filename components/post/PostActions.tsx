@@ -6,6 +6,7 @@ import { usePostActions } from '../../hooks/usePostActions';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
+import { formatCompactNumber } from '@/lib/formatters';
 
 interface PostActionsProps {
   post: AppBskyFeedDefs.PostView;
@@ -38,7 +39,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
     <View style={styles.container}>
       <Pressable onPress={handleReplyClick} style={styles.actionButton}>
         <MessageCircle size={18} color={theme.colors.onSurfaceVariant} />
-        <Text style={styles.actionText}>{post.replyCount || 0}</Text>
+        <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
       </Pressable>
       <Pressable 
         onPress={(e) => { e.stopPropagation(); e.preventDefault(); handleRepost(e); }}
@@ -46,7 +47,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         style={styles.actionButton}
       >
         <Repeat size={18} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
-        <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{repostCount}</Text>
+        <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCompactNumber(repostCount)}</Text>
       </Pressable>
       <Pressable 
         onPress={(e) => { e.stopPropagation(); e.preventDefault(); handleLike(e); }}
@@ -54,7 +55,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         style={styles.actionButton}
       >
         <Heart size={18} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? theme.colors.pink : 'none'} />
-        <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{likeCount}</Text>
+        <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{formatCompactNumber(likeCount)}</Text>
       </Pressable>
     </View>
   );

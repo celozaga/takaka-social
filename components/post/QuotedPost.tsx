@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs, AppBskyFeedPost, AppBskyEmbedImages } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { formatCompactDate } from '@/lib/formatters';
 import { theme } from '@/lib/theme';
 import ResizedImage from '../shared/ResizedImage';
 
@@ -38,7 +38,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
     const author = recordEmbed.author;
     const postRecord = recordEmbed.value as AppBskyFeedPost.Record;
     const postUri = new AtUri(recordEmbed.uri);
-    const timeAgo = formatDistanceToNowStrict(new Date(recordEmbed.indexedAt), { addSuffix: true });
+    const timeAgo = formatCompactDate(recordEmbed.indexedAt);
     const postLink = `/post/${postUri.hostname}/${postUri.rkey}`;
 
     const renderMediaPreview = () => {

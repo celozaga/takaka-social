@@ -6,6 +6,7 @@ import { Heart, Pin, Share2, AlertCircle, X } from 'lucide-react';
 import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
+import { formatCompactNumber } from '@/lib/formatters';
 
 const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();
@@ -58,7 +59,7 @@ const FeedHeaderModal: React.FC = () => {
                     <FeedAvatar src={feedView.avatar} alt={feedView.displayName} style={styles.avatarImage} />
                     <Text style={styles.title}>{feedView.displayName}</Text>
                     <Text style={styles.byline}>{t('feedModal.byline', { handle: feedView.creator.handle })}</Text>
-                    <Text style={styles.likes}>{t('feedModal.likes', { count: feedView.likeCount || 0 })}</Text>
+                    <Text style={styles.likes}>{t('feedModal.likes', { count: formatCompactNumber(feedView.likeCount || 0) })}</Text>
                     {feedView.description && <Text style={styles.description}>{feedView.description}</Text>}
                 </View>
                 <View style={styles.actionsGrid}>

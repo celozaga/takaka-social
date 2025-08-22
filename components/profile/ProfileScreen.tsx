@@ -15,6 +15,7 @@ import ScreenHeader from '../layout/ScreenHeader';
 import { theme } from '@/lib/theme';
 import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';
 import PostCardSkeleton from '../post/PostCardSkeleton';
+import { formatCompactNumber } from '@/lib/formatters';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -156,8 +157,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     <Text style={styles.handle}>@{profile?.handle}</Text>
                     {descriptionWithFacets && <Text style={styles.description}><RichTextRenderer record={descriptionWithFacets} /></Text>}
                     <View style={styles.statsContainer}>
-                        <Link href={`/profile/${actor}/following`} asChild><Pressable><Text style={styles.statNumber}>{profile?.followsCount ?? 0} <Text style={styles.statLabel}>{t('common.following')}</Text></Text></Pressable></Link>
-                        <Link href={`/profile/${actor}/followers`} asChild><Pressable><Text style={styles.statNumber}>{profile?.followersCount ?? 0} <Text style={styles.statLabel}>{t('common.followers')}</Text></Text></Pressable></Link>
+                        <Link href={`/profile/${actor}/following`} asChild><Pressable><Text style={styles.statNumber}>{formatCompactNumber(profile?.followsCount ?? 0)} <Text style={styles.statLabel}>{t('common.following')}</Text></Text></Pressable></Link>
+                        <Link href={`/profile/${actor}/followers`} asChild><Pressable><Text style={styles.statNumber}>{formatCompactNumber(profile?.followersCount ?? 0)} <Text style={styles.statLabel}>{t('common.followers')}</Text></Text></Pressable></Link>
                     </View>
                 </View>
             </View>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useRouter } from 'expo-router';
-import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText,AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
@@ -14,6 +14,7 @@ import ResizedImage from '../shared/ResizedImage';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { theme } from '@/lib/theme';
 import Card from '../ui/Card';
+import { formatCompactNumber } from '@/lib/formatters';
 
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -148,7 +149,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
                         style={styles.likeButton}
                     >
                         <Heart size={16} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? theme.colors.pink : 'none'} />
-                        {likeCount > 0 && <Text style={[styles.likeCount, !!likeUri && { color: theme.colors.pink }]}>{likeCount}</Text>}
+                        {likeCount > 0 && <Text style={[styles.likeCount, !!likeUri && { color: theme.colors.pink }]}>{formatCompactNumber(likeCount)}</Text>}
                     </Pressable>
                 </View>
             </View>

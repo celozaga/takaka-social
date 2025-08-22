@@ -8,16 +8,11 @@ import { useToast } from '../ui/use-toast';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
+import { formatCompactNumber } from '@/lib/formatters';
 
 interface VideoActionsProps {
   post: AppBskyFeedDefs.PostView;
 }
-
-const formatCount = (count: number): string => {
-    if (count > 9999) return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}K`;
-    if (count > 999) return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}K`;
-    return count.toString();
-};
 
 const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     const { openComposer, openMediaActionsModal } = useUI();
@@ -55,15 +50,15 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
             
             <Pressable onPress={(e) => { e.stopPropagation(); handleLike(e as any); }} disabled={isLiking} style={styles.actionButton}>
                 <Heart size={32} color={likeUri ? theme.colors.pink : 'white'} fill={likeUri ? theme.colors.pink : 'none'} />
-                <Text style={styles.actionText}>{formatCount(likeCount)}</Text>
+                <Text style={styles.actionText}>{formatCompactNumber(likeCount)}</Text>
             </Pressable>
             <Pressable onPress={handleComment} style={styles.actionButton}>
                 <MessageCircle size={32} color="white"/>
-                <Text style={styles.actionText}>{formatCount(post.replyCount || 0)}</Text>
+                <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
             </Pressable>
             <Pressable onPress={(e) => { e.stopPropagation(); handleRepost(e as any); }} disabled={isReposting} style={styles.actionButton}>
                 <Repeat size={32} color={repostUri ? theme.colors.primary : 'white'} />
-                <Text style={styles.actionText}>{formatCount(repostCount)}</Text>
+                <Text style={styles.actionText}>{formatCompactNumber(repostCount)}</Text>
             </Pressable>
             <Pressable onPress={handleMoreClick} style={styles.actionButton}>
                 <MoreHorizontal size={32} color="white" />

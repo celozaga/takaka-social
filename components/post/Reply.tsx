@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs, RichText, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
-import { formatDistanceToNow } from 'date-fns';
+import { formatCompactNumber, formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Heart } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
@@ -23,11 +23,6 @@ interface ReplyProps {
   depth?: number;
 }
 
-const formatCount = (count: number): string => {
-    if (count > 999) return `${(count/1000).toFixed(1)}k`.replace('.0', '');
-    return count.toString();
-}
-
 const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   const { t } = useTranslation();
   const moderation = useModeration();
@@ -46,7 +41,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   
   const subReplies = (replies || []).filter(r => AppBskyFeedDefs.isThreadViewPost(r)) as AppBskyFeedDefs.ThreadViewPost[];
 
-  const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
+  const timeAgo = formatCompactDate(record.createdAt);
 
   const ensureSession = () => {
     if (!session) {
@@ -149,7 +144,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
                         style={styles.footerButton}
                     >
                         <Heart size={16} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? 'currentColor' : 'none'} />
-                        {likeCount > 0 && <Text style={[styles.footerText, !!likeUri && {color: theme.colors.pink}]}>{formatCount(likeCount)}</Text>}
+                        {likeCount > 0 && <Text style={[styles.footerText, !!likeUri && {color: theme.colors.pink}]}>{formatCompactNumber(likeCount)}</Text>}
                     </Pressable>
                      <Pressable onPress={handleReplyClick} style={styles.footerButton}>
                          <Text style={styles.footerText}>{t('common.reply')}</Text>

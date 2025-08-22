@@ -4,7 +4,7 @@ import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { formatDistanceToNow } from 'date-fns';
+import { formatCompactDate } from '@/lib/formatters';
 import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, PlayCircle, VolumeX, Volume2 } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import SharedVideoPlayer, { PlayerRef } from '../shared/VideoPlayer';
@@ -322,7 +322,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         return null;
     };
 
-    const timeAgo = formatDistanceToNow(new Date(record.createdAt), { addSuffix: true });
+    const timeAgo = formatCompactDate(record.createdAt);
 
     return (
         <View>

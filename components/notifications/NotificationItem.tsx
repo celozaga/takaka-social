@@ -12,7 +12,7 @@ import {
   AppBskyFeedDefs
 } from '@atproto/api';
 import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { View, Text, Image, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
@@ -40,11 +40,10 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
         if (!mediaEmbed || mediaEmbed.images.length === 0) return null;
         const firstImage = mediaEmbed.images[0];
         const authorDid = new AtUri(postUri).hostname;
-        const imageUrlObj = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
-        imageUrlObj.searchParams.set('did', authorDid);
-        imageUrlObj.searchParams.set('cid', firstImage.image.ref.toString());
-        const imageUrl = imageUrlObj.toString();
-        return <Image source={{ uri: imageUrl }} style={styles.previewImage} />;
+        const imageUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
+        imageUrl.searchParams.set('did', authorDid);
+        imageUrl.searchParams.set('cid', firstImage.image.ref.toString());
+        return <Image source={{ uri: imageUrl.toString() }} style={styles.previewImage} />;
     };
 
     const imageElement = renderImage();
@@ -158,7 +157,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
       Icon = <FileText color={theme.colors.onSurfaceVariant} size={24} />;
   }
   
-  const timeAgo = formatDistanceToNow(new Date(indexedAt), { addSuffix: true });
+  const timeAgo = formatCompactDate(indexedAt);
 
   return (
     <Pressable onPress={handlePress} style={[styles.container, !isRead && styles.unreadContainer]}>
