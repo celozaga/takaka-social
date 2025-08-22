@@ -15,26 +15,17 @@ interface Props {
   blobUrl: string;
 }
 
-/**
- * A highly optimized video player for the vertical feed.
- * - Shows thumbnail and loading indicator.
- * - Handles play/pause on tap.
- * - Overlays user info, description, and action buttons.
- * - Forwards the video ref so the parent feed can control playback.
- */
 const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref) => {
   const videoRef = useRef<Video>(null);
   const [status, setStatus] = useState<AVPlaybackStatusSuccess | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Start true to show placeholder initially
 
-  // Expose the internal video component's ref to the parent (WatchFeed).
-  // This allows the parent to call methods like playAsync() and pauseAsync().
   useImperativeHandle(ref, () => videoRef.current as Video, []);
 
   const { post } = postView;
   const record = post.record as any;
 
-  // Extract the video embed details from the post.
   let embedView: AppBskyEmbedVideo.View | undefined;
   if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
   else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
@@ -42,11 +33,19 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
   if (!embedView) return null;
 
   const handlePlaybackStatusUpdate = (playbackStatus: AVPlaybackStatus) => {
-      if(playbackStatus.isLoaded) {
-          setStatus(playbackStatus);
-      } else {
-          setStatus(null);
+    if (playbackStatus.isLoaded) {
+      setStatus(playbackStatus);
+      // Show loader only when buffering
+      setIsLoading(playbackStatus.isBuffering);
+    } else {
+      setStatus(null);
+      // If error or not loaded, it might still be loading
+      const { error } = playbackStatus;
+      if (error) {
+        console.error(`Video Error: ${error}`);
       }
+      setIsLoading(true);
+    }
   };
 
   const togglePlayPause = () => {
@@ -55,16 +54,22 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
   };
 
   const toggleMuteLocal = (e: any) => {
-      e.stopPropagation(); // Prevent the tap from also pausing the video
-      setIsMuted(prev => !prev);
+    e.stopPropagation();
+    setIsMuted(prev => !prev);
   }
 
-  // Show loading indicator if the video is not ready or is actively buffering.
-  const isLoading = !status?.isLoaded || (status.isBuffering && !status.isPlaying);
-  
   return (
     <TouchableWithoutFeedback onPress={togglePlayPause}>
       <View style={styles.container}>
+        {/* Placeholder before the buffer starts */}
+        {isLoading && embedView.thumbnail && (
+          <Image 
+            source={{ uri: embedView.thumbnail }} 
+            style={[StyleSheet.absoluteFill, styles.thumbnail]} // Use absoluteFill to cover bg
+            resizeMode="cover" 
+          />
+        )}
+
         <Video
           ref={videoRef}
           source={{ uri: hlsUrl || blobUrl }}
@@ -72,8 +77,12 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
           resizeMode={ResizeMode.CONTAIN}
           isLooping
           isMuted={isMuted}
+          onLoadStart={() => setIsLoading(true)}
+          onReadyForDisplay={() => setIsLoading(false)} // Indicates it's ready to play
           onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
         />
+
+        {/* Loader while buffering */}
         {isLoading && (
           <ActivityIndicator
             size="large"
@@ -81,6 +90,7 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
             style={styles.loader}
           />
         )}
+
          <View style={styles.infoOverlay}>
             <Pressable onPress={(e) => e.stopPropagation()}>
                 <Text style={styles.authorText}>{post.author.displayName || `@${post.author.handle}`}</Text>
@@ -102,8 +112,11 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
 
 const styles = StyleSheet.create({
   container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' },
-  video: { width: '100%', height: '100%' },
-  loader: { position: 'absolute', zIndex: 2 },
+  thumbnail: {
+      zIndex: 1,
+  },
+  video: { width: '100%', height: '100%', zIndex: 2 },
+  loader: { position: 'absolute', zIndex: 3 },
   infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: 96, zIndex: 20 },
   authorText: { ...theme.typography.titleSmall, color: 'white', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2, },
   descriptionText: { ...theme.typography.bodyMedium, color: 'white', marginTop: theme.spacing.xs, textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2, },
