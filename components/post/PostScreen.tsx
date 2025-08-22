@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, FlatList, Text, Platform } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
-import ScreenHeader from '../layout/ScreenHeader';
+import PostHeader from './PostHeader';
 import FullPostCard from './FullPostCard';
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
@@ -47,7 +47,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title={t('common.post')} />
+      <PostHeader post={thread.post} />
       <FlatList
         data={replies}
         renderItem={renderItem}
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     padding: theme.spacing.l,
-    paddingTop: 0,
+    paddingTop: theme.spacing.l,
   },
   listContentContainer: {
     paddingBottom: Platform.select({ web: 0, default: 80 }), // Space for action bar on native

@@ -195,6 +195,7 @@ const Feed: React.FC<FeedProps> = ({
   if (isLoading) {
     return (
       <View>
+        <>
         {ListHeaderComponent}
         {layout === 'grid' ? (
           <View style={styles.masonryContainer}>
@@ -204,6 +205,7 @@ const Feed: React.FC<FeedProps> = ({
         ) : (
           <View style={styles.listContainer}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
         )}
+        </>
       </View>
     );
   }
@@ -214,8 +216,10 @@ const Feed: React.FC<FeedProps> = ({
             contentContainerStyle={{paddingTop: theme.spacing.l}}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
           >
-              {ListHeaderComponent}
-              {renderListEmptyComponent()}
+              <View>
+                {ListHeaderComponent}
+                {renderListEmptyComponent()}
+              </View>
           </ScrollView>
       )
   }
@@ -240,12 +244,14 @@ const Feed: React.FC<FeedProps> = ({
   return (
     <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
         <View style={styles.contentContainer}>
+            <>
             {ListHeaderComponent}
             <View style={styles.masonryContainer}>
                 <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
                 <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
             </View>
             {renderFooter()}
+            </>
         </View>
     </ScrollView>
   );

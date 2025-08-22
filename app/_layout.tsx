@@ -204,8 +204,8 @@ const styles = StyleSheet.create({
   },
   composerBackdrop: {
      justifyContent: 'flex-start',
-     paddingTop: Platform.select({ web: '5%', default: 40 }),
-     paddingBottom: Platform.select({ web: '5%', default: 10 }),
+     paddingTop: Platform.select({ web: 40, default: 40 }),
+     paddingBottom: Platform.select({ web: 10, default: 10 }),
   },
   composerWrapper: {
     width: '100%',

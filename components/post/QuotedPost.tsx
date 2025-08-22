@@ -31,7 +31,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
     return null; // Don't render if it's not a valid record view or not a post
   }
 
-  const { record } = embed;
+  const record = embed.record as AppBskyFeedDefs.PostView;
   const author = record.author;
   const postRecord = record.record as { text: string, createdAt: string, facets?: any[] };
   const postUri = new AtUri(record.uri);
