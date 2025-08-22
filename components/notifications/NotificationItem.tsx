@@ -30,8 +30,11 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
     if (AppBskyEmbedImages.isMain(embed)) mediaEmbed = embed;
     else if (AppBskyEmbedRecord.isMain(embed)) recordEmbed = embed;
     else if (AppBskyEmbedRecordWithMedia.isMain(embed)) {
-        recordEmbed = embed.record;
-        if (AppBskyEmbedImages.isMain(embed.media)) mediaEmbed = embed.media;
+        const recordWithMediaEmbed = embed;
+        recordEmbed = recordWithMediaEmbed.record;
+        if (AppBskyEmbedImages.isMain(recordWithMediaEmbed.media)) {
+            mediaEmbed = recordWithMediaEmbed.media;
+        }
     }
 
     const renderImage = () => {

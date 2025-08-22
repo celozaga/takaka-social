@@ -8,6 +8,7 @@ import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, Alert, Platform } from 'react-native';
+import { theme } from '@/lib/theme';
 
 const SettingsListItem: React.FC<{
     icon: React.ElementType;
@@ -19,12 +20,12 @@ const SettingsListItem: React.FC<{
         <Pressable style={({ pressed }) => [styles.listItem, pressed && styles.listItemPressed]}>
             <View style={styles.listItemContent}>
                 <View style={styles.listItemLeft}>
-                    <Icon size={24} color={'#C3C6CF'} />
+                    <Icon size={24} color={theme.colors.onSurfaceVariant} />
                     <Text style={styles.listItemLabel}>{label}</Text>
                 </View>
                 <View style={styles.listItemRight}>
                     {value && <Text style={styles.listItemValue}>{value}</Text>}
-                    <ChevronRight size={20} color="#C3C6CF" />
+                    <ChevronRight size={20} color={theme.colors.onSurfaceVariant} />
                 </View>
             </View>
         </Pressable>
@@ -81,7 +82,7 @@ const SettingsScreen: React.FC = () => {
                     <Pressable onPress={handleLogout} style={({ pressed }) => [styles.listItem, styles.logoutButton, pressed && styles.listItemPressed]}>
                         <View style={styles.listItemContent}>
                             <View style={styles.listItemLeft}>
-                                <LogOut size={24} color={'#F2B8B5'} />
+                                <LogOut size={24} color={theme.colors.error} />
                                 <Text style={[styles.listItemLabel, styles.destructiveText]}>{t('settings.signOut')}</Text>
                             </View>
                         </View>
@@ -102,13 +103,13 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     listItem: {
-        backgroundColor: '#1E2021',
-        borderRadius: 8,
-        paddingVertical: 12,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.extraLarge,
+        paddingVertical: 16,
         paddingHorizontal: 16,
     },
     listItemPressed: {
-        backgroundColor: '#2b2d2e',
+        backgroundColor: theme.colors.surfaceContainerHigh,
     },
     listItemContent: {
         flexDirection: 'row',
@@ -127,18 +128,18 @@ const styles = StyleSheet.create({
     },
     listItemLabel: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#E2E2E6',
+        fontWeight: '500',
+        color: theme.colors.onSurface,
     },
     listItemValue: {
         fontSize: 14,
-        color: '#C3C6CF',
+        color: theme.colors.onSurfaceVariant,
     },
     logoutButton: {
         marginTop: 16,
     },
     destructiveText: {
-        color: '#F2B8B5',
+        color: theme.colors.error,
     }
 });
 

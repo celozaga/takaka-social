@@ -77,8 +77,9 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     }
 
     if(AppBskyEmbedRecordWithMedia.isView(embed)) {
-        const mediaEmbed = embed.media;
-        const recordEmbed = embed.record;
+        const recordWithMediaView = embed;
+        const mediaEmbed = recordWithMediaView.media;
+        const recordEmbed = recordWithMediaView.record;
         return (
             <View>
                 {AppBskyEmbedImages.isView(mediaEmbed) && mediaEmbed.images.length > 0 &&

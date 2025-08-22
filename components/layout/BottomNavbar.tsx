@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/lib/theme';
 
 // NavItem component for a single navigation item.
-const NavItem = ({ item, isDesktop }) => {
+const NavItem = ({ item, isDesktop }: { item: any; isDesktop: boolean; }) => {
   const { t } = useTranslation();
   const { unreadCount } = useAtp();
 

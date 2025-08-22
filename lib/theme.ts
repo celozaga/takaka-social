@@ -1,16 +1,16 @@
 import { Platform } from 'react-native';
 
 const colors = {
-  primary: '#A8C7FA',
-  onPrimary: '#003258',
-  background: '#111314',
-  surface: '#1E2021', // Used for main component surfaces like cards, sheets, menus
-  surfaceContainer: '#1E2021', // A bit lighter than background
-  surfaceContainerHigh: '#2b2d2e', // Higher emphasis surface
-  surfaceContainerHighest: '#3c3f41', // Highest emphasis
-  onSurface: '#E2E2E6',
-  onSurfaceVariant: '#C3C6CF',
-  outline: '#2b2d2e', // Used for borders, dividers
+  primary: '#5662F6',
+  onPrimary: '#FFFFFF',
+  background: '#000000',
+  surface: '#222222',
+  surfaceContainer: '#222222',
+  surfaceContainerHigh: '#333333',
+  surfaceContainerHighest: '#444444',
+  onSurface: '#E5E5E5',
+  onSurfaceVariant: '#A0A0A0',
+  outline: '#333333',
   error: '#F2B8B5',
   pink: '#ec4899', // A custom accent color
 };

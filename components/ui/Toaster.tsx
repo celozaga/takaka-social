@@ -42,9 +42,10 @@ const ToastComponent: React.FC<ToastMessage & { onDismiss: () => void }> = ({ id
   const isDestructive = variant === 'destructive';
   const Icon = isDestructive ? AlertTriangle : CheckCircle;
   const iconColor = isDestructive ? '#F2B8B5' : '#A8C7FA';
+  const AnimatedView = Animated.View as any;
 
   return (
-    <Animated.View style={[styles.toast, isDestructive ? styles.toastDestructive : styles.toastDefault, { opacity: fadeAnim }]}>
+    <AnimatedView style={[styles.toast, isDestructive ? styles.toastDestructive : styles.toastDefault, { opacity: fadeAnim }]}>
         <Icon color={iconColor} size={24} style={styles.icon} />
         <View style={styles.textContainer}>
             <Text style={[styles.title, isDestructive && styles.textDestructive]}>{title}</Text>
@@ -53,7 +54,7 @@ const ToastComponent: React.FC<ToastMessage & { onDismiss: () => void }> = ({ id
         <Pressable onPress={onDismiss} style={styles.closeButton}>
             <X size={16} color={isDestructive ? '#F2B8B5' : '#C3C6CF'} />
         </Pressable>
-    </Animated.View>
+    </AnimatedView>
   );
 };
 
