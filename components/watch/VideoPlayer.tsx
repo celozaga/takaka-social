@@ -33,19 +33,19 @@ const VideoPlayer = forwardRef<Video, Props>(({ postView, hlsUrl, blobUrl }, ref
   if (!embedView) return null;
 
   const handlePlaybackStatusUpdate = (playbackStatus: AVPlaybackStatus) => {
-    if (playbackStatus.isLoaded) {
-      setStatus(playbackStatus);
-      // Show loader only when buffering
-      setIsLoading(playbackStatus.isBuffering);
-    } else {
+    if (!playbackStatus.isLoaded) {
       setStatus(null);
       // If error or not loaded, it might still be loading
-      const { error } = playbackStatus;
-      if (error) {
-        console.error(`Video Error: ${error}`);
+      if (playbackStatus.error) {
+        console.error(`Video Error: ${playbackStatus.error}`);
       }
       setIsLoading(true);
+      return;
     }
+    
+    setStatus(playbackStatus);
+    // Show loader only when buffering, not on initial load if thumbnail is present
+    setIsLoading(playbackStatus.isBuffering);
   };
 
   const togglePlayPause = () => {
