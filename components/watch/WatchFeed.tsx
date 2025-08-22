@@ -46,7 +46,7 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={viewConfigRef.current}
       onEndReached={loadMore}
-      onEndReachedThreshold={3}
+      onEndReachedThreshold={1.5}
       ListFooterComponent={() => {
         if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
         if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;

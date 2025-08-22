@@ -44,7 +44,7 @@ const WatchScreen: React.FC = () => {
         let isFallback = currentCursor ? activeFeed.isFallback : false;
 
         try {
-            const res = await agent.app.bsky.feed.getFeed({ feed: feedToFetch, cursor: currentCursor, limit: 10 });
+            const res = await agent.app.bsky.feed.getFeed({ feed: feedToFetch, cursor: currentCursor, limit: 25 });
             
             let posts = res.data.feed;
             if (isFallback) {
@@ -68,7 +68,7 @@ const WatchScreen: React.FC = () => {
             if (!currentCursor) {
                 console.warn(`Primary video feed failed, attempting fallback...`, err);
                 try {
-                    const res = await agent.app.bsky.feed.getFeed({ feed: DISCOVER_FEED_URI, limit: 25 });
+                    const res = await agent.app.bsky.feed.getFeed({ feed: DISCOVER_FEED_URI, limit: 50 });
                     const posts = res.data.feed.filter(p => isVideoPost(p.post));
                     
                     setVideoPosts(posts);
