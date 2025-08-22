@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
+import {AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
 import Feed from '../shared/Feed';
 import { Search as SearchIcon, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
 import ActorSearchResultCard from './ActorSearchResultCard';
@@ -187,10 +187,10 @@ const styles = StyleSheet.create({
     input: { width: '100%', paddingLeft: 48, paddingRight: 16, paddingVertical: 12, backgroundColor: '#1E2021', borderRadius: 8, color: '#E2E2E6', fontSize: 16 },
     discoveryContainer: { padding: 16, gap: 32 },
     filterContainer: { paddingHorizontal: 16, gap: 8, paddingBottom: 16 },
-    filterButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    filterButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainer },
     activeFilterButton: { backgroundColor: theme.colors.onSurface },
-    filterText: { fontSize: 14, fontWeight: 'bold', color: theme.colors.onSurface },
-    activeFilterText: { color: theme.colors.background },
+    filterText: { fontSize: 14, fontWeight: '500', color: theme.colors.onSurface },
+    activeFilterText: { color: theme.colors.background, fontWeight: 'bold' },
     contentContainer: { paddingTop: 16, paddingHorizontal: 16 },
     skeletonItemListView: { backgroundColor: '#1E2021', borderRadius: 12, height: 88, opacity: 0.5 },
     emptyContainer: { padding: 32, marginHorizontal: 16, backgroundColor: '#1E2021', borderRadius: 12, marginTop: 16 },

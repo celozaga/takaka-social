@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
         paddingVertical: theme.spacing.s,
         paddingHorizontal: theme.spacing.l,
         borderRadius: theme.shape.full,
-        backgroundColor: theme.colors.surfaceContainerHigh,
+        backgroundColor: theme.colors.surfaceContainer,
     },
     tabActive: {
         backgroundColor: theme.colors.onSurface,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     skeleton: {
         height: 38,
         width: 96,
-        backgroundColor: theme.colors.surfaceContainerHigh,
+        backgroundColor: theme.colors.surfaceContainer,
         borderRadius: theme.shape.full,
     }
 });
