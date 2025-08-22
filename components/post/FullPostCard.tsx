@@ -235,7 +235,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             );
         };
 
-        const showArrows = Platform.OS !== 'web' || isHovered;
+        const showArrows = true;
 
         const handlePrev = () => {
             if (currentIndex > 0) {
@@ -253,10 +253,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             <View style={styles.slideshowOuterContainer}>
                 <View 
                     style={[styles.slideshowInnerContainer, { aspectRatio: slideshowAspectRatio, maxHeight: 700 }]}
-                    {...(Platform.OS === 'web' && {
-                        onMouseEnter: () => setIsHovered(true),
-                        onMouseLeave: () => setIsHovered(false),
-                    } as any)}
                 >
                     <FlatList
                         ref={flatListRef}
@@ -268,7 +264,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         keyExtractor={(item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index}
                         onViewableItemsChanged={onViewableItemsChanged}
                         viewabilityConfig={viewabilityConfig}
-                        style={{ borderRadius: theme.shape.medium }}
+                        style={{ width: '100%', height: '100%', borderRadius: theme.shape.medium }}
                         getItemLayout={(_, index) => ({
                             length: itemWidth,
                             offset: itemWidth * index,
