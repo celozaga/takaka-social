@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
@@ -30,6 +30,40 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
+    const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
+
+    const fetchPlaybackUrl = useCallback(async (postUri: string, authorDid: string, videoCid: string) => {
+        if (playbackUrls.has(postUri)) return;
+        try {
+            const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({
+                did: authorDid,
+                cid: videoCid,
+            });
+            if (res.data.url) {
+                setPlaybackUrls(prev => new Map(prev).set(postUri, res.data.url));
+            }
+        } catch (e) {
+            console.warn(`Could not fetch playback URL for ${postUri}`, e);
+        }
+    }, [agent, playbackUrls]);
+
+    useEffect(() => {
+        if (post.embed) {
+            let videoEmbed: AppBskyEmbedVideo.View | undefined;
+            const findVideo = (embed: unknown) => {
+                if (AppBskyEmbedVideo.isView(embed)) {
+                    videoEmbed = embed;
+                } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                    findVideo((embed as AppBskyEmbedRecordWithMedia.View).media);
+                }
+            };
+            findVideo(post.embed);
+            if (videoEmbed) {
+                fetchPlaybackUrl(post.uri, post.author.did, videoEmbed.cid);
+            }
+        }
+    }, [post.embed, post.uri, post.author.did, fetchPlaybackUrl]);
+
 
     const onLayout = (event: { nativeEvent: { layout: { width: number } } }) => {
         setContainerWidth(event.nativeEvent.layout.width);
@@ -72,35 +106,45 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         if (mediaItems.length === 1) {
             const item = mediaItems[0];
             
-            let aspectRatio;
             if ('view' in item) { // item is a video
-                aspectRatio = item.view.aspectRatio ? item.view.aspectRatio.width / item.view.aspectRatio.height : 16 / 9;
-            } else { // item is an image
-                aspectRatio = item.aspectRatio ? item.aspectRatio.width / item.aspectRatio.height : 1.5;
-            }
+                const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
+                const hlsUrl = playbackUrls.get(post.uri);
+                const blobVideoUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoItem.view.cid}`;
+                const aspectRatio = videoItem.view.aspectRatio ? videoItem.view.aspectRatio.width / videoItem.view.aspectRatio.height : 16 / 9;
 
-            return (
-                <View style={{ maxHeight: 1000, marginTop: theme.spacing.s, aspectRatio: aspectRatio, width: '100%' }}>
-                    {'view' in item ? (
+                return (
+                    <View style={{ maxHeight: 1000, marginTop: theme.spacing.s, aspectRatio: aspectRatio, width: '100%' }}>
                         <SharedVideoPlayer
                             options={{
                                 autoplay: true,
                                 controls: true,
-                                poster: (item as { type: 'video', view: AppBskyEmbedVideo.View }).view.thumbnail,
-                                sources: [{ src: `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${(item as { type: 'video', view: AppBskyEmbedVideo.View }).view.cid}`, type: 'video/mp4' }],
+                                poster: videoItem.view.thumbnail,
+                                sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }],
                                 loop: true,
                                 muted: true,
                             }}
                             style={{ width: '100%', height: '100%', borderRadius: theme.shape.medium }}
                         />
-                    ) : (
-                        <Pressable onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
-                            <ResizedImage src={(item as AppBskyEmbedImages.ViewImage).thumb} resizeWidth={1200} alt={(item as AppBskyEmbedImages.ViewImage).alt || 'Post image'} style={styles.singleImage} resizeMode="contain" />
-                            <View style={styles.imageOverlay}><ExternalLink color="white" size={24} /></View>
-                        </Pressable>
-                    )}
-                </View>
-            );
+                    </View>
+                );
+            } else { // item is an image
+                const imageItem = item as AppBskyEmbedImages.ViewImage;
+                const aspectRatio = imageItem.aspectRatio ? imageItem.aspectRatio.width / imageItem.aspectRatio.height : 1.5;
+
+                return (
+                    <Pressable 
+                        style={{ marginTop: theme.spacing.s, borderRadius: theme.shape.medium, overflow: 'hidden' }} 
+                        onPress={(e) => { e.stopPropagation(); Linking.openURL(imageItem.fullsize); }}
+                        {...(Platform.OS === 'web' && {
+                            onMouseEnter: () => setIsHovered(true),
+                            onMouseLeave: () => setIsHovered(false),
+                        } as any)}
+                    >
+                        <ResizedImage src={imageItem.thumb} resizeWidth={1200} alt={imageItem.alt || 'Post image'} style={[styles.singleImage, { aspectRatio }]} resizeMode="contain" />
+                        <View style={[styles.imageOverlay, { opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0 }]}><ExternalLink color="white" size={24} /></View>
+                    </Pressable>
+                );
+            }
         }
 
         const handlePrev = () => {
@@ -119,17 +163,24 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             return (
                 <View style={{ width: containerWidth, height: '100%', justifyContent: 'center' }}>
                     {isVideo ? (
-                         <SharedVideoPlayer
-                            options={{
-                                autoplay: false,
-                                controls: true,
-                                poster: (item as { type: 'video', view: AppBskyEmbedVideo.View }).view.thumbnail,
-                                sources: [{ src: `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${(item as { type: 'video', view: AppBskyEmbedVideo.View }).view.cid}`, type: 'video/mp4' }],
-                                loop: false,
-                                muted: false,
-                            }}
-                            style={{ width: '100%', height: '100%' }}
-                        />
+                         (() => {
+                            const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
+                            const hlsUrl = playbackUrls.get(post.uri);
+                            const blobVideoUrl = `${agent.service.toString()}/xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${videoItem.view.cid}`;
+                            return (
+                                <SharedVideoPlayer
+                                    options={{
+                                        autoplay: false,
+                                        controls: true,
+                                        poster: videoItem.view.thumbnail,
+                                        sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }],
+                                        loop: false,
+                                        muted: false,
+                                    }}
+                                    style={{ width: '100%', height: '100%' }}
+                                />
+                            );
+                        })()
                     ) : (
                         <Pressable onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
                            <ResizedImage src={(item as AppBskyEmbedImages.ViewImage).thumb} resizeWidth={1200} alt={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} resizeMode="contain" />
@@ -331,8 +382,8 @@ const styles = StyleSheet.create({
     },
     singleImage: {
         width: '100%',
-        height: '100%',
-        borderRadius: theme.shape.medium
+        borderRadius: theme.shape.medium,
+        backgroundColor: 'black',
     },
     imageOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -340,7 +391,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         opacity: 0,
-    },
+        transition: 'opacity 0.2s',
+    } as any,
     counterOverlay: {
         position: 'absolute',
         top: theme.spacing.m,
