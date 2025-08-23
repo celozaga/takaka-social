@@ -215,7 +215,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    stickyHeader: { padding: theme.spacing.l, backgroundColor: theme.colors.background },
+    stickyHeader: { padding: theme.spacing.l, backgroundColor: theme.colors.background, zIndex: 10 },
     inputContainer: { position: 'relative', justifyContent: 'center' },
     searchIcon: { position: 'absolute', left: theme.spacing.l, zIndex: 1 },
     input: { width: '100%', paddingLeft: 48, paddingRight: theme.spacing.l, paddingVertical: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
