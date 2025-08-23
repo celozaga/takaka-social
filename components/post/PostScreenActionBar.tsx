@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        height: 80,
+        height: 60,
         backgroundColor: theme.colors.surfaceContainer,
         paddingHorizontal: theme.spacing.l,
         flexDirection: 'row',
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     actionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 5,
     },
     actionText: {
         fontWeight: '600',
