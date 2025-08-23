@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   navBarItem: {
-    flex: 1,
+    flexGrow: 1,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
