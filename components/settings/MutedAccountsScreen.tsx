@@ -14,7 +14,7 @@ const MutedAccountItem: React.FC<{
     actor: AppBskyActorDefs.ProfileView;
     onUnmute: (did: string) => void;
     isUnmuting: boolean;
-}> = ({ actor, onUnmute, isUnmuting }) => {
+}> = React.memo(({ actor, onUnmute, isUnmuting }) => {
     const { t } = useTranslation();
     const profileLink = `/profile/${actor.handle}`;
 
@@ -51,7 +51,7 @@ const MutedAccountItem: React.FC<{
             <Pressable>{content}</Pressable>
         </Link>
     );
-};
+});
 
 const MutedAccountsScreen: React.FC = () => {
     const { t } = useTranslation();

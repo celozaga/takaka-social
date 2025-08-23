@@ -11,7 +11,7 @@ import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import PostCardSkeleton from './PostCardSkeleton';
 import ResizedImage from '../shared/ResizedImage';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, StyleProp, ViewStyle } from 'react-native';
 import { theme } from '@/lib/theme';
 import Card from '../ui/Card';
 import { formatCompactNumber } from '@/lib/formatters';
@@ -19,9 +19,10 @@ import { formatCompactNumber } from '@/lib/formatters';
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
     isClickable?: boolean;
+    style?: StyleProp<ViewStyle>;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true }) => {
+const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, style }) => {
     const { setPostForNav } = useUI();
     const router = useRouter();
     const moderation = useModeration();
@@ -123,7 +124,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
     if (!mediaElement) return null;
 
     return (
-        <Card onPress={handlePress}>
+        <Card onPress={handlePress} style={style}>
             {mediaElement}
             <View style={styles.content}>
                 {record?.text && (

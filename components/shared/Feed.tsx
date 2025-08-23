@@ -151,46 +151,15 @@ const Feed: React.FC<FeedProps> = ({
     return feed.filter(item => moderatePost(item.post, moderation).visibility !== 'hide');
   }, [feed, moderation]);
 
-  const { column1Items, column2Items } = useMemo(() => {
-    if (layout !== 'grid') return { column1Items: [], column2Items: [] };
-    const col1: AppBskyFeedDefs.FeedViewPost[] = [];
-    const col2:AppBskyFeedDefs.FeedViewPost[] = [];
-    moderatedFeed.forEach((item, index) => {
-        if (index % 2 === 0) col1.push(item);
-        else col2.push(item);
-    });
-    return { column1Items: col1, column2Items: col2 };
-  }, [moderatedFeed, layout]);
-
-  const renderHeader = () => {
-    if (!ListHeaderComponent) {
-      return null;
-    }
-    // Handle both Component and Element types
-    if (typeof ListHeaderComponent === 'function') {
-      const Header = ListHeaderComponent;
-      return <Header />;
-    }
-    return ListHeaderComponent;
-  };
-
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
   
-  const handleScroll = ({ nativeEvent }: { nativeEvent: { layoutMeasurement: any, contentOffset: any, contentSize: any } }) => {
-    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
-    if (isCloseToBottom && !isLoadingMore && hasMore) {
-        loadMorePosts();
-    }
-  };
-
   const renderFooter = () => {
     if (isLoadingMore) {
       if (layout === 'grid') {
         return (
-          <View style={styles.masonryContainer}>
-            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+          <View style={styles.gridFooterContainer}>
+            <PostCardSkeleton />
+            <PostCardSkeleton />
           </View>
         );
       }
@@ -224,7 +193,7 @@ const Feed: React.FC<FeedProps> = ({
     return (
       <View>
         <>
-          {renderHeader()}
+          {ListHeaderComponent}
           {layout === 'grid' ? (
             <View style={styles.masonryContainer}>
               <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
@@ -246,7 +215,7 @@ const Feed: React.FC<FeedProps> = ({
           >
               <View>
                 <>
-                  {renderHeader()}
+                  {ListHeaderComponent}
                   {renderListEmptyComponent()}
                 </>
               </View>
@@ -271,19 +240,21 @@ const Feed: React.FC<FeedProps> = ({
       )
   }
 
+  // Grid layout uses FlatList for virtualization
   return (
-    <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
-        <View style={styles.contentContainer}>
-            <>
-              {renderHeader()}
-              <View style={styles.masonryContainer}>
-                  <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
-                  <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
-              </View>
-              {renderFooter()}
-            </>
-        </View>
-    </ScrollView>
+    <FlatList
+        data={moderatedFeed}
+        renderItem={({ item }) => <PostCard feedViewPost={item} style={styles.gridItem} />}
+        keyExtractor={keyExtractor}
+        numColumns={2}
+        ListHeaderComponent={ListHeaderComponent}
+        ListFooterComponent={renderFooter}
+        onEndReached={loadMorePosts}
+        onEndReachedThreshold={0.7}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        contentContainerStyle={styles.gridContentContainer}
+        columnWrapperStyle={styles.gridColumnWrapper}
+    />
   );
 };
 
@@ -297,7 +268,24 @@ const styles = StyleSheet.create({
     infoText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant, textAlign: 'center' },
     endOfList: { ...theme.typography.bodyMedium, textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
     tryAgainButton: { backgroundColor: theme.colors.surfaceContainerHigh, paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.m, borderRadius: theme.shape.full, },
-    tryAgainText: { ...theme.typography.labelLarge, color: theme.colors.onSurface, }
+    tryAgainText: { ...theme.typography.labelLarge, color: theme.colors.onSurface, },
+    gridContentContainer: {
+        paddingTop: theme.spacing.l,
+        paddingBottom: 60,
+    },
+    gridColumnWrapper: {
+        paddingHorizontal: theme.spacing.l,
+        gap: theme.spacing.l,
+    },
+    gridItem: {
+        flex: 1,
+        marginBottom: theme.spacing.l,
+    },
+    gridFooterContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: theme.spacing.l,
+        gap: theme.spacing.l,
+    }
 });
 
 export default Feed;
