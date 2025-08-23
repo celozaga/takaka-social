@@ -133,7 +133,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
           );
       }
       return (
-        <ScrollView onScroll={({ nativeEvent }) => { if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 50) fetchNonPostResults(debouncedQuery || initialQuery, activeFilter, cursor); }} scrollEventThrottle={16}>
+        <ScrollView onScroll={({ nativeEvent }) => { if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) fetchNonPostResults(debouncedQuery || initialQuery, activeFilter, cursor); }} scrollEventThrottle={16}>
           <View style={[styles.contentContainer, { gap: theme.spacing.m }]}>
             {nonPostResults.map(item => {
                 if (activeFilter === 'people') return <ActorSearchResultCard key={(item as any).did} actor={item as any} />;
@@ -189,14 +189,16 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                     </ScrollView>
                 ) : (
                     <View style={{ flex: 1 }}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer} style={styles.filterScroll}>
-                            {filters.map(filter => (
-                                <Pressable key={filter.id} onPress={() => setActiveFilter(filter.id)} style={[styles.filterButton, activeFilter === filter.id && styles.activeFilterButton]}>
-                                    <filter.icon size={16} color={activeFilter === filter.id ? theme.colors.background : theme.colors.onSurface} />
-                                    <Text style={[styles.filterText, activeFilter === filter.id && styles.activeFilterText]}>{filter.label}</Text>
-                                </Pressable>
-                            ))}
-                        </ScrollView>
+                        <View>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
+                                {filters.map(filter => (
+                                    <Pressable key={filter.id} onPress={() => setActiveFilter(filter.id)} style={[styles.filterButton, activeFilter === filter.id && styles.activeFilterButton]}>
+                                        <filter.icon size={16} color={activeFilter === filter.id ? theme.colors.background : theme.colors.onSurface} />
+                                        <Text style={[styles.filterText, activeFilter === filter.id && styles.activeFilterText]}>{filter.label}</Text>
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+                        </View>
                         
                         <View style={{ flex: 1 }}>
                             {!isPostSearch && isLoading && (
@@ -222,7 +224,6 @@ const styles = StyleSheet.create({
     input: { width: '100%', paddingLeft: 48, paddingRight: theme.spacing.l, paddingVertical: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
     discoveryContainer: { padding: theme.spacing.l, gap: theme.spacing.xxl },
     filterContainer: { paddingHorizontal: theme.spacing.l, gap: theme.spacing.s, paddingBottom: theme.spacing.l, alignItems: 'center' },
-    filterScroll: { flexGrow: 0 },
     filterButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainer },
     activeFilterButton: { backgroundColor: theme.colors.onSurface },
     filterText: { ...theme.typography.labelLarge, fontWeight: '500', color: theme.colors.onSurface },

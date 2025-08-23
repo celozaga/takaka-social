@@ -267,41 +267,38 @@ const Feed: React.FC<FeedProps> = ({
               onEndReached={loadMorePosts}
               onEndReachedThreshold={0.7}
               refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
--             contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 60}}
-+             contentContainerStyle={{paddingTop: theme.spacing.m, paddingBottom: 60}}
+              contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 60}}
           />
       )
   }
 
   return (
     <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
--        <View style={styles.contentContainer}>
-+        <View style={[styles.contentContainer, { paddingTop: theme.spacing.m }]}>
-             <>
-               {renderHeader()}
-               <View style={styles.masonryContainer}>
-                   <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
-                   <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
-               </View>
-               {renderFooter()}
-             </>
-         </View>
+        <View style={styles.contentContainer}>
+            <>
+              {renderHeader()}
+              <View style={styles.masonryContainer}>
+                  <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
+                  <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
+              </View>
+              {renderFooter()}
+            </>
+        </View>
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
--    contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
-+    contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
-     masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
-     listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, alignItems: 'center' },
-     column: { flex: 1, gap: theme.spacing.l, },
-     messageContainer: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center', justifyContent: 'center', margin: theme.spacing.l },
-     errorText: { ...theme.typography.bodyLarge, color: theme.colors.error, textAlign: 'center', marginBottom: theme.spacing.l },
-     infoText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant, textAlign: 'center' },
-     endOfList: { ...theme.typography.bodyMedium, textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
-     tryAgainButton: { backgroundColor: theme.colors.surfaceContainerHigh, paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.m, borderRadius: theme.shape.full, },
-     tryAgainText: { ...theme.typography.labelLarge, color: theme.colors.onSurface, }
+    contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
+    masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
+    listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, alignItems: 'center' },
+    column: { flex: 1, gap: theme.spacing.l, },
+    messageContainer: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center', justifyContent: 'center', margin: theme.spacing.l },
+    errorText: { ...theme.typography.bodyLarge, color: theme.colors.error, textAlign: 'center', marginBottom: theme.spacing.l },
+    infoText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant, textAlign: 'center' },
+    endOfList: { ...theme.typography.bodyMedium, textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
+    tryAgainButton: { backgroundColor: theme.colors.surfaceContainerHigh, paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.m, borderRadius: theme.shape.full, },
+    tryAgainText: { ...theme.typography.labelLarge, color: theme.colors.onSurface, }
 });
 
 export default Feed;
