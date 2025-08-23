@@ -127,7 +127,7 @@
     "likes": "Likes",
     "mentions": "Mentions",
     "reposts": "Reposts",
-    "follows": "Follows",
+    "follows": "Followers",
     "likedYourPost": "<0>{{author}}</0> liked your post",
     "repostedYourPost": "<0>{{author}}</0> reposted your post",
     "followedYou": "<0>{{author}}</0> followed you",
