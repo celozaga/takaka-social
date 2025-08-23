@@ -6,7 +6,7 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { Link } from 'expo-router';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from '../shared/Head';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Image, FlatListProps } from 'react-native';
 import { theme, settingsStyles } from '@/lib/theme';
 import { BadgeCheck } from 'lucide-react';
 
@@ -125,6 +125,19 @@ const MutedAccountsScreen: React.FC = () => {
         </View>
     );
 
+    const flatListProps: FlatListProps<AppBskyActorDefs.ProfileView> = {
+        data: accounts,
+        renderItem,
+        keyExtractor: (item) => item.did,
+        contentContainerStyle: settingsStyles.scrollContainer,
+        ListHeaderComponent: <Text style={settingsStyles.description}>{t('mutedAccounts.description')}</Text>,
+        ListEmptyComponent: renderListEmptyComponent,
+        onEndReached: loadMore,
+        onEndReachedThreshold: 0.5,
+        ItemSeparatorComponent: () => <View style={settingsStyles.divider} />,
+        ListFooterComponent: isLoadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null,
+    };
+
     return (
         <>
             <Head><title>{t('mutedAccounts.title')}</title></Head>
@@ -133,19 +146,7 @@ const MutedAccountsScreen: React.FC = () => {
                 {isLoading ? (
                     <View style={styles.centeredMessage}><ActivityIndicator size="large" /></View>
                 ) : (
-                    // @ts-ignore Type definitions for FlatList seem to be incorrect in this environment
-                    <FlatList
-                        data={accounts}
-                        renderItem={renderItem}
-                        keyExtractor={(item) => item.did}
-                        contentContainerStyle={settingsStyles.scrollContainer}
-                        ListHeaderComponent={<Text style={settingsStyles.description}>{t('mutedAccounts.description')}</Text>}
-                        ListEmptyComponent={renderListEmptyComponent}
-                        onEndReached={loadMore}
-                        onEndReachedThreshold={0.5}
-                        ItemSeparatorComponent={() => <View style={settingsStyles.divider} />}
-                        ListFooterComponent={isLoadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null}
-                    />
+                    <FlatList {...flatListProps} />
                 )}
             </View>
         </>

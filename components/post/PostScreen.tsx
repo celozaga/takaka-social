@@ -1,7 +1,8 @@
 
 
+
 import React from 'react';
-import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions, FlatListProps } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import PostHeader from './PostHeader';
 import FullPostCard from './FullPostCard';
@@ -56,24 +57,25 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
       return null;
   }
 
+  const flatListProps: FlatListProps<AppBskyFeedDefs.ThreadViewPost> = {
+    data: replies,
+    renderItem,
+    keyExtractor: (item) => item.post.cid,
+    ListHeaderComponent: ListHeader,
+    ListEmptyComponent: ListEmpty,
+    ListFooterComponent: renderFooter,
+    contentContainerStyle: [
+        styles.listContentContainer,
+        // Add padding for the absolute action bar on mobile, but not desktop
+        { paddingBottom: (Platform.OS === 'web' && isDesktop) ? theme.spacing.l : 80 }
+    ],
+    ItemSeparatorComponent: () => <View style={styles.separator} />,
+  };
+
   return (
     <View style={styles.container}>
       <PostHeader post={thread.post} />
-      {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
-      <FlatList
-        data={replies}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.post.cid}
-        ListHeaderComponent={ListHeader}
-        ListEmptyComponent={ListEmpty}
-        ListFooterComponent={renderFooter}
-        contentContainerStyle={[
-            styles.listContentContainer,
-            // Add padding for the absolute action bar on mobile, but not desktop
-            { paddingBottom: (Platform.OS === 'web' && isDesktop) ? theme.spacing.l : 80 }
-        ]}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+      <FlatList {...flatListProps} />
       {/* Render floating action bar on mobile (native and web) */}
       {!(Platform.OS === 'web' && isDesktop) && <PostScreenActionBar post={thread.post} />}
     </View>

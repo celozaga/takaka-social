@@ -186,6 +186,8 @@
     "block": "Block",
     "confirmBlock": "Are you sure you want to block @{{handle}}? They will not be able to see your posts or interact with you.",
     "emptyFeed": "This user has not posted any {{mediaType}} yet.",
+    "emptyReposts": "This user hasn't reposted any media yet.",
+    "emptyLikes": "This user hasn't liked any media yet.",
     "toast": {
       "followError": "Could not follow user.",
       "unfollowError": "Could not unfollow user.",

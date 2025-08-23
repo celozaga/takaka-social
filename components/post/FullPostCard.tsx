@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform, StyleProp, ViewStyle, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform, StyleProp, ViewStyle, useWindowDimensions, FlatListProps } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -261,29 +261,30 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             }
         };
 
+        const flatListProps: FlatListProps<MediaItem> = {
+            ref: flatListRef,
+            data: mediaItems,
+            renderItem: renderSlideshowItem,
+            horizontal: true,
+            pagingEnabled: true,
+            showsHorizontalScrollIndicator: false,
+            keyExtractor: (item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index,
+            onViewableItemsChanged,
+            viewabilityConfig,
+            style: StyleSheet.absoluteFillObject,
+            getItemLayout: (_, index) => ({
+                length: containerWidth,
+                offset: containerWidth * index,
+                index,
+            }),
+        };
+
         return (
             <View style={styles.slideshowOuterContainer}>
                 <View 
                     style={[styles.slideshowInnerContainer, { height: finalHeight }]}
                 >
-                    {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
-                    <FlatList
-                        ref={flatListRef}
-                        data={mediaItems}
-                        renderItem={renderSlideshowItem}
-                        horizontal
-                        pagingEnabled
-                        showsHorizontalScrollIndicator={false}
-                        keyExtractor={(item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index}
-                        onViewableItemsChanged={onViewableItemsChanged}
-                        viewabilityConfig={viewabilityConfig}
-                        style={StyleSheet.absoluteFillObject}
-                        getItemLayout={(_, index) => ({
-                            length: containerWidth,
-                            offset: containerWidth * index,
-                            index,
-                        })}
-                    />
+                    <FlatList {...flatListProps} />
                     <View style={styles.counterOverlay}>
                         <Text style={styles.counterText}>{currentIndex + 1} / {mediaItems.length}</Text>
                     </View>

@@ -186,6 +186,8 @@
     "block": "Bloquear",
     "confirmBlock": "¿Seguro que quieres bloquear a @{{handle}}? No podrán ver tus publicaciones ni interactuar contigo.",
     "emptyFeed": "Este usuario todavía no ha publicado ningún {{mediaType}}.",
+    "emptyReposts": "Este usuario aún no ha reposteado ningún contenido multimedia.",
+    "emptyLikes": "A este usuario todavía no le ha gustado ningún contenido multimedia.",
     "toast": {
       "followError": "No se pudo seguir al usuario.",
       "unfollowError": "No se pudo dejar de seguir al usuario.",

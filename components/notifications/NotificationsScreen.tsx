@@ -5,7 +5,7 @@ import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from '../shared/Head';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import NotificationItemSkeleton from './NotificationItemSkeleton';
 
@@ -85,23 +85,26 @@ const NotificationsScreen: React.FC = () => {
     }
   }, [notifications, activeTab]);
 
-  const renderListHeader = () => (
-    <View style={styles.filterScrollContainer}>
-        {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
-        <FlatList<{ id: NotificationFilter; label: string; }>
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={filters}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-                <Pressable onPress={() => setActiveTab(item.id)} style={[styles.filterButton, activeTab === item.id && styles.activeFilter]}>
-                    <Text style={[styles.filterText, activeTab === item.id && styles.activeFilterText]}>{t(`notifications.${item.id}`, { defaultValue: item.label })}</Text>
-                </Pressable>
-            )}
-            contentContainerStyle={styles.filterContainer}
-        />
-    </View>
-  );
+  const renderListHeader = () => {
+    const filterFlatListProps: FlatListProps<{ id: NotificationFilter; label: string; }> = {
+        horizontal: true,
+        showsHorizontalScrollIndicator: false,
+        data: filters,
+        keyExtractor: (item) => item.id,
+        renderItem: ({ item }) => (
+            <Pressable onPress={() => setActiveTab(item.id)} style={[styles.filterButton, activeTab === item.id && styles.activeFilter]}>
+                <Text style={[styles.filterText, activeTab === item.id && styles.activeFilterText]}>{t(`notifications.${item.id}`, { defaultValue: item.label })}</Text>
+            </Pressable>
+        ),
+        contentContainerStyle: styles.filterContainer,
+    };
+
+    return (
+        <View style={styles.filterScrollContainer}>
+            <FlatList {...filterFlatListProps} />
+        </View>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -122,42 +125,43 @@ const NotificationsScreen: React.FC = () => {
       </>
     )
   }
+  
+  const mainFlatListProps: FlatListProps<AppBskyNotificationListNotifications.Notification> = {
+      data: filteredNotifications,
+      renderItem: ({ item }) => <NotificationItem notification={item} />,
+      keyExtractor: (item) => item.uri,
+      ListHeaderComponent: renderListHeader,
+      ItemSeparatorComponent: () => <View style={styles.separator} />,
+      contentContainerStyle: styles.listContentContainer,
+      onRefresh: onRefresh,
+      refreshing: isRefreshing,
+      onEndReached: loadMoreNotifications,
+      onEndReachedThreshold: 0.5,
+      ListFooterComponent: () => {
+          if (isLoadingMore) return <ActivityIndicator style={{ marginVertical: 24 }} size="large" />;
+          if (!hasMore && notifications.length > 0) return <Text style={styles.endText}>{t('common.endOfList')}</Text>;
+          return null;
+      },
+      ListEmptyComponent: () => {
+          if (isLoading) {
+              return null;
+          }
+          if (error) {
+              return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
+          }
+          if (filteredNotifications.length === 0) {
+              return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('notifications.empty')}</Text></View>;
+          }
+          return null;
+      },
+  };
 
   return (
     <>
       <Head><title>{t('notifications.title')}</title></Head>
       <View style={{flex: 1}}>
         <ScreenHeader title={t('notifications.title')} />
-        {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
-        <FlatList<AppBskyNotificationListNotifications.Notification>
-            data={filteredNotifications}
-            renderItem={({ item }) => <NotificationItem notification={item} />}
-            keyExtractor={(item) => item.uri}
-            ListHeaderComponent={renderListHeader}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            contentContainerStyle={styles.listContentContainer}
-            onRefresh={onRefresh}
-            refreshing={isRefreshing}
-            onEndReached={loadMoreNotifications}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={() => {
-                if (isLoadingMore) return <ActivityIndicator style={{ marginVertical: 24 }} size="large" />;
-                if (!hasMore && notifications.length > 0) return <Text style={styles.endText}>{t('common.endOfList')}</Text>;
-                return null;
-            }}
-            ListEmptyComponent={() => {
-                if (isLoading) {
-                    return null;
-                }
-                if (error) {
-                    return <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>;
-                }
-                if (filteredNotifications.length === 0) {
-                    return <View style={styles.messageContainer}><Text style={styles.infoText}>{t('notifications.empty')}</Text></View>;
-                }
-                return null;
-            }}
-        />
+        <FlatList {...mainFlatListProps} />
       </View>
     </>
   );

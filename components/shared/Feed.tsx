@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -7,7 +9,7 @@ import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 
@@ -22,6 +24,7 @@ interface FeedProps {
   mediaFilter?: MediaFilter;
   layout?: 'grid' | 'list';
   ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null;
+  postFilter?: 'reposts_only' | 'likes_only';
 }
 
 const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
@@ -44,7 +47,8 @@ const Feed: React.FC<FeedProps> = ({
     searchSort = 'top',
     mediaFilter = 'all',
     layout = 'grid', 
-    ListHeaderComponent 
+    ListHeaderComponent,
+    postFilter,
 }) => {
   const { agent, session } = useAtp();
   const { t } = useTranslation();
@@ -64,6 +68,9 @@ const Feed: React.FC<FeedProps> = ({
         return { data: { feed, cursor: res.data.cursor } };
     }
     if (feedUri) {
+        if (postFilter === 'likes_only') {
+            return agent.app.bsky.feed.getActorLikes({ actor: feedUri, cursor: currentCursor, limit: 30 });
+        }
         if (feedUri === 'following') {
             if (!session) return { data: { feed: [], cursor: undefined } };
             return agent.app.bsky.feed.getTimeline({ cursor: currentCursor, limit: 30 });
@@ -74,12 +81,16 @@ const Feed: React.FC<FeedProps> = ({
         return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
     }
     return Promise.resolve({ data: { feed: [], cursor: undefined } });
-  }, [agent, feedUri, session, searchQuery, searchSort, authorFeedFilter]);
+  }, [agent, feedUri, session, searchQuery, searchSort, authorFeedFilter, postFilter]);
 
   
   const processAndSetFeed = useCallback((newPosts: AppBskyFeedDefs.FeedViewPost[], currentCursor?: string) => {
       // Per user request, all replies are filtered from feed views.
       let processedPosts = newPosts.filter(item => !item.reply);
+      
+      if (postFilter === 'reposts_only') {
+          processedPosts = processedPosts.filter(item => !!item.reason && AppBskyFeedDefs.isReasonRepost(item.reason));
+      }
       
       if (layout === 'grid') {
           processedPosts = processedPosts.filter(item => isPostAMediaPost(item.post));
@@ -98,7 +109,7 @@ const Feed: React.FC<FeedProps> = ({
           setFeed(processedPosts);
       }
 
-  }, [layout, mediaFilter]);
+  }, [layout, mediaFilter, postFilter]);
 
   const loadInitialPosts = useCallback(async () => {
     setIsLoading(true);
@@ -207,18 +218,29 @@ const Feed: React.FC<FeedProps> = ({
     return null;
   };
   
-  const renderListEmptyComponent = () => (
-    <View style={styles.messageContainer}>
-      {error ? (
-        <View style={{ alignItems: 'center' }}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}><Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text></Pressable>
+  const renderListEmptyComponent = () => {
+    let emptyText = t('feed.empty');
+    if (postFilter === 'reposts_only') {
+        emptyText = t('profile.emptyReposts');
+    } else if (postFilter === 'likes_only') {
+        emptyText = t('profile.emptyLikes');
+    } else if (authorFeedFilter) {
+        emptyText = t('profile.emptyFeed', { mediaType: 'media' });
+    }
+
+    return (
+        <View style={styles.messageContainer}>
+        {error ? (
+            <View style={{ alignItems: 'center' }}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}><Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text></Pressable>
+            </View>
+        ) : (
+            <Text style={styles.infoText}>{emptyText}</Text>
+        )}
         </View>
-      ) : (
-        <Text style={styles.infoText}>{t('feed.empty')}</Text>
-      )}
-    </View>
-  );
+    );
+  };
 
   if (isLoading) {
     return (
@@ -241,7 +263,7 @@ const Feed: React.FC<FeedProps> = ({
   if (moderatedFeed.length === 0 && !isLoading) {
       return (
           <ScrollView 
-            contentContainerStyle={{ paddingTop: 0 }}
+            contentContainerStyle={{paddingTop: theme.spacing.l}}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
           >
               <View>
@@ -255,20 +277,20 @@ const Feed: React.FC<FeedProps> = ({
   }
 
   if (layout === 'list') {
+      const flatListProps: FlatListProps<AppBskyFeedDefs.FeedViewPost> = {
+          data: moderatedFeed,
+          renderItem: ({item}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>,
+          keyExtractor,
+          ItemSeparatorComponent: () => <View style={{height: theme.spacing.s}} />,
+          ListHeaderComponent,
+          ListFooterComponent: renderFooter,
+          onEndReached: loadMorePosts,
+          onEndReachedThreshold: 0.7,
+          refreshControl: <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />,
+          contentContainerStyle: {paddingTop: theme.spacing.l, paddingBottom: 60}
+      };
       return (
-          // @ts-ignore Type definitions for FlatList seem to be incorrect in this environment
-          <FlatList
-              data={moderatedFeed}
-              renderItem={({item}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>}
-              keyExtractor={keyExtractor}
-              ItemSeparatorComponent={() => <View style={{height: theme.spacing.s}} />}
-              ListHeaderComponent={ListHeaderComponent}
-              ListFooterComponent={renderFooter}
-              onEndReached={loadMorePosts}
-              onEndReachedThreshold={0.7}
-              refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-              contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 60}}
-          />
+          <FlatList {...flatListProps} />
       )
   }
 

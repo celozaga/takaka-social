@@ -8,7 +8,7 @@ import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Modal, Lin
 import { Link, useRouter } from 'expo-router';
 import { AppBskyActorDefs, RichText, AtUri } from '@atproto/api';
 import Feed from '../shared/Feed';
-import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X, ArrowLeft } from 'lucide-react';
+import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X, ArrowLeft, Grid, Repeat, Heart } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from '../shared/Head';
@@ -33,6 +33,8 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<'posts' | 'reposts' | 'likes'>('posts');
+
 
     const isMe = session?.did === profile?.did;
     
@@ -179,6 +181,20 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     )}
                 </View>
              )}
+            <View style={styles.filterContainer}>
+                <Pressable style={styles.filterButton} onPress={() => setActiveFilter('posts')}>
+                    <Grid size={24} color={activeFilter === 'posts' ? theme.colors.primary : theme.colors.onSurfaceVariant} />
+                    {activeFilter === 'posts' && <View style={styles.activeIndicator} />}
+                </Pressable>
+                <Pressable style={styles.filterButton} onPress={() => setActiveFilter('reposts')}>
+                    <Repeat size={24} color={activeFilter === 'reposts' ? theme.colors.primary : theme.colors.onSurfaceVariant} />
+                    {activeFilter === 'reposts' && <View style={styles.activeIndicator} />}
+                </Pressable>
+                <Pressable style={styles.filterButton} onPress={() => setActiveFilter('likes')}>
+                    <Heart size={24} color={activeFilter === 'likes' ? theme.colors.primary : theme.colors.onSurfaceVariant} />
+                    {activeFilter === 'likes' && <View style={styles.activeIndicator} />}
+                </Pressable>
+            </View>
         </View>
     );
 
@@ -227,9 +243,23 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     )}
                 />
                 <Feed
+                    key={activeFilter}
                     feedUri={actor}
                     layout="grid"
-                    authorFeedFilter="posts_with_media"
+                    authorFeedFilter={
+                        activeFilter === 'posts'
+                            ? 'posts_with_media'
+                            : activeFilter === 'reposts'
+                            ? 'posts_no_replies'
+                            : undefined
+                    }
+                    postFilter={
+                        activeFilter === 'reposts'
+                            ? 'reposts_only'
+                            : activeFilter === 'likes'
+                            ? 'likes_only'
+                            : undefined
+                    }
                     ListHeaderComponent={ListHeader}
                 />
                  <Modal visible={isActionsModalVisible} transparent={true} animationType="fade" onRequestClose={() => setIsActionsModalVisible(false)}>
@@ -281,6 +311,26 @@ const styles = StyleSheet.create({
     actionItem: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.shape.medium },
     actionItemText: { ...theme.typography.bodyLarge, color: theme.colors.onSurface },
     destructiveText: { color: theme.colors.error },
+    filterContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.outline,
+        marginTop: theme.spacing.l,
+    },
+    filterButton: {
+        paddingVertical: theme.spacing.m,
+        alignItems: 'center',
+        flex: 1,
+    },
+    activeIndicator: {
+        height: 2,
+        backgroundColor: theme.colors.primary,
+        position: 'absolute',
+        bottom: -1,
+        left: 0,
+        right: 0,
+    },
 });
 
 export default ProfileScreen;

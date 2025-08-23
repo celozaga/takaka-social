@@ -1,8 +1,9 @@
 
 
+
 import React, { useRef, useState } from 'react';
-import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet } from 'react-native';
-import { AppBskyFeedDefs } from '@atproto/api';
+import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet, FlatListProps } from 'react-native';
+import {AppBskyFeedDefs } from '@atproto/api';
 import VideoPlayer from './VideoPlayer';
 import { theme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
@@ -30,40 +31,41 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
 
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
+  const flatListProps: FlatListProps<AppBskyFeedDefs.FeedViewPost> = {
+    data: videoPosts,
+    keyExtractor: item => item.post.uri,
+    renderItem: ({ item, index }) => (
+      <View style={{ height }}>
+        <VideoPlayer 
+          postView={item} 
+          paused={index !== activeIndex}
+        />
+      </View>
+    ),
+    pagingEnabled: true,
+    showsVerticalScrollIndicator: false,
+    onViewableItemsChanged,
+    viewabilityConfig: viewConfigRef.current,
+    onEndReached: loadMore,
+    onEndReachedThreshold: 1.5,
+    ListFooterComponent: () => {
+      if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
+      if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
+      return null;
+    },
+    windowSize: 3, // Renders the visible screen, and one item above and below
+    initialNumToRender: 1,
+    maxToRenderPerBatch: 1,
+    removeClippedSubviews: true,
+    getItemLayout: (_, index) => ({
+      length: height,
+      offset: height * index,
+      index,
+    }),
+  };
+
   return (
-    // @ts-ignore Type definitions for FlatList seem to be incorrect in this environment
-    <FlatList
-      data={videoPosts}
-      keyExtractor={item => item.post.uri}
-      renderItem={({ item, index }) => (
-        <View style={{ height }}>
-          <VideoPlayer 
-            postView={item} 
-            paused={index !== activeIndex}
-          />
-        </View>
-      )}
-      pagingEnabled
-      showsVerticalScrollIndicator={false}
-      onViewableItemsChanged={onViewableItemsChanged}
-      viewabilityConfig={viewConfigRef.current}
-      onEndReached={loadMore}
-      onEndReachedThreshold={1.5}
-      ListFooterComponent={() => {
-        if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
-        if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
-        return null;
-      }}
-      windowSize={3} // Renders the visible screen, and one item above and below
-      initialNumToRender={1}
-      maxToRenderPerBatch={1}
-      removeClippedSubviews
-      getItemLayout={(_, index) => ({
-        length: height,
-        offset: height * index,
-        index,
-      })}
-    />
+    <FlatList {...flatListProps} />
   );
 };
 
