@@ -9,6 +9,9 @@ import { useFeedActions } from '../../hooks/useFeedActions';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
+import ErrorState from '../shared/ErrorState';
+import { ListX } from 'lucide-react';
+import ScreenHeader from '../layout/ScreenHeader';
 
 interface FeedViewScreenProps {
     handle: string;
@@ -59,10 +62,16 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
 
     if (error || !feedUri) {
          return (
-             <>
-                <FeedViewHeader feedUri="" onBack={() => router.back()} />
-                <View style={styles.centered}><Text style={styles.errorText}>{error}</Text></View>
-             </>
+             <View style={{flex: 1}}>
+                <ScreenHeader title={t('common.feeds')} />
+                <View style={{ flex: 1 }}>
+                    <ErrorState
+                        icon={ListX}
+                        title={t('errors.feedNotFound.title')}
+                        message={t('errors.feedNotFound.message')}
+                    />
+                </View>
+             </View>
         );
     }
 
@@ -91,10 +100,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    errorText: {
-        ...theme.typography.bodyLarge,
-        color: theme.colors.error,
     },
     feedContainer: {
         flex: 1,

@@ -8,7 +8,7 @@ import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Modal, Lin
 import { Link, useRouter } from 'expo-router';
 import { AppBskyActorDefs, RichText, AtUri } from '@atproto/api';
 import Feed from '../shared/Feed';
-import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X, ArrowLeft, Grid, Repeat, Heart } from 'lucide-react';
+import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X, ArrowLeft, Grid, Repeat, Frown } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from '../shared/Head';
@@ -17,6 +17,7 @@ import { theme } from '@/lib/theme';
 import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { formatCompactNumber } from '@/lib/formatters';
+import ErrorState from '../shared/ErrorState';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
@@ -206,8 +207,38 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
           </>
         );
     }
-    if (error) return <View><TopAppBar title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{error}</Text></View></View>;
-    if (!profile) return <View><TopAppBar title={t('profile.title')} /><View style={styles.centered}><Text style={styles.errorText}>{t('profile.notFound')}</Text></View></View>;
+    if (error) {
+        const isNotFound = error === t('profile.notFound');
+        const isBlocked = error === t('profile.blockedBy');
+        
+        if (isBlocked) { // BlockedBy has a special, simpler UI. Keep it.
+            return (
+                <View style={{flex: 1}}>
+                    <TopAppBar title={actor} />
+                    <View style={styles.centered}><Shield size={48} color={theme.colors.onSurfaceVariant} /><Text style={styles.blockedTitle}>{t('profile.blockedBy')}</Text></View>
+                </View>
+            )
+        }
+
+        // Handle other errors with the new component
+        return (
+            <View style={styles.container}>
+                <TopAppBar 
+                    title={isNotFound ? t('profile.notFound') : t('common.error')}
+                    leading={<Pressable onPress={() => router.back()} style={styles.headerButton}><ArrowLeft size={24} color={theme.colors.onSurface} /></Pressable>}
+                />
+                <View style={{ flex: 1 }}>
+                    <ErrorState
+                        icon={isNotFound ? UserX : Frown}
+                        title={isNotFound ? t('errors.profileNotFound.title') : t('errors.genericError.title')}
+                        message={isNotFound ? t('errors.profileNotFound.message') : t('errors.genericError.message')}
+                        onRetry={fetchProfile}
+                    />
+                </View>
+            </View>
+        );
+    }
+    if (!profile) return null; // Should be covered by error state
     
     if (profile.viewer?.blockedBy) return <><TopAppBar title={profile.handle} /><View style={styles.centered}><Shield size={48} color={theme.colors.onSurfaceVariant} /><Text style={styles.blockedTitle}>{t('profile.blockedBy')}</Text></View></>;
 

@@ -365,5 +365,24 @@
       "unmuteError": "Não foi possível reativar o som da conta.",
       "unmuteSuccess": "Som da conta reativado."
     }
+  },
+  "errors": {
+    "postNotFound": {
+      "title": "Publicação não encontrada",
+      "message": "Esta publicação pode ter sido excluída ou o link está incorreto."
+    },
+    "profileNotFound": {
+      "title": "Perfil não encontrado",
+      "message": "Este usuário pode não existir ou o handle está incorreto."
+    },
+    "feedNotFound": {
+      "title": "Feed não encontrado",
+      "message": "Não foi possível encontrar este feed. Pode ser privado ou ter sido excluído."
+    },
+    "genericError": {
+      "title": "Algo deu errado",
+      "message": "Não foi possível carregar isto. Verifique sua conexão e tente novamente."
+    },
+    "goToHome": "Ir para o Início"
   }
 }

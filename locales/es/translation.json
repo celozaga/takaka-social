@@ -365,5 +365,24 @@
       "unmuteError": "No se pudo dejar de silenciar la cuenta.",
       "unmuteSuccess": "Se ha dejado de silenciar la cuenta."
     }
+  },
+  "errors": {
+    "postNotFound": {
+      "title": "Publicación no encontrada",
+      "message": "Esta publicación puede haber sido eliminada o el enlace es incorrecto."
+    },
+    "profileNotFound": {
+      "title": "Perfil no encontrado",
+      "message": "Este usuario puede no existir o el handle es incorrecto."
+    },
+    "feedNotFound": {
+      "title": "Feed no encontrado",
+      "message": "No se pudo encontrar este feed. Puede ser privado o haber sido eliminado."
+    },
+    "genericError": {
+      "title": "Algo salió mal",
+      "message": "No pudimos cargar esto. Por favor, revisa tu conexión e inténtalo de nuevo."
+    },
+    "goToHome": "Ir al Inicio"
   }
 }

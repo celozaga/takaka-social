@@ -365,5 +365,24 @@
       "unmuteError": "Could not unmute account.",
       "unmuteSuccess": "Account unmuted."
     }
+  },
+  "errors": {
+    "postNotFound": {
+      "title": "Post Not Found",
+      "message": "This post may have been deleted or the link is incorrect."
+    },
+    "profileNotFound": {
+      "title": "Profile Not Found",
+      "message": "This user may not exist or the handle is incorrect."
+    },
+    "feedNotFound": {
+      "title": "Feed Not Found",
+      "message": "This feed could not be found. It may be private or deleted."
+    },
+    "genericError": {
+      "title": "Something Went Wrong",
+      "message": "We couldn't load this. Please check your connection and try again."
+    },
+    "goToHome": "Go to Home"
   }
 }

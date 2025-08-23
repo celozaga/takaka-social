@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -12,6 +13,8 @@ import { moderatePost } from '../../lib/moderation';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
+import ErrorState from './ErrorState';
+import { Frown } from 'lucide-react';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
@@ -270,6 +273,22 @@ const Feed: React.FC<FeedProps> = ({
   };
   
   const renderListEmptyComponent = () => {
+    if (error) {
+        const isNonRecoverableError = error === t('profile.privateLikes') || error === t('profile.blockedBy');
+        
+        return (
+            <View style={styles.messageContainerWrapper}>
+                 <ErrorState
+                    icon={Frown}
+                    title={error}
+                    message={isNonRecoverableError ? '' : t('errors.genericError.message')}
+                    onRetry={isNonRecoverableError ? undefined : loadInitialPosts}
+                    retryText={t('common.tryAgain')}
+                />
+            </View>
+        )
+    }
+
     let emptyText = t('feed.empty');
     if (searchQuery) {
         emptyText = t('search.empty', { query: searchQuery });
@@ -283,22 +302,9 @@ const Feed: React.FC<FeedProps> = ({
         emptyText = t('profile.emptyFeed', { mediaType: 'media' });
     }
 
-    const isNonRecoverableError = error === t('profile.privateLikes') || error === t('profile.blockedBy');
-
     return (
-        <View style={styles.messageContainer}>
-        {error ? (
-            <View style={{ alignItems: 'center' }}>
-                <Text style={styles.errorText}>{error}</Text>
-                {!isNonRecoverableError && (
-                    <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
-                        <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
-                    </Pressable>
-                )}
-            </View>
-        ) : (
+        <View style={styles.messageContainerWrapper}>
             <Text style={styles.infoText}>{emptyText}</Text>
-        )}
         </View>
     );
   };
@@ -376,12 +382,11 @@ const styles = StyleSheet.create({
     masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
     listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, alignItems: 'center' },
     column: { flex: 1, gap: theme.spacing.l, },
-    messageContainer: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center', justifyContent: 'center', margin: theme.spacing.l },
-    errorText: { ...theme.typography.bodyLarge, color: theme.colors.error, textAlign: 'center', marginBottom: theme.spacing.l },
-    infoText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant, textAlign: 'center' },
+    messageContainerWrapper: {
+        padding: theme.spacing.l,
+    },
+    infoText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant, textAlign: 'center', padding: theme.spacing.xl },
     endOfList: { ...theme.typography.bodyMedium, textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
-    tryAgainButton: { backgroundColor: theme.colors.surfaceContainerHigh, paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.m, borderRadius: theme.shape.full, },
-    tryAgainText: { ...theme.typography.labelLarge, color: theme.colors.onSurface, }
 });
 
 export default Feed;
