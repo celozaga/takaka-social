@@ -5,7 +5,7 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { BadgeCheck } from 'lucide-react';
 import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import ScreenHeader from '../layout/ScreenHeader';
-import { theme, settingsStyles } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 interface ModerationServiceScreenProps {
   serviceDid: string;
@@ -51,7 +51,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
     return (
         <View>
             <ScreenHeader title={serviceProfile.displayName || ''} />
-            <View style={settingsStyles.scrollContainer}>
+            <View style={theme.settingsStyles.scrollContainer}>
                 <View style={styles.profileHeader}>
                     <Image source={{ uri: serviceProfile.avatar }} style={styles.avatar} />
                     <View>
@@ -62,7 +62,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                         <Text style={styles.handle}>@{serviceProfile.handle}</Text>
                     </View>
                 </View>
-                {serviceProfile.description && <Text style={[settingsStyles.description, {marginBottom: 0, marginTop: theme.spacing.l}]}>{serviceProfile.description}</Text>}
+                {serviceProfile.description && <Text style={[theme.settingsStyles.description, {marginBottom: 0, marginTop: theme.spacing.l}]}>{serviceProfile.description}</Text>}
 
                 <View style={styles.labelsContainer}>
                     {configurableLabels.map(labelId => {
@@ -71,9 +71,9 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                         const currentVisibility = labelPreferences.get(def.id) || (def.adult ? 'warn' : 'show');
                         
                         return (
-                            <View key={def.id} style={[styles.labelCard, isDisabled && settingsStyles.disabled]}>
+                            <View key={def.id} style={[styles.labelCard, isDisabled && theme.settingsStyles.disabled]}>
                                 <Text style={styles.labelTitle}>{def.title}</Text>
-                                <Text style={settingsStyles.sublabel}>{def.description}</Text>
+                                <Text style={theme.settingsStyles.sublabel}>{def.description}</Text>
                                 {isDisabled && <Text style={styles.disabledText}>Configured in moderation settings.</Text>}
 
                                 <View style={styles.optionsContainer}>

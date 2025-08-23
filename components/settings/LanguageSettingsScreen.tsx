@@ -5,7 +5,8 @@ import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { theme, settingsStyles } from '@/lib/theme';
+import { theme } from '@/lib/theme';
+import SettingsDivider from '@/components/ui/SettingsDivider';
 
 const LanguageSettingsScreen: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -19,19 +20,19 @@ const LanguageSettingsScreen: React.FC = () => {
             <Head><title>{t('languageSettings.title')}</title></Head>
             <View style={{flex: 1}}>
                 <ScreenHeader title={t('languageSettings.title')} />
-                <ScrollView contentContainerStyle={settingsStyles.scrollContainer}>
-                    <Text style={settingsStyles.description}>{t('languageSettings.description')}</Text>
-                    <View style={settingsStyles.section}>
+                <ScrollView contentContainerStyle={theme.settingsStyles.scrollContainer}>
+                    <Text style={theme.settingsStyles.description}>{t('languageSettings.description')}</Text>
+                    <View style={theme.settingsStyles.section}>
                         {supportedLanguages.map((lang, index) => (
                             <React.Fragment key={lang.code}>
                                 <Pressable
                                     onPress={() => changeLanguage(lang.code)}
-                                    style={({ pressed }) => [settingsStyles.item, pressed && settingsStyles.pressed]}
+                                    style={({ pressed }) => [theme.settingsStyles.item, pressed && theme.settingsStyles.pressed]}
                                 >
-                                    <Text style={settingsStyles.label}>{lang.name}</Text>
+                                    <Text style={theme.settingsStyles.label}>{lang.name}</Text>
                                     {i18n.language.startsWith(lang.code) && <Check color={theme.colors.onSurface} size={20} />}
                                 </Pressable>
-                                {index < supportedLanguages.length - 1 && <View style={settingsStyles.divider} />}
+                                {index < supportedLanguages.length - 1 && <SettingsDivider />}
                             </React.Fragment>
                         ))}
                     </View>

@@ -8,10 +8,9 @@ import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
 import Head from '../shared/Head';
 import { View, Alert, Platform } from 'react-native';
-import { theme, settingsStyles } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
-
-const SettingsDivider = () => <View style={settingsStyles.divider} />;
+import SettingsDivider from '@/components/ui/SettingsDivider';
 
 const SettingsScreen: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -54,8 +53,8 @@ const SettingsScreen: React.FC = () => {
             <Head><title>{t('settings.title')}</title></Head>
             <View>
                 <ScreenHeader title={t('settings.title')} />
-                <View style={settingsStyles.scrollContainer}>
-                    <View style={settingsStyles.section}>
+                <View style={theme.settingsStyles.scrollContainer}>
+                    <View style={theme.settingsStyles.section}>
                         <SettingsListItem icon={Shield} label="Moderation" href="/settings/moderation" />
                         <SettingsDivider />
                         <SettingsListItem icon={Globe} label={t('settings.language')} value={currentLanguageName} href="/settings/language" />
@@ -65,7 +64,7 @@ const SettingsScreen: React.FC = () => {
                         <SettingsListItem icon={UserCircle} label={t('settings.account')} href="/settings/account" />
                     </View>
 
-                    <View style={[{marginTop: theme.spacing.xxl}, settingsStyles.section]}>
+                    <View style={[{marginTop: theme.spacing.xxl}, theme.settingsStyles.section]}>
                         <SettingsListItem 
                             icon={LogOut} 
                             label={t('settings.signOut')} 

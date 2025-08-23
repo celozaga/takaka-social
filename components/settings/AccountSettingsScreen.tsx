@@ -8,10 +8,9 @@ import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ShieldCheck } 
 import Head from '../shared/Head';
 import { View, Text, ScrollView, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { settingsStyles, theme } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
-
-const SettingsDivider = () => <View style={settingsStyles.divider} />;
+import SettingsDivider from '@/components/ui/SettingsDivider';
 
 const AccountSettingsScreen: React.FC = () => {
     const { session, agent, logout } = useAtp();
@@ -84,7 +83,7 @@ const AccountSettingsScreen: React.FC = () => {
     
     const emailValue = (
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
-            <Text style={settingsStyles.value}>{session?.email}</Text>
+            <Text style={theme.settingsStyles.value}>{session?.email}</Text>
             {session?.emailConfirmed && <ShieldCheck color={theme.colors.onSurface} size={16} />}
         </View>
     );
@@ -94,8 +93,8 @@ const AccountSettingsScreen: React.FC = () => {
             <Head><title>{t('accountSettings.title')}</title></Head>
             <View style={{flex: 1}}>
                 <ScreenHeader title={t('accountSettings.title')} />
-                <ScrollView contentContainerStyle={settingsStyles.container}>
-                    <View style={settingsStyles.section}>
+                <ScrollView contentContainerStyle={theme.settingsStyles.container}>
+                    <View style={theme.settingsStyles.section}>
                         <SettingsListItem icon={Mail} label={t('accountSettings.email')} value={emailValue} />
                         <SettingsDivider />
                         <SettingsListItem icon={Edit} label={t('accountSettings.updateEmail')} onPress={openUpdateEmailModal} disabled={!!actionInProgress} />
@@ -106,7 +105,7 @@ const AccountSettingsScreen: React.FC = () => {
                         <SettingsDivider />
                         <SettingsListItem icon={Cake} label={t('accountSettings.birthday')} href="https://bsky.app/settings/birthday" />
                     </View>
-                    <View style={settingsStyles.section}>
+                    <View style={theme.settingsStyles.section}>
                         <SettingsListItem icon={Download} label={t('accountSettings.exportData')} onPress={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
                         <SettingsDivider />
                         <SettingsListItem icon={Power} label={t('accountSettings.deactivateAccount')} onPress={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />

@@ -6,9 +6,8 @@ import { Shield, Filter, Users, UserX, MicOff } from 'lucide-react';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import SettingsListItem from './SettingsListItem';
 import { View, Text, ActivityIndicator } from 'react-native';
-import { settingsStyles } from '@/lib/theme';
-
-const SettingsDivider = () => <View style={settingsStyles.divider} />;
+import { theme } from '@/lib/theme';
+import SettingsDivider from '@/components/ui/SettingsDivider';
 
 const BLUESKY_OFFICIAL_MOD_SERVICE = 'did:plc:z72i7hdynmk6r22z27h6tvur';
 
@@ -19,8 +18,8 @@ const ModerationSettingsScreen: React.FC = () => {
     return (
         <View>
             <ScreenHeader title={t('settings.moderation.title')} />
-            <View style={settingsStyles.container}>
-                <View style={settingsStyles.section}>
+            <View style={theme.settingsStyles.container}>
+                <View style={theme.settingsStyles.section}>
                     <SettingsListItem icon={Filter} label={t('settings.moderation.mutedWordsAndTags')} href="/settings/muted-words" />
                     <SettingsDivider />
                     <SettingsListItem icon={Users} label={t('settings.moderation.moderationLists')} href="#" disabled />
@@ -31,8 +30,8 @@ const ModerationSettingsScreen: React.FC = () => {
                 </View>
                 
                 <View>
-                    <Text style={settingsStyles.sectionHeader}>{t('settings.moderation.contentFilters')}</Text>
-                    <View style={settingsStyles.section}>
+                    <Text style={theme.settingsStyles.sectionHeader}>{t('settings.moderation.contentFilters')}</Text>
+                    <View style={theme.settingsStyles.section}>
                         <SettingsListItem
                             icon={Shield}
                             label={t('settings.moderation.enableAdultContent')}
@@ -48,8 +47,8 @@ const ModerationSettingsScreen: React.FC = () => {
                 </View>
 
                  <View>
-                    <Text style={settingsStyles.sectionHeader}>{t('settings.moderation.advanced')}</Text>
-                    <View style={settingsStyles.section}>
+                    <Text style={theme.settingsStyles.sectionHeader}>{t('settings.moderation.advanced')}</Text>
+                    <View style={theme.settingsStyles.section}>
                         <SettingsListItem
                             icon={Shield}
                             label="Bluesky Moderation Service"

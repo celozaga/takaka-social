@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { ChevronRight, Loader2 } from 'lucide-react';
-import { settingsStyles, theme } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 
 interface SettingsListItemProps {
     icon: React.ElementType;
@@ -30,20 +30,20 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
     control
 }) => {
     const content = (
-        <View style={[settingsStyles.item, disabled && settingsStyles.disabled]}>
-            <View style={styles.itemLeft}>
+        <View style={[theme.settingsStyles.item, disabled && theme.settingsStyles.disabled]}>
+            <View style={theme.settingsStyles.itemLeft}>
                 <Icon
-                    style={settingsStyles.icon}
+                    style={theme.settingsStyles.icon}
                     color={isDestructive ? theme.colors.error : theme.colors.onSurfaceVariant}
                     size={24}
                 />
-                <View style={styles.itemTextContainer}>
-                    <Text style={[settingsStyles.label, isDestructive && settingsStyles.destructiveLabel]}>{label}</Text>
-                    {sublabel && <Text style={settingsStyles.sublabel}>{sublabel}</Text>}
+                <View style={theme.settingsStyles.itemTextContainer}>
+                    <Text style={[theme.settingsStyles.label, isDestructive && theme.settingsStyles.destructiveLabel]}>{label}</Text>
+                    {sublabel && <Text style={theme.settingsStyles.sublabel}>{sublabel}</Text>}
                 </View>
             </View>
-            <View style={styles.itemRight}>
-                {value && <Text style={settingsStyles.value}>{value}</Text>}
+            <View style={theme.settingsStyles.itemRight}>
+                {value && <Text style={theme.settingsStyles.value}>{value}</Text>}
                 {control}
                 {isLoading ? (
                     <Loader2 color={theme.colors.onSurfaceVariant} size={20} style={{ animation: 'spin 1s linear infinite' } as any} />
@@ -55,7 +55,7 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
     );
 
     const pressableStyle = ({ pressed }: { pressed: boolean }) => [
-        pressed && !disabled && settingsStyles.pressed,
+        pressed && !disabled && theme.settingsStyles.pressed,
     ];
 
     if (href) {
@@ -71,24 +71,6 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
             {content}
         </Pressable>
     );
-};
-
-// Use a simplified version of the main styles object for this component
-const styles = {
-    itemLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.l,
-        flexShrink: 1,
-    } as const,
-    itemRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.s,
-    } as const,
-    itemTextContainer: {
-        flexShrink: 1,
-    } as const,
 };
 
 export default SettingsListItem;

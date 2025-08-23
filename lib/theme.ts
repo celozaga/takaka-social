@@ -33,8 +33,8 @@ const palette = {
  * Theme Colors
  * ============================================================================
  *
- * Maps the abstract palette colors to semantic theme roles.
- * This makes it easy to swap out themes.
+ * Maps the abstract palette colors to semantic theme roles (e.g., 'background').
+ * This is the active color set for the application.
  *
  */
 const darkThemeColors = {
@@ -79,7 +79,8 @@ const lightThemeColors = {
  * Design Tokens
  * ============================================================================
  *
- * Consistent spacing, shapes, and typography for the entire app.
+ * Provides consistent spacing, shapes, and typography for the entire app.
+ * Using these tokens ensures a uniform and predictable design.
  *
  */
 const shape = {
@@ -113,10 +114,11 @@ const typography = {
 
 /**
  * ============================================================================
- * Exported Theme
+ * Exported Theme Object
  * ============================================================================
  *
- * The final theme object that is imported by components.
+ * This is the single source of truth for all design tokens and shared styles.
+ * Components should import this object to access theme values.
  * To switch themes, change `colors` to `lightThemeColors`.
  *
  */
@@ -125,18 +127,11 @@ export const theme = {
   shape,
   spacing,
   typography,
-};
 
-
-/**
- * ============================================================================
- * Settings Pages Styles
- * ============================================================================
- *
- * Centralized styles for all settings-related screens to ensure consistency.
- *
- */
-export const settingsStyles = StyleSheet.create({
+  /**
+   * Centralized styles for all settings-related screens to ensure consistency.
+   */
+  settingsStyles: StyleSheet.create({
     // Page level styles
     container: {
         padding: spacing.l,
@@ -146,21 +141,21 @@ export const settingsStyles = StyleSheet.create({
         padding: spacing.l,
     },
     description: {
-        color: theme.colors.onSurfaceVariant,
+        color: darkThemeColors.onSurfaceVariant,
         ...typography.bodyMedium,
         marginBottom: spacing.l,
     },
 
     // Section styles
     section: {
-        backgroundColor: theme.colors.surfaceContainer,
+        backgroundColor: darkThemeColors.surfaceContainer,
         borderRadius: shape.large,
         overflow: 'hidden',
     },
     sectionHeader: {
         ...typography.labelLarge,
         fontWeight: 'bold',
-        color: theme.colors.onSurfaceVariant,
+        color: darkThemeColors.onSurfaceVariant,
         paddingHorizontal: spacing.s,
         marginBottom: spacing.s,
     },
@@ -194,19 +189,19 @@ export const settingsStyles = StyleSheet.create({
     label: {
         ...typography.bodyLarge,
         fontWeight: '600',
-        color: theme.colors.onSurface,
+        color: darkThemeColors.onSurface,
     },
     sublabel: {
         ...typography.bodyMedium,
-        color: theme.colors.onSurfaceVariant,
+        color: darkThemeColors.onSurfaceVariant,
         marginTop: 2,
     },
     value: {
-        color: theme.colors.onSurfaceVariant,
+        color: darkThemeColors.onSurfaceVariant,
         fontSize: 14,
     },
     destructiveLabel: {
-        color: theme.colors.error,
+        color: darkThemeColors.error,
     },
 
     // States
@@ -214,13 +209,18 @@ export const settingsStyles = StyleSheet.create({
         opacity: 0.5,
     },
     pressed: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
+        backgroundColor: darkThemeColors.surfaceContainerHigh,
     },
 
     // Divider
     divider: {
         height: 1,
-        backgroundColor: theme.colors.outline,
+        backgroundColor: darkThemeColors.outline,
         marginLeft: 56, // Icon size (24) + item padding (16) + gap (16)
     },
-});
+  }),
+};
+
+// For convenience, we can still export settingsStyles directly,
+// but it's now derived from the main theme object.
+export const settingsStyles = theme.settingsStyles;

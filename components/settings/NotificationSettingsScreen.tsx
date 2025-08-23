@@ -7,10 +7,9 @@ import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell } from 'lucide-rea
 import Head from '../shared/Head';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import { settingsStyles } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
-
-const SettingsDivider = () => <View style={settingsStyles.divider} />;
+import SettingsDivider from '@/components/ui/SettingsDivider';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
 const APP_ID = 'social.takaka.app';
@@ -183,8 +182,8 @@ const NotificationSettingsScreen: React.FC = () => {
             <Head><title>{t('notificationSettings.title')}</title></Head>
             <View style={{flex: 1}}>
                 <ScreenHeader title={t('notificationSettings.title')} />
-                <ScrollView contentContainerStyle={settingsStyles.container}>
-                     <View style={settingsStyles.section}>
+                <ScrollView contentContainerStyle={theme.settingsStyles.container}>
+                     <View style={theme.settingsStyles.section}>
                         <SettingsListItem
                             icon={Bell}
                             label={t('notificationSettings.enablePush')}
@@ -193,9 +192,9 @@ const NotificationSettingsScreen: React.FC = () => {
                         />
                     </View>
 
-                    <View style={!pushEnabled ? settingsStyles.disabled : undefined}>
-                        <Text style={settingsStyles.sectionHeader}>{t('notificationSettings.notifyMeAbout')}</Text>
-                        <View style={settingsStyles.section}>
+                    <View style={!pushEnabled ? theme.settingsStyles.disabled : undefined}>
+                        <Text style={theme.settingsStyles.sectionHeader}>{t('notificationSettings.notifyMeAbout')}</Text>
+                        <View style={theme.settingsStyles.section}>
                              {settingsItems.map((item, index) => (
                                 <React.Fragment key={item.key}>
                                     <SettingsListItem

@@ -7,7 +7,7 @@ import { Link } from 'expo-router';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from '../shared/Head';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Image, FlatListProps } from 'react-native';
-import { theme, settingsStyles } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 import { BadgeCheck } from 'lucide-react';
 
 const MutedAccountItem: React.FC<{
@@ -114,7 +114,7 @@ const MutedAccountsScreen: React.FC = () => {
     );
 
     const renderListEmptyComponent = () => (
-        <View style={settingsStyles.section}>
+        <View style={theme.settingsStyles.section}>
             <View style={styles.centeredMessage}>
                 {error ? (
                     <Text style={styles.errorText}>{error}</Text>
@@ -129,12 +129,12 @@ const MutedAccountsScreen: React.FC = () => {
         data: accounts,
         renderItem,
         keyExtractor: (item: AppBskyActorDefs.ProfileView) => item.did,
-        contentContainerStyle: settingsStyles.scrollContainer,
-        ListHeaderComponent: <Text style={settingsStyles.description}>{t('mutedAccounts.description')}</Text>,
+        contentContainerStyle: theme.settingsStyles.scrollContainer,
+        ListHeaderComponent: <Text style={theme.settingsStyles.description}>{t('mutedAccounts.description')}</Text>,
         ListEmptyComponent: renderListEmptyComponent,
         onEndReached: loadMore,
         onEndReachedThreshold: 0.5,
-        ItemSeparatorComponent: () => <View style={settingsStyles.divider} />,
+        ItemSeparatorComponent: () => <View style={theme.settingsStyles.divider} />,
         ListFooterComponent: isLoadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null,
     };
 

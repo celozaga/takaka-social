@@ -10,11 +10,9 @@ import {
 } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
-import { theme, settingsStyles } from '@/lib/theme';
+import { theme } from '@/lib/theme';
 import SettingsListItem from '../settings/SettingsListItem';
-
-
-const SettingsDivider = () => <View style={settingsStyles.divider} />;
+import SettingsDivider from '@/components/ui/SettingsDivider';
 
 
 const MoreScreen: React.FC = () => {
