@@ -12,17 +12,16 @@ const NavItem = ({ item, isDesktop }) => {
   const { t } = useTranslation();
   const { unreadCount } = useAtp();
   
-  const isCenterButton = !isDesktop && item.labelKey === 'nav.compose';
   const isNotifications = item.labelKey === 'nav.notifications';
   const hasNotificationBadge = isNotifications && unreadCount > 0;
 
   const content = (
     <View style={isDesktop ? styles.navRailItemContent : styles.navBarItemContent}>
-      <View style={isCenterButton ? {} : styles.iconWrapper}>
+      <View style={styles.iconWrapper}>
         <item.icon
-          size={isCenterButton ? 28 : 24}
-          color={isCenterButton ? theme.colors.onPrimary : (item.activeCondition ? theme.colors.onSurface : theme.colors.onSurfaceVariant)}
-          fill={item.activeCondition && !isCenterButton ? theme.colors.onSurface : 'none'}
+          size={24}
+          color={item.activeCondition ? theme.colors.onSurface : theme.colors.onSurfaceVariant}
+          fill={item.activeCondition ? theme.colors.onSurface : 'none'}
           strokeWidth={2}
         />
         {hasNotificationBadge && (
@@ -40,7 +39,7 @@ const NavItem = ({ item, isDesktop }) => {
   );
 
   const style = ({ pressed }) => [
-    isDesktop ? styles.navRailItem : (isCenterButton ? styles.centerButton : styles.navBarItem),
+    isDesktop ? styles.navRailItem : styles.navBarItem,
     pressed && styles.pressed,
   ];
 
@@ -53,7 +52,7 @@ const NavItem = ({ item, isDesktop }) => {
   }
 
   return (
-    <Link href={item.href} asChild>
+    <Link href={item.href as any} asChild>
       <Pressable style={style}>
         {content}
       </Pressable>
@@ -165,15 +164,6 @@ const styles = StyleSheet.create({
   },
   navBarItemContent: {
     alignItems: 'center',
-  },
-  centerButton: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.shape.large,
-    backgroundColor: theme.colors.onSurface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 8,
   },
   iconWrapper: {
     position: 'relative',
