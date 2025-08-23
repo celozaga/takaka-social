@@ -23,7 +23,7 @@ const EditableFeedItem: React.FC<{
     onMoveDown: () => void;
     onTogglePin: () => void;
     onRemove: () => void;
-}> = React.memo(({ feed, isPinned, isFirst, isLast, disabled, onMoveUp, onMoveDown, onTogglePin, onRemove }) => {
+}> = ({ feed, isPinned, isFirst, isLast, disabled, onMoveUp, onMoveDown, onTogglePin, onRemove }) => {
     const { t } = useTranslation();
     const feedLink = `/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
 
@@ -64,7 +64,7 @@ const EditableFeedItem: React.FC<{
             </View>
         </View>
     );
-});
+};
 
 const FeedsScreen: React.FC = () => {
     const { session } = useAtp();

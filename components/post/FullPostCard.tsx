@@ -459,4 +459,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default React.memo(FullPostCard);
+export default FullPostCard;
