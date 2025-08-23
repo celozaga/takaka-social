@@ -1,7 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useModeration } from '../../context/ModerationContext';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Shield, Filter, Users, MessageSquare, UserX } from 'lucide-react';
+import { Shield, Filter, Users, UserX, MicOff } from 'lucide-react';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import SettingsListItem from './SettingsListItem';
 import { View, Text, ActivityIndicator } from 'react-native';
@@ -12,28 +13,29 @@ const SettingsDivider = () => <View style={settingsStyles.divider} />;
 const BLUESKY_OFFICIAL_MOD_SERVICE = 'did:plc:z72i7hdynmk6r22z27h6tvur';
 
 const ModerationSettingsScreen: React.FC = () => {
+    const { t } = useTranslation();
     const { isReady, adultContentEnabled, setAdultContentEnabled } = useModeration();
 
     return (
         <View>
-            <ScreenHeader title="Moderation" />
+            <ScreenHeader title={t('settings.moderation.title')} />
             <View style={settingsStyles.container}>
                 <View style={settingsStyles.section}>
-                    <SettingsListItem icon={Filter} label="Muted words & tags" href="/settings/muted-words" />
+                    <SettingsListItem icon={Filter} label={t('settings.moderation.mutedWordsAndTags')} href="/settings/muted-words" />
                     <SettingsDivider />
-                    <SettingsListItem icon={Users} label="Moderation lists" href="#" disabled />
+                    <SettingsListItem icon={Users} label={t('settings.moderation.moderationLists')} href="#" disabled />
                     <SettingsDivider />
-                    <SettingsListItem icon={MessageSquare} label="Muted accounts" href="#" disabled />
+                    <SettingsListItem icon={MicOff} label={t('settings.mutedAccounts')} href="/settings/muted-accounts" />
                     <SettingsDivider />
-                    <SettingsListItem icon={UserX} label="Blocked accounts" href="#" disabled />
+                    <SettingsListItem icon={UserX} label={t('settings.moderation.blockedAccounts')} href="#" disabled />
                 </View>
                 
                 <View>
-                    <Text style={settingsStyles.sectionHeader}>Content filters</Text>
+                    <Text style={settingsStyles.sectionHeader}>{t('settings.moderation.contentFilters')}</Text>
                     <View style={settingsStyles.section}>
                         <SettingsListItem
                             icon={Shield}
-                            label="Enable adult content"
+                            label={t('settings.moderation.enableAdultContent')}
                             control={
                                 isReady ? (
                                     <ToggleSwitch checked={adultContentEnabled} onChange={setAdultContentEnabled} />
@@ -46,7 +48,7 @@ const ModerationSettingsScreen: React.FC = () => {
                 </View>
 
                  <View>
-                    <Text style={settingsStyles.sectionHeader}>Advanced</Text>
+                    <Text style={settingsStyles.sectionHeader}>{t('settings.moderation.advanced')}</Text>
                     <View style={settingsStyles.section}>
                         <SettingsListItem
                             icon={Shield}

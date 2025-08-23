@@ -254,7 +254,17 @@
     "language": "Idioma",
     "notifications": "Notificações",
     "signOut": "Sair",
-    "signOutConfirm": "Tem certeza de que deseja sair?"
+    "signOutConfirm": "Tem certeza de que deseja sair?",
+    "moderation": {
+      "title": "Moderação",
+      "mutedWordsAndTags": "Palavras e tags silenciadas",
+      "moderationLists": "Listas de moderação",
+      "blockedAccounts": "Contas bloqueadas",
+      "contentFilters": "Filtros de conteúdo",
+      "enableAdultContent": "Ativar conteúdo adulto",
+      "advanced": "Avançado"
+    },
+    "mutedAccounts": "Contas silenciadas"
   },
   "languageSettings": {
     "title": "Idioma do aplicativo",
@@ -321,5 +331,17 @@
     "button": "Atualizar Handle",
     "successToastTitle": "Handle atualizado!",
     "successToastDescription": "Você foi desconectado. Por favor, faça login novamente com seu novo handle."
+  },
+  "mutedAccounts": {
+    "title": "Contas Silenciadas",
+    "description": "As publicações de contas silenciadas não aparecerão nos seus feeds. Você não receberá notificações delas. Elas ainda podem ver suas publicações e responder a você.",
+    "empty": "Você ainda não silenciou nenhuma conta.",
+    "loadingError": "Não foi possível carregar as contas silenciadas.",
+    "unmute": "Reativar som",
+    "unmuting": "Reativando som...",
+    "toast": {
+      "unmuteError": "Não foi possível reativar o som da conta.",
+      "unmuteSuccess": "Som da conta reativado."
+    }
   }
 }

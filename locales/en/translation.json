@@ -254,7 +254,17 @@
     "language": "Language",
     "notifications": "Notifications",
     "signOut": "Sign Out",
-    "signOutConfirm": "Are you sure you want to sign out?"
+    "signOutConfirm": "Are you sure you want to sign out?",
+    "moderation": {
+      "title": "Moderation",
+      "mutedWordsAndTags": "Muted words & tags",
+      "moderationLists": "Moderation lists",
+      "blockedAccounts": "Blocked accounts",
+      "contentFilters": "Content filters",
+      "enableAdultContent": "Enable adult content",
+      "advanced": "Advanced"
+    },
+    "mutedAccounts": "Muted accounts"
   },
   "languageSettings": {
     "title": "App Language",
@@ -321,5 +331,17 @@
     "button": "Update Handle",
     "successToastTitle": "Handle updated!",
     "successToastDescription": "You have been logged out. Please sign in again with your new handle."
+  },
+  "mutedAccounts": {
+    "title": "Muted Accounts",
+    "description": "Posts from muted accounts will not appear in your feeds. You will not receive notifications from them. They can still see your posts and reply to you.",
+    "empty": "You haven't muted any accounts yet.",
+    "loadingError": "Could not load muted accounts.",
+    "unmute": "Unmute",
+    "unmuting": "Unmuting...",
+    "toast": {
+      "unmuteError": "Could not unmute account.",
+      "unmuteSuccess": "Account unmuted."
+    }
   }
 }

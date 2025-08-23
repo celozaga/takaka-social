@@ -254,7 +254,17 @@
     "language": "Idioma",
     "notifications": "Notificaciones",
     "signOut": "Cerrar sesión",
-    "signOutConfirm": "¿Estás seguro de que quieres cerrar la sesión?"
+    "signOutConfirm": "¿Estás seguro de que quieres cerrar la sesión?",
+    "moderation": {
+      "title": "Moderación",
+      "mutedWordsAndTags": "Palabras y etiquetas silenciadas",
+      "moderationLists": "Listas de moderación",
+      "blockedAccounts": "Cuentas bloqueadas",
+      "contentFilters": "Filtros de contenido",
+      "enableAdultContent": "Activar contenido para adultos",
+      "advanced": "Avanzado"
+    },
+    "mutedAccounts": "Cuentas silenciadas"
   },
   "languageSettings": {
     "title": "Idioma de la aplicación",
@@ -321,5 +331,17 @@
     "button": "Actualizar handle",
     "successToastTitle": "¡Handle actualizado!",
     "successToastDescription": "Has cerrado la sesión. Por favor, vuelve a iniciar sesión con tu nuevo handle."
+  },
+  "mutedAccounts": {
+    "title": "Cuentas silenciadas",
+    "description": "Las publicaciones de las cuentas silenciadas no aparecerán en tus feeds. No recibirás notificaciones de ellas. Aún pueden ver tus publicaciones y responderte.",
+    "empty": "Aún no has silenciado ninguna cuenta.",
+    "loadingError": "No se pudieron cargar las cuentas silenciadas.",
+    "unmute": "Dejar de silenciar",
+    "unmuting": "Dejando de silenciar...",
+    "toast": {
+      "unmuteError": "No se pudo dejar de silenciar la cuenta.",
+      "unmuteSuccess": "Se ha dejado de silenciar la cuenta."
+    }
   }
 }
