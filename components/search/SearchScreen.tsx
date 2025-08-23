@@ -133,7 +133,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
           );
       }
       return (
-        <ScrollView onScroll={({ nativeEvent }) => { if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 50) fetchNonPostResults(debouncedQuery || initialQuery, activeFilter, cursor); }} scrollEventThrottle={16}>
+        <ScrollView onScroll={({ nativeEvent }) => { if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) fetchNonPostResults(debouncedQuery || initialQuery, activeFilter, cursor); }} scrollEventThrottle={16}>
           <View style={[styles.contentContainer, { gap: theme.spacing.m }]}>
             {nonPostResults.map(item => {
                 if (activeFilter === 'people') return <ActorSearchResultCard key={(item as any).did} actor={item as any} />;
