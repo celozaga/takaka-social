@@ -241,7 +241,7 @@ const Feed: React.FC<FeedProps> = ({
   if (moderatedFeed.length === 0 && !isLoading) {
       return (
           <ScrollView 
-            contentContainerStyle={{paddingTop: theme.spacing.l}}
+            contentContainerStyle={{ paddingTop: 0 }}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
           >
               <View>
