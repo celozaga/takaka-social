@@ -3,39 +3,44 @@ import { useTranslation } from 'react-i18next';
 import { Link, usePathname } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { Home, Search, Edit3, LogOut, Bell, LogIn, MoreHorizontal } from 'lucide-react';
+import { Home, Search, Plus, Bell, LogOut, LogIn, LayoutGrid } from 'lucide-react';
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/lib/theme';
 
-// NavItem component for a single navigation item.
-const NavItem = ({ item, isDesktop }: { item: any; isDesktop: boolean; }) => {
+const NavItem = ({ item, isDesktop }) => {
   const { t } = useTranslation();
   const { unreadCount } = useAtp();
-
+  
+  const isCenterButton = !isDesktop && item.labelKey === 'nav.compose';
   const isNotifications = item.labelKey === 'nav.notifications';
   const hasNotificationBadge = isNotifications && unreadCount > 0;
 
-  // The content (Icon and Text) of the navigation item.
-  // This is shared between Pressable and Link.
   const content = (
     <View style={isDesktop ? styles.navRailItemContent : styles.navBarItemContent}>
-      <View style={[styles.iconContainer, item.activeCondition && styles.iconContainerActive]}>
-        <item.icon size={24} color={item.activeCondition ? theme.colors.onSurface : theme.colors.onSurfaceVariant} />
+      <View style={isCenterButton ? {} : styles.iconWrapper}>
+        <item.icon
+          size={isCenterButton ? 28 : 24}
+          color={isCenterButton ? theme.colors.onPrimary : (item.activeCondition ? theme.colors.onSurface : theme.colors.onSurfaceVariant)}
+          fill={item.activeCondition && !isCenterButton ? theme.colors.onSurface : 'none'}
+          strokeWidth={2}
+        />
         {hasNotificationBadge && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
           </View>
         )}
       </View>
-      <Text style={[styles.labelText, item.activeCondition && styles.labelTextActive]} numberOfLines={1}>
-        {t(item.labelKey)}
-      </Text>
+      {isDesktop && (
+        <Text style={[styles.labelText, item.activeCondition && styles.labelTextActive]} numberOfLines={1}>
+          {t(item.labelKey)}
+        </Text>
+      )}
     </View>
   );
 
   const style = ({ pressed }) => [
-    isDesktop ? styles.navRailItem : styles.navBarItem,
+    isDesktop ? styles.navRailItem : (isCenterButton ? styles.centerButton : styles.navBarItem),
     pressed && styles.pressed,
   ];
 
@@ -56,25 +61,22 @@ const NavItem = ({ item, isDesktop }: { item: any; isDesktop: boolean; }) => {
   );
 };
 
-// Main Navbar component that handles responsive layout.
 const BottomNavbar = () => {
   const { session, logout } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const pathname = usePathname();
-  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
   const isDesktop = width >= 768;
 
-  // Define navigation items based on login state
   const navItems = [
     { href: '/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/home' || pathname === '/' },
     { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
     ...(session
       ? [
-          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false },
+          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false },
           { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
-          { href: '/more', labelKey: 'nav.more', icon: MoreHorizontal, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
+          { href: '/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
         ]
       : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false }]),
   ];
@@ -82,7 +84,6 @@ const BottomNavbar = () => {
   // Render Navigation Rail for larger screens
   if (isDesktop) {
     const desktopNavItems = navItems.filter(item => !(item.isAction && item.labelKey === 'nav.compose'));
-
     return (
       <View style={[styles.navRail, { paddingTop: top + theme.spacing.l, paddingBottom: bottom + theme.spacing.l }]}>
         <View style={styles.navRailSection}>
@@ -91,10 +92,10 @@ const BottomNavbar = () => {
         <View style={styles.navRailSection}>
           {session ? (
             <>
-              <NavItem item={{ isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Edit3, activeCondition: false }} isDesktop />
+              <NavItem item={{ isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false }} isDesktop />
               <NavItem item={{ isAction: true, action: logout, labelKey: 'nav.logout', icon: LogOut, activeCondition: false }} isDesktop />
             </>
-          ) : null }
+          ) : null}
         </View>
       </View>
     );
@@ -102,38 +103,21 @@ const BottomNavbar = () => {
 
   // Render Bottom Navigation Bar for smaller screens
   return (
-    <View style={[styles.navBar, { height: 80 + bottom, paddingBottom: bottom }]}>
-      {navItems.map(item => (
-        <NavItem key={item.labelKey} item={item} isDesktop={false} />
-      ))}
+    <View style={[styles.navBar, { height: 60 + bottom, paddingBottom: bottom }]}>
+      {navItems.map(item => <NavItem key={item.labelKey} item={item} isDesktop={false} />)}
     </View>
   );
 };
 
-
-// Styles rewritten for clarity and to fix alignment issues.
 const styles = StyleSheet.create({
-  // Common
   pressed: {
-    backgroundColor: theme.colors.surfaceContainerHover,
-  },
-  iconContainer: {
-    width: 64,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: theme.shape.full,
-    position: 'relative',
-  },
-  iconContainerActive: {
-    backgroundColor: 'transparent',
+    opacity: 0.7,
   },
   labelText: {
     ...theme.typography.labelMedium,
     color: theme.colors.onSurfaceVariant,
     fontWeight: '400',
     textAlign: 'center',
-    // Add padding to prevent text from touching edges on small screens
     paddingHorizontal: 2,
   },
   labelTextActive: {
@@ -143,7 +127,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: -2,
-    right: 12,
+    right: -4,
     backgroundColor: theme.colors.error,
     borderRadius: theme.shape.full,
     paddingHorizontal: 4,
@@ -167,21 +151,36 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
     backgroundColor: theme.colors.background,
     borderTopWidth: 0,
     zIndex: 50,
   },
   navBarItem: {
-    flex: 1, // Each item takes equal width
+    flex: 1,
     height: '100%',
-    justifyContent: 'flex-start', // Align content to the top
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: theme.spacing.m, // 12px padding top per M3 spec
   },
   navBarItemContent: {
-    // This view ensures icon and text are stacked vertically
     alignItems: 'center',
-    gap: theme.spacing.xs, // 4px gap between icon and label
+  },
+  centerButton: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.shape.large,
+    backgroundColor: theme.colors.onSurface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  iconWrapper: {
+    position: 'relative',
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Desktop: Navigation Rail
@@ -206,6 +205,14 @@ const styles = StyleSheet.create({
   navRailItemContent: {
     alignItems: 'center',
     gap: theme.spacing.xs,
+  },
+  iconContainer: {
+    width: 64,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.shape.full,
+    position: 'relative',
   },
 });
 
