@@ -165,13 +165,15 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             ))}
                         </ScrollView>
                         
-                        {!isPostSearch && isLoading && (
-                            <View style={{ gap: theme.spacing.m, paddingHorizontal: theme.spacing.l }}>
-                                {[...Array(5)].map((_, i) => <View key={i} style={styles.skeletonItemListView} />)}
-                            </View>
-                        )}
-                        {(!isLoading || isPostSearch) && (debouncedQuery || initialQuery) && renderResults()}
-                        {!isLoading && nonPostResults.length === 0 && !isPostSearch && (debouncedQuery || initialQuery) && <View style={styles.emptyContainer}><Text style={styles.emptyText}>{t('search.empty', { query: debouncedQuery || initialQuery })}</Text></View>}
+                        <View style={{ flex: 1 }}>
+                            {!isPostSearch && isLoading && (
+                                <View style={{ gap: theme.spacing.m, paddingHorizontal: theme.spacing.l }}>
+                                    {[...Array(5)].map((_, i) => <View key={i} style={styles.skeletonItemListView} />)}
+                                </View>
+                            )}
+                            {(!isLoading || isPostSearch) && (debouncedQuery || initialQuery) && renderResults()}
+                            {!isLoading && nonPostResults.length === 0 && !isPostSearch && (debouncedQuery || initialQuery) && <View style={styles.emptyContainer}><Text style={styles.emptyText}>{t('search.empty', { query: debouncedQuery || initialQuery })}</Text></View>}
+                        </View>
                     </View>
                 )}
             </View>
