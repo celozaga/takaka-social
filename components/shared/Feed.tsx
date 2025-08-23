@@ -266,7 +266,7 @@ const Feed: React.FC<FeedProps> = ({
               onEndReached={loadMorePosts}
               onEndReachedThreshold={0.7}
               refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-              contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 80}}
+              contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 60}}
           />
       )
   }
