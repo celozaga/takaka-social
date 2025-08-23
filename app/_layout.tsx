@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     maxWidth: 640,
   },
   mainContentMobile: {
-    paddingBottom: 80, // Height of Navigation Bar
+    paddingBottom: 60, // Height of Navigation Bar
   },
   fullScreenContent: {
     paddingTop: 0,
