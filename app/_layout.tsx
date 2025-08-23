@@ -33,7 +33,7 @@ const ModalSuspenseFallback = () => (
 );
 
 function AppLayout() {
-  const { session } = useAtp();
+  const { session, isLoadingSession } = useAtp();
   const {
     isLoginModalOpen, closeLoginModal,
     isComposerOpen, closeComposer, composerReplyTo, composerInitialText,
@@ -44,6 +44,14 @@ function AppLayout() {
     isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
     isRepostModalOpen, closeRepostModal, repostModalPost,
   } = useUI();
+
+  if (isLoadingSession) {
+    return (
+      <View style={styles.fullScreenLoader}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
   
   const pathname = usePathname();
   const { width } = useWindowDimensions();
@@ -258,5 +266,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: theme.shape.extraLarge,
     padding: theme.spacing.s,
     paddingBottom: theme.spacing.xl, // For home bar
-  }
+  },
+  fullScreenLoader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+  },
 });
