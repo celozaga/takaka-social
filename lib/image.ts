@@ -34,7 +34,7 @@ export const resizeImage = (url: string, width: number): string => {
     const urlWithoutProtocol = urlObject.host + urlObject.pathname + urlObject.search;
 
     // Construct the new URL with width, quality, and webp output for optimization.
-    return `${RESIZE_PROXY}?url=${encodeURIComponent(urlWithoutProtocol)}&w=${width}&q=80&output=webp`;
+    return `${RESIZE_PROXY}?url=${encodeURIComponent(urlWithoutProtocol)}&w=${width}&q=50&output=webp`;
   } catch (e) {
     // If the URL is invalid or parsing fails, log the error and return the original URL as a fallback.
     console.error("Invalid URL provided for resizing:", url, e);
