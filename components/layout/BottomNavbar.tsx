@@ -43,17 +43,17 @@ const NavItem = ({ item, isDesktop }) => {
     pressed && styles.pressed,
   ];
 
-  if (item.isAction) {
-    return (
-      <Pressable onPress={item.action} style={style}>
-        {content}
-      </Pressable>
-    );
-  }
-
   return (
     <Link href={item.href as any} asChild>
-      <Pressable style={style}>
+      <Pressable
+        style={style}
+        onPress={(e) => {
+          if (item.isAction) {
+            e.preventDefault();
+            item.action();
+          }
+        }}
+      >
         {content}
       </Pressable>
     </Link>
@@ -73,16 +73,19 @@ const BottomNavbar = () => {
     { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
     ...(session
       ? [
-          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false },
+          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false, href: '#' },
           { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
           { href: '/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
         ]
-      : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false }]),
+      : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false, href: '#' }]),
   ];
 
   // Render Navigation Rail for larger screens
   if (isDesktop) {
     const desktopNavItems = navItems.filter(item => !(item.isAction && item.labelKey === 'nav.compose'));
+    const composeItem = { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false, href: '#' };
+    const logoutItem = { isAction: true, action: logout, labelKey: 'nav.logout', icon: LogOut, activeCondition: false, href: '#' };
+    
     return (
       <View style={[styles.navRail, { paddingTop: top + theme.spacing.l, paddingBottom: bottom + theme.spacing.l }]}>
         <View style={styles.navRailSection}>
@@ -91,8 +94,8 @@ const BottomNavbar = () => {
         <View style={styles.navRailSection}>
           {session ? (
             <>
-              <NavItem item={{ isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false }} isDesktop />
-              <NavItem item={{ isAction: true, action: logout, labelKey: 'nav.logout', icon: LogOut, activeCondition: false }} isDesktop />
+              <NavItem item={composeItem} isDesktop />
+              <NavItem item={logoutItem} isDesktop />
             </>
           ) : null}
         </View>
