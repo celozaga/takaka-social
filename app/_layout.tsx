@@ -8,6 +8,7 @@ import { UIProvider, useUI } from '@/context/UIContext';
 import { HiddenPostsProvider } from '@/context/HiddenPostsContext';
 import { ModerationProvider } from '@/context/ModerationContext';
 import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
+import { BookmarksProvider } from '@/context/BookmarksContext';
 import { Toaster, ToastProvider } from '@/components/ui/Toaster';
 import { StatusBar } from 'expo-status-bar';
 import BottomNavbar from '@/components/layout/BottomNavbar';
@@ -175,13 +176,15 @@ export default function RootLayout() {
         <ModerationProvider>
           <UIProvider>
             <HiddenPostsProvider>
-              <ProfileCacheProvider>
-                 <SafeAreaProvider>
-                    <StatusBar style="light" />
-                    <AppLayout />
-                    <Toaster />
-                 </SafeAreaProvider>
-              </ProfileCacheProvider>
+              <BookmarksProvider>
+                <ProfileCacheProvider>
+                    <SafeAreaProvider>
+                      <StatusBar style="light" />
+                      <AppLayout />
+                      <Toaster />
+                    </SafeAreaProvider>
+                </ProfileCacheProvider>
+              </BookmarksProvider>
             </HiddenPostsProvider>
           </UIProvider>
         </ModerationProvider>

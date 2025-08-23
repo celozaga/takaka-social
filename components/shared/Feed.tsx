@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -22,7 +23,7 @@ interface FeedProps {
   mediaFilter?: MediaFilter;
   layout?: 'grid' | 'list';
   ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null;
-  postFilter?: 'reposts_only' | 'likes_only';
+  postFilter?: 'reposts_only' | 'likes_only' | 'bookmarks_only';
 }
 
 const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
@@ -68,6 +69,23 @@ const Feed: React.FC<FeedProps> = ({
     if (feedUri) {
         if (postFilter === 'likes_only') {
             return agent.app.bsky.feed.getActorLikes({ actor: feedUri, cursor: currentCursor, limit: 30 });
+        }
+        if (postFilter === 'bookmarks_only') {
+            const res = await agent.com.atproto.repo.listRecords({
+                repo: session!.did,
+                collection: 'app.myclient.bookmark',
+                limit: 25,
+                cursor: currentCursor,
+            });
+            const bookmarkUris = res.data.records.map(r => (r.value as any).subject.uri);
+            if (bookmarkUris.length === 0) {
+                return { data: { feed: [], cursor: res.data.cursor } };
+            }
+            const postsRes = await agent.getPosts({ uris: bookmarkUris });
+            const postsByUri = new Map(postsRes.data.posts.map(p => [p.uri, { post: p }]));
+            const sortedFeed = bookmarkUris.map(uri => postsByUri.get(uri)).filter(Boolean) as AppBskyFeedDefs.FeedViewPost[];
+            
+            return { data: { feed: sortedFeed, cursor: res.data.cursor } };
         }
         if (feedUri === 'following') {
             if (!session) return { data: { feed: [], cursor: undefined } };
@@ -229,6 +247,8 @@ const Feed: React.FC<FeedProps> = ({
         emptyText = t('profile.emptyReposts');
     } else if (postFilter === 'likes_only') {
         emptyText = t('profile.emptyLikes');
+    } else if (postFilter === 'bookmarks_only') {
+        emptyText = t('feed.emptyBookmarks');
     } else if (authorFeedFilter) {
         emptyText = t('profile.emptyFeed', { mediaType: 'media' });
     }

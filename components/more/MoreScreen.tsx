@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'expo-router';
@@ -6,7 +7,7 @@ import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { 
     Settings, List, Search, 
-    Bell, Users, UserCheck, Clapperboard, ChevronRight
+    Bell, Users, UserCheck, Clapperboard, ChevronRight, Bookmark
 } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, Image, ScrollView } from 'react-native';
@@ -109,6 +110,7 @@ const MoreScreen: React.FC = () => {
                                 <View style={styles.appsGridContainer}>
                                     <AppGridItem icon={Search} label={t('nav.search')} href="/search" color="#424242" />
                                     <AppGridItem icon={Clapperboard} label={t('more.watch')} href="/watch" color="#005B96" />
+                                    <AppGridItem icon={Bookmark} label={t('nav.bookmarks')} href="/bookmarks" color="#AD1457" />
                                     <AppGridItem icon={Users} label={t('common.followers')} href={`/profile/${session.handle}/followers`} color="#6A1B9A" />
                                     <AppGridItem icon={UserCheck} label={t('common.following')} href={`/profile/${session.handle}/following`} color="#2E7D32" />
                                 </View>

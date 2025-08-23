@@ -40,7 +40,8 @@
     "feeds": "Feeds",
     "signIn": "Iniciar sesión",
     "logout": "Cerrar sesión",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "bookmarks": "Marcadores"
   },
   "home": {
     "following": "Siguiendo",
@@ -172,12 +173,17 @@
     "report": "Denunciar Publicación",
     "delete": "Eliminar Publicación",
     "confirmDelete": "¿Estás seguro de que quieres eliminar esta publicación? Esta acción no se puede deshacer.",
+    "bookmark": "Guardar en marcadores",
+    "removeBookmark": "Quitar de marcadores",
     "toast": {
       "textCopied": "¡Texto copiado!",
       "postHidden": "Publicación Oculta",
       "postHiddenDescription": "Esta publicación ya no se te mostrará.",
       "deleteSuccess": "Publicación Eliminada",
-      "deleteError": "No se pudo eliminar la publicación."
+      "deleteError": "No se pudo eliminar la publicación.",
+      "bookmarkAdded": "Publicación guardada",
+      "bookmarkRemoved": "Marcador eliminado",
+      "bookmarkError": "No se pudo actualizar el marcador"
     }
   },
   "profile": {
@@ -239,7 +245,8 @@
   },
   "feed": {
     "loadingError": "No se pudo cargar este feed. Por favor, inténtalo de nuevo más tarde.",
-    "empty": "No se encontraron publicaciones visuales en este feed."
+    "empty": "No se encontraron publicaciones visuales en este feed.",
+    "emptyBookmarks": "Aún no has guardado ninguna publicación."
   },
   "watch": {
     "allSeenTitle": "¡Lo has visto todo!",

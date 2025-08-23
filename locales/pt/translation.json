@@ -40,7 +40,8 @@
     "feeds": "Feeds",
     "signIn": "Entrar",
     "logout": "Sair",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "bookmarks": "Marcadores"
   },
   "home": {
     "following": "Seguindo",
@@ -172,12 +173,17 @@
     "report": "Denunciar Publicação",
     "delete": "Excluir Publicação",
     "confirmDelete": "Tem certeza que deseja excluir esta publicação? Esta ação não pode ser desfeita.",
+    "bookmark": "Salvar nos marcadores",
+    "removeBookmark": "Remover dos marcadores",
     "toast": {
       "textCopied": "Texto Copiado!",
       "postHidden": "Publicação Oculta",
       "postHiddenDescription": "Esta publicação não será mais exibida para você.",
       "deleteSuccess": "Publicação Excluída",
-      "deleteError": "Não foi possível excluir a publicação."
+      "deleteError": "Não foi possível excluir a publicação.",
+      "bookmarkAdded": "Publicação salva",
+      "bookmarkRemoved": "Marcador removido",
+      "bookmarkError": "Não foi possível atualizar o marcador"
     }
   },
   "profile": {
@@ -239,7 +245,8 @@
   },
   "feed": {
     "loadingError": "Não foi possível carregar este feed. Por favor, tente novamente mais tarde.",
-    "empty": "Nenhuma publicação visual encontrada neste feed."
+    "empty": "Nenhuma publicação visual encontrada neste feed.",
+    "emptyBookmarks": "Você ainda não salvou nenhuma publicação."
   },
   "watch": {
     "allSeenTitle": "Você já viu tudo!",
@@ -329,7 +336,7 @@
   "updateEmail": {
     "title": "Atualizar e-mail",
     "checkEmail": "Verifique seu e-mail",
-    "confirmationSent": "Um link de confirmação foi enviado para <strong>{{email}}</strong>. Clique no link para confirmar seu novo endereço de e-mail.",
+    "confirmationSent": "Um link de confirmación foi enviado para <strong>{{email}}</strong>. Clique no link para confirmar seu novo endereço de e-mail.",
     "description": "Insira seu novo endereço de e-mail. Um link de verificação será enviado para ele.",
     "placeholder": "novo-email@exemplo.com",
     "button": "Enviar e-mail de verificação",

@@ -40,7 +40,8 @@
     "feeds": "Feeds",
     "signIn": "Sign In",
     "logout": "Logout",
-    "settings": "Settings"
+    "settings": "Settings",
+    "bookmarks": "Bookmarks"
   },
   "home": {
     "following": "Following",
@@ -172,12 +173,17 @@
     "report": "Report Post",
     "delete": "Delete Post",
     "confirmDelete": "Are you sure you want to delete this post? This cannot be undone.",
+    "bookmark": "Bookmark",
+    "removeBookmark": "Remove Bookmark",
     "toast": {
       "textCopied": "Text Copied!",
       "postHidden": "Post Hidden",
       "postHiddenDescription": "This post will no longer be shown to you.",
       "deleteSuccess": "Post Deleted",
-      "deleteError": "Could not delete post."
+      "deleteError": "Could not delete post.",
+      "bookmarkAdded": "Post bookmarked",
+      "bookmarkRemoved": "Bookmark removed",
+      "bookmarkError": "Could not update bookmark"
     }
   },
   "profile": {
@@ -239,7 +245,8 @@
   },
   "feed": {
     "loadingError": "Could not load this feed. Please try again later.",
-    "empty": "No visual posts found in this feed."
+    "empty": "No visual posts found in this feed.",
+    "emptyBookmarks": "You haven't bookmarked any posts yet."
   },
   "watch": {
     "allSeenTitle": "You've seen it all!",

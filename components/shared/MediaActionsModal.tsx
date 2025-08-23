@@ -1,15 +1,17 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
+import { useBookmarks } from '../../context/BookmarksContext';
 import { AtUri,AppBskyFeedDefs } from '@atproto/api';
-import { EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, ShieldOff } from 'lucide-react';
+import { EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, ShieldOff, Bookmark } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 import { theme } from '@/lib/theme';
 
 interface MediaActionsModalProps {
-  post: AppBskyFeedDefs.PostView;
+  post:AppBskyFeedDefs.PostView;
   onClose: () => void;
 }
 
@@ -36,6 +38,7 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { hidePost } = useHiddenPosts();
+    const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
     const { t } = useTranslation();
 
     const [isLoading, setIsLoading] = useState<string | null>(null);
@@ -44,6 +47,7 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
     if (!post) return null;
 
     const isMe = post.author.did === session?.did;
+    const isPostBookmarked = isBookmarked(post.uri);
     
     const confirmAction = (title: string, message: string, onConfirm: () => void) => {
         if (Platform.OS === 'web') {
@@ -56,6 +60,23 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
         }
     }
 
+    const handleBookmark = async () => {
+        setIsLoading('bookmark');
+        try {
+            if (isPostBookmarked) {
+                await removeBookmark(post.uri);
+                toast({ title: t('postActions.toast.bookmarkRemoved') });
+            } else {
+                await addBookmark(post);
+                toast({ title: t('postActions.toast.bookmarkAdded') });
+            }
+        } catch(e) {
+            toast({ title: "Error", description: t('postActions.toast.bookmarkError'), variant: 'destructive' });
+        } finally {
+            setIsLoading(null);
+            onClose();
+        }
+    };
     const handleHide = () => { hidePost(post.uri); toast({ title: t('postActions.toast.postHidden') }); onClose(); };
     const handleMute = async (mute: boolean) => { setIsLoading('mute'); try { if (mute) await agent.mute(post.author.did); else await agent.unmute(post.author.did); setViewerState(p => ({ ...p, muted: mute })); } finally { setIsLoading(null); onClose(); } };
     const handleBlock = async (block: boolean) => confirmAction('Block User', t('profile.confirmBlock', { handle: post.author.handle }), async () => { setIsLoading('block'); try { if (block) { const { uri } = await agent.app.bsky.graph.block.create({ repo: session!.did }, { subject: post.author.did, createdAt: new Date().toISOString() }); setViewerState(p => ({ ...p, blocking: uri, following: undefined })); } else if (viewerState?.blocking) { await agent.app.bsky.graph.block.delete({ repo: session!.did, rkey: new AtUri(viewerState.blocking).rkey }); setViewerState(p => ({ ...p, blocking: undefined })); } } finally { setIsLoading(null); onClose(); } });
@@ -71,6 +92,7 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
 
             <View style={styles.content}>
                 {isLoading && <View style={styles.loadingOverlay}><ActivityIndicator size="large" /></View>}
+                <ActionListItem icon={Bookmark} label={isPostBookmarked ? t('postActions.removeBookmark') : t('postActions.bookmark')} onPress={handleBookmark} />
                 <ActionListItem icon={EyeOff} label={t('mediaActions.notInterested')} onPress={handleHide} />
                 {!isMe && (
                     <>
