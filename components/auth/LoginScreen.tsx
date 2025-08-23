@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AtSign, KeyRound, LogIn } from 'lucide-react';
+import { AtSign, KeyRound, LogIn, ShieldCheck } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Linking, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
 
@@ -12,6 +13,9 @@ interface LoginScreenProps {
 const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   const [identifier, setIdentifier] = useState('');
   const [appPassword, setAppPassword] = useState('');
+  const [token, setToken] = useState('');
+  const [loginStep, setLoginStep] = useState<'credentials' | 'token'>('credentials');
+  const [emailHint, setEmailHint] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAtp();
@@ -21,18 +25,81 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
     setIsLoading(true);
     setError(null);
     try {
-      await login(identifier, appPassword);
+      await login({
+        identifier,
+        appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: appPassword,
+        ...(loginStep === 'token' && { token }),
+      });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || t('signIn.loginFailed'));
-      console.error(err);
-    } finally {
+      if (loginStep === 'credentials' && err.error === 'AuthFactorRequired' && Array.isArray(err.factors)) {
+        const emailFactor = err.factors.find((f: any) => f.type === 'email' && f.hint);
+        if (emailFactor) {
+          setLoginStep('token');
+          setEmailHint(emailFactor.hint);
+          setIsLoading(false);
+          return;
+        }
+      }
+      setError(err.message || (loginStep === 'token' ? t('signIn.invalidToken') : t('signIn.loginFailed')));
       setIsLoading(false);
     }
   };
   
   const openAppPasswordLink = () => {
       Linking.openURL('https://bsky.app/settings/app-passwords');
+  }
+  
+  const resetToCredentials = () => {
+    setLoginStep('credentials');
+    setError(null);
+    setToken('');
+  };
+
+  if (loginStep === 'token') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.textCenter}>
+          <Text style={styles.title}>{t('signIn.checkEmailTitle')}</Text>
+          <Text style={styles.description}>{t('signIn.checkEmailDescription', { emailHint })}</Text>
+        </View>
+        <View style={styles.formContainer}>
+          <View style={styles.inputContainer}>
+            <KeyRound style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
+            <TextInput
+              value={token}
+              onChangeText={setToken}
+              placeholder={t('signIn.verificationCodePlaceholder')}
+              placeholderTextColor={theme.colors.onSurfaceVariant}
+              style={styles.input}
+              keyboardType="numeric"
+              autoFocus
+            />
+          </View>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          <Pressable
+            onPress={handleLogin}
+            disabled={isLoading || !token.trim()}
+            style={({ pressed }) => [styles.button, (isLoading || pressed || !token.trim()) && styles.buttonDisabled]}
+          >
+            {isLoading ? (
+              <>
+                <ActivityIndicator size="small" color={theme.colors.onPrimary} />
+                <Text style={styles.buttonText}>{t('signIn.verifyingButton')}</Text>
+              </>
+            ) : (
+              <>
+                <ShieldCheck color={theme.colors.onPrimary} size={20} />
+                <Text style={styles.buttonText}>{t('signIn.verifyButton')}</Text>
+              </>
+            )}
+          </Pressable>
+           <Pressable onPress={resetToCredentials}>
+            <Text style={[styles.link, { textAlign: 'center', marginTop: 16 }]}>{t('signIn.backToLogin')}</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -78,8 +145,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
         {error && <Text style={styles.errorText}>{error}</Text>}
         <Pressable
           onPress={handleLogin}
-          disabled={isLoading}
-          style={({ pressed }) => [styles.button, (isLoading || pressed) && styles.buttonDisabled]}
+          disabled={isLoading || !identifier.trim() || !appPassword.trim()}
+          style={({ pressed }) => [styles.button, (isLoading || pressed || !identifier.trim() || !appPassword.trim()) && styles.buttonDisabled]}
         >
           {isLoading ? (
             <>
@@ -117,6 +184,7 @@ const styles = StyleSheet.create({
   description: {
     color: theme.colors.onSurfaceVariant,
     marginTop: 8,
+    textAlign: 'center'
   },
   formContainer: {
     gap: 24,

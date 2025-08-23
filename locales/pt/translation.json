@@ -54,7 +54,14 @@
     "appPasswordNotice": "<strong>Importante:</strong> Por segurança, use uma <1>senha de aplicativo</1>, não sua senha principal.",
     "button": "Entrar",
     "buttonLoading": "Entrando...",
-    "loginFailed": "Falha no login. Verifique seu handle e senha de aplicativo."
+    "loginFailed": "Falha no login. Verifique seu handle e senha de aplicativo.",
+    "checkEmailTitle": "Verifique seu e-mail",
+    "checkEmailDescription": "Digite o código de verificação enviado para {{emailHint}}",
+    "verificationCodePlaceholder": "Código de Verificação",
+    "verifyButton": "Verificar",
+    "verifyingButton": "Verificando...",
+    "backToLogin": "Voltar para o login",
+    "invalidToken": "Token inválido. Por favor, tente novamente."
   },
   "loginPrompt": {
     "title": "Experimente o Takaka completo",

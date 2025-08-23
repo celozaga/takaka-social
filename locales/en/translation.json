@@ -54,7 +54,14 @@
     "appPasswordNotice": "<strong>Important:</strong> For security, please use an <1>App Password</1>, not your main password.",
     "button": "Sign In",
     "buttonLoading": "Signing In...",
-    "loginFailed": "Login failed. Please check your handle and app password."
+    "loginFailed": "Login failed. Please check your handle and app password.",
+    "checkEmailTitle": "Check your email",
+    "checkEmailDescription": "Enter the verification code sent to {{emailHint}}",
+    "verificationCodePlaceholder": "Verification Code",
+    "verifyButton": "Verify",
+    "verifyingButton": "Verifying...",
+    "backToLogin": "Back to login",
+    "invalidToken": "Invalid token. Please try again."
   },
   "loginPrompt": {
     "title": "Experience the full Takaka",

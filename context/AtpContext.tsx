@@ -9,7 +9,7 @@ interface AtpContextType {
   agent: BskyAgent;
   session: AtpSessionData | null;
   isLoadingSession: boolean;
-  login: (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => Promise<any>;
+  login: (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => Promise<any>;
   logout: () => Promise<void>;
   unreadCount: number;
   resetUnreadCount: () => void;
@@ -118,8 +118,9 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, [agent, fetchUnreadCount, isPollingPaused, toast]);
 
-  const login = async (identifier: string, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string) => {
-    const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE });
+  const login = async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => {
+    const { identifier, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, token } = params;
+    const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, authFactorToken: token });
     if(agent.session) {
         setSession(agent.session);
         await fetchUnreadCount();
