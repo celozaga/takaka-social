@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
     searchIcon: { position: 'absolute', left: theme.spacing.l, zIndex: 1 },
     input: { width: '100%', paddingLeft: 48, paddingRight: theme.spacing.l, paddingVertical: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
     discoveryContainer: { padding: theme.spacing.l, gap: theme.spacing.xxl },
-    filterContainer: { paddingHorizontal: theme.spacing.l, gap: theme.spacing.s, paddingBottom: theme.spacing.l },
+    filterContainer: { paddingHorizontal: theme.spacing.l, gap: theme.spacing.s, paddingBottom: theme.spacing.l, alignItems: 'center' },
     filterButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainer },
     activeFilterButton: { backgroundColor: theme.colors.onSurface },
     filterText: { ...theme.typography.labelLarge, fontWeight: '500', color: theme.colors.onSurface },
