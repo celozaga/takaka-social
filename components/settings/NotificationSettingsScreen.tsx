@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell } from 'lucide-react';
 import Head from '../shared/Head';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { settingsStyles } from '@/lib/theme';
+import SettingsListItem from './SettingsListItem';
 
+const SettingsDivider = () => <View style={settingsStyles.divider} />;
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
 const APP_ID = 'social.takaka.app';
@@ -23,7 +24,6 @@ interface PushNotificationsPref {
 }
 
 const NotificationSettingsScreen: React.FC = () => {
-    const { setCustomFeedHeaderVisible } = useUI();
     const { agent } = useAtp();
     const { toast } = useToast();
     const { t } = useTranslation();
@@ -41,7 +41,6 @@ const NotificationSettingsScreen: React.FC = () => {
     type SettingsKey = keyof typeof settings;
 
     useEffect(() => {
-        setCustomFeedHeaderVisible(true);
         const loadSettings = async () => {
             setIsLoading(true);
             if (typeof Notification !== 'undefined') {
@@ -70,8 +69,7 @@ const NotificationSettingsScreen: React.FC = () => {
             }
         };
         loadSettings();
-        return () => setCustomFeedHeaderVisible(false);
-    }, [agent, setCustomFeedHeaderVisible]);
+    }, [agent]);
 
     const saveSettings = useCallback(async (newSettings: typeof settings) => {
         setIsSaving(true);
@@ -171,10 +169,10 @@ const NotificationSettingsScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <View style={styles.container}>
+            <View style={{flex: 1}}>
                 <ScreenHeader title={t('notificationSettings.title')} />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                    <ActivityIndicator size="large" />
                 </View>
             </View>
         )
@@ -183,37 +181,36 @@ const NotificationSettingsScreen: React.FC = () => {
     return (
         <>
             <Head><title>{t('notificationSettings.title')}</title></Head>
-            <View style={styles.container}>
+            <View style={{flex: 1}}>
                 <ScreenHeader title={t('notificationSettings.title')} />
-                <ScrollView contentContainerStyle={styles.scrollContent}>
-                     <View style={styles.section}>
-                        <View style={styles.listItem}>
-                            <View style={styles.listItemLeft}>
-                                <Bell size={24} color={theme.colors.onSurfaceVariant} />
-                                <View>
-                                    <Text style={styles.label}>{t('notificationSettings.enablePush')}</Text>
-                                    <Text style={styles.subLabel}>{t('notificationSettings.getAlerts')}</Text>
-                                </View>
-                            </View>
-                            <ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />
-                        </View>
+                <ScrollView contentContainerStyle={settingsStyles.container}>
+                     <View style={settingsStyles.section}>
+                        <SettingsListItem
+                            icon={Bell}
+                            label={t('notificationSettings.enablePush')}
+                            sublabel={t('notificationSettings.getAlerts')}
+                            control={<ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />}
+                        />
                     </View>
 
-                    <View style={!pushEnabled && styles.disabledSection}>
-                        <Text style={styles.sectionHeader}>{t('notificationSettings.notifyMeAbout')}</Text>
-                        <View style={styles.section}>
+                    <View style={!pushEnabled ? settingsStyles.disabled : undefined}>
+                        <Text style={settingsStyles.sectionHeader}>{t('notificationSettings.notifyMeAbout')}</Text>
+                        <View style={settingsStyles.section}>
                              {settingsItems.map((item, index) => (
-                                <View key={item.key} style={[styles.listItem, index === settingsItems.length - 1 && styles.lastListItem]}>
-                                    <View style={styles.listItemLeft}>
-                                        <item.icon size={24} color={theme.colors.onSurfaceVariant} />
-                                        <Text style={styles.label}>{item.title}</Text>
-                                    </View>
-                                    <ToggleSwitch
-                                        checked={settings[item.key]}
-                                        onChange={(checked) => handleSettingToggle(item.key, checked)}
-                                        disabled={isSaving || !pushEnabled}
+                                <React.Fragment key={item.key}>
+                                    <SettingsListItem
+                                        icon={item.icon}
+                                        label={item.title}
+                                        control={
+                                            <ToggleSwitch
+                                                checked={settings[item.key]}
+                                                onChange={(checked) => handleSettingToggle(item.key, checked)}
+                                                disabled={isSaving || !pushEnabled}
+                                            />
+                                        }
                                     />
-                                </View>
+                                    {index < settingsItems.length - 1 && <SettingsDivider />}
+                                </React.Fragment>
                             ))}
                         </View>
                     </View>
@@ -222,58 +219,5 @@ const NotificationSettingsScreen: React.FC = () => {
         </>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    scrollContent: {
-        padding: theme.spacing.l,
-        gap: theme.spacing.l,
-    },
-    section: {
-        backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
-        overflow: 'hidden',
-    },
-    disabledSection: {
-        opacity: 0.5,
-    },
-    sectionHeader: {
-        ...theme.typography.labelLarge,
-        fontWeight: 'bold',
-        color: theme.colors.onSurfaceVariant,
-        paddingHorizontal: theme.spacing.s,
-        marginBottom: theme.spacing.s,
-    },
-    listItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: theme.spacing.l,
-    },
-    lastListItem: {
-        borderBottomWidth: 0,
-    },
-    listItemLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.l,
-    },
-    label: {
-        ...theme.typography.bodyLarge,
-        fontWeight: '600',
-        color: theme.colors.onSurface,
-    },
-    subLabel: {
-        ...theme.typography.bodyMedium,
-        color: theme.colors.onSurfaceVariant,
-    },
-});
 
 export default NotificationSettingsScreen;

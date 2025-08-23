@@ -5,7 +5,7 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { BadgeCheck } from 'lucide-react';
 import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import ScreenHeader from '../layout/ScreenHeader';
-import { theme } from '@/lib/theme';
+import { theme, settingsStyles } from '@/lib/theme';
 
 interface ModerationServiceScreenProps {
   serviceDid: string;
@@ -51,7 +51,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
     return (
         <View>
             <ScreenHeader title={serviceProfile.displayName || ''} />
-            <View style={styles.container}>
+            <View style={settingsStyles.scrollContainer}>
                 <View style={styles.profileHeader}>
                     <Image source={{ uri: serviceProfile.avatar }} style={styles.avatar} />
                     <View>
@@ -62,7 +62,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                         <Text style={styles.handle}>@{serviceProfile.handle}</Text>
                     </View>
                 </View>
-                {serviceProfile.description && <Text style={styles.description}>{serviceProfile.description}</Text>}
+                {serviceProfile.description && <Text style={[settingsStyles.description, {marginBottom: 0, marginTop: theme.spacing.l}]}>{serviceProfile.description}</Text>}
 
                 <View style={styles.labelsContainer}>
                     {configurableLabels.map(labelId => {
@@ -71,12 +71,12 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                         const currentVisibility = labelPreferences.get(def.id) || (def.adult ? 'warn' : 'show');
                         
                         return (
-                            <View key={def.id} style={[styles.labelCard, isDisabled && styles.disabled]}>
+                            <View key={def.id} style={[styles.labelCard, isDisabled && settingsStyles.disabled]}>
                                 <Text style={styles.labelTitle}>{def.title}</Text>
-                                <Text style={styles.labelDescription}>{def.description}</Text>
+                                <Text style={settingsStyles.sublabel}>{def.description}</Text>
                                 {isDisabled && <Text style={styles.disabledText}>Configured in moderation settings.</Text>}
 
-                                <View style={[styles.optionsContainer, isDisabled && { opacity: 0.5 }]}>
+                                <View style={styles.optionsContainer}>
                                     {(['Hide', 'Warn', 'Show'] as const).map(option => {
                                         const value = option.toLowerCase() as LabelVisibility;
                                         const isActive = currentVisibility === value;
@@ -104,18 +104,14 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
 const styles = StyleSheet.create({
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xxl },
     errorText: { color: theme.colors.error, textAlign: 'center' },
-    container: { padding: theme.spacing.l },
     profileHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l },
     avatar: { width: 64, height: 64, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
     nameContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s },
     displayName: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
     handle: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
-    description: { marginTop: theme.spacing.l, color: theme.colors.onSurface, ...theme.typography.bodyMedium },
-    labelsContainer: { marginTop: theme.spacing.l, gap: theme.spacing.l },
+    labelsContainer: { marginTop: theme.spacing.xl, gap: theme.spacing.l },
     labelCard: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, padding: theme.spacing.l },
-    disabled: { opacity: 0.5 },
     labelTitle: { ...theme.typography.labelLarge, fontWeight: '600', color: theme.colors.onSurface },
-    labelDescription: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
     disabledText: { ...theme.typography.bodySmall, color: theme.colors.error, marginTop: theme.spacing.xs },
     optionsContainer: { marginTop: theme.spacing.m, flexDirection: 'row', gap: theme.spacing.s },
     optionButton: { flex: 1, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.m, borderRadius: theme.shape.medium, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center' },

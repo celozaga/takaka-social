@@ -1,21 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
 import Head from '../shared/Head';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { theme } from '@/lib/theme';
+import { View, Text, Pressable, ScrollView } from 'react-native';
+import { theme, settingsStyles } from '@/lib/theme';
 
 const LanguageSettingsScreen: React.FC = () => {
-    const { setCustomFeedHeaderVisible } = useUI();
     const { t, i18n } = useTranslation();
-
-    React.useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const changeLanguage = (langCode: string) => {
         i18n.changeLanguage(langCode);
@@ -24,20 +17,22 @@ const LanguageSettingsScreen: React.FC = () => {
     return (
         <>
             <Head><title>{t('languageSettings.title')}</title></Head>
-            <View style={styles.container}>
+            <View style={{flex: 1}}>
                 <ScreenHeader title={t('languageSettings.title')} />
-                <ScrollView style={styles.scrollView}>
-                    <Text style={styles.description}>{t('languageSettings.description')}</Text>
-                    <View style={styles.listContainer}>
+                <ScrollView contentContainerStyle={settingsStyles.scrollContainer}>
+                    <Text style={settingsStyles.description}>{t('languageSettings.description')}</Text>
+                    <View style={settingsStyles.section}>
                         {supportedLanguages.map((lang, index) => (
-                            <Pressable
-                                key={lang.code}
-                                onPress={() => changeLanguage(lang.code)}
-                                style={({ pressed }) => [styles.listItem, index === supportedLanguages.length - 1 && { borderBottomWidth: 0 }, pressed && styles.listItemPressed]}
-                            >
-                                <Text style={styles.langName}>{lang.name}</Text>
-                                {i18n.language.startsWith(lang.code) && <Check color={theme.colors.onSurface} size={20} />}
-                            </Pressable>
+                            <React.Fragment key={lang.code}>
+                                <Pressable
+                                    onPress={() => changeLanguage(lang.code)}
+                                    style={({ pressed }) => [settingsStyles.item, pressed && settingsStyles.pressed]}
+                                >
+                                    <Text style={settingsStyles.label}>{lang.name}</Text>
+                                    {i18n.language.startsWith(lang.code) && <Check color={theme.colors.onSurface} size={20} />}
+                                </Pressable>
+                                {index < supportedLanguages.length - 1 && <View style={settingsStyles.divider} />}
+                            </React.Fragment>
                         ))}
                     </View>
                 </ScrollView>
@@ -45,43 +40,5 @@ const LanguageSettingsScreen: React.FC = () => {
         </>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollView: {
-        padding: 16,
-    },
-    description: {
-        color: theme.colors.onSurfaceVariant,
-        fontSize: 14,
-        marginBottom: 16,
-    },
-    listContainer: {
-        borderRadius: 12,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: theme.colors.outline,
-    },
-    listItem: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: 'transparent',
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.outline,
-    },
-    listItemPressed: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
-    langName: {
-        fontWeight: '600',
-        color: theme.colors.onSurface,
-        fontSize: 16,
-    },
-});
 
 export default LanguageSettingsScreen;

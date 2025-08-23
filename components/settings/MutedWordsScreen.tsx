@@ -3,7 +3,7 @@ import { useModeration } from '../../context/ModerationContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Trash2, Tag, Plus } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { theme, settingsStyles } from '@/lib/theme';
 
 const MutedWordsScreen: React.FC = () => {
     const { isReady, mutedWords, addMutedWord, removeMutedWord } = useModeration();
@@ -28,8 +28,8 @@ const MutedWordsScreen: React.FC = () => {
     return (
         <View style={{ flex: 1 }}>
             <ScreenHeader title="Muted Words & Tags" />
-            <ScrollView contentContainerStyle={styles.container}>
-                <Text style={styles.description}>
+            <ScrollView contentContainerStyle={settingsStyles.scrollContainer}>
+                <Text style={settingsStyles.description}>
                     Posts containing these words or tags will be hidden from your feeds. Muting is case-insensitive.
                 </Text>
                 <View style={styles.formContainer}>
@@ -50,19 +50,22 @@ const MutedWordsScreen: React.FC = () => {
                     </Pressable>
                 </View>
 
-                <View style={styles.listContainer}>
+                <View style={[settingsStyles.section, {marginTop: theme.spacing.xl}]}>
                     {!isReady ? (
                         <View style={styles.centered}><ActivityIndicator size="large" /></View>
                     ) : mutedWords.length === 0 ? (
                         <View style={styles.centered}><Text style={styles.infoText}>You haven't muted any words yet.</Text></View>
                     ) : (
                         mutedWords.map((word, index) => (
-                            <View key={word.value} style={[styles.listItem, index > 0 && styles.listItemBorder]}>
-                                <Text style={styles.wordText}>{word.value}</Text>
-                                <Pressable onPress={() => handleRemove(word.value)} style={styles.removeButton}>
-                                    <Trash2 size={18} color={theme.colors.onSurfaceVariant} />
-                                </Pressable>
-                            </View>
+                            <React.Fragment key={word.value}>
+                                <View style={settingsStyles.item}>
+                                    <Text style={settingsStyles.label}>{word.value}</Text>
+                                    <Pressable onPress={() => handleRemove(word.value)} style={styles.removeButton}>
+                                        <Trash2 size={18} color={theme.colors.onSurfaceVariant} />
+                                    </Pressable>
+                                </View>
+                                {index < mutedWords.length - 1 && <View style={settingsStyles.divider} />}
+                            </React.Fragment>
                         ))
                     )}
                 </View>
@@ -72,21 +75,15 @@ const MutedWordsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { padding: theme.spacing.l },
-    description: { color: theme.colors.onSurfaceVariant, ...theme.typography.bodyMedium, marginBottom: theme.spacing.l },
-    formContainer: { flexDirection: 'row', gap: theme.spacing.s, marginBottom: theme.spacing.xl },
+    formContainer: { flexDirection: 'row', gap: theme.spacing.s },
     inputContainer: { position: 'relative', flex: 1, justifyContent: 'center' },
     inputIcon: { position: 'absolute', left: theme.spacing.m },
     input: { width: '100%', paddingLeft: 40, paddingRight: theme.spacing.m, paddingVertical: 10, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface },
     addButton: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, borderRadius: theme.shape.medium },
     disabledButton: { opacity: 0.5 },
     addButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
-    listContainer: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, overflow: 'hidden' },
     centered: { padding: theme.spacing.xxl, alignItems: 'center' },
     infoText: { color: theme.colors.onSurfaceVariant },
-    listItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.m },
-    listItemBorder: { borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainerHigh },
-    wordText: { ...theme.typography.bodyLarge, fontWeight: '600', color: theme.colors.onSurface },
     removeButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
 });
 

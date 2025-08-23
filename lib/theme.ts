@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 /**
  * ============================================================================
@@ -43,12 +43,12 @@ const darkThemeColors = {
   background: palette.black,
   surface: palette.black,
   surfaceContainer: palette.darkGray,
-  surfaceContainerHigh: palette.midGray,
+  surfaceContainerHigh: '#2a2a2a', // Slightly lighter than darkGray for pressed states
   surfaceContainerHighest: palette.midGray,
   surfaceContainerHover: palette.white_10,
   onSurface: palette.offWhite,
   onSurfaceVariant: palette.midGray,
-  outline: palette.darkGray,
+  outline: '#3c3c3c', // A subtle outline color
   error: palette.error,
   errorContainer: palette.errorContainer,
   onErrorContainer: palette.onErrorContainer,
@@ -126,3 +126,101 @@ export const theme = {
   spacing,
   typography,
 };
+
+
+/**
+ * ============================================================================
+ * Settings Pages Styles
+ * ============================================================================
+ *
+ * Centralized styles for all settings-related screens to ensure consistency.
+ *
+ */
+export const settingsStyles = StyleSheet.create({
+    // Page level styles
+    container: {
+        padding: spacing.l,
+        gap: spacing.xl,
+    },
+    scrollContainer: {
+        padding: spacing.l,
+    },
+    description: {
+        color: theme.colors.onSurfaceVariant,
+        ...typography.bodyMedium,
+        marginBottom: spacing.l,
+    },
+
+    // Section styles
+    section: {
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: shape.large,
+        overflow: 'hidden',
+    },
+    sectionHeader: {
+        ...typography.labelLarge,
+        fontWeight: 'bold',
+        color: theme.colors.onSurfaceVariant,
+        paddingHorizontal: spacing.s,
+        marginBottom: spacing.s,
+    },
+
+    // Item styles
+    item: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: spacing.l,
+        backgroundColor: 'transparent',
+    },
+    itemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.l,
+        flex: 1,
+    },
+    itemRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.s,
+    },
+    itemTextContainer: {
+        flex: 1,
+    },
+    icon: {
+        width: 24,
+        height: 24,
+    },
+    label: {
+        ...typography.bodyLarge,
+        fontWeight: '600',
+        color: theme.colors.onSurface,
+    },
+    sublabel: {
+        ...typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
+        marginTop: 2,
+    },
+    value: {
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 14,
+    },
+    destructiveLabel: {
+        color: theme.colors.error,
+    },
+
+    // States
+    disabled: {
+        opacity: 0.5,
+    },
+    pressed: {
+        backgroundColor: theme.colors.surfaceContainerHigh,
+    },
+
+    // Divider
+    divider: {
+        height: 1,
+        backgroundColor: theme.colors.outline,
+        marginLeft: 56, // Icon size (24) + item padding (16) + gap (16)
+    },
+});

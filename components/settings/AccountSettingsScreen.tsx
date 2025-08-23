@@ -4,60 +4,22 @@ import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ChevronRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ShieldCheck } from 'lucide-react';
 import Head from '../shared/Head';
-import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { settingsStyles, theme } from '@/lib/theme';
+import SettingsListItem from './SettingsListItem';
 
-interface SettingsListItemProps {
-    icon: React.ElementType;
-    label: string;
-    value?: React.ReactNode;
-    href?: string;
-    onPress?: () => void;
-    isDestructive?: boolean;
-    isLoading?: boolean;
-    disabled?: boolean;
-}
-
-const SettingsListItem: React.FC<SettingsListItemProps> = ({ icon: Icon, label, value, href, onPress, isDestructive = false, isLoading = false, disabled = false }) => {
-    const handlePress = () => {
-        if (disabled) return;
-        if (onPress) onPress();
-        else if (href) Linking.openURL(href);
-    };
-
-    return (
-        <Pressable onPress={handlePress} disabled={disabled} style={({ pressed }) => [styles.listItem, disabled && styles.disabled, pressed && !disabled && styles.listItemPressed]}>
-            <View style={styles.listItemContent}>
-                <Icon style={styles.icon} color={isDestructive ? theme.colors.error : theme.colors.onSurfaceVariant} size={24} />
-                <Text style={[styles.label, isDestructive && styles.destructiveText]}>{label}</Text>
-            </View>
-            <View style={styles.listItemContent}>
-                {value && <Text style={styles.valueText}>{value}</Text>}
-                {isLoading ? (
-                    <Loader2 color={theme.colors.onSurfaceVariant} size={20} style={{ animation: 'spin 1s linear infinite' } as any} />
-                ) : (
-                    (href || onPress) && <ChevronRight color={theme.colors.onSurfaceVariant} size={20} />
-                )}
-            </View>
-        </Pressable>
-    );
-};
+const SettingsDivider = () => <View style={settingsStyles.divider} />;
 
 const AccountSettingsScreen: React.FC = () => {
     const { session, agent, logout } = useAtp();
-    const { setCustomFeedHeaderVisible, openUpdateEmailModal, openUpdateHandleModal } = useUI();
+    const { openUpdateEmailModal, openUpdateHandleModal } = useUI();
     const { toast } = useToast();
     const { t } = useTranslation();
     const router = useRouter();
     const [actionInProgress, setActionInProgress] = useState<string | null>(null);
-
-    React.useEffect(() => {
-        setCustomFeedHeaderVisible(true);
-        return () => setCustomFeedHeaderVisible(false);
-    }, [setCustomFeedHeaderVisible]);
 
     const handleAction = (title: string, message: string, actionFn: () => Promise<void>) => {
         const performAction = async () => {
@@ -121,8 +83,8 @@ const AccountSettingsScreen: React.FC = () => {
     );
     
     const emailValue = (
-        <View style={styles.emailValueContainer}>
-            <Text style={styles.valueText}>{session?.email}</Text>
+        <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+            <Text style={settingsStyles.value}>{session?.email}</Text>
             {session?.emailConfirmed && <ShieldCheck color={theme.colors.onSurface} size={16} />}
         </View>
     );
@@ -130,19 +92,25 @@ const AccountSettingsScreen: React.FC = () => {
     return (
         <>
             <Head><title>{t('accountSettings.title')}</title></Head>
-            <View style={styles.container}>
+            <View style={{flex: 1}}>
                 <ScreenHeader title={t('accountSettings.title')} />
-                <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <View style={styles.section}>
+                <ScrollView contentContainerStyle={settingsStyles.container}>
+                    <View style={settingsStyles.section}>
                         <SettingsListItem icon={Mail} label={t('accountSettings.email')} value={emailValue} />
+                        <SettingsDivider />
                         <SettingsListItem icon={Edit} label={t('accountSettings.updateEmail')} onPress={openUpdateEmailModal} disabled={!!actionInProgress} />
+                        <SettingsDivider />
                         <SettingsListItem icon={Lock} label={t('accountSettings.password')} href="https://bsky.app/settings/password" />
+                        <SettingsDivider />
                         <SettingsListItem icon={AtSign} label={t('accountSettings.handle')} value={`@${session?.handle}`} onPress={openUpdateHandleModal} disabled={!!actionInProgress} />
+                        <SettingsDivider />
                         <SettingsListItem icon={Cake} label={t('accountSettings.birthday')} href="https://bsky.app/settings/birthday" />
                     </View>
-                    <View style={styles.section}>
+                    <View style={settingsStyles.section}>
                         <SettingsListItem icon={Download} label={t('accountSettings.exportData')} onPress={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
+                        <SettingsDivider />
                         <SettingsListItem icon={Power} label={t('accountSettings.deactivateAccount')} onPress={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
+                        <SettingsDivider />
                         <SettingsListItem icon={Trash2} label={t('accountSettings.deleteAccount')} onPress={handleDeleteAccount} isDestructive isLoading={actionInProgress === 'delete'} disabled={!!actionInProgress} />
                     </View>
                 </ScrollView>
@@ -150,63 +118,5 @@ const AccountSettingsScreen: React.FC = () => {
         </>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollContent: {
-        padding: 16,
-        gap: 24,
-    },
-    section: {
-        borderWidth: 1,
-        borderColor: theme.colors.outline,
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    listItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: 'transparent',
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.outline,
-    },
-    listItemPressed: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
-    disabled: {
-        opacity: 0.5,
-    },
-    listItemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    icon: {
-        width: 24,
-        height: 24,
-    },
-    label: {
-        fontWeight: '600',
-        color: theme.colors.onSurface,
-        fontSize: 16,
-    },
-    destructiveText: {
-        color: theme.colors.error,
-    },
-    valueText: {
-        color: theme.colors.onSurfaceVariant,
-        fontSize: 14,
-        marginRight: 8,
-    },
-    emailValueContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-});
 
 export default AccountSettingsScreen;

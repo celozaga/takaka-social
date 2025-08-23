@@ -2,36 +2,16 @@ import React from 'react';
 import { Link, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { Bell, UserCircle, LogOut, Globe, Shield, ChevronRight } from 'lucide-react';
+import { Bell, UserCircle, LogOut, Globe, Shield } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
 import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
 import Head from '../shared/Head';
-import { View, Text, Pressable, StyleSheet, Alert, Platform } from 'react-native';
-import { theme } from '@/lib/theme';
+import { View, Alert, Platform } from 'react-native';
+import { theme, settingsStyles } from '@/lib/theme';
+import SettingsListItem from './SettingsListItem';
 
-const SettingsListItem: React.FC<{
-    icon: React.ElementType;
-    label: string;
-    value?: string;
-    href: string;
-    isLast?: boolean;
-}> = ({ icon: Icon, label, value, href, isLast = false }) => (
-    <Link href={href as any} asChild>
-        <Pressable style={({ pressed }) => [styles.listItem, isLast && styles.lastListItem, pressed && styles.listItemPressed]}>
-            <View style={styles.listItemContent}>
-                <View style={styles.listItemLeft}>
-                    <Icon size={24} color={theme.colors.onSurfaceVariant} />
-                    <Text style={styles.listItemLabel}>{label}</Text>
-                </View>
-                <View style={styles.listItemRight}>
-                    {value && <Text style={styles.listItemValue}>{value}</Text>}
-                    <ChevronRight size={20} color={theme.colors.onSurfaceVariant} />
-                </View>
-            </View>
-        </Pressable>
-    </Link>
-);
+const SettingsDivider = () => <View style={settingsStyles.divider} />;
 
 const SettingsScreen: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -47,7 +27,7 @@ const SettingsScreen: React.FC = () => {
     const handleLogout = () => {
         const confirmLogout = () => {
             logout();
-            router.replace('/(tabs)/home');
+            router.replace('/home');
         };
 
         if (Platform.OS === 'web') {
@@ -72,79 +52,31 @@ const SettingsScreen: React.FC = () => {
     return (
         <>
             <Head><title>{t('settings.title')}</title></Head>
-            <View style={styles.container}>
+            <View>
                 <ScreenHeader title={t('settings.title')} />
-                <View style={styles.contentContainer}>
-                    <SettingsListItem icon={Shield} label="Moderation" href="/settings/moderation" />
-                    <SettingsListItem icon={Globe} label={t('settings.language')} value={currentLanguageName} href="/settings/language" />
-                    <SettingsListItem icon={Bell} label={t('settings.notifications')} href="/settings/notifications" />
-                    <SettingsListItem icon={UserCircle} label={t('settings.account')} href="/settings/account" isLast />
+                <View style={settingsStyles.scrollContainer}>
+                    <View style={settingsStyles.section}>
+                        <SettingsListItem icon={Shield} label="Moderation" href="/settings/moderation" />
+                        <SettingsDivider />
+                        <SettingsListItem icon={Globe} label={t('settings.language')} value={currentLanguageName} href="/settings/language" />
+                        <SettingsDivider />
+                        <SettingsListItem icon={Bell} label={t('settings.notifications')} href="/settings/notifications" />
+                        <SettingsDivider />
+                        <SettingsListItem icon={UserCircle} label={t('settings.account')} href="/settings/account" />
+                    </View>
 
-                    <Pressable onPress={handleLogout} style={({ pressed }) => [styles.listItem, styles.logoutButton, pressed && styles.listItemPressed]}>
-                        <View style={styles.listItemContent}>
-                            <View style={styles.listItemLeft}>
-                                <LogOut size={24} color={theme.colors.error} />
-                                <Text style={[styles.listItemLabel, styles.destructiveText]}>{t('settings.signOut')}</Text>
-                            </View>
-                        </View>
-                    </Pressable>
+                    <View style={[{marginTop: theme.spacing.xxl}, settingsStyles.section]}>
+                        <SettingsListItem 
+                            icon={LogOut} 
+                            label={t('settings.signOut')} 
+                            onPress={handleLogout}
+                            isDestructive
+                        />
+                    </View>
                 </View>
             </View>
         </>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    contentContainer: {
-        marginTop: 16,
-        marginHorizontal: 16,
-    },
-    listItem: {
-        backgroundColor: 'transparent',
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.outline,
-    },
-    lastListItem: {
-        borderBottomWidth: 0,
-    },
-    listItemPressed: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
-    listItemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    listItemLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    listItemRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    listItemLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: theme.colors.onSurface,
-    },
-    listItemValue: {
-        fontSize: 14,
-        color: theme.colors.onSurfaceVariant,
-    },
-    logoutButton: {
-        marginTop: 32,
-        borderBottomWidth: 0,
-    },
-    destructiveText: {
-        color: theme.colors.error,
-    }
-});
 
 export default SettingsScreen;
