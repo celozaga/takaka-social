@@ -250,7 +250,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                         activeFilter === 'posts'
                             ? 'posts_with_media'
                             : activeFilter === 'reposts'
-                            ? 'posts_no_replies'
+                            ? 'posts_with_replies' // This includes posts, reposts, and replies. Client-side will filter.
                             : undefined
                     }
                     postFilter={

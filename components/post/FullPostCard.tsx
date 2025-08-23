@@ -262,7 +262,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         };
 
         const flatListProps: FlatListProps<MediaItem> = {
-            ref: flatListRef,
             data: mediaItems,
             renderItem: renderSlideshowItem,
             horizontal: true,
@@ -284,7 +283,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 <View 
                     style={[styles.slideshowInnerContainer, { height: finalHeight }]}
                 >
-                    <FlatList {...flatListProps} />
+                    <FlatList ref={flatListRef} {...flatListProps} />
                     <View style={styles.counterOverlay}>
                         <Text style={styles.counterText}>{currentIndex + 1} / {mediaItems.length}</Text>
                     </View>
