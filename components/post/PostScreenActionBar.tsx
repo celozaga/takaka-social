@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
 import { MessageSquare, Heart, Repeat } from 'lucide-react';
 import { AppBskyFeedDefs } from '@atproto/api';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { theme } from '@/lib/theme';
 import { formatCompactNumber } from '@/lib/formatters';
 
@@ -19,11 +20,14 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
         likeUri, likeCount, isLiking, handleLike,
         repostUri, repostCount, isReposting
     } = usePostActions(post);
+    const { width } = useWindowDimensions();
+    const isDesktop = width >= 768;
+    const isMobile = Platform.OS !== 'web' || !isDesktop;
 
     if (!session) return null;
 
     return (
-        <View style={styles.container}>
+        <View style={isMobile ? styles.containerMobile : styles.containerWeb}>
             <Pressable
                 onPress={() => openComposer({ replyTo: { uri: post.uri, cid: post.cid } })}
                 style={styles.replyButton}
@@ -57,31 +61,27 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        ...Platform.select({
-            web: {
-                paddingVertical: theme.spacing.m,
-                marginVertical: theme.spacing.l,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: theme.spacing.l,
-            },
-            default: {
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 80,
-                backgroundColor: theme.colors.surfaceContainer,
-                paddingHorizontal: theme.spacing.l,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: theme.spacing.l,
-                zIndex: 30,
-            }
-        }),
+    containerMobile: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 80,
+        backgroundColor: theme.colors.surfaceContainer,
+        paddingHorizontal: theme.spacing.l,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: theme.spacing.l,
+        zIndex: 30,
+    },
+    containerWeb: {
+        paddingVertical: theme.spacing.m,
+        marginVertical: theme.spacing.l,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: theme.spacing.l,
     },
     replyButton: {
         flex: 1,

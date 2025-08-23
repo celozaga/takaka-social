@@ -49,7 +49,7 @@ function AppLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  const isFullScreenPage = ['/watch'].some(p => pathname.startsWith(p));
+  const isFullScreenPage = ['/watch', '/post'].some(p => pathname.startsWith(p));
   const showNav = !isFullScreenPage;
 
   const appContainerStyle: StyleProp<ViewStyle> = [

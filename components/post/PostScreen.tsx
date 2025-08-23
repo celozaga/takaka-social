@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, StyleSheet, FlatList, Text, Platform } from 'react-native';
+import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import PostHeader from './PostHeader';
 import FullPostCard from './FullPostCard';
@@ -15,6 +15,8 @@ interface PostScreenProps {
 
 const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
 
   const replies = thread.replies?.filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[] || [];
 
@@ -45,9 +47,11 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
   }
   
   const renderFooter = () => {
-      if (Platform.OS === 'web') {
+      // Show action bar in footer only on desktop web
+      if (Platform.OS === 'web' && isDesktop) {
           return <PostScreenActionBar post={thread.post} />;
       }
+      // On mobile web and native, it's rendered absolutely, so no footer needed.
       return null;
   }
 
@@ -61,10 +65,15 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={ListEmpty}
         ListFooterComponent={renderFooter}
-        contentContainerStyle={styles.listContentContainer}
+        contentContainerStyle={[
+            styles.listContentContainer,
+            // Add padding for the absolute action bar on mobile, but not desktop
+            { paddingBottom: (Platform.OS === 'web' && isDesktop) ? theme.spacing.l : 80 }
+        ]}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      {Platform.OS !== 'web' && <PostScreenActionBar post={thread.post} />}
+      {/* Render floating action bar on mobile (native and web) */}
+      {!(Platform.OS === 'web' && isDesktop) && <PostScreenActionBar post={thread.post} />}
     </View>
   );
 };
@@ -76,7 +85,6 @@ const styles = StyleSheet.create({
   },
   listContentContainer: {
     padding: theme.spacing.l,
-    paddingBottom: Platform.select({ web: 0, default: 80 }), // Space for action bar on native
   },
   repliesHeader: {
     marginTop: theme.spacing.xl,
