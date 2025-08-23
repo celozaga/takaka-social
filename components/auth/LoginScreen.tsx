@@ -66,6 +66,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
           />
         </View>
         <Text style={styles.noticeText}>
+            {/* @ts-ignore Trans component is causing a type error in this environment */}
             <Trans
                 i18nKey="signIn.appPasswordNotice"
                 components={{

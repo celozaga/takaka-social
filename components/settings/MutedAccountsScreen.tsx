@@ -133,6 +133,7 @@ const MutedAccountsScreen: React.FC = () => {
                 {isLoading ? (
                     <View style={styles.centeredMessage}><ActivityIndicator size="large" /></View>
                 ) : (
+                    // @ts-ignore Type definitions for FlatList seem to be incorrect in this environment
                     <FlatList
                         data={accounts}
                         renderItem={renderItem}

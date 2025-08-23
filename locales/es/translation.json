@@ -224,7 +224,8 @@
     "empty": "No se encontraron resultados para \"{{query}}\".",
     "trending": "Tendencias",
     "suggestedFollows": "Sugerencias para seguir",
-    "popularFeeds": "Feeds populares"
+    "popularFeeds": "Feeds populares",
+    "clearHistory": "Limpiar todo"
   },
   "feed": {
     "loadingError": "No se pudo cargar este feed. Por favor, inténtalo de nuevo más tarde.",

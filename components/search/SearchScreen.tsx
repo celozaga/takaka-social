@@ -1,9 +1,10 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import {AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
 import Feed from '../shared/Feed';
-import { Search as SearchIcon, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List } from 'lucide-react';
+import { Search as SearchIcon, UserCircle, Image as ImageIcon, Video, TrendingUp, Clock, List, X } from 'lucide-react';
 import ActorSearchResultCard from './ActorSearchResultCard';
 import PopularFeeds from '../feeds/PopularFeeds';
 import SuggestedFollows from '../profile/SuggestedFollows';
@@ -12,7 +13,8 @@ import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import TrendingTopics from './TrendingTopics';
 import Head from '../shared/Head';
 import { useDebounce } from '../../hooks/useDebounce';
-import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { useSearchHistory } from '../../hooks/useSearchHistory';
+import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, Pressable, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
 
 type SearchResult = AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
@@ -37,6 +39,8 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const [hasMore, setHasMore] = useState(true);
     const { pinnedUris, togglePin, addFeed } = useSavedFeeds();
     const [activeFilter, setActiveFilter] = useState<FilterType>((initialFilter as FilterType) || 'top');
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const { history, addHistoryItem, removeHistoryItem, clearHistory } = useSearchHistory();
 
     const filters: { id: FilterType; label: string; icon: React.FC<any> }[] = [
       { id: 'top', label: t('search.top'), icon: TrendingUp },
@@ -90,12 +94,13 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     useEffect(() => {
         const effectiveQuery = debouncedQuery || initialQuery;
         if (effectiveQuery.trim()) {
+            addHistoryItem(effectiveQuery);
             fetchNonPostResults(effectiveQuery, activeFilter);
         } else {
             setNonPostResults([]);
             setIsLoading(false);
         }
-    }, [debouncedQuery, initialQuery, activeFilter, fetchNonPostResults]);
+    }, [debouncedQuery, initialQuery, activeFilter, addHistoryItem, fetchNonPostResults]);
     
     const handlePinToggle = useCallback((feed:AppBskyFeedDefs.GeneratorView) => {
         const isPinned = pinnedUris.has(feed.uri);
@@ -103,6 +108,16 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         else addFeed(feed, true);
     }, [pinnedUris, togglePin, addFeed]);
     
+    const handleHistoryItemSelect = (term: string) => {
+        setQuery(term);
+        setIsInputFocused(false);
+    };
+
+    const handleHistoryItemRemove = (e: any, term: string) => {
+        e.stopPropagation();
+        removeHistoryItem(term);
+    };
+
     const renderResults = () => {
       if (isPostSearch) {
           const mediaFilter: MediaFilter = activeFilter === 'images' ? 'photos' : activeFilter === 'videos' ? 'videos' : 'all';
@@ -144,8 +159,25 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             placeholder={t('search.placeholder')}
                             placeholderTextColor={theme.colors.onSurfaceVariant}
                             style={styles.input}
+                            onFocus={() => setIsInputFocused(true)}
+                            onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
                         />
                     </View>
+                    {isInputFocused && history.length > 0 && !query.trim() && (
+                        <View style={styles.historyDropdown}>
+                            {history.map(item => (
+                                <Pressable key={item} onPress={() => handleHistoryItemSelect(item)} style={styles.historyItem}>
+                                    <Text style={styles.historyItemText}>{item}</Text>
+                                    <Pressable onPress={(e) => handleHistoryItemRemove(e, item)} style={styles.historyRemoveButton}>
+                                        <X size={16} color={theme.colors.onSurfaceVariant} />
+                                    </Pressable>
+                                </Pressable>
+                            ))}
+                            <Pressable onPress={clearHistory} style={styles.historyClearButton}>
+                                <Text style={styles.historyClearButtonText}>{t('search.clearHistory')}</Text>
+                            </Pressable>
+                        </View>
+                    )}
                 </View>
 
                 {showDiscoveryContent ? (
@@ -198,6 +230,47 @@ const styles = StyleSheet.create({
     emptyContainer: { padding: theme.spacing.xxl, marginHorizontal: theme.spacing.l, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, marginTop: theme.spacing.l },
     emptyText: { color: theme.colors.onSurfaceVariant, textAlign: 'center' },
     endText: { textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
+    historyDropdown: {
+        position: 'absolute',
+        top: 72,
+        left: theme.spacing.l,
+        right: theme.spacing.l,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: theme.shape.medium,
+        zIndex: 100,
+        ...Platform.select({
+            web: {
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            },
+            default: {
+                elevation: 5,
+            }
+        }),
+    },
+    historyItem: {
+        paddingVertical: theme.spacing.m,
+        paddingHorizontal: theme.spacing.l,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.outline,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    historyItemText: {
+        color: theme.colors.onSurface,
+        fontSize: 16,
+    },
+    historyRemoveButton: {
+        padding: theme.spacing.xs,
+    },
+    historyClearButton: {
+        padding: theme.spacing.m,
+        alignItems: 'center',
+    },
+    historyClearButtonText: {
+        color: theme.colors.primary,
+        fontWeight: 'bold',
+    },
 });
 
 

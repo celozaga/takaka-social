@@ -224,7 +224,8 @@
     "empty": "No results found for \"{{query}}\".",
     "trending": "Trending",
     "suggestedFollows": "Suggested Follows",
-    "popularFeeds": "Popular Feeds"
+    "popularFeeds": "Popular Feeds",
+    "clearHistory": "Clear all"
   },
   "feed": {
     "loadingError": "Could not load this feed. Please try again later.",

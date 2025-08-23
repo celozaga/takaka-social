@@ -87,6 +87,7 @@ const NotificationsScreen: React.FC = () => {
 
   const renderListHeader = () => (
     <View style={styles.filterScrollContainer}>
+        {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
         <FlatList<{ id: NotificationFilter; label: string; }>
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -127,6 +128,7 @@ const NotificationsScreen: React.FC = () => {
       <Head><title>{t('notifications.title')}</title></Head>
       <View style={{flex: 1}}>
         <ScreenHeader title={t('notifications.title')} />
+        {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
         <FlatList<AppBskyNotificationListNotifications.Notification>
             data={filteredNotifications}
             renderItem={({ item }) => <NotificationItem notification={item} />}

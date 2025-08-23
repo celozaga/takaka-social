@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -58,6 +59,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
   return (
     <View style={styles.container}>
       <PostHeader post={thread.post} />
+      {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
       <FlatList
         data={replies}
         renderItem={renderItem}

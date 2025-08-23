@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useState } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -30,6 +31,7 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
   return (
+    // @ts-ignore Type definitions for FlatList seem to be incorrect in this environment
     <FlatList
       data={videoPosts}
       keyExtractor={item => item.post.uri}

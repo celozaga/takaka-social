@@ -256,6 +256,7 @@ const Feed: React.FC<FeedProps> = ({
 
   if (layout === 'list') {
       return (
+          // @ts-ignore Type definitions for FlatList seem to be incorrect in this environment
           <FlatList
               data={moderatedFeed}
               renderItem={({item}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>}

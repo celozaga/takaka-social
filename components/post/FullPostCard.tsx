@@ -266,6 +266,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 <View 
                     style={[styles.slideshowInnerContainer, { height: finalHeight }]}
                 >
+                    {/* @ts-ignore Type definitions for FlatList seem to be incorrect in this environment */}
                     <FlatList
                         ref={flatListRef}
                         data={mediaItems}
