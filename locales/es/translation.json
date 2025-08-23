@@ -41,7 +41,8 @@
     "signIn": "Iniciar sesión",
     "logout": "Cerrar sesión",
     "settings": "Configuración",
-    "bookmarks": "Marcadores"
+    "bookmarks": "Marcadores",
+    "likes": "Me gusta"
   },
   "home": {
     "following": "Siguiendo",
@@ -200,7 +201,6 @@
     "confirmBlock": "¿Seguro que quieres bloquear a @{{handle}}? No podrán ver tus publicaciones ni interactuar contigo.",
     "emptyFeed": "Este usuario todavía no ha publicado ningún {{mediaType}}.",
     "emptyReposts": "Este usuario aún no ha reposteado ningún contenido multimedia.",
-    "emptyLikes": "A este usuario todavía no le ha gustado ningún contenido multimedia.",
     "privateLikes": "Los 'me gusta' de este usuario son privados.",
     "toast": {
       "followError": "No se pudo seguir al usuario.",
@@ -236,6 +236,7 @@
     "title": "Buscar",
     "placeholder": "Buscar publicaciones, usuarios y feeds",
     "placeholderSaved": "Buscar en publicaciones guardadas",
+    "placeholderLiked": "Buscar en 'Me gusta'",
     "top": "Top",
     "latest": "Recientes",
     "empty": "No se encontraron resultados para \"{{query}}\".",
@@ -247,7 +248,8 @@
   "feed": {
     "loadingError": "No se pudo cargar este feed. Por favor, inténtalo de nuevo más tarde.",
     "empty": "No se encontraron publicaciones visuales en este feed.",
-    "emptyBookmarks": "Aún no has guardado ninguna publicación."
+    "emptyBookmarks": "Aún no has guardado ninguna publicación.",
+    "emptyLikes": "Aún no te ha gustado ninguna publicación."
   },
   "watch": {
     "allSeenTitle": "¡Lo has visto todo!",

@@ -41,7 +41,8 @@
     "signIn": "Entrar",
     "logout": "Sair",
     "settings": "Configurações",
-    "bookmarks": "Marcadores"
+    "bookmarks": "Marcadores",
+    "likes": "Curtidas"
   },
   "home": {
     "following": "Seguindo",
@@ -200,7 +201,6 @@
     "confirmBlock": "Tem certeza de que deseja bloquear @{{handle}}? Eles não poderão ver suas publicações nem interagir com você.",
     "emptyFeed": "Este usuário ainda não publicou nenhuma {{mediaType}}.",
     "emptyReposts": "Este usuário ainda não repostou nenhuma mídia.",
-    "emptyLikes": "Este usuário ainda não curtiu nenhuma mídia.",
     "privateLikes": "As curtidas deste usuário são privadas.",
     "toast": {
       "followError": "Não foi possível seguir o usuário.",
@@ -236,6 +236,7 @@
     "title": "Busca",
     "placeholder": "Buscar publicações, usuários e feeds",
     "placeholderSaved": "Pesquisar publicações salvas",
+    "placeholderLiked": "Pesquisar em Curtidas",
     "top": "Top",
     "latest": "Recentes",
     "empty": "Nenhum resultado encontrado para \"{{query}}\".",
@@ -247,7 +248,8 @@
   "feed": {
     "loadingError": "Não foi possível carregar este feed. Por favor, tente novamente mais tarde.",
     "empty": "Nenhuma publicação visual encontrada neste feed.",
-    "emptyBookmarks": "Você ainda não salvou nenhuma publicação."
+    "emptyBookmarks": "Você ainda não salvou nenhuma publicação.",
+    "emptyLikes": "Você ainda não curtiu nenhuma publicação."
   },
   "watch": {
     "allSeenTitle": "Você já viu tudo!",

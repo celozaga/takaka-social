@@ -61,43 +61,57 @@ const Feed: React.FC<FeedProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
-    // A. GENERAL SEARCH (if not a bookmark feed)
-    if (searchQuery && postFilter !== 'bookmarks_only') {
+    // A. PRIVATE FEEDS (Bookmarks, Likes)
+    if (postFilter === 'bookmarks_only' || postFilter === 'likes_only') {
+        if (!session) return { data: { feed: [], cursor: undefined } };
+
+        let records: any[] = [];
+        let nextCursor: string | undefined;
+
+        if (postFilter === 'bookmarks_only') {
+            const res = await agent.com.atproto.repo.listRecords({
+                repo: session.did,
+                collection: 'app.myclient.bookmark',
+                limit: 50, // Fetch more to have enough items after potential filtering
+                cursor: currentCursor,
+            });
+            const bookmarkUris = res.data.records.map(r => (r.value as any).subject.uri);
+            if (bookmarkUris.length > 0) {
+                const postsRes = await agent.getPosts({ uris: bookmarkUris });
+                const postsByUri = new Map(postsRes.data.posts.map(p => [p.uri, { post: p }]));
+                records = bookmarkUris.map(uri => postsByUri.get(uri)).filter(Boolean) as AppBskyFeedDefs.FeedViewPost[];
+            }
+            nextCursor = res.data.cursor;
+        } else { // likes_only
+            const res = await agent.app.bsky.feed.getActorLikes({
+                actor: session.did,
+                limit: 50,
+                cursor: currentCursor,
+            });
+            records = res.data.feed;
+            nextCursor = res.data.cursor;
+        }
+        
+        if (searchQuery) {
+            const lowerCaseQuery = searchQuery.toLowerCase();
+            records = records.filter(item => {
+                const record = item.post.record as { text?: string };
+                return record.text?.toLowerCase().includes(lowerCaseQuery);
+            });
+        }
+        
+        return { data: { feed: records, cursor: nextCursor } };
+    }
+
+    // B. GENERAL SEARCH
+    if (searchQuery) {
         const res = await agent.app.bsky.feed.searchPosts({ q: searchQuery, cursor: currentCursor, sort: searchSort, limit: 40 });
         const feed: AppBskyFeedDefs.FeedViewPost[] = res.data.posts.map(post => ({ post }));
         return { data: { feed, cursor: res.data.cursor } };
     }
 
-    // B. FEED-BASED FETCHING
+    // C. FEED-BASED FETCHING
     if (feedUri) {
-        if (postFilter === 'likes_only') {
-            return agent.app.bsky.feed.getActorLikes({ actor: feedUri, cursor: currentCursor, limit: 30 });
-        }
-        if (postFilter === 'bookmarks_only') {
-            const res = await agent.com.atproto.repo.listRecords({
-                repo: session!.did,
-                collection: 'app.myclient.bookmark',
-                limit: 25,
-                cursor: currentCursor,
-            });
-            const bookmarkUris = res.data.records.map(r => (r.value as any).subject.uri);
-            if (bookmarkUris.length === 0) {
-                return { data: { feed: [], cursor: res.data.cursor } };
-            }
-            const postsRes = await agent.getPosts({ uris: bookmarkUris });
-            const postsByUri = new Map(postsRes.data.posts.map(p => [p.uri, { post: p }]));
-            let sortedFeed = bookmarkUris.map(uri => postsByUri.get(uri)).filter(Boolean) as AppBskyFeedDefs.FeedViewPost[];
-            
-            if (searchQuery) {
-                const lowerCaseQuery = searchQuery.toLowerCase();
-                sortedFeed = sortedFeed.filter(item => {
-                    const record = item.post.record as { text?: string };
-                    return record.text?.toLowerCase().includes(lowerCaseQuery);
-                });
-            }
-            
-            return { data: { feed: sortedFeed, cursor: res.data.cursor } };
-        }
         if (feedUri === 'following') {
             if (!session) return { data: { feed: [], cursor: undefined } };
             return agent.app.bsky.feed.getTimeline({ cursor: currentCursor, limit: 30 });
@@ -108,7 +122,7 @@ const Feed: React.FC<FeedProps> = ({
         return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
     }
     
-    // C. FALLBACK
+    // D. FALLBACK
     return Promise.resolve({ data: { feed: [], cursor: undefined } });
   }, [agent, feedUri, session, searchQuery, searchSort, authorFeedFilter, postFilter]);
 
@@ -261,7 +275,7 @@ const Feed: React.FC<FeedProps> = ({
     } else if (postFilter === 'reposts_only') {
         emptyText = t('profile.emptyReposts');
     } else if (postFilter === 'likes_only') {
-        emptyText = t('profile.emptyLikes');
+        emptyText = t('feed.emptyLikes');
     } else if (postFilter === 'bookmarks_only') {
         emptyText = t('feed.emptyBookmarks');
     } else if (authorFeedFilter) {

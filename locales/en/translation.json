@@ -41,7 +41,8 @@
     "signIn": "Sign In",
     "logout": "Logout",
     "settings": "Settings",
-    "bookmarks": "Bookmarks"
+    "bookmarks": "Bookmarks",
+    "likes": "Likes"
   },
   "home": {
     "following": "Following",
@@ -200,7 +201,6 @@
     "confirmBlock": "Are you sure you want to block @{{handle}}? They will not be able to see your posts or interact with you.",
     "emptyFeed": "This user has not posted any {{mediaType}} yet.",
     "emptyReposts": "This user hasn't reposted any media yet.",
-    "emptyLikes": "This user hasn't liked any media yet.",
     "privateLikes": "This user's likes are private.",
     "toast": {
       "followError": "Could not follow user.",
@@ -236,6 +236,7 @@
     "title": "Search",
     "placeholder": "Search posts, users, and feeds",
     "placeholderSaved": "Search saved posts",
+    "placeholderLiked": "Search liked posts",
     "top": "Top",
     "latest": "Latest",
     "empty": "No results found for \"{{query}}\".",
@@ -247,7 +248,8 @@
   "feed": {
     "loadingError": "Could not load this feed. Please try again later.",
     "empty": "No visual posts found in this feed.",
-    "emptyBookmarks": "You haven't bookmarked any posts yet."
+    "emptyBookmarks": "You haven't bookmarked any posts yet.",
+    "emptyLikes": "You haven't liked any posts yet."
   },
   "watch": {
     "allSeenTitle": "You've seen it all!",

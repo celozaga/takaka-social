@@ -33,7 +33,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
-    const [activeFilter, setActiveFilter] = useState<'posts' | 'reposts' | 'likes'>('posts');
+    const [activeFilter, setActiveFilter] = useState<'posts' | 'reposts'>('posts');
 
 
     const isMe = session?.did === profile?.did;
@@ -190,10 +190,6 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     <Repeat size={24} color={activeFilter === 'reposts' ? theme.colors.primary : theme.colors.onSurfaceVariant} />
                     {activeFilter === 'reposts' && <View style={styles.activeIndicator} />}
                 </Pressable>
-                <Pressable style={styles.filterButton} onPress={() => setActiveFilter('likes')}>
-                    <Heart size={24} color={activeFilter === 'likes' ? theme.colors.primary : theme.colors.onSurfaceVariant} />
-                    {activeFilter === 'likes' && <View style={styles.activeIndicator} />}
-                </Pressable>
             </View>
         </View>
     );
@@ -249,15 +245,11 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
                     authorFeedFilter={
                         activeFilter === 'posts'
                             ? 'posts_with_media'
-                            : activeFilter === 'reposts'
-                            ? 'posts_with_replies' // This includes posts, reposts, and replies. Client-side will filter.
-                            : undefined
+                            : 'posts_with_replies'
                     }
                     postFilter={
                         activeFilter === 'reposts'
                             ? 'reposts_only'
-                            : activeFilter === 'likes'
-                            ? 'likes_only'
                             : undefined
                     }
                     ListHeaderComponent={ListHeader}
