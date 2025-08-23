@@ -5,15 +5,39 @@ import { useAtp } from '../../context/AtpContext';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { 
-    Settings, BadgeCheck, List, Search, 
-    Bell, Users, UserCheck, Clapperboard
+    Settings, List, Search, 
+    Bell, Users, UserCheck, Clapperboard, ChevronRight
 } from 'lucide-react';
 import Head from '../shared/Head';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
-import SettingsListItem from '../settings/SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
 
+// --- Reusable Icon Components for the new SuperApp Layout ---
+
+const QuickActionItem: React.FC<{ icon: React.ElementType, label: string, href: string }> = ({ icon: Icon, label, href }) => (
+    <Link href={href as any} asChild>
+        <Pressable style={styles.quickActionItem}>
+            <View style={styles.quickActionIconContainer}>
+                <Icon size={28} color={theme.colors.onSurface} />
+            </View>
+            <Text style={styles.quickActionLabel}>{label}</Text>
+        </Pressable>
+    </Link>
+);
+
+const AppGridItem: React.FC<{ icon: React.ElementType, label: string, href: string, color: string }> = ({ icon: Icon, label, href, color }) => (
+    <Link href={href as any} asChild>
+        <Pressable style={styles.appGridItem}>
+            <View style={[styles.appGridIconContainer, { backgroundColor: color }]}>
+                <Icon size={32} color="white" />
+            </View>
+            <Text style={styles.appGridItemLabel}>{label}</Text>
+        </Pressable>
+    </Link>
+);
+
+
+// --- Main MoreScreen Component ---
 
 const MoreScreen: React.FC = () => {
     const { session } = useAtp();
@@ -37,141 +61,184 @@ const MoreScreen: React.FC = () => {
     
     const profileLink = session?.handle ? `/profile/${session.handle}` : '/';
 
-    const listItems = session ? [
-        { icon: List, label: t('more.myFeeds'), href: '/feeds' },
-        { icon: Clapperboard, label: t('more.watch'), href: '/watch' },
-        { icon: Search, label: t('nav.search'), href: '/search' },
-        { icon: Bell, label: t('nav.notifications'), href: '/notifications' },
-        { icon: Users, label: t('common.followers'), href: `/profile/${session.handle}/followers` },
-        { icon: UserCheck, label: t('common.following'), href: `/profile/${session.handle}/following` },
-        { icon: Settings, label: t('nav.settings'), href: '/settings' },
-    ] : [];
-    
+    const renderSkeleton = () => (
+        <View style={styles.container}>
+            <View style={styles.profileSection}>
+                <View style={styles.avatarSkeleton} />
+                <View style={{ flex: 1, gap: theme.spacing.s }}>
+                    <View style={styles.textSkeletonLg} />
+                    <View style={styles.textSkeletonSm} />
+                </View>
+            </View>
+            <View style={styles.divider} />
+        </View>
+    );
 
     return (
         <>
             <Head><title>{t('more.title')}</title></Head>
-            <View style={styles.container}>
-                <View style={{gap: theme.spacing.xxl}}>
-                    {isLoading ? (
-                        <View style={[styles.profileCard, styles.profileCardSkeleton]}>
-                            <View style={styles.profileContent}>
-                                <View style={styles.avatarSkeleton} />
-                                <View style={{gap: theme.spacing.s}}>
-                                    <View style={styles.textSkeletonLg} />
-                                    <View style={styles.textSkeletonSm} />
-                                </View>
-                            </View>
-                        </View>
-                    ) : profile && (
-                        <Link href={profileLink as any} asChild>
-                            <Pressable style={({ pressed }) => [styles.profileCard, pressed && styles.profileCardPressed]}>
-                                <View style={styles.profileContent}>
-                                    <View style={{flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, flex: 1}}>
-                                        <Image source={{ uri: profile.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                                        <View style={{flex: 1}}>
-                                            <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
-                                                <Text style={styles.profileName} numberOfLines={1}>{profile.displayName || `@${profile.handle}`}</Text>
-                                                {profile.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
-                                                    <BadgeCheck size={20} color={theme.colors.primary} fill="currentColor" />
-                                                )}
-                                            </View>
-                                            <Text style={styles.profileHandle} numberOfLines={1}>@{profile.handle}</Text>
-                                        </View>
+            <ScrollView style={styles.scrollView}>
+                <View style={styles.container}>
+                    {isLoading ? renderSkeleton() : (
+                        profile && (
+                            <Link href={profileLink as any} asChild>
+                                <Pressable style={({ pressed }) => [styles.profileSection, pressed && styles.pressed]}>
+                                    <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+                                    <View style={styles.profileTextContainer}>
+                                        <Text style={styles.displayName}>{profile.displayName || `@${profile.handle}`}</Text>
+                                        <Text style={styles.handle}>@{profile.handle}</Text>
                                     </View>
-                                    <SettingsListItem icon={() => null} label="" href={profileLink} />
-                                </View>
-                            </Pressable>
-                        </Link>
+                                    <ChevronRight size={24} color={theme.colors.onSurfaceVariant} />
+                                </Pressable>
+                            </Link>
+                        )
                     )}
+                    
+                    <View style={styles.divider} />
 
                     {session && (
-                        <View>
-                            <Text style={styles.sectionTitle}>{t('more.allApps')}</Text>
-                            <View style={styles.listContainer}>
-                                {listItems.map((item, index) => (
-                                    <React.Fragment key={item.label}>
-                                        <SettingsListItem icon={item.icon} label={item.label} href={item.href} />
-                                        {index < listItems.length - 1 && <SettingsDivider />}
-                                    </React.Fragment>
-                                ))}
+                        <>
+                            <View style={styles.quickActionsContainer}>
+                                <QuickActionItem icon={Bell} label={t('nav.notifications')} href="/notifications" />
+                                <QuickActionItem icon={List} label={t('more.myFeeds')} href="/feeds" />
+                                <QuickActionItem icon={Settings} label={t('nav.settings')} href="/settings" />
                             </View>
-                        </View>
+
+                            <View style={styles.allAppsSection}>
+                                <Text style={styles.sectionTitle}>{t('more.allApps')}</Text>
+                                <View style={styles.appsGridContainer}>
+                                    <AppGridItem icon={Search} label={t('nav.search')} href="/search" color="#424242" />
+                                    <AppGridItem icon={Clapperboard} label={t('more.watch')} href="/watch" color="#005B96" />
+                                    <AppGridItem icon={Users} label={t('common.followers')} href={`/profile/${session.handle}/followers`} color="#6A1B9A" />
+                                    <AppGridItem icon={UserCheck} label={t('common.following')} href={`/profile/${session.handle}/following`} color="#2E7D32" />
+                                </View>
+                            </View>
+                        </>
                     )}
                 </View>
-            </View>
+            </ScrollView>
         </>
     );
 };
 
 const styles = StyleSheet.create({
+    scrollView: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
     container: {
-        paddingTop: theme.spacing.l,
-        paddingHorizontal: theme.spacing.l,
-    },
-    profileCard: {
-        backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.medium,
-    },
-    profileCardPressed: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
-    profileCardSkeleton: {
-        height: 96,
         padding: theme.spacing.l,
-        justifyContent: 'center'
     },
-    profileContent: {
+    pressed: {
+        backgroundColor: theme.colors.surfaceContainerHover,
+    },
+    // --- Profile Section ---
+    profileSection: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingRight: theme.spacing.l,
+        paddingVertical: theme.spacing.m,
     },
     avatar: {
         width: 64,
         height: 64,
         borderRadius: theme.shape.full,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        margin: theme.spacing.l,
-        marginRight: 0,
     },
+    profileTextContainer: {
+        flex: 1,
+        marginHorizontal: theme.spacing.m,
+    },
+    displayName: {
+        ...theme.typography.titleLarge,
+        color: theme.colors.onSurface,
+    },
+    handle: {
+        ...theme.typography.bodyLarge,
+        color: theme.colors.onSurfaceVariant,
+        marginTop: theme.spacing.xs,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: theme.colors.outline,
+        marginVertical: theme.spacing.l,
+    },
+    // --- Skeleton Styles ---
     avatarSkeleton: {
         width: 64,
         height: 64,
         borderRadius: theme.shape.full,
-        backgroundColor: theme.colors.surfaceContainerHigh,
-        marginRight: theme.spacing.l,
+        backgroundColor: theme.colors.surfaceContainer,
     },
     textSkeletonLg: {
-        height: 20,
-        width: 128,
-        backgroundColor: theme.colors.surfaceContainerHigh,
+        height: 24,
+        width: '60%',
+        backgroundColor: theme.colors.surfaceContainer,
         borderRadius: theme.shape.small,
     },
     textSkeletonSm: {
-        height: 16,
-        width: 96,
-        backgroundColor: theme.colors.surfaceContainerHigh,
+        height: 20,
+        width: '40%',
+        backgroundColor: theme.colors.surfaceContainer,
         borderRadius: theme.shape.small,
     },
-    profileName: {
-        ...theme.typography.titleMedium,
-        color: theme.colors.onSurface
+    // --- Quick Actions ---
+    quickActionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'flex-start',
+        paddingVertical: theme.spacing.m,
+        marginBottom: theme.spacing.l,
     },
-    profileHandle: {
-        ...theme.typography.bodyLarge,
-        color: theme.colors.onSurfaceVariant,
+    quickActionItem: {
+        alignItems: 'center',
+        gap: theme.spacing.m,
+        flex: 1,
+    },
+    quickActionIconContainer: {
+        width: 72,
+        height: 72,
+        borderRadius: theme.shape.extraLarge,
+        backgroundColor: theme.colors.surfaceContainer,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    quickActionLabel: {
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurface,
+        textAlign: 'center',
+    },
+    // --- All Apps Grid ---
+    allAppsSection: {
+        marginTop: theme.spacing.l,
     },
     sectionTitle: {
-        ...theme.typography.labelLarge,
-        color: theme.colors.onSurfaceVariant,
-        marginBottom: theme.spacing.s,
-        paddingHorizontal: theme.spacing.xs,
+        ...theme.typography.titleMedium,
+        color: theme.colors.onSurface,
+        marginBottom: theme.spacing.l,
     },
-    listContainer: {
-        backgroundColor: theme.colors.surfaceContainer,
+    appsGridContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        margin: -theme.spacing.s, // Negative margin to create space for items
+    },
+    appGridItem: {
+        width: '25%', // 4 items per row
+        alignItems: 'center',
+        padding: theme.spacing.s,
+        marginBottom: theme.spacing.m,
+    },
+    appGridIconContainer: {
+        width: 64,
+        height: 64,
         borderRadius: theme.shape.large,
-        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: theme.spacing.s,
+    },
+    appGridItemLabel: {
+        ...theme.typography.bodySmall,
+        color: theme.colors.onSurface,
+        textAlign: 'center',
     },
 });
 
