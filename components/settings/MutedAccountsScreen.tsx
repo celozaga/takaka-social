@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -136,7 +137,7 @@ const MutedAccountsScreen: React.FC = () => {
         onEndReached: loadMore,
         onEndReachedThreshold: 0.5,
         ItemSeparatorComponent: SettingsDivider,
-        ListFooterComponent: isLoadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null,
+        ListFooterComponent: isLoadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} color={theme.colors.onSurface} /> : null,
     };
 
     return (
@@ -145,7 +146,7 @@ const MutedAccountsScreen: React.FC = () => {
             <View style={{ flex: 1 }}>
                 <ScreenHeader title={t('mutedAccounts.title')} />
                 {isLoading ? (
-                    <View style={styles.centeredMessage}><ActivityIndicator size="large" /></View>
+                    <View style={styles.centeredMessage}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>
                 ) : (
                     <FlatList {...flatListProps} />
                 )}

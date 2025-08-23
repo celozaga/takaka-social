@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useModeration } from '../../context/ModerationContext';
 import { useProfileCache } from '../../context/ProfileCacheContext';
@@ -41,7 +42,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
     }, [getProfile, serviceDid]);
     
     if (isLoading) {
-        return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
+        return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>;
     }
 
     if (!serviceProfile) {

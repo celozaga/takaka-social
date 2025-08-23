@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -96,7 +97,7 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
                 {!isLoading && error && <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>}
                 {!isLoading && !error && list.length === 0 && <View style={styles.messageContainer}><Text style={styles.infoText}>{t('follows.empty')}</Text></View>}
                 {list.map(user => <ActorSearchResultCard key={user.did} actor={user} />)}
-                {isLoadingMore && <ActivityIndicator style={{ marginVertical: 24 }} size="large" />}
+                {isLoadingMore && <ActivityIndicator style={{ marginVertical: 24 }} size="large" color={theme.colors.onSurface} />}
             </ScrollView>
         </>
     );

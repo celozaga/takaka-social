@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -171,7 +172,7 @@ const NotificationSettingsScreen: React.FC = () => {
             <View style={{flex: 1}}>
                 <ScreenHeader title={t('notificationSettings.title')} />
                 <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                    <ActivityIndicator size="large" />
+                    <ActivityIndicator size="large" color={theme.colors.onSurface} />
                 </View>
             </View>
         )

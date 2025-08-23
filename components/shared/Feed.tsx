@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -313,7 +314,7 @@ const Feed: React.FC<FeedProps> = ({
               <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
             </View>
           ) : (
-            <View style={styles.listContainer}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
+            <View style={styles.listContainer}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>
           )}
         </>
       </View>

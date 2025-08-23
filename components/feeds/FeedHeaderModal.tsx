@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUI } from '../../context/UIContext';
@@ -38,7 +39,7 @@ const FeedHeaderModal: React.FC = () => {
 
     const renderContent = () => {
         if (isLoading) {
-            return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
+            return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>;
         }
 
         if (error || !feedView) {

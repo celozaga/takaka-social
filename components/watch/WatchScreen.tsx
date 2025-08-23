@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -25,7 +26,7 @@ const WatchScreen: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const [activeFeed, setActiveFeed] = useState({ uri: VIDEOS_FEED_URI, isFallback: false });
 
-    const isVideoPost = (post: AppBskyFeedDefs.PostView) => {
+    const isVideoPost = (post:AppBskyFeedDefs.PostView) => {
         const embed = post.embed;
         if (!embed) return false;
         return AppBskyEmbedVideo.isView(embed) || (AppBskyEmbedRecordWithMedia.isView(embed) && AppBskyEmbedVideo.isView(embed.media));
@@ -102,7 +103,7 @@ const WatchScreen: React.FC = () => {
         }
     }, [cursor, fetchVideos]);
 
-    if (isLoading) return <View style={styles.fullScreenCentered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
+    if (isLoading) return <View style={styles.fullScreenCentered}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>;
     if (error) return <View style={styles.fullScreenCentered}><Text style={styles.errorText}>{error}</Text></View>;
     
     return (

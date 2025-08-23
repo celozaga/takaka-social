@@ -140,7 +140,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 if (activeFilter === 'feeds') return <FeedSearchResultCard key={(item as any).uri} feed={item as any} isPinned={pinnedUris.has((item as any).uri)} onTogglePin={() => handlePinToggle(item as any)} />;
                 return null;
             })}
-             {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: theme.spacing.xxl }} />}
+             {isLoadingMore && <ActivityIndicator size="large" style={{ marginVertical: theme.spacing.xxl }} color={theme.colors.onSurface} />}
              {!isLoading && !hasMore && nonPostResults.length > 0 && <Text style={styles.endText}>{t('common.endOfList')}</Text>}
           </View>
         </ScrollView>

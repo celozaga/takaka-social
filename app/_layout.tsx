@@ -49,7 +49,7 @@ function AppLayout() {
   if (isLoadingSession) {
     return (
       <View style={styles.fullScreenLoader}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.onSurface} />
       </View>
     );
   }

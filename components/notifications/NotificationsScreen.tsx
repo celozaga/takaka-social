@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -138,7 +139,7 @@ const NotificationsScreen: React.FC = () => {
       onEndReached: loadMoreNotifications,
       onEndReachedThreshold: 0.5,
       ListFooterComponent: () => {
-          if (isLoadingMore) return <ActivityIndicator style={{ marginVertical: 24 }} size="large" />;
+          if (isLoadingMore) return <ActivityIndicator style={{ marginVertical: 24 }} size="large" color={theme.colors.onSurface} />;
           if (!hasMore && notifications.length > 0) return <Text style={styles.endText}>{t('common.endOfList')}</Text>;
           return null;
       },

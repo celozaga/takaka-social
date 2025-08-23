@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../ui/use-toast';
@@ -67,7 +68,7 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
             </View>
             
             <View style={styles.content}>
-                {isReposting && <View style={styles.loadingOverlay}><ActivityIndicator size="large" /></View>}
+                {isReposting && <View style={styles.loadingOverlay}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>}
                 <ActionListItem 
                     icon={Repeat} 
                     label={repostUri ? t('repostModal.undoRepost') : t('repostModal.repost')} 

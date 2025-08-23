@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -91,7 +92,7 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
             </View>
 
             <View style={styles.content}>
-                {isLoading && <View style={styles.loadingOverlay}><ActivityIndicator size="large" /></View>}
+                {isLoading && <View style={styles.loadingOverlay}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>}
                 <ActionListItem icon={Bookmark} label={isPostBookmarked ? t('postActions.removeBookmark') : t('postActions.bookmark')} onPress={handleBookmark} />
                 <ActionListItem icon={EyeOff} label={t('mediaActions.notInterested')} onPress={handleHide} />
                 {!isMe && (
