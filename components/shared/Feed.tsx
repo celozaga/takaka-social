@@ -40,6 +40,8 @@ const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
     return post.embed?.$type === 'app.bsky.embed.video#view';
 }
 
+const PRIVATE_LIKES_ERROR_MESSAGE = "This user's likes are private.";
+
 const Feed: React.FC<FeedProps> = ({ 
     feedUri, 
     authorFeedFilter,
@@ -85,8 +87,8 @@ const Feed: React.FC<FeedProps> = ({
 
   
   const processAndSetFeed = useCallback((newPosts: AppBskyFeedDefs.FeedViewPost[], currentCursor?: string) => {
-      // Per user request, all replies are filtered from feed views.
-      let processedPosts = newPosts.filter(item => !item.reply);
+      // Per user request, all replies are filtered from feed views, but not on author profile feeds where the API filter should be respected.
+      let processedPosts = authorFeedFilter ? newPosts : newPosts.filter(item => !item.reply);
       
       if (postFilter === 'reposts_only') {
           processedPosts = processedPosts.filter(item => !!item.reason && AppBskyFeedDefs.isReasonRepost(item.reason));
@@ -109,7 +111,7 @@ const Feed: React.FC<FeedProps> = ({
           setFeed(processedPosts);
       }
 
-  }, [layout, mediaFilter, postFilter]);
+  }, [layout, mediaFilter, postFilter, authorFeedFilter]);
 
   const loadInitialPosts = useCallback(async () => {
     setIsLoading(true);
@@ -124,11 +126,15 @@ const Feed: React.FC<FeedProps> = ({
         setCursor(response.data.cursor);
         setHasMore(!!response.data.cursor && posts.length > 0);
     } catch (err: any) {
-        setError(t('feed.loadingError'));
+        if (postFilter === 'likes_only' && err.error === 'AuthRequiredError') {
+            setError(PRIVATE_LIKES_ERROR_MESSAGE);
+        } else {
+            setError(t('feed.loadingError'));
+        }
     } finally {
         setIsLoading(false);
     }
-  }, [fetchPosts, processAndSetFeed, t]);
+  }, [fetchPosts, processAndSetFeed, t, postFilter]);
 
   useEffect(() => {
     loadInitialPosts();
@@ -228,12 +234,18 @@ const Feed: React.FC<FeedProps> = ({
         emptyText = t('profile.emptyFeed', { mediaType: 'media' });
     }
 
+    const isLikesPrivateError = error === PRIVATE_LIKES_ERROR_MESSAGE;
+
     return (
         <View style={styles.messageContainer}>
         {error ? (
             <View style={{ alignItems: 'center' }}>
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}><Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text></Pressable>
+                <Text style={styles.errorText}>{error}</Text>
+                {!isLikesPrivateError && (
+                    <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
+                        <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
+                    </Pressable>
+                )}
             </View>
         ) : (
             <Text style={styles.infoText}>{emptyText}</Text>
