@@ -261,17 +261,17 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             }
         };
 
-        const flatListProps: FlatListProps<MediaItem> = {
+        const flatListProps = {
             data: mediaItems,
             renderItem: renderSlideshowItem,
             horizontal: true,
             pagingEnabled: true,
             showsHorizontalScrollIndicator: false,
-            keyExtractor: (item, index) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index,
+            keyExtractor: (item: MediaItem, index: number) => 'type' in item ? item.view.cid : (item as AppBskyEmbedImages.ViewImage).thumb + index,
             onViewableItemsChanged,
             viewabilityConfig,
             style: StyleSheet.absoluteFillObject,
-            getItemLayout: (_, index) => ({
+            getItemLayout: (_: any, index: number) => ({
                 length: containerWidth,
                 offset: containerWidth * index,
                 index,

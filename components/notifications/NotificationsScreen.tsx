@@ -86,12 +86,12 @@ const NotificationsScreen: React.FC = () => {
   }, [notifications, activeTab]);
 
   const renderListHeader = () => {
-    const filterFlatListProps: FlatListProps<{ id: NotificationFilter; label: string; }> = {
+    const filterFlatListProps = {
         horizontal: true,
         showsHorizontalScrollIndicator: false,
         data: filters,
-        keyExtractor: (item) => item.id,
-        renderItem: ({ item }) => (
+        keyExtractor: (item: { id: NotificationFilter; label: string; }) => item.id,
+        renderItem: ({ item }: { item: { id: NotificationFilter; label: string; } }) => (
             <Pressable onPress={() => setActiveTab(item.id)} style={[styles.filterButton, activeTab === item.id && styles.activeFilter]}>
                 <Text style={[styles.filterText, activeTab === item.id && styles.activeFilterText]}>{t(`notifications.${item.id}`, { defaultValue: item.label })}</Text>
             </Pressable>
@@ -126,10 +126,10 @@ const NotificationsScreen: React.FC = () => {
     )
   }
   
-  const mainFlatListProps: FlatListProps<AppBskyNotificationListNotifications.Notification> = {
+  const mainFlatListProps = {
       data: filteredNotifications,
-      renderItem: ({ item }) => <NotificationItem notification={item} />,
-      keyExtractor: (item) => item.uri,
+      renderItem: ({ item }: { item: AppBskyNotificationListNotifications.Notification }) => <NotificationItem notification={item} />,
+      keyExtractor: (item: AppBskyNotificationListNotifications.Notification) => item.uri,
       ListHeaderComponent: renderListHeader,
       ItemSeparatorComponent: () => <View style={styles.separator} />,
       contentContainerStyle: styles.listContentContainer,

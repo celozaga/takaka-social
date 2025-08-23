@@ -1,6 +1,3 @@
-
-
-
 import React from 'react';
 import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions, FlatListProps } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -57,10 +54,10 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
       return null;
   }
 
-  const flatListProps: FlatListProps<AppBskyFeedDefs.ThreadViewPost> = {
+  const flatListProps = {
     data: replies,
     renderItem,
-    keyExtractor: (item) => item.post.cid,
+    keyExtractor: (item: AppBskyFeedDefs.ThreadViewPost) => item.post.cid,
     ListHeaderComponent: ListHeader,
     ListEmptyComponent: ListEmpty,
     ListFooterComponent: renderFooter,

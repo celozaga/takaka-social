@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -208,7 +204,7 @@ const Feed: React.FC<FeedProps> = ({
     if (isLoadingMore) {
       if (layout === 'grid') {
         return (
-          <View style={styles.masonryContainer}>
+          <View style={[styles.masonryContainer, { marginTop: theme.spacing.l }]}>
             <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
             <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
           </View>
@@ -292,9 +288,9 @@ const Feed: React.FC<FeedProps> = ({
   }
 
   if (layout === 'list') {
-      const flatListProps: FlatListProps<AppBskyFeedDefs.FeedViewPost> = {
+      const flatListProps = {
           data: moderatedFeed,
-          renderItem: ({item}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>,
+          renderItem: ({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>,
           keyExtractor,
           ItemSeparatorComponent: () => <View style={{height: theme.spacing.s}} />,
           ListHeaderComponent,

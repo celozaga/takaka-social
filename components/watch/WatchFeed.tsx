@@ -1,6 +1,3 @@
-
-
-
 import React, { useRef, useState } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet, FlatListProps } from 'react-native';
 import {AppBskyFeedDefs } from '@atproto/api';
@@ -9,7 +6,7 @@ import { theme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
-  videoPosts: AppBskyFeedDefs.FeedViewPost[];
+  videoPosts:AppBskyFeedDefs.FeedViewPost[];
   loadMore: () => void;
   isLoadingMore: boolean;
   hasMore: boolean;
@@ -31,10 +28,10 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
 
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
-  const flatListProps: FlatListProps<AppBskyFeedDefs.FeedViewPost> = {
+  const flatListProps = {
     data: videoPosts,
-    keyExtractor: item => item.post.uri,
-    renderItem: ({ item, index }) => (
+    keyExtractor: (item: AppBskyFeedDefs.FeedViewPost) => item.post.uri,
+    renderItem: ({ item, index }: { item: AppBskyFeedDefs.FeedViewPost; index: number }) => (
       <View style={{ height }}>
         <VideoPlayer 
           postView={item} 
@@ -57,7 +54,7 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
     initialNumToRender: 1,
     maxToRenderPerBatch: 1,
     removeClippedSubviews: true,
-    getItemLayout: (_, index) => ({
+    getItemLayout: (_: any, index: number) => ({
       length: height,
       offset: height * index,
       index,

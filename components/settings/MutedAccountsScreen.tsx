@@ -125,10 +125,10 @@ const MutedAccountsScreen: React.FC = () => {
         </View>
     );
 
-    const flatListProps: FlatListProps<AppBskyActorDefs.ProfileView> = {
+    const flatListProps = {
         data: accounts,
         renderItem,
-        keyExtractor: (item) => item.did,
+        keyExtractor: (item: AppBskyActorDefs.ProfileView) => item.did,
         contentContainerStyle: settingsStyles.scrollContainer,
         ListHeaderComponent: <Text style={settingsStyles.description}>{t('mutedAccounts.description')}</Text>,
         ListEmptyComponent: renderListEmptyComponent,
