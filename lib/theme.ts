@@ -2,6 +2,20 @@ import { Platform, StyleSheet } from 'react-native';
 
 /**
  * ============================================================================
+ * App Design Tokens
+ * ============================================================================
+ *
+ * This file is the single source of truth for all stylistic choices in the app,
+ * including colors, spacing, typography, and shapes. By centralizing these
+ * "design tokens," we ensure a consistent and scalable UI.
+ *
+ * All components should import the `theme` object from this file to access
+ * these values, rather than using hardcoded styles.
+ *
+ */
+
+/**
+ * ============================================================================
  * Color Palette
  * ============================================================================
  *
@@ -220,7 +234,3 @@ export const theme = {
     },
   }),
 };
-
-// For convenience, we can still export settingsStyles directly,
-// but it's now derived from the main theme object.
-export const settingsStyles = theme.settingsStyles;

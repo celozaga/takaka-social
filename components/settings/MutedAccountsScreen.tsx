@@ -9,6 +9,7 @@ import Head from '../shared/Head';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Image, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import { BadgeCheck } from 'lucide-react';
+import SettingsDivider from '../ui/SettingsDivider';
 
 const MutedAccountItem: React.FC<{
     actor: AppBskyActorDefs.ProfileView;
@@ -125,7 +126,7 @@ const MutedAccountsScreen: React.FC = () => {
         </View>
     );
 
-    const flatListProps = {
+    const flatListProps: FlatListProps<AppBskyActorDefs.ProfileView> = {
         data: accounts,
         renderItem,
         keyExtractor: (item: AppBskyActorDefs.ProfileView) => item.did,
@@ -134,7 +135,7 @@ const MutedAccountsScreen: React.FC = () => {
         ListEmptyComponent: renderListEmptyComponent,
         onEndReached: loadMore,
         onEndReachedThreshold: 0.5,
-        ItemSeparatorComponent: () => <View style={theme.settingsStyles.divider} />,
+        ItemSeparatorComponent: SettingsDivider,
         ListFooterComponent: isLoadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null,
     };
 

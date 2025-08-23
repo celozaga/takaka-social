@@ -4,6 +4,7 @@ import ScreenHeader from '../layout/ScreenHeader';
 import { Trash2, Tag, Plus } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
+import SettingsDivider from '../ui/SettingsDivider';
 
 const MutedWordsScreen: React.FC = () => {
     const { isReady, mutedWords, addMutedWord, removeMutedWord } = useModeration();
@@ -64,7 +65,7 @@ const MutedWordsScreen: React.FC = () => {
                                         <Trash2 size={18} color={theme.colors.onSurfaceVariant} />
                                     </Pressable>
                                 </View>
-                                {index < mutedWords.length - 1 && <View style={theme.settingsStyles.divider} />}
+                                {index < mutedWords.length - 1 && <SettingsDivider />}
                             </React.Fragment>
                         ))
                     )}

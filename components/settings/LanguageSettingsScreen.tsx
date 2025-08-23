@@ -6,7 +6,7 @@ import { Check } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
-import SettingsDivider from '@/components/ui/SettingsDivider';
+import SettingsDivider from '../ui/SettingsDivider';
 
 const LanguageSettingsScreen: React.FC = () => {
     const { t, i18n } = useTranslation();
