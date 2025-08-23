@@ -256,8 +256,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: theme.spacing.l,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.surfaceContainerHigh,
     },
     lastListItem: {
         borderBottomWidth: 0,
