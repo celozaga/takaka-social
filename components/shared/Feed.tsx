@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -39,8 +40,6 @@ const hasPhotos = (post: AppBskyFeedDefs.PostView): boolean => {
 const hasVideos = (post: AppBskyFeedDefs.PostView): boolean => {
     return post.embed?.$type === 'app.bsky.embed.video#view';
 }
-
-const PRIVATE_LIKES_ERROR_MESSAGE = "This user's likes are private.";
 
 const Feed: React.FC<FeedProps> = ({ 
     feedUri, 
@@ -87,8 +86,9 @@ const Feed: React.FC<FeedProps> = ({
 
   
   const processAndSetFeed = useCallback((newPosts: AppBskyFeedDefs.FeedViewPost[], currentCursor?: string) => {
-      // Per user request, all replies are filtered from feed views, but not on author profile feeds where the API filter should be respected.
-      let processedPosts = authorFeedFilter ? newPosts : newPosts.filter(item => !item.reply);
+      const isProfileContext = !!authorFeedFilter || !!postFilter;
+      // All replies are filtered from general feed views, but not on author profile feeds where the API filter should be respected.
+      let processedPosts = isProfileContext ? newPosts : newPosts.filter(item => !item.reply);
       
       if (postFilter === 'reposts_only') {
           processedPosts = processedPosts.filter(item => !!item.reason && AppBskyFeedDefs.isReasonRepost(item.reason));
@@ -126,8 +126,10 @@ const Feed: React.FC<FeedProps> = ({
         setCursor(response.data.cursor);
         setHasMore(!!response.data.cursor && posts.length > 0);
     } catch (err: any) {
-        if (postFilter === 'likes_only' && err.error === 'AuthRequiredError') {
-            setError(PRIVATE_LIKES_ERROR_MESSAGE);
+        if (postFilter === 'likes_only' && (err.error === 'AuthRequiredError' || err.message?.includes('private'))) {
+            setError(t('profile.privateLikes'));
+        } else if (err.error === 'BlockedByActor' || err.error === 'BlockedActor') {
+            setError(t('profile.blockedBy'));
         } else {
             setError(t('feed.loadingError'));
         }
@@ -234,14 +236,14 @@ const Feed: React.FC<FeedProps> = ({
         emptyText = t('profile.emptyFeed', { mediaType: 'media' });
     }
 
-    const isLikesPrivateError = error === PRIVATE_LIKES_ERROR_MESSAGE;
+    const isNonRecoverableError = error === t('profile.privateLikes') || error === t('profile.blockedBy');
 
     return (
         <View style={styles.messageContainer}>
         {error ? (
             <View style={{ alignItems: 'center' }}>
                 <Text style={styles.errorText}>{error}</Text>
-                {!isLikesPrivateError && (
+                {!isNonRecoverableError && (
                     <Pressable onPress={loadInitialPosts} style={styles.tryAgainButton}>
                         <Text style={styles.tryAgainText}>{t('common.tryAgain')}</Text>
                     </Pressable>

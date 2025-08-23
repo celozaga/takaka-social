@@ -188,6 +188,7 @@
     "emptyFeed": "This user has not posted any {{mediaType}} yet.",
     "emptyReposts": "This user hasn't reposted any media yet.",
     "emptyLikes": "This user hasn't liked any media yet.",
+    "privateLikes": "This user's likes are private.",
     "toast": {
       "followError": "Could not follow user.",
       "unfollowError": "Could not unfollow user.",

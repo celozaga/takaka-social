@@ -188,6 +188,7 @@
     "emptyFeed": "Este usuario todavía no ha publicado ningún {{mediaType}}.",
     "emptyReposts": "Este usuario aún no ha reposteado ningún contenido multimedia.",
     "emptyLikes": "A este usuario todavía no le ha gustado ningún contenido multimedia.",
+    "privateLikes": "Los 'me gusta' de este usuario son privados.",
     "toast": {
       "followError": "No se pudo seguir al usuario.",
       "unfollowError": "No se pudo dejar de seguir al usuario.",
