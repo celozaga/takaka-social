@@ -288,7 +288,7 @@ const Feed: React.FC<FeedProps> = ({
 };
 
 const styles = StyleSheet.create({
-    contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 80 },
+    contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
     masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
     listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, alignItems: 'center' },
     column: { flex: 1, gap: theme.spacing.l, },
