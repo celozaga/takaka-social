@@ -61,11 +61,14 @@ const Feed: React.FC<FeedProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
-    if (searchQuery) {
+    // A. GENERAL SEARCH (if not a bookmark feed)
+    if (searchQuery && postFilter !== 'bookmarks_only') {
         const res = await agent.app.bsky.feed.searchPosts({ q: searchQuery, cursor: currentCursor, sort: searchSort, limit: 40 });
         const feed: AppBskyFeedDefs.FeedViewPost[] = res.data.posts.map(post => ({ post }));
         return { data: { feed, cursor: res.data.cursor } };
     }
+
+    // B. FEED-BASED FETCHING
     if (feedUri) {
         if (postFilter === 'likes_only') {
             return agent.app.bsky.feed.getActorLikes({ actor: feedUri, cursor: currentCursor, limit: 30 });
@@ -83,7 +86,15 @@ const Feed: React.FC<FeedProps> = ({
             }
             const postsRes = await agent.getPosts({ uris: bookmarkUris });
             const postsByUri = new Map(postsRes.data.posts.map(p => [p.uri, { post: p }]));
-            const sortedFeed = bookmarkUris.map(uri => postsByUri.get(uri)).filter(Boolean) as AppBskyFeedDefs.FeedViewPost[];
+            let sortedFeed = bookmarkUris.map(uri => postsByUri.get(uri)).filter(Boolean) as AppBskyFeedDefs.FeedViewPost[];
+            
+            if (searchQuery) {
+                const lowerCaseQuery = searchQuery.toLowerCase();
+                sortedFeed = sortedFeed.filter(item => {
+                    const record = item.post.record as { text?: string };
+                    return record.text?.toLowerCase().includes(lowerCaseQuery);
+                });
+            }
             
             return { data: { feed: sortedFeed, cursor: res.data.cursor } };
         }
@@ -96,6 +107,8 @@ const Feed: React.FC<FeedProps> = ({
         }
         return agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
     }
+    
+    // C. FALLBACK
     return Promise.resolve({ data: { feed: [], cursor: undefined } });
   }, [agent, feedUri, session, searchQuery, searchSort, authorFeedFilter, postFilter]);
 
@@ -243,7 +256,9 @@ const Feed: React.FC<FeedProps> = ({
   
   const renderListEmptyComponent = () => {
     let emptyText = t('feed.empty');
-    if (postFilter === 'reposts_only') {
+    if (searchQuery) {
+        emptyText = t('search.empty', { query: searchQuery });
+    } else if (postFilter === 'reposts_only') {
         emptyText = t('profile.emptyReposts');
     } else if (postFilter === 'likes_only') {
         emptyText = t('profile.emptyLikes');

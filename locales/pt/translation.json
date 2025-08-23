@@ -235,6 +235,7 @@
   "search": {
     "title": "Busca",
     "placeholder": "Buscar publicações, usuários e feeds",
+    "placeholderSaved": "Pesquisar publicações salvas",
     "top": "Top",
     "latest": "Recentes",
     "empty": "Nenhum resultado encontrado para \"{{query}}\".",

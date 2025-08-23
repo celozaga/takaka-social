@@ -235,6 +235,7 @@
   "search": {
     "title": "Search",
     "placeholder": "Search posts, users, and feeds",
+    "placeholderSaved": "Search saved posts",
     "top": "Top",
     "latest": "Latest",
     "empty": "No results found for \"{{query}}\".",
