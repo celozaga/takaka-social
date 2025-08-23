@@ -124,6 +124,7 @@
     "title": "Notifications",
     "loadingError": "Could not load your notifications. Please try again later.",
     "empty": "You don't have any notifications here.",
+    "likes": "Likes",
     "mentions": "Mentions",
     "reposts": "Reposts",
     "follows": "Follows",

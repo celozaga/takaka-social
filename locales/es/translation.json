@@ -124,6 +124,7 @@
     "title": "Notificaciones",
     "loadingError": "No se pudieron cargar tus notificaciones. Por favor, inténtalo de nuevo más tarde.",
     "empty": "No tienes ninguna notificación aquí.",
+    "likes": "Me gusta",
     "mentions": "Menciones",
     "reposts": "Reposts",
     "follows": "Seguidores",

@@ -9,11 +9,14 @@ import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import NotificationItemSkeleton from './NotificationItemSkeleton';
+import { Link } from 'expo-router';
+import { Settings } from 'lucide-react';
 
-type NotificationFilter = 'all' | 'mentions' | 'reposts' | 'follows';
+type NotificationFilter = 'all' | 'likes' | 'mentions' | 'reposts' | 'follows';
 
 const filters: { id: NotificationFilter; label: string }[] = [
     { id: 'all', label: 'All' },
+    { id: 'likes', label: 'Likes' },
     { id: 'mentions', label: 'Mentions' },
     { id: 'reposts', label: 'Reposts' },
     { id: 'follows', label: 'Follows' },
@@ -79,6 +82,7 @@ const NotificationsScreen: React.FC = () => {
   
   const filteredNotifications = useMemo(() => {
     switch (activeTab) {
+      case 'likes': return notifications.filter(n => n.reason === 'like');
       case 'mentions': return notifications.filter(n => n.reason === 'mention' || n.reason === 'reply');
       case 'reposts': return notifications.filter(n => n.reason === 'repost');
       case 'follows': return notifications.filter(n => n.reason === 'follow');
@@ -107,12 +111,20 @@ const NotificationsScreen: React.FC = () => {
     );
   };
 
+  const headerActions = (
+    <Link href="/settings/notifications" asChild>
+        <Pressable style={styles.headerButton} aria-label="Settings">
+            <Settings size={24} color={theme.colors.onSurface} />
+        </Pressable>
+    </Link>
+  );
+
   if (isLoading) {
     return (
       <>
         <Head><title>{t('notifications.title')}</title></Head>
         <View style={{flex: 1}}>
-            <ScreenHeader title={t('notifications.title')} />
+            <ScreenHeader title={t('notifications.title')}>{headerActions}</ScreenHeader>
             {renderListHeader()}
             <View>
                 {[...Array(10)].map((_, i) => (
@@ -161,7 +173,7 @@ const NotificationsScreen: React.FC = () => {
     <>
       <Head><title>{t('notifications.title')}</title></Head>
       <View style={{flex: 1}}>
-        <ScreenHeader title={t('notifications.title')} />
+        <ScreenHeader title={t('notifications.title')}>{headerActions}</ScreenHeader>
         <FlatList {...mainFlatListProps} />
       </View>
     </>
@@ -181,6 +193,9 @@ const styles = StyleSheet.create({
     errorText: { color: theme.colors.error },
     infoText: { color: theme.colors.onSurfaceVariant },
     endText: { textAlign: 'center', color: theme.colors.onSurfaceVariant, paddingVertical: 32 },
+    headerButton: {
+        padding: theme.spacing.s,
+    },
 });
 
 export default NotificationsScreen;
