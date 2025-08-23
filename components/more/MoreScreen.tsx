@@ -5,37 +5,16 @@ import { useAtp } from '../../context/AtpContext';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { 
-    Settings, ChevronRight, BadgeCheck, List, Search, 
+    Settings, BadgeCheck, List, Search, 
     Bell, Users, UserCheck, Clapperboard
 } from 'lucide-react';
 import Head from '../shared/Head';
 import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
-import { theme } from '@/lib/theme';
+import { theme, settingsStyles } from '@/lib/theme';
+import SettingsListItem from '../settings/SettingsListItem';
 
 
-const ListItem: React.FC<{
-    icon: React.ElementType,
-    label: string,
-    href: string,
-}> = ({ icon: Icon, label, href }) => {
-    const content = (
-        <View style={styles.listItemContent}>
-            <View style={styles.listItemLeft}>
-                <Icon size={24} color={theme.colors.onSurfaceVariant} />
-                <Text style={styles.listItemLabel}>{label}</Text>
-            </View>
-            <ChevronRight size={20} color={theme.colors.onSurfaceVariant} />
-        </View>
-    );
-    
-    return (
-        <Link href={href as any} asChild>
-            <Pressable style={({ pressed }) => [styles.listItem, pressed && styles.listItemPressed]}>
-                {content}
-            </Pressable>
-        </Link>
-    );
-};
+const SettingsDivider = () => <View style={settingsStyles.divider} />;
 
 
 const MoreScreen: React.FC = () => {
@@ -102,7 +81,7 @@ const MoreScreen: React.FC = () => {
                                             <Text style={styles.profileHandle} numberOfLines={1}>@{profile.handle}</Text>
                                         </View>
                                     </View>
-                                    <ChevronRight size={24} color={theme.colors.onSurfaceVariant} />
+                                    <SettingsListItem icon={() => null} label="" href={profileLink} />
                                 </View>
                             </Pressable>
                         </Link>
@@ -114,8 +93,8 @@ const MoreScreen: React.FC = () => {
                             <View style={styles.listContainer}>
                                 {listItems.map((item, index) => (
                                     <React.Fragment key={item.label}>
-                                        <ListItem {...item} />
-                                        {index < listItems.length - 1 && <View style={styles.divider} />}
+                                        <SettingsListItem icon={item.icon} label={item.label} href={item.href} />
+                                        {index < listItems.length - 1 && <SettingsDivider />}
                                     </React.Fragment>
                                 ))}
                             </View>
@@ -148,13 +127,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: theme.spacing.l,
+        paddingRight: theme.spacing.l,
     },
     avatar: {
         width: 64,
         height: 64,
         borderRadius: theme.shape.full,
         backgroundColor: theme.colors.surfaceContainerHigh,
+        margin: theme.spacing.l,
+        marginRight: 0,
     },
     avatarSkeleton: {
         width: 64,
@@ -193,32 +174,6 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surfaceContainer,
         borderRadius: theme.shape.large,
         overflow: 'hidden',
-    },
-    listItem: {
-        padding: theme.spacing.l,
-    },
-    listItemPressed: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
-    listItemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    listItemLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.l,
-    },
-    listItemLabel: {
-        color: theme.colors.onSurface,
-        ...theme.typography.bodyLarge,
-        fontWeight: '500',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: theme.colors.surfaceContainerHigh,
-        marginLeft: 56,
     },
 });
 
