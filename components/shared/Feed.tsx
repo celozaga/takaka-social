@@ -258,9 +258,19 @@ const Feed: React.FC<FeedProps> = ({
 
   const renderFooter = () => {
     if (isLoadingMore) {
+      if (layout === 'grid') {
+        // Render skeletons in a 2-column layout to match the grid
+        return (
+          <View style={[styles.masonryContainer, { marginTop: theme.spacing.l }]}>
+            <View style={styles.column}><PostCardSkeleton /></View>
+            <View style={styles.column}><PostCardSkeleton /></View>
+          </View>
+        );
+      }
+      // For list layout, render a single full post skeleton
       return (
-        <View style={{ paddingVertical: theme.spacing.xl }}>
-          <ActivityIndicator size="large" color={theme.colors.onSurface} />
+        <View style={styles.listContainer}>
+          <FullPostCardSkeleton />
         </View>
       );
     }
