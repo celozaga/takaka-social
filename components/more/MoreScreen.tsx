@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'expo-router';
@@ -9,7 +10,7 @@ import {
     Settings, List, Search, 
     Bell, Users, UserCheck, Clapperboard, ChevronRight, Bookmark, Heart
 } from 'lucide-react';
-import { Head } from 'expo-router/head';
+import Head from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, Image, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
 

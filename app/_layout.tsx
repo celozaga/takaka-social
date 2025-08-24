@@ -1,4 +1,5 @@
 
+
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions, KeyboardAvoidingView, StyleProp, ViewStyle } from 'react-native';
@@ -14,7 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import BottomNavbar from '@/components/layout/BottomNavbar';
 import LoginPrompt from '@/components/auth/LoginPrompt';
 import { theme } from '@/lib/theme';
-import { Head } from 'expo-router/head';
+import Head from 'expo-router/head';
 
 import '@/lib/i18n';
 

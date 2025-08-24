@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -11,7 +12,7 @@ import Feed from '../shared/Feed';
 import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X, ArrowLeft, Grid, Repeat, Frown } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
-import { Head } from 'expo-router/head';
+import Head from 'expo-router/head';
 import TopAppBar from '../ui/TopAppBar';
 import { theme } from '@/lib/theme';
 import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';

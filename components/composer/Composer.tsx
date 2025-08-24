@@ -6,6 +6,7 @@ import { ImageUp, Send, X, Video } from 'lucide-react';
 import { useToast } from '../ui/use-toast';
 import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, Modal, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
+import * as ImagePicker from 'expo-image-picker';
 
 interface ComposerProps {
   onPostSuccess: () => void;
@@ -18,7 +19,7 @@ interface ComposerProps {
 }
 
 interface MediaFile {
-    file?: File; 
+    asset: ImagePicker.ImagePickerAsset;
     preview: string;
     type: 'image' | 'video' | 'gif';
 }
@@ -59,8 +60,6 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [langSearchTerm, setLangSearchTerm] = useState('');
-  
-  const fileInputRef = Platform.OS === 'web' ? useRef<HTMLInputElement>(null) : null;
 
   useEffect(() => {
     if (session?.did) {
@@ -72,27 +71,40 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
     }
   }, [agent, session?.did]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const pickMedia = async (options: ImagePicker.ImagePickerOptions) => {
+    let result = await ImagePicker.launchImageLibraryAsync(options);
 
-    if (mediaFiles.length + files.length > MAX_IMAGES && !Array.from(files).some((f: File) => f.type.startsWith('video'))) {
-        toast({ title: t('composer.toast.maxImages', { max: MAX_IMAGES }), variant: 'destructive' });
+    if (result.canceled) return;
+
+    const hasVideoOrGif = mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif');
+    if (hasVideoOrGif && result.assets.length > 0) {
+        toast({ title: t('composer.toast.noMoreImagesWithVideoOrGif'), variant: 'destructive' });
         return;
     }
+
     const newMediaFiles: MediaFile[] = [...mediaFiles];
-    Array.from(files).forEach((file: File) => {
-        const type = file.type.startsWith('video') ? 'video' : (file.type === 'image/gif' ? 'gif' : 'image');
-        newMediaFiles.push({ file, preview: URL.createObjectURL(file), type });
-    });
+    for (const asset of result.assets) {
+        if (newMediaFiles.length >= MAX_IMAGES) {
+            toast({ title: t('composer.toast.maxImages', { max: MAX_IMAGES }), variant: 'destructive' });
+            break;
+        }
+        const type = asset.type === 'video' ? 'video' : (asset.mimeType === 'image/gif' ? 'gif' : 'image');
+        
+        if ((type === 'video' || type === 'gif') && (newMediaFiles.length > 0 || result.assets.length > 1)) {
+            toast({ title: t('composer.toast.oneVideoOrGif'), variant: 'destructive' });
+            if (newMediaFiles.length === 0) {
+                newMediaFiles.push({ preview: asset.uri, type, asset });
+            }
+            break; 
+        }
+
+        newMediaFiles.push({ preview: asset.uri, type, asset });
+    }
     setMediaFiles(newMediaFiles);
   };
   
   const removeMedia = (index: number) => {
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    if (Platform.OS === 'web' && fileInputRef?.current) {
-        fileInputRef.current.value = "";
-    }
   };
 
   const handlePost = async () => {
@@ -120,10 +132,12 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
             createdAt: new Date().toISOString(),
         };
         
-        if (Platform.OS === 'web' && mediaFiles.length > 0 && mediaFiles[0].file) {
+        if (mediaFiles.length > 0) {
             const imageEmbeds = await Promise.all(mediaFiles.map(async mf => {
-                const fileBytes = new Uint8Array(await mf.file!.arrayBuffer());
-                const blobRes = await agent.uploadBlob(fileBytes, { encoding: mf.file!.type });
+                const response = await fetch(mf.asset.uri);
+                const blob = await response.blob();
+                const fileBytes = new Uint8Array(await blob.arrayBuffer());
+                const blobRes = await agent.uploadBlob(fileBytes, { encoding: blob.type });
                 return { image: blobRes.data.blob, alt: '' };
             }));
             postRecord.embed = {
@@ -211,29 +225,19 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         <View style={styles.footer}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
                 <Pressable 
-                    onPress={() => Platform.OS === 'web' && fileInputRef?.current?.click()} 
+                    onPress={() => pickMedia({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsMultipleSelection: true, selectionLimit: MAX_IMAGES })} 
                     style={styles.iconButton}
                     disabled={mediaFiles.length >= MAX_IMAGES || hasVideoOrGif}
                 >
                     <ImageUp color={theme.colors.primary} size={24} />
                 </Pressable>
                 <Pressable 
-                    onPress={() => Platform.OS === 'web' && fileInputRef?.current?.click()} 
+                    onPress={() => pickMedia({ mediaTypes: ImagePicker.MediaTypeOptions.Videos })} 
                     style={styles.iconButton}
                     disabled={mediaFiles.length > 0}
                 >
                     <Video color={theme.colors.primary} size={24} />
                 </Pressable>
-                 {Platform.OS === 'web' && (
-                    <input 
-                        type="file" 
-                        ref={fileInputRef as any}
-                        onChange={handleFileChange} 
-                        accept="image/png, image/jpeg, image/gif, video/mp4, video/quicktime" 
-                        style={{ display: 'none' }}
-                        multiple={!hasVideoOrGif}
-                    />
-                 )}
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s }}>

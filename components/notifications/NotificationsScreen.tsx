@@ -1,11 +1,12 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Head } from 'expo-router/head';
+import Head from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import NotificationItemSkeleton from './NotificationItemSkeleton';

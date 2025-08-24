@@ -1,16 +1,16 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell } from 'lucide-react';
-import { Head } from 'expo-router/head';
+import Head from 'expo-router/head';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
 import SettingsDivider from '@/components/ui/SettingsDivider';
+import * as Notifications from 'expo-notifications';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
 const APP_ID = 'social.takaka.app';
@@ -43,9 +43,9 @@ const NotificationSettingsScreen: React.FC = () => {
     useEffect(() => {
         const loadSettings = async () => {
             setIsLoading(true);
-            if (typeof Notification !== 'undefined') {
-              setPushEnabled(Notification.permission === 'granted');
-            }
+            const { status } = await Notifications.getPermissionsAsync();
+            setPushEnabled(status === 'granted');
+            
             try {
                 const { data } = await agent.app.bsky.actor.getPreferences();
                 const pushPref = data.preferences.find(
@@ -106,29 +106,25 @@ const NotificationSettingsScreen: React.FC = () => {
     };
 
     const handleMasterToggle = async (enabled: boolean) => {
-       if (typeof Notification === 'undefined' || typeof navigator.serviceWorker === 'undefined') {
-            toast({ title: "Unsupported", description: "Push notifications are not supported on this device or browser.", variant: "destructive"});
-            return;
-        }
-
         if (enabled) {
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
+            }
+            if (finalStatus !== 'granted') {
                 toast({ title: t('notificationSettings.toast.permissionDenied'), description: t('notificationSettings.toast.permissionDeniedDescription'), variant: "destructive"});
                 return;
             }
             try {
                 setIsSaving(true);
-                const serviceWorker = await navigator.serviceWorker.ready;
-                const subscription = await serviceWorker.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: 'BF-2_IFJ2xM24vA2p9a-gQIc37Hr5yS90Pbo7gPltQ9FNCjYl7uD7sBPlsHeOdK00mKYT1vplg9M2a3WjmTEkYA'
-                });
+                const token = (await Notifications.getPushTokenAsync()).data;
 
                 await agent.app.bsky.notification.registerPush({
                     serviceDid: PUSH_SERVICE_DID,
-                    token: JSON.stringify(subscription),
-                    platform: 'web',
+                    token,
+                    platform: Platform.OS,
                     appId: APP_ID,
                 });
                 setPushEnabled(true);
@@ -141,21 +137,11 @@ const NotificationSettingsScreen: React.FC = () => {
                 setIsSaving(false);
             }
         } else {
-             try {
-                setIsSaving(true);
-                const serviceWorker = await navigator.serviceWorker.ready;
-                const subscription = await serviceWorker.pushManager.getSubscription();
-                if (subscription) {
-                    await subscription.unsubscribe();
-                }
-                setPushEnabled(false);
-                toast({ title: t('notificationSettings.toast.disabled') });
-            } catch (error) {
-                console.error("Failed to unsubscribe:", error);
-                toast({ title: t('common.error'), description: t('notificationSettings.toast.disableError'), variant: "destructive"});
-            } finally {
-                setIsSaving(false);
-            }
+            // Note: Unregistering push tokens is not a standard part of the atproto spec.
+            // The user can disable notifications from the device settings.
+            // We'll update the UI to reflect their choice within the app.
+            setPushEnabled(false);
+            toast({ title: t('notificationSettings.toast.disabled') });
         }
     };
 

@@ -6,7 +6,7 @@ import { Bell, UserCircle, LogOut, Globe, Shield } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
 import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
-import { Head } from 'expo-router/head';
+import Head from 'expo-router/head';
 import { View, Alert, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import ScreenHeader from '../layout/ScreenHeader';
 import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
-import { Head } from 'expo-router/head';
+import Head from 'expo-router/head';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsDivider from '../ui/SettingsDivider';
