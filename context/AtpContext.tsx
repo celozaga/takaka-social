@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
@@ -27,11 +25,27 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isPollingPaused, setIsPollingPaused] = useState(false);
   const { toast } = useToast();
 
-  // The agent is now created without the `persistSession` callback.
-  // Session management will be handled manually in the `login`, `logout`,
-  // and `initialize` functions for better control with async storage.
+  // The agent is now configured with the `persistSession` callback, which is the
+  // recommended way to handle session lifecycle events. This centralizes all
+  // session storage logic and ensures it's synchronized with the agent's state.
   const agent = useMemo(() => new BskyAgent({
     service: PDS_URL,
+    persistSession: (evt: AtpSessionEvent, sess?: AtpSessionData) => {
+      switch (evt) {
+        case 'create':
+        case 'update':
+          if (sess) {
+            setItemAsync(ATP_SESSION_KEY, JSON.stringify(sess));
+            setSession(sess); // Keep React state in sync with the agent
+          }
+          break;
+        case 'expired':
+        case 'create-failed':
+          deleteItemAsync(ATP_SESSION_KEY);
+          setSession(null); // Clear React state
+          break;
+      }
+    },
   }), []);
   
   // Effect for one-time session initialization
@@ -43,8 +57,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (storedSessionString) {
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
-          // Manually set session in state, as resumeSession does not trigger the callback
-          setSession(parsedSession);
+          // `resumeSession` triggers the `update` event in `persistSession`,
+          // which automatically calls `setSession` and keeps the state consistent.
         }
       } catch (error) {
         console.error("Failed to resume session:", error);
@@ -114,26 +128,17 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   const login = useCallback(async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => {
-    const { identifier, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, token } = params;
-    
-    // 1. Call agent.login() which updates the agent's internal session state.
-    const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, authFactorToken: token });
-    
-    // 2. Manually persist the session to SecureStore and update React state.
-    if (agent.session) {
-        await setItemAsync(ATP_SESSION_KEY, JSON.stringify(agent.session));
-        setSession(agent.session);
-        await fetchUnreadCount();
-    }
+    // The agent's login method will now automatically trigger the `persistSession`
+    // callback, which handles storing the session and updating React state.
+    const response = await agent.login({ identifier: params.identifier, password: params.appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, authFactorToken: params.token });
+    await fetchUnreadCount();
     return response;
   }, [agent, fetchUnreadCount]);
 
   const logout = useCallback(async () => {
-    // 1. Clear the agent's internal session.
+    // The agent's logout method will automatically trigger the 'expired' event
+    // in `persistSession`, handling the cleanup.
     await agent.logout();
-    // 2. Manually clear the persisted session and React state.
-    await deleteItemAsync(ATP_SESSION_KEY);
-    setSession(null);
   }, [agent]);
 
   return (
