@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
 import { Volume2, VolumeX, Play } from 'lucide-react';
@@ -20,19 +20,14 @@ interface Props {
 }
 
 const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, isMuted, onMuteToggle }) => {
-  const videoRef = useRef<Video>(null);
-  
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
-  const [status, setStatus] = useState<AVPlaybackStatusSuccess | null>(null);
   const [isContentVisible, setIsContentVisible] = useState(false);
-  
   const { post } = postView;
   const moderation = useModeration();
   
   useEffect(() => {
     // Reset state for new video
     setIsInternallyPaused(false);
-    setStatus(null);
     setIsContentVisible(false);
   }, [post.uri]);
 
@@ -48,45 +43,64 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
   }, [post.embed]);
 
   const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embedView, post.author.did);
-  const { currentSource, error: playerError, handleError } = useHlsPlayer(videoRef, hlsUrl, fallbackUrl);
+  
+  const player = useVideoPlayer(null, p => {
+    p.loop = true;
+  });
+
+  const { error: playerError } = useHlsPlayer(player, hlsUrl, fallbackUrl);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const subscriptions = [
+        player.addListener('loadingChange', (event) => setIsLoading(event.isLoading)),
+        player.addListener('timeUpdate', (event) => {
+            setPosition(event.position);
+            setDuration(event.duration);
+        }),
+    ];
+    return () => {
+        subscriptions.forEach(sub => sub.remove());
+    };
+  }, [player]);
+
 
   const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isEffectivelyPaused) {
-        videoRef.current.pauseAsync();
-      } else {
-        videoRef.current.playAsync();
-      }
-    }
-  }, [isEffectivelyPaused]);
 
-  const resizeMode = useMemo(() => {
-    if (!embedView?.aspectRatio) return ResizeMode.CONTAIN; // Fallback for videos without metadata
-    // Always use COVER for the watch feed for an immersive, full-screen experience.
-    return ResizeMode.COVER;
+  useEffect(() => {
+    player.muted = isMuted;
+  }, [player, isMuted]);
+
+  useEffect(() => {
+    if (isEffectivelyPaused) {
+        player.pause();
+    } else {
+        player.play();
+    }
+  }, [player, isEffectivelyPaused]);
+
+  const contentFit = useMemo(() => {
+    if (!embedView?.aspectRatio) return 'contain';
+    return 'cover';
   }, [embedView]);
   
-  const showSpinner = isLoadingUrl || (status?.isBuffering && !status?.isPlaying);
+  const showSpinner = isLoadingUrl || isLoading;
   const toggleInternalPlayPause = () => setIsInternallyPaused(prev => !prev);
   const handleMuteToggle = (e: any) => { e.stopPropagation(); onMuteToggle(); };
 
-  const progress = status ? (status.positionMillis / (status.durationMillis || 1)) : 0;
+  const progress = duration ? (position / duration) : 0;
 
   const renderPlayerContent = () => (
       <>
-        <Video
-          ref={videoRef}
+        <VideoView
+          player={player}
           style={styles.video}
-          source={currentSource ? { uri: currentSource } : null}
-          posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : undefined}
-          usePoster
-          resizeMode={resizeMode}
-          shouldPlay={!isExternallyPaused}
-          isLooping
-          isMuted={isMuted}
-          onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s as AVPlaybackStatusSuccess) }}
-          onError={handleError}
+          poster={embedView?.thumbnail}
+          contentFit={contentFit}
+          allowsFullscreen
         />
         
         {showSpinner && <ActivityIndicator size="large" color="white" style={styles.loader} />}
