@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -29,6 +27,9 @@ interface FeedProps {
   ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null;
   postFilter?: 'reposts_only' | 'likes_only' | 'bookmarks_only';
 }
+
+const MIN_BATCH_SIZE = 10;
+const MAX_FETCH_ATTEMPTS = 5; // To prevent infinite loops
 
 const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
@@ -97,10 +98,12 @@ const Feed: React.FC<FeedProps> = ({
         }
         
         if (searchQuery) {
-            const lowerCaseQuery = searchQuery.toLowerCase();
+            const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
             records = records.filter(item => {
                 const record = item.post.record as { text?: string };
-                return record.text?.toLowerCase().includes(lowerCaseQuery);
+                const postText = record.text?.toLowerCase();
+                if (!postText) return false;
+                return searchTerms.every(term => postText.includes(term));
             });
         }
         
@@ -130,34 +133,26 @@ const Feed: React.FC<FeedProps> = ({
     return Promise.resolve({ data: { feed: [], cursor: undefined } });
   }, [agent, feedUri, session, searchQuery, searchSort, authorFeedFilter, postFilter]);
 
-  
-  const processAndSetFeed = useCallback((newPosts: AppBskyFeedDefs.FeedViewPost[], currentCursor?: string) => {
-      const isProfileContext = !!authorFeedFilter || !!postFilter;
-      // All replies are filtered from general feed views, but not on author profile feeds where the API filter should be respected.
-      let processedPosts = isProfileContext ? newPosts : newPosts.filter(item => !item.reply);
-      
-      if (postFilter === 'reposts_only') {
-          processedPosts = processedPosts.filter(item => !!item.reason && AppBskyFeedDefs.isReasonRepost(item.reason));
-      }
-      
-      if (layout === 'grid') {
-          processedPosts = processedPosts.filter(item => isPostAMediaPost(item.post));
-          if (mediaFilter === 'photos') processedPosts = processedPosts.filter(item => hasPhotos(item.post));
-          if (mediaFilter === 'videos') processedPosts = processedPosts.filter(item => hasVideos(item.post));
-      }
-      // For list view, no further filtering is needed here as replies are already removed.
-      
-      if (currentCursor) {
-          setFeed(prevFeed => {
-              const existingUris = new Set(prevFeed.map(p => p.post.uri));
-              const uniqueNewPosts = processedPosts.filter(p => !existingUris.has(p.post.uri));
-              return [...prevFeed, ...uniqueNewPosts];
-          });
-      } else {
-          setFeed(processedPosts);
-      }
+  const fetchAndFilterPage = useCallback(async (currentCursor?: string) => {
+    const response = await fetchPosts(currentCursor);
+    const posts = response.data.feed || [];
+    const nextCursor = response.data.cursor;
 
-  }, [layout, mediaFilter, postFilter, authorFeedFilter]);
+    const isProfileContext = !!authorFeedFilter || !!postFilter;
+    let processedPosts = isProfileContext ? posts : posts.filter(item => !item.reply);
+    
+    if (postFilter === 'reposts_only') {
+        processedPosts = processedPosts.filter(item => !!item.reason && AppBskyFeedDefs.isReasonRepost(item.reason));
+    }
+    
+    if (layout === 'grid') {
+        processedPosts = processedPosts.filter(item => isPostAMediaPost(item.post));
+        if (mediaFilter === 'photos') processedPosts = processedPosts.filter(item => hasPhotos(item.post));
+        if (mediaFilter === 'videos') processedPosts = processedPosts.filter(item => hasVideos(item.post));
+    }
+
+    return { posts: processedPosts, cursor: nextCursor, originalCount: posts.length };
+  }, [fetchPosts, authorFeedFilter, postFilter, layout, mediaFilter]);
 
   const loadInitialPosts = useCallback(async () => {
     setIsLoading(true);
@@ -165,12 +160,28 @@ const Feed: React.FC<FeedProps> = ({
     setFeed([]);
     setCursor(undefined);
     setHasMore(true);
+
     try {
-        const response = await fetchPosts();
-        const posts = response.data.feed || [];
-        processAndSetFeed(posts);
-        setCursor(response.data.cursor);
-        setHasMore(!!response.data.cursor && posts.length > 0);
+        let accumulatedPosts: AppBskyFeedDefs.FeedViewPost[] = [];
+        let nextCursor: string | undefined;
+        let attempts = 0;
+        let canFetchMore = true;
+
+        while (accumulatedPosts.length < MIN_BATCH_SIZE && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
+            const batchResult = await fetchAndFilterPage(nextCursor);
+            
+            const newUniquePosts = batchResult.posts.filter(p => !accumulatedPosts.some(ap => ap.post.uri === p.post.uri));
+            accumulatedPosts.push(...newUniquePosts);
+            
+            nextCursor = batchResult.cursor;
+            canFetchMore = !!nextCursor && batchResult.originalCount > 0;
+            attempts++;
+        }
+
+        setFeed(accumulatedPosts);
+        setCursor(nextCursor);
+        setHasMore(canFetchMore);
+
     } catch (err: any) {
         if (postFilter === 'likes_only' && (err.error === 'AuthRequiredError' || err.message?.includes('private'))) {
             setError(t('profile.privateLikes'));
@@ -182,7 +193,7 @@ const Feed: React.FC<FeedProps> = ({
     } finally {
         setIsLoading(false);
     }
-  }, [fetchPosts, processAndSetFeed, t, postFilter]);
+  }, [fetchAndFilterPage, t, postFilter]);
 
   useEffect(() => {
     loadInitialPosts();
@@ -196,20 +207,35 @@ const Feed: React.FC<FeedProps> = ({
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMore || !cursor || !hasMore) return;
     setIsLoadingMore(true);
+
     try {
-      const response = await fetchPosts(cursor);
-      const posts = response.data.feed || [];
-      if (posts.length > 0) {
-        processAndSetFeed(posts, cursor);
-        setCursor(response.data.cursor);
-        setHasMore(!!response.data.cursor);
-      } else {
-        setHasMore(false);
-      }
+        let accumulatedPosts: AppBskyFeedDefs.FeedViewPost[] = [];
+        let nextCursor: string | undefined = cursor;
+        let attempts = 0;
+        let canFetchMore = true;
+
+        while (accumulatedPosts.length < MIN_BATCH_SIZE && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
+            const batchResult = await fetchAndFilterPage(nextCursor);
+            accumulatedPosts.push(...batchResult.posts);
+            nextCursor = batchResult.cursor;
+            canFetchMore = !!nextCursor && batchResult.originalCount > 0;
+            attempts++;
+        }
+
+        if (accumulatedPosts.length > 0) {
+            setFeed(prevFeed => {
+                const existingUris = new Set(prevFeed.map(p => p.post.uri));
+                const uniqueNewPosts = accumulatedPosts.filter(p => !existingUris.has(p.post.uri));
+                return [...prevFeed, ...uniqueNewPosts];
+            });
+        }
+        setCursor(nextCursor);
+        setHasMore(canFetchMore);
+
     } finally {
-      setIsLoadingMore(false);
+        setIsLoadingMore(false);
     }
-  }, [cursor, hasMore, isLoadingMore, fetchPosts, processAndSetFeed]);
+  }, [cursor, hasMore, isLoadingMore, fetchAndFilterPage]);
   
   const moderatedFeed = useMemo(() => {
     if (!moderation.isReady) return [];
