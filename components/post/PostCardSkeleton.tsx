@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
@@ -38,20 +37,19 @@ const styles = StyleSheet.create({
   },
   contentPlaceholder: {
     padding: theme.spacing.m,
+    gap: theme.spacing.s,
   },
   textLineLg: {
     height: 16,
     width: '83.3333%', // w-5/6
     backgroundColor: theme.colors.surfaceContainerHigh,
     borderRadius: theme.shape.small,
-    marginBottom: theme.spacing.m,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: theme.spacing.s,
-    marginTop: theme.spacing.l,
   },
   authorInfo: {
     flexDirection: 'row',
