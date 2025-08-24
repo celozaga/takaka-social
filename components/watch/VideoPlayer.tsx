@@ -72,7 +72,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
         {currentSource && (
           <Video
             ref={videoRef}
-            style={StyleSheet.absoluteFillObject}
+            style={styles.video}
             source={{ uri: currentSource }}
             posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : undefined}
             usePoster
@@ -114,6 +114,13 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
 
 const styles = StyleSheet.create({
   container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', overflow: 'hidden' },
+  video: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+  },
   backgroundImage: { ...StyleSheet.absoluteFillObject, zIndex: 0, ...(Platform.OS === 'web' && { filter: 'blur(25px) brightness(0.8)', transform: [{ scale: '1.1' }] } as any) },
   backgroundOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.3)', zIndex: 1 },
   loader: { position: 'absolute', zIndex: 4 },
