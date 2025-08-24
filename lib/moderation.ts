@@ -1,3 +1,4 @@
+
 import { AppBskyFeedDefs, ComAtprotoLabelDefs, AppBskyActorDefs } from '@atproto/api';
 
 export type LabelVisibility = 'show' | 'warn' | 'hide';

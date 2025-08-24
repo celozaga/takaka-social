@@ -161,47 +161,134 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   const timeAgo = formatCompactDate(indexedAt);
 
   return (
-    <Pressable onPress={handlePress} style={[styles.container, !isRead && styles.unreadContainer]}>
-      <View style={{ flexDirection: 'row', gap: 16 }}>
-          <View style={{ flexShrink: 0, width: 32, alignItems: 'center' }}>
-            <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-          </View>
-          <View style={{ flex: 1 }}>
-              <View style={styles.header}>
-                  <View style={styles.titleContainer}>
-                      <Text style={styles.titleText} numberOfLines={2}><AuthorLink /> {reasonText}</Text>
-                  </View>
-                  <Text style={styles.timeAgo}>{timeAgo}</Text>
-              </View>
-              {content && <View style={{ marginTop: 4 }}>{content}</View>}
-              {isNavigating && <View style={styles.navigatingOverlay}><ActivityIndicator /></View>}
-          </View>
+    <Pressable onPress={handlePress} style={[styles.container, !isRead && styles.unread]}>
+      {isNavigating && (
+        <View style={{...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1}}>
+          <ActivityIndicator color="white" />
+        </View>
+      )}
+      <View style={{ flexShrink: 0, width: 32, height: 40, position: 'relative' }}>
+        <Image source={{ uri: author.avatar }} style={styles.avatar} />
+        <View style={[styles.iconContainer,
+            reason === 'like' && styles.iconBackgroundLike,
+            reason === 'repost' && styles.iconBackgroundRepost,
+            reason === 'follow' && styles.iconBackgroundFollow,
+            reason === 'reply' && styles.iconBackgroundReply,
+            reason === 'mention' && styles.iconBackgroundMention,
+        ]}>
+            {Icon}
+        </View>
+      </View>
+      <View style={styles.mainContent}>
+        <View style={styles.textContainer}>
+            <AuthorLink />
+            <Text style={styles.reasonText}>
+                {reasonText}
+            </Text>
+            <Text style={styles.timeAgo}>· {timeAgo}</Text>
+        </View>
+        
+        {content && <View style={styles.postContent}>{content}</View>}
+
       </View>
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-    container: { paddingHorizontal: 16, paddingVertical: 12 },
-    unreadContainer: { backgroundColor: 'transparent' },
-    header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', flex: 1 },
-    avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.colors.surfaceContainerHigh },
-    titleContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, alignItems: 'center' },
-    titleText: { fontSize: 14, color: theme.colors.onSurface, lineHeight: 20 },
-    authorLinkContainer: { flexDirection: 'row', alignItems: 'center' },
-    authorLinkText: { fontWeight: 'bold', color: theme.colors.onSurface, fontSize: 14, lineHeight: 20 },
-    timeAgo: { fontSize: 12, color: theme.colors.onSurfaceVariant, flexShrink: 0, marginLeft: 8, paddingTop: 2 },
-    previewContainer: { borderRadius: 8, padding: 8, marginTop: 8, backgroundColor: theme.colors.surfaceContainerHigh },
-    previewContent: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-    previewImage: { width: 48, height: 48, borderRadius: 6, backgroundColor: theme.colors.surfaceContainerHighest },
-    previewText: { color: theme.colors.onSurface, fontSize: 14, flex: 1 },
-    navigatingOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.2)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 8,
-    }
+    container: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        flexDirection: 'row',
+        gap: 16,
+        backgroundColor: theme.colors.background,
+    },
+    unread: {
+        backgroundColor: theme.colors.surfaceContainer,
+    },
+    avatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: 2,
+    },
+    iconContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        zIndex: 3,
+        borderWidth: 2,
+        borderColor: theme.colors.background
+    },
+    iconBackgroundLike: { backgroundColor: theme.colors.pink },
+    iconBackgroundRepost: { backgroundColor: theme.colors.primary },
+    iconBackgroundFollow: { backgroundColor: theme.colors.primary },
+    iconBackgroundReply: { backgroundColor: theme.colors.onSurfaceVariant },
+    iconBackgroundMention: { backgroundColor: theme.colors.onSurfaceVariant },
+    mainContent: {
+        flex: 1,
+    },
+    textContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 4,
+    },
+    reasonText: {
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    authorLinkContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    authorLinkText: {
+        fontWeight: 'bold',
+        color: theme.colors.onSurface,
+        fontSize: 14,
+    },
+    timeAgo: {
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 14,
+    },
+    postContent: {
+        marginTop: 8,
+    },
+    previewContainer: {
+        borderWidth: 1,
+        borderColor: theme.colors.outline,
+        borderRadius: 8,
+        marginTop: 8,
+        overflow: 'hidden',
+    },
+    previewContent: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'flex-start',
+        padding: 8,
+        backgroundColor: theme.colors.surfaceContainer,
+    },
+    previewImage: {
+        width: 48,
+        height: 48,
+        borderRadius: 6,
+        backgroundColor: theme.colors.surfaceContainerHigh,
+    },
+    previewText: {
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 14,
+        flex: 1,
+    },
 });
 
-export default React.memo(NotificationItem);
+export default NotificationItem;
