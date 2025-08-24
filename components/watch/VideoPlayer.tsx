@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform, useWindowDimensions, ViewStyle } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -14,170 +14,131 @@ interface Props {
   paused: boolean;
 }
 
-type VideoStatus = 'loading' | 'buffering' | 'playing' | 'error';
-
 const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) => {
   const { agent, session } = useAtp();
   const videoRef = useRef<Video>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
+  const [isLoadingUrl, setIsLoadingUrl] = useState(true);
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
-  const [status, setStatus] = useState<VideoStatus>('loading');
-  const [isMuted, setIsMuted] = useState(false); // Audio on by default
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isTextTruncated, setIsTextTruncated] = useState(false);
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const { post } = postView;
   const record = post.record as any;
   const isMe = session?.did === post.author.did;
   const profileLink = `/profile/${post.author.handle}`;
-
-  // Follow state logic moved from VideoActions
+  
   const [followUri, setFollowUri] = useState(post.author.viewer?.following);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   useEffect(() => setFollowUri(post.author.viewer?.following), [post.author.viewer?.following]);
   const handleFollow = useCallback((e: any) => { e.stopPropagation(); if (isFollowLoading || isMe || followUri) return; setIsFollowLoading(true); agent.follow(post.author.did).then(({ uri }) => setFollowUri(uri)).finally(() => setIsFollowLoading(false)); }, [agent, isFollowLoading, isMe, followUri, post.author.did]);
   const handleUnfollow = useCallback((e: any) => { e.stopPropagation(); if (isFollowLoading || isMe || !followUri) return; setIsFollowLoading(true); agent.deleteFollow(followUri).then(() => setFollowUri(undefined)).finally(() => setIsFollowLoading(false)); }, [agent, isFollowLoading, isMe, followUri]);
 
+  const embedView = useMemo(() => {
+    if (AppBskyEmbedVideo.isView(post.embed)) return post.embed;
+    if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) return post.embed.media as AppBskyEmbedVideo.View;
+    return undefined;
+  }, [post.embed]);
+
   useEffect(() => {
-    // Reset state for new video
-    setStatus('loading');
     setIsInternallyPaused(false);
-    setVideoUrl(null);
     setProgress(0);
-    setIsDescriptionExpanded(false);
-    setIsTextTruncated(false);
 
-    let currentEmbedView: AppBskyEmbedVideo.View | undefined;
-    if (AppBskyEmbedVideo.isView(post.embed)) currentEmbedView = post.embed;
-    else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) currentEmbedView = post.embed.media as AppBskyEmbedVideo.View;
-
-    if (!currentEmbedView) {
-      setStatus('error');
+    if (!embedView) {
+      setIsLoadingUrl(false);
+      setPlaybackUrl(null);
       return;
     }
 
-    try {
-      const did = post.author.did;
-      const cid = currentEmbedView.cid;
-      const serviceUrl = agent.service.toString();
-      const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-      const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${did}&cid=${cid}`;
-      setVideoUrl(blobUrl);
-    } catch (e) {
-      console.error('Failed to construct blob URL', e);
-      setStatus('error');
-    }
-  }, [postView, agent]);
-  
-  const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
+    const fetchUrl = async () => {
+      setIsLoadingUrl(true);
+      try {
+        const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did: post.author.did, cid: embedView.cid });
+        setPlaybackUrl(res.data.url);
+      } catch (e) {
+        console.warn("Could not fetch playback URL, falling back to blob", e);
+        try {
+          const serviceUrl = agent.service.toString();
+          const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+          const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${post.author.did}&cid=${embedView.cid}`;
+          setPlaybackUrl(blobUrl);
+        } catch (blobError) {
+          console.error("Failed to construct blob URL", blobError);
+          setPlaybackUrl(null);
+        }
+      } finally {
+        setIsLoadingUrl(false);
+      }
+    };
 
+    fetchUrl();
+  }, [agent, embedView, post.author.did]);
+
+  const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
   useEffect(() => {
-    const player = videoRef.current;
-    if (!player) return;
-    
-    if (isEffectivelyPaused) {
-      player.pauseAsync();
-    } else {
-      player.playAsync();
-    }
+    videoRef.current?.[isEffectivelyPaused ? 'pauseAsync' : 'playAsync']();
   }, [isEffectivelyPaused]);
 
-  let embedView: AppBskyEmbedVideo.View | undefined;
-  if (AppBskyEmbedVideo.isView(post.embed)) embedView = post.embed;
-  else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
-
-  if (!embedView) return null;
-
-  const videoAspectRatio = embedView.aspectRatio ? embedView.aspectRatio.width / embedView.aspectRatio.height : 16 / 9;
-  const screenAspectRatio = screenWidth / screenHeight;
-
-  // Determine the correct styling to make the video fit the screen using "contain" logic,
-  // which will then be centered by the parent flex container.
-  const videoStyle: ViewStyle = videoAspectRatio > screenAspectRatio
-    ? { width: '100%', aspectRatio: videoAspectRatio } // Video is wider than screen, fit to width
-    : { height: '100%', aspectRatio: videoAspectRatio }; // Video is taller than screen, fit to height
+  const resizeMode = useMemo(() => {
+    if (!embedView?.aspectRatio) return ResizeMode.CONTAIN;
+    const { width, height } = embedView.aspectRatio;
+    return width < height ? ResizeMode.COVER : ResizeMode.CONTAIN;
+  }, [embedView]);
   
-  const showSpinner = status === 'buffering';
-
+  const showSpinner = isLoadingUrl || isBuffering;
   const toggleInternalPlayPause = () => setIsInternallyPaused(prev => !prev);
   const toggleMuteLocal = (e: any) => { e.stopPropagation(); setIsMuted(prev => !prev); };
   const toggleDescription = (e: any) => { e.stopPropagation(); setIsDescriptionExpanded(prev => !prev); };
-  
   const needsTruncation = (record.text?.split('\n').length > 2 || record.text?.length > 100);
 
   return (
     <TouchableWithoutFeedback onPress={toggleInternalPlayPause}>
       <View style={styles.container}>
-        {/* Blurred Background */}
-        {embedView.thumbnail && (
-          <Image
-            source={{ uri: embedView.thumbnail }}
-            style={styles.backgroundImage}
-            resizeMode="cover"
-            blurRadius={Platform.OS === 'ios' ? 30 : 0}
-          />
+        {resizeMode === ResizeMode.CONTAIN && embedView?.thumbnail && (
+          <Image source={{ uri: embedView.thumbnail }} style={styles.backgroundImage} resizeMode="cover" blurRadius={Platform.OS === 'ios' ? 30 : 15} />
         )}
         <View style={styles.backgroundOverlay} />
-
-        {/* The main video content, contained within the screen bounds */}
-        {videoUrl && (
-            <Video
-              ref={videoRef}
-              source={{ uri: videoUrl }}
-              style={[styles.video, videoStyle]}
-              resizeMode={ResizeMode.CONTAIN}
-              isLooping
-              shouldPlay={!isEffectivelyPaused}
-              isMuted={isMuted}
-              onPlaybackStatusUpdate={(s: AVPlaybackStatus) => {
-                if (!s.isLoaded) {
-                  if ('error' in s && s.error) {
-                    console.error('Video Error:', s.error);
-                    setStatus('error');
-                  }
-                  return;
-                }
-                
-                const newProgress = s.positionMillis / (s.durationMillis || 1);
-                setProgress(newProgress || 0);
-                
-                if (s.isBuffering) {
-                  if (status !== 'loading') setStatus('buffering');
-                } else {
-                  setStatus('playing');
-                }
-              }}
-              onLoadStart={() => setStatus('loading')}
-              onReadyForDisplay={() => setStatus('playing')}
-            />
+        
+        {playbackUrl && (
+          <Video
+            ref={videoRef}
+            source={{ uri: playbackUrl }}
+            style={StyleSheet.absoluteFill}
+            resizeMode={resizeMode}
+            isLooping
+            shouldPlay={!isEffectivelyPaused}
+            isMuted={isMuted}
+            onPlaybackStatusUpdate={(s: AVPlaybackStatus) => {
+              if (s.isLoaded) {
+                setIsBuffering(s.isBuffering);
+                setProgress((s.positionMillis / (s.durationMillis || 1)) || 0);
+              }
+            }}
+          />
         )}
         
-        {showSpinner && (
-          <ActivityIndicator size="large" color="white" style={styles.loader} />
+        {showSpinner && <ActivityIndicator size="large" color="white" style={styles.loader} />}
+        {!playbackUrl && !isLoadingUrl && (
+            <View style={styles.errorOverlay}><Text style={styles.errorText}>Could not play video</Text></View>
         )}
         
-        {status === 'error' && (
-            <View style={styles.errorOverlay}>
-                <Text style={styles.errorText}>Could not play video</Text>
-            </View>
-        )}
-        
-        {isInternallyPaused && status === 'playing' && (
+        {isInternallyPaused && !isBuffering && (
           <View style={styles.playButtonOverlay}>
             <Play size={80} color="rgba(255, 255, 255, 0.7)" fill="rgba(255, 255, 255, 0.5)" />
           </View>
         )}
         
-        {status !== 'loading' && status !== 'error' && (
+        {!isLoadingUrl && (
           <>
             <View style={styles.infoOverlay}>
               <View style={styles.authorContainer}>
                 <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
                   <Pressable>
                     <Image source={{ uri: post.author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
-                     {post.author.labels?.some(l => l.val === 'blue-check' && l.src === 'did:plc:z72i7hdynmk6r22z27h6tvur') && (
+                     {post.author.labels?.some(l => l.val === 'blue-check') && (
                         <View style={styles.badgeContainer}><BadgeCheck size={14} color="white" fill="currentColor" /></View>
                     )}
                   </Pressable>
@@ -196,11 +157,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
               <Text 
                 style={styles.descriptionText} 
                 numberOfLines={isDescriptionExpanded ? undefined : 2}
-                onTextLayout={e => {
-                    if (needsTruncation) {
-                        setIsTextTruncated(e.nativeEvent.lines.length >= 2);
-                    }
-                }}
+                onTextLayout={e => { if (needsTruncation) setIsTextTruncated(e.nativeEvent.lines.length >= 2); }}
               >
                 <RichTextRenderer record={record} />
               </Text>
@@ -226,28 +183,10 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
 
 const styles = StyleSheet.create({
   container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', overflow: 'hidden' },
-  backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-    ...(Platform.OS === 'web' && {
-      filter: 'blur(25px) brightness(0.8)', // CSS filter for web
-      transform: [{ scale: '1.1' }], // Scale to cover edges after blur
-    } as any),
-  },
-  backgroundOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Darken the background for better contrast
-    zIndex: 1,
-    // On Android, where blurRadius is not great, this overlay is more important.
-    ...(Platform.OS === 'android' && {
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    })
-  },
-  video: {
-    zIndex: 2,
-  },
+  backgroundImage: { ...StyleSheet.absoluteFillObject, zIndex: 0, ...(Platform.OS === 'web' && { filter: 'blur(25px) brightness(0.8)', transform: [{ scale: '1.1' }] } as any) },
+  backgroundOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.3)', zIndex: 1 },
   loader: { position: 'absolute', zIndex: 4 },
-  infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: theme.spacing.l, zIndex: 3, gap: theme.spacing.s },
+  infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, zIndex: 3, gap: theme.spacing.s },
   authorContainer: { position: 'relative', width: 48, height: 48, marginBottom: theme.spacing.xs },
   avatar: { width: 48, height: 48, borderRadius: theme.shape.full, borderWidth: 2, borderColor: 'white', backgroundColor: theme.colors.surfaceContainerHigh },
   badgeContainer: { position: 'absolute', bottom: -2, right: -2, backgroundColor: theme.colors.primary, borderRadius: theme.shape.full, padding: 2, borderWidth: 1, borderColor: 'black' },
@@ -259,27 +198,9 @@ const styles = StyleSheet.create({
   muteButton: { position: 'absolute', top: theme.spacing.l, right: theme.spacing.l, backgroundColor: 'rgba(0,0,0,0.4)', padding: theme.spacing.s, borderRadius: theme.shape.full, zIndex: 3 },
   errorOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 4 },
   errorText: { color: 'white', fontWeight: 'bold' },
-  playButtonOverlay: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-  progressBarContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    zIndex: 3,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: 'white',
-    width: '100%',
-    transformOrigin: 'left',
-  },
+  playButtonOverlay: { position: 'absolute', justifyContent: 'center', alignItems: 'center', zIndex: 5 },
+  progressBarContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: 'rgba(255, 255, 255, 0.3)', zIndex: 3 },
+  progressBar: { height: '100%', backgroundColor: 'white', width: '100%', transformOrigin: 'left' },
 });
 
 export default React.memo(VideoPlayer);

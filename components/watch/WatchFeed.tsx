@@ -1,18 +1,20 @@
 import React, { useRef, useState } from 'react';
-import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet, FlatListProps } from 'react-native';
-import {AppBskyFeedDefs } from '@atproto/api';
+import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet, RefreshControl } from 'react-native';
+import { AppBskyFeedDefs } from '@atproto/api';
 import VideoPlayer from './VideoPlayer';
 import { theme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
-  videoPosts:AppBskyFeedDefs.FeedViewPost[];
+  videoPosts: AppBskyFeedDefs.FeedViewPost[];
   loadMore: () => void;
   isLoadingMore: boolean;
   hasMore: boolean;
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }
 
-const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMore }) => {
+const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMore, onRefresh, isRefreshing }) => {
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const { height } = useWindowDimensions();
@@ -28,41 +30,46 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
 
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
-  const flatListProps = {
-    data: videoPosts,
-    keyExtractor: (item: AppBskyFeedDefs.FeedViewPost) => item.post.uri,
-    renderItem: ({ item, index }: { item: AppBskyFeedDefs.FeedViewPost; index: number }) => (
-      <View style={{ height }}>
-        <VideoPlayer 
-          postView={item} 
-          paused={index !== activeIndex}
-        />
-      </View>
-    ),
-    pagingEnabled: true,
-    showsVerticalScrollIndicator: false,
-    onViewableItemsChanged,
-    viewabilityConfig: viewConfigRef.current,
-    onEndReached: loadMore,
-    onEndReachedThreshold: 1.5,
-    ListFooterComponent: () => {
-      if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
-      if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
-      return null;
-    },
-    windowSize: 3, // Renders the visible screen, and one item above and below
-    initialNumToRender: 1,
-    maxToRenderPerBatch: 1,
-    removeClippedSubviews: true,
-    getItemLayout: (_: any, index: number) => ({
-      length: height,
-      offset: height * index,
-      index,
-    }),
-  };
-
   return (
-    <FlatList {...flatListProps} />
+    <FlatList
+      data={videoPosts}
+      keyExtractor={(item: AppBskyFeedDefs.FeedViewPost) => item.post.uri}
+      renderItem={({ item, index }: { item: AppBskyFeedDefs.FeedViewPost; index: number }) => (
+        <View style={{ height }}>
+          <VideoPlayer 
+            postView={item} 
+            paused={index !== activeIndex}
+          />
+        </View>
+      )}
+      pagingEnabled
+      showsVerticalScrollIndicator={false}
+      onViewableItemsChanged={onViewableItemsChanged}
+      viewabilityConfig={viewConfigRef.current}
+      onEndReached={loadMore}
+      onEndReachedThreshold={1.5}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          tintColor="white"
+        />
+      }
+      ListFooterComponent={() => {
+        if (isLoadingMore) return <View style={{height, justifyContent: 'center'}}><ActivityIndicator size="large" color="white" /></View>;
+        if (!hasMore && videoPosts.length > 0) return <View style={[styles.fullScreenCentered, {height}]}><Text style={styles.endText}>{t('watch.allSeenTitle')}</Text><Text style={styles.endSubText}>{t('watch.allSeenDescription')}</Text></View>;
+        return null;
+      }}
+      windowSize={3}
+      initialNumToRender={1}
+      maxToRenderPerBatch={1}
+      removeClippedSubviews
+      getItemLayout={(_: any, index: number) => ({
+        length: height,
+        offset: height * index,
+        index,
+      })}
+    />
   );
 };
 
