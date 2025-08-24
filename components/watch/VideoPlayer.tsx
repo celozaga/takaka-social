@@ -89,9 +89,9 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
 
   if (!embedView) return null;
 
-  const videoAspectRatio = embedView.aspectRatio ? embedView.aspectRatio.width / embedView.aspectRatio.height : 16 / 9;
-  const isVideoVertical = videoAspectRatio < 1;
-  const videoResizeMode = isVideoVertical ? ResizeMode.COVER : ResizeMode.CONTAIN;
+  // Use 'contain' for all videos to prevent cropping, which was the main user complaint.
+  // The video will be centered, and the blurred background will fill any empty space (letterboxing/pillarboxing).
+  const videoResizeMode = ResizeMode.CONTAIN;
   
   const showSpinner = status === 'buffering';
 
