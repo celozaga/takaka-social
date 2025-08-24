@@ -81,7 +81,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     if (AppBskyEmbedImages.isView(mediaEmbed)) {
         const image = mediaEmbed.images[0]; // Show first image only in replies
         const imageAspectRatio = image.aspectRatio ? image.aspectRatio.width / image.aspectRatio.height : 1.5;
-        return <ResizedImage src={image.thumb} resizeWidth={400} alt={image.alt || 'Reply image'} style={[styles.mediaPreview, { aspectRatio: imageAspectRatio }]} />;
+        return <ResizedImage src={image.thumb} alt={image.alt || 'Reply image'} style={[styles.mediaPreview, { aspectRatio: imageAspectRatio }]} />;
     }
 
     if (AppBskyEmbedVideo.isView(mediaEmbed)) {

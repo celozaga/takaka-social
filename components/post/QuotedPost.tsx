@@ -46,7 +46,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
         const firstEmbed = recordEmbed.embeds[0];
         if (AppBskyEmbedImages.isView(firstEmbed) && firstEmbed.images.length > 0) {
           const image = firstEmbed.images[0];
-          return <ResizedImage src={image.thumb} resizeWidth={500} alt={image.alt || 'Quoted post image'} style={styles.mediaPreview} />;
+          return <ResizedImage src={image.thumb} alt={image.alt || 'Quoted post image'} style={styles.mediaPreview} />;
         }
       }
       return null;

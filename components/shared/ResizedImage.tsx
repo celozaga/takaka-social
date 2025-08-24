@@ -1,38 +1,17 @@
-
-import React, { useState, useEffect } from 'react';
-import { resizeImage } from '../../lib/image';
+import React from 'react';
 import { Image, ImageProps } from 'react-native';
 
 interface ResizedImageProps extends ImageProps {
   src: string;
-  resizeWidth: number;
   alt: string;
 }
 
-const ResizedImage: React.FC<ResizedImageProps> = ({ src, resizeWidth, alt, style, ...props }) => {
-  const [imageSrc, setImageSrc] = useState(src ? resizeImage(src, resizeWidth) : '');
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    // When the src prop changes, reset the error state and try the proxy again.
-    setHasError(false);
-    setImageSrc(src ? resizeImage(src, resizeWidth) : '');
-  }, [src, resizeWidth]);
-
-  const handleError = () => {
-    // Only try to fall back once to prevent an infinite loop if the original src also fails.
-    if (!hasError) {
-      setHasError(true);
-      setImageSrc(src); // Fallback to the original, un-proxied URL.
-    }
-  };
-
+const ResizedImage: React.FC<ResizedImageProps> = ({ src, alt, style, ...props }) => {
   if (!src) {
-    // Render nothing or a placeholder if no src is provided.
     return <Image {...props} style={style} source={{ uri: '' }} accessibilityLabel={alt} />;
   }
 
-  return <Image source={{ uri: imageSrc }} onError={handleError} accessibilityLabel={alt} style={style} {...props} />;
+  return <Image source={{ uri: src }} accessibilityLabel={alt} style={style} {...props} />;
 };
 
 export default ResizedImage;

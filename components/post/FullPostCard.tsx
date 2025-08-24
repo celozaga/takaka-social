@@ -112,7 +112,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             onMouseLeave: () => setIsHovered(false),
                         } as any)}
                     >
-                        <ResizedImage src={imageItem.thumb} resizeWidth={1200} alt={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                        <ResizedImage src={imageItem.thumb} alt={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
                         <View style={[styles.imageOverlay, { opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0 }]}><ExternalLink color="white" size={24} /></View>
                     </Pressable>
                 );
@@ -169,7 +169,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         })()
                     ) : (
                         <Pressable style={{width: '100%', height: '100%'}} onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
-                           <ResizedImage src={(item as AppBskyEmbedImages.ViewImage).thumb} resizeWidth={1200} alt={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} resizeMode="contain" />
+                           <ResizedImage src={(item as AppBskyEmbedImages.ViewImage).thumb} alt={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} resizeMode="contain" />
                         </Pressable>
                     )}
                 </View>

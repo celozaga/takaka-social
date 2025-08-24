@@ -75,7 +75,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
                 <View>
                     <ResizedImage 
                         src={firstImage.thumb}
-                        resizeWidth={400}
                         alt={firstImage.alt || 'Post image'} 
                         style={[styles.image, { aspectRatio: imageAspectRatio }]} 
                     />
@@ -102,7 +101,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
             
             return (
                 <View>
-                    <ResizedImage src={posterUrl || ''} resizeWidth={400} alt="Video poster" style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} />
+                    <ResizedImage src={posterUrl || ''} alt="Video poster" style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} />
                     <View style={styles.mediaBadgeContainer}>
                         {isRepost && <View style={styles.mediaBadge}><Repeat size={14} color="white" /></View>}
                         <View style={styles.mediaBadge}><PlayCircle size={14} color="white" /></View>
@@ -138,7 +137,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
                             src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} 
                             alt={`${author.displayName}'s avatar`} 
                             style={styles.avatar} 
-                            resizeWidth={48}
                         />
                         <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
                     </Pressable>
