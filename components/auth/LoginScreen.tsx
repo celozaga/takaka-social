@@ -32,8 +32,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
       });
       onSuccess();
     } catch (err: any) {
-      if (loginStep === 'credentials' && err.error === 'AuthFactorRequired' && Array.isArray(err.factors)) {
-        const emailFactor = err.factors.find((f: any) => f.type === 'email' && f.hint);
+      // Robustly check for a 2FA/AuthFactorRequired error.
+      // The presence of the `factors` array is a strong indicator.
+      if (loginStep === 'credentials' && (err.error === 'AuthFactorRequired' || Array.isArray(err.factors))) {
+        const emailFactor = Array.isArray(err.factors) 
+          ? err.factors.find((f: any) => f.type === 'email' && f.hint)
+          : null;
+          
         if (emailFactor) {
           setLoginStep('token');
           setEmailHint(emailFactor.hint);
@@ -41,6 +46,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
           return;
         }
       }
+      
       setError(err.message || (loginStep === 'token' ? t('signIn.invalidToken') : t('signIn.loginFailed')));
       setIsLoading(false);
     }
