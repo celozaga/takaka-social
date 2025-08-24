@@ -103,7 +103,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   const progress = status?.durationMillis ? status.positionMillis / status.durationMillis : 0;
   const showSpinner = isLoadingUrl || (status?.isBuffering && !status?.isPlaying);
 
-  if (!currentSource && !isLoadingUrl) {
+  if (!currentSource && !isLoadingUrl && playerError) {
     return (
         <View style={[styles.container, style]}>
             <Image source={{ uri: embed.thumbnail }} style={StyleSheet.absoluteFill} contentFit="contain" />
@@ -116,7 +116,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
     <Pressable ref={containerRef} style={[styles.container, style]} onPress={showControls}>
       <Video
         ref={videoRef}
-        source={{ uri: currentSource || undefined }}
+        source={currentSource ? { uri: currentSource } : null}
         posterSource={embed.thumbnail ? { uri: embed.thumbnail } : undefined}
         usePoster={!!embed.thumbnail}
         style={StyleSheet.absoluteFill}

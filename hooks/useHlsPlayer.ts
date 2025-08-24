@@ -13,7 +13,6 @@ export const useHlsPlayer = (
     const [error, setError] = useState<string | null>(null);
     const hlsInstanceRef = useRef<Hls | null>(null);
     
-    // Internal fallback handler, can be called from HLS.js error or component error
     const triggerFallback = useCallback(() => {
         if (hlsInstanceRef.current) {
             hlsInstanceRef.current.destroy();
@@ -26,37 +25,12 @@ export const useHlsPlayer = (
             setError(null);
         } else {
             console.error("Fallback also failed or is unavailable.");
-            setError("Failed to play video.");
+            setError("Could not play video");
         }
     }, [fallbackUrl, currentSource]);
 
-    const setupHls = useCallback(() => {
-        if (!hlsUrl || !videoRef.current) return;
-        // This is an internal property of expo-av on web, but necessary for HLS.js
-        const videoNode = (videoRef.current as any)._video;
-        if (!videoNode) return;
-        
-        const hls = new Hls();
-        hlsInstanceRef.current = hls;
-        hls.loadSource(hlsUrl);
-        hls.attachMedia(videoNode);
-
-        hls.on(Hls.Events.ERROR, (_event, data) => {
-            console.error('HLS.js error:', data.details);
-            if (data.fatal) {
-                triggerFallback();
-            }
-        });
-    }, [hlsUrl, videoRef, triggerFallback]);
-
     useEffect(() => {
-        // This is the main strategy selector.
-        if (Platform.OS === 'web' && Hls.isSupported() && hlsUrl) {
-            setCurrentSource(null); // Use HLS.js by setting source to null initially
-        } else {
-            setCurrentSource(hlsUrl ?? fallbackUrl); // Use native/expo-av handling
-        }
-        
+        // Cleanup function to destroy HLS instance when component unmounts or URLs change
         return () => {
             if (hlsInstanceRef.current) {
                 hlsInstanceRef.current.destroy();
@@ -64,17 +38,40 @@ export const useHlsPlayer = (
             }
         };
     }, [hlsUrl, fallbackUrl]);
-
+    
     useEffect(() => {
-        // If strategy is HLS.js (signaled by currentSource being null), set it up.
-        if (currentSource === null) {
-            setupHls();
+        const videoElement = videoRef.current;
+        // This is an internal property of expo-av on web, but necessary for HLS.js
+        const videoNode = (videoElement as any)?._video;
+
+        if (Platform.OS === 'web' && Hls.isSupported() && hlsUrl) {
+            if (videoNode) {
+                // If the video node is ready, set up HLS.js
+                const hls = new Hls();
+                hlsInstanceRef.current = hls;
+                hls.loadSource(hlsUrl);
+                hls.attachMedia(videoNode);
+
+                hls.on(Hls.Events.ERROR, (_event, data) => {
+                    console.error('HLS.js error:', data.details);
+                    if (data.fatal) {
+                        triggerFallback();
+                    }
+                });
+                // Set source to null to ensure expo-av doesn't interfere
+                setCurrentSource(null);
+            } else {
+                // If video node is not ready, we still set source to null and wait for a re-render
+                setCurrentSource(null);
+            }
+        } else {
+            // For native or non-HLS browsers, let expo-av handle it
+            setCurrentSource(hlsUrl ?? fallbackUrl);
         }
-    }, [currentSource, setupHls]);
+    }, [hlsUrl, fallbackUrl, videoRef, triggerFallback, videoRef.current]); // Rely on videoRef.current to re-run this effect
 
     const handleError = useCallback(() => {
         // This is for the <Video> component's onError prop.
-        // It's mainly for when native HLS playback fails (e.g., on Chrome).
         console.error(`Error playing source via <Video> component: ${currentSource}`);
         triggerFallback();
     }, [currentSource, triggerFallback]);
