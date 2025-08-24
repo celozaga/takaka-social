@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AppBskyFeedDefs, RichText, AppBskyEmbedImages, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
+import { AppBskyFeedDefs, RichText, AppBskyEmbedImages,AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { formatCompactNumber, formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Heart } from 'lucide-react';
@@ -16,6 +15,7 @@ import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
 import ResizedImage from '../shared/ResizedImage';
 import SimpleVideoPlayer from '../shared/VideoPlayer';
+import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
 const MAX_REPLY_DEPTH = 6;
 
@@ -23,6 +23,26 @@ interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
   depth?: number;
 }
+
+const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> = ({embed, authorDid}) => {
+    const {hlsUrl, fallbackUrl} = useVideoPlayback(embed, authorDid);
+    const aspectRatio = embed.aspectRatio ? embed.aspectRatio.width / embed.aspectRatio.height : 16/9;
+    
+    return (
+        <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>
+            <SimpleVideoPlayer 
+                hlsUrl={hlsUrl}
+                fallbackUrl={fallbackUrl}
+                videoOptions={{
+                    autoplay: false,
+                    controls: true,
+                    poster: embed.thumbnail
+                }}
+                style={{ width: '100%', height: '100%' }}
+            />
+        </View>
+    );
+};
 
 const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   const { t } = useTranslation();
@@ -36,7 +56,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   const author = post.author;
   const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
-  const { session, agent } = useAtp();
+  const { session } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const { likeUri, likeCount, isLiking, handleLike } = usePostActions(post);
   
@@ -86,24 +106,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
 
     if (AppBskyEmbedVideo.isView(mediaEmbed)) {
         const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
-        const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
-        blobUrl.searchParams.set('did', authorDid);
-        blobUrl.searchParams.set('cid', mediaEmbed.cid);
-        const videoUrl = blobUrl.toString();
-        const aspectRatio = mediaEmbed.aspectRatio ? mediaEmbed.aspectRatio.width / mediaEmbed.aspectRatio.height : 16/9;
-        return (
-            <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>
-                <SimpleVideoPlayer 
-                    options={{
-                        autoplay: false,
-                        controls: true,
-                        poster: mediaEmbed.thumbnail,
-                        sources: [{ src: videoUrl, type: 'video/mp4' }]
-                    }}
-                    style={{ width: '100%', height: '100%' }}
-                />
-            </View>
-        );
+        return <ReplyVideo embed={mediaEmbed} authorDid={authorDid} />;
     }
     
     // Quoted posts are removed as per user request.

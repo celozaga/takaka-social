@@ -33,7 +33,8 @@
     "expo-clipboard": "~6.0.3",
     "expo-image-picker": "~15.0.7",
     "expo-notifications": "~0.28.10",
-    "expo-secure-store": "~13.0.2"
+    "expo-secure-store": "~13.0.2",
+    "hls.js": "^1.5.8"
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",

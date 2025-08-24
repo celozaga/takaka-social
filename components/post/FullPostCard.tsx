@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform, StyleProp, ViewStyle, useWindowDimensions, FlatListProps } from 'react-native';
 import { Link, useRouter } from 'expo-router';
@@ -12,6 +11,7 @@ import AdvancedVideoPlayer from '../shared/AdvancedVideoPlayer';
 import SimpleVideoPlayer from '../shared/VideoPlayer';
 import ResizedImage from '../shared/ResizedImage';
 import { theme } from '@/lib/theme';
+import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
 interface FullPostCardProps {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -20,7 +20,6 @@ interface FullPostCardProps {
 type MediaItem = AppBskyEmbedImages.ViewImage | { type: 'video', view: AppBskyEmbedVideo.View };
 
 const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
-    const { agent } = useAtp();
     const { setPostForNav } = useUI();
     const router = useRouter();
     const { post, reason } = feedViewPost;
@@ -141,32 +140,31 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         const calculatedHeight = containerWidth / slideshowAspectRatio;
         const finalHeight = Math.min(calculatedHeight, 700);
 
+        const SlideshowVideoItem: React.FC<{item: { type: 'video', view: AppBskyEmbedVideo.View }}> = ({item}) => {
+            const {hlsUrl, fallbackUrl} = useVideoPlayback(item.view, authorDid);
+            return (
+                <SimpleVideoPlayer
+                    hlsUrl={hlsUrl}
+                    fallbackUrl={fallbackUrl}
+                    videoOptions={{
+                        autoplay: false,
+                        controls: true,
+                        poster: item.view.thumbnail,
+                        loop: false,
+                        muted: false,
+                    }}
+                    style={{ width: '100%', height: '100%' }}
+                />
+            );
+        }
+
         const renderSlideshowItem = ({ item }: { item: MediaItem }) => {
             const isVideo = 'type' in item && item.type === 'video';
             
             return (
                 <View style={{ width: containerWidth, height: finalHeight, justifyContent: 'center' }}>
                     {isVideo ? (
-                         (() => {
-                            const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
-                            const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
-                            blobUrl.searchParams.set('did', authorDid);
-                            blobUrl.searchParams.set('cid', videoItem.view.cid);
-                            const blobVideoUrl = blobUrl.toString();
-                            return (
-                                <SimpleVideoPlayer
-                                    options={{
-                                        autoplay: false,
-                                        controls: true,
-                                        poster: videoItem.view.thumbnail,
-                                        sources: [{ src: blobVideoUrl, type: 'video/mp4' }],
-                                        loop: false,
-                                        muted: false,
-                                    }}
-                                    style={{ width: '100%', height: '100%' }}
-                                />
-                            );
-                        })()
+                        <SlideshowVideoItem item={item as { type: 'video', view: AppBskyEmbedVideo.View }} />
                     ) : (
                         <Pressable style={{width: '100%', height: '100%'}} onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
                            <ResizedImage src={(item as AppBskyEmbedImages.ViewImage).thumb} alt={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} resizeMode="contain" />

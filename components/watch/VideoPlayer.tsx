@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Link } from 'expo-router';
@@ -10,6 +9,7 @@ import { Volume2, VolumeX, Play, Plus, Check, BadgeCheck } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useAtp } from '@/context/AtpContext';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
+import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;
@@ -46,7 +46,8 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
     return undefined;
   }, [post.embed]);
 
-  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(post.uri, embedView, post.author.did);
+  const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embedView, post.author.did);
+  const { currentSource, error: playerError, handleError } = useHlsPlayer(videoRef, hlsUrl, fallbackUrl);
 
   useEffect(() => {
     // Reset state for new video
@@ -89,11 +90,11 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
         )}
         <View style={styles.backgroundOverlay} />
         
-        {playbackUrl && (
+        {currentSource && (
           <Video
             ref={videoRef}
             style={StyleSheet.absoluteFill}
-            source={{ uri: playbackUrl }}
+            source={{ uri: currentSource }}
             posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : undefined}
             usePoster
             resizeMode={resizeMode}
@@ -101,12 +102,13 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
             isLooping
             isMuted={isMuted}
             onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s as AVPlaybackStatusSuccess) }}
+            onError={handleError}
           />
         )}
         
         {showSpinner && <ActivityIndicator size="large" color="white" style={styles.loader} />}
-        {!playbackUrl && !isLoadingUrl && (
-            <View style={styles.errorOverlay}><Text style={styles.errorText}>Could not play video</Text></View>
+        {playerError && !showSpinner && (
+            <View style={styles.errorOverlay}><Text style={styles.errorText}>{playerError}</Text></View>
         )}
         
         {isInternallyPaused && !showSpinner && (
@@ -184,7 +186,7 @@ const styles = StyleSheet.create({
   errorText: { color: 'white', fontWeight: 'bold' },
   playButtonOverlay: { position: 'absolute', justifyContent: 'center', alignItems: 'center', zIndex: 5 },
   progressBarContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, backgroundColor: 'rgba(255, 255, 255, 0.3)', zIndex: 3 },
-  progressBar: { height: '100%', backgroundColor: 'white', width: '100%', transformOrigin: 'left' },
+  progressBar: { height: '100%', backgroundColor: 'white', transformOrigin: 'left' },
 });
 
 export default React.memo(VideoPlayer);

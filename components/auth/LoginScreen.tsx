@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -6,6 +7,7 @@ import { AtSign, KeyRound, LogIn, ShieldCheck, Globe, Pencil, Check, X } from 'l
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Linking, Platform, Modal } from 'react-native';
 import { theme } from '@/lib/theme';
 import { PDS_URL } from '@/lib/config';
+import i18n from '@/lib/i18n';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -189,6 +191,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
           </View>
           <Text style={styles.noticeText}>
               <Trans
+                  i18n={i18n}
                   i18nKey="signIn.appPasswordNotice"
                   components={{
                       1: <Text style={styles.link} onPress={openAppPasswordLink} />,
@@ -248,6 +251,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
                 )}
                 <Text style={styles.modalDescription}>
                     <Trans
+                        i18n={i18n}
                         i18nKey="signIn.providerDescription"
                         components={{
                             1: <Text style={styles.link} onPress={() => Linking.openURL('https://bsky.social/about/blog/5-23-2023-a-new-dawn-for-social')} />,

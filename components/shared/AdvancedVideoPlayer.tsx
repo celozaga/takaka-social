@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform, Image } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } from 'expo-av';
@@ -7,6 +6,7 @@ import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
 import { AppBskyFeedDefs, AppBskyEmbedVideo } from '@atproto/api';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
+import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 
 interface AdvancedVideoPlayerProps {
   post: AppBskyFeedDefs.PostView;
@@ -15,16 +15,17 @@ interface AdvancedVideoPlayerProps {
 
 const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }) => {
   const embed = post.embed as AppBskyEmbedVideo.View;
-  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(post.uri, embed, post.author.did);
+  const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, post.author.did);
 
   const videoRef = useRef<Video>(null);
   const containerRef = useRef<View>(null);
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  const { currentSource, error: playerError, handleError } = useHlsPlayer(videoRef, hlsUrl, fallbackUrl);
 
   const [status, setStatus] = useState<AVPlaybackStatusSuccess | null>(null);
   const [isControlsVisible, setControlsVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const hideControls = () => {
     if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
@@ -100,11 +101,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   const progress = status?.durationMillis ? status.positionMillis / status.durationMillis : 0;
   const showSpinner = isLoadingUrl || (status?.isBuffering && !status?.isPlaying);
 
-  if (!playbackUrl && !isLoadingUrl) {
+  if (!currentSource && !isLoadingUrl) {
     return (
         <View style={[styles.container, style]}>
             <Image source={{ uri: embed.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="contain" />
-            <View style={styles.errorOverlay}><Text style={styles.errorText}>Could not play video</Text></View>
+            <View style={styles.errorOverlay}><Text style={styles.errorText}>{playerError || "Could not play video"}</Text></View>
         </View>
     )
   }
@@ -113,7 +114,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
     <Pressable ref={containerRef} style={[styles.container, style]} onPress={showControls}>
       <Video
         ref={videoRef}
-        source={{ uri: playbackUrl || undefined }}
+        source={{ uri: currentSource || undefined }}
         posterSource={embed.thumbnail ? { uri: embed.thumbnail } : undefined}
         usePoster={!!embed.thumbnail}
         style={StyleSheet.absoluteFill}
@@ -121,9 +122,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
         shouldPlay={true}
         isMuted={false}
         isLooping
-        onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s); else if (s.isLoaded === false && s.error) setError(s.error) }}
+        onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s); }}
         onFullscreenUpdate={(e) => setIsFullscreen(e.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_DID_PRESENT)}
-        onError={setError}
+        onError={handleError}
       />
 
       {isControlsVisible && (
@@ -148,7 +149,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
       )}
 
       {showSpinner && <ActivityIndicator size="large" color="white" style={StyleSheet.absoluteFill} />}
-      {error && !showSpinner && <View style={styles.errorOverlay}><Text style={styles.errorText}>Could not play video</Text></View>}
+      {playerError && !showSpinner && <View style={styles.errorOverlay}><Text style={styles.errorText}>{playerError}</Text></View>}
     </Pressable>
   );
 };

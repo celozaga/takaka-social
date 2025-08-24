@@ -1,17 +1,17 @@
-
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
-import { StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { StyleSheet, StyleProp, ViewStyle, View, Text } from 'react-native';
+import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 
-// The player ref will be an expo-av Video component instance
 export type PlayerRef = Video;
 
 interface SimpleVideoPlayerProps {
-  options: {
+  hlsUrl: string | null;
+  fallbackUrl: string | null;
+  videoOptions: {
     autoplay?: boolean;
     controls?: boolean;
     poster?: string;
-    sources: { src: string; type?: string }[];
     loop?: boolean;
     muted?: boolean;
   };
@@ -23,52 +23,57 @@ interface SimpleVideoPlayerProps {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
 }
 
-const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({ options, onReady, style, onPlay, onPause, onEnded, onPlaybackStatusUpdate: onStatusUpdateProp }) => {
+const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({ 
+  hlsUrl, 
+  fallbackUrl, 
+  videoOptions, 
+  onReady, 
+  style, 
+  onPlay, 
+  onPause, 
+  onEnded, 
+  onPlaybackStatusUpdate: onStatusUpdateProp 
+}) => {
   const videoRef = useRef<Video>(null);
-  const onReadyRef = React.useRef(onReady);
-
-  // Keep onReady ref up to date without re-running effect
-  useEffect(() => {
-    onReadyRef.current = onReady;
-  }, [onReady]);
-
-  useEffect(() => {
-    if (videoRef.current) {
-        onReadyRef.current?.(videoRef.current);
-    }
-  }, [videoRef.current]);
+  const { currentSource, error, handleError } = useHlsPlayer(videoRef, hlsUrl, fallbackUrl);
 
   const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
     onStatusUpdateProp?.(status);
-
     if (!status.isLoaded) return;
     
     const successStatus = status as AVPlaybackStatusSuccess;
-    
     if (successStatus.isPlaying) onPlay?.();
     else onPause?.();
-    
     if (successStatus.didJustFinish && !successStatus.isLooping) onEnded?.();
   };
 
-  if (!options.sources || options.sources.length === 0 || !options.sources[0].src) {
-      return null;
+  if (error) {
+    return (
+      <View style={[styles.video, style, styles.errorContainer]}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!currentSource) {
+      return <View style={[styles.video, style]} />;
   }
   
   return (
     <Video
       ref={videoRef}
       style={[styles.video, style]}
-      source={{ uri: options.sources[0].src }}
-      posterSource={options.poster ? { uri: options.poster } : undefined}
-      usePoster={!!options.poster}
-      shouldPlay={options.autoplay}
-      isLooping={options.loop}
-      isMuted={options.muted}
+      source={{ uri: currentSource }}
+      posterSource={videoOptions.poster ? { uri: videoOptions.poster } : undefined}
+      usePoster={!!videoOptions.poster}
+      shouldPlay={videoOptions.autoplay}
+      isLooping={videoOptions.loop}
+      isMuted={videoOptions.muted}
       resizeMode={ResizeMode.CONTAIN}
       posterStyle={{ resizeMode: ResizeMode.CONTAIN }}
-      useNativeControls={options.controls}
+      useNativeControls={videoOptions.controls}
       onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+      onError={handleError}
     />
   );
 };
@@ -79,6 +84,14 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: 'black'
   },
+  errorContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'white',
+    fontWeight: 'bold',
+  }
 });
 
 export default SimpleVideoPlayer;
