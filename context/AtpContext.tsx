@@ -58,6 +58,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (storedSessionString) {
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
+          // Manually set session in state, as resumeSession does not trigger the callback
+          setSession(parsedSession);
         }
       } catch (error) {
         console.error("Failed to resume session:", error);
@@ -129,7 +131,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const login = async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => {
     const { identifier, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, token } = params;
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, authFactorToken: token });
-    // The persistSession callback will handle setting the session state
     if(agent.session) {
         await fetchUnreadCount();
     }
@@ -138,7 +139,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = async () => {
     await agent.logout();
-    // The persistSession callback will handle clearing the session state
+    await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
+    setSession(null);
   };
 
   return (
