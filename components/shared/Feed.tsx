@@ -364,12 +364,18 @@ const Feed: React.FC<FeedProps> = ({
       )
   }
 
+  const renderGridItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => (
+    <View style={styles.gridItem}>
+        <PostCard feedViewPost={item} imageWidth={imageWidth} />
+    </View>
+  );
+
   return (
     <FlatList
         onLayout={onLayout}
         {...flatListProps}
         numColumns={2}
-        renderItem={({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <PostCard feedViewPost={item} imageWidth={imageWidth} />}
+        renderItem={renderGridItem}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 60, paddingHorizontal: theme.spacing.l}}
     />
@@ -384,6 +390,9 @@ const styles = StyleSheet.create({
     columnWrapper: {
         gap: theme.spacing.l,
         marginBottom: theme.spacing.l,
+    },
+    gridItem: {
+        flex: 1,
     },
     messageContainerWrapper: {
         padding: theme.spacing.l,
