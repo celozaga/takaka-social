@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Link } from 'expo-router';
@@ -12,14 +13,40 @@ import { useAtp } from '@/context/AtpContext';
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;
   paused: boolean;
+  isMuted: boolean;
+  onMuteToggle: () => void;
 }
 
-const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) => {
-  const { agent, session } = useAtp();
+const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, authorDid: string) => {
+    const { agent } = useAtp();
+    const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!embed || !authorDid) {
+            setIsLoading(false);
+            setPlaybackUrl(null);
+            return;
+        }
+        setIsLoading(true);
+        setError(null);
+
+        // Construct the direct blob URL, which is the official, stable method.
+        const serviceUrl = agent.service.toString();
+        const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+        const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${embed.cid}`;
+        
+        setPlaybackUrl(blobUrl);
+        setIsLoading(false);
+    }, [agent, embed, authorDid]);
+
+    return { playbackUrl, isLoading, error };
+};
+
+
+const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, isMuted, onMuteToggle }) => {
   const videoRef = useRef<Video>(null);
-  
-  const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
-  const [isLoadingUrl, setIsLoadingUrl] = useState(true);
   
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
   const [status, setStatus] = useState<AVPlaybackStatusSuccess | null>(null);
@@ -28,6 +55,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
   const [isTextTruncated, setIsTextTruncated] = useState(false);
   
   const { post } = postView;
+  const { agent, session } = useAtp();
   const record = post.record as any;
   const isMe = session?.did === post.author.did;
   const profileLink = `/profile/${post.author.handle}`;
@@ -45,34 +73,15 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
     return undefined;
   }, [post.embed]);
 
+  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embedView, post.author.did);
+
   useEffect(() => {
     // Reset state for new video
     setIsInternallyPaused(false);
     setStatus(null);
-    setPlaybackUrl(null);
     setIsDescriptionExpanded(false);
     setIsTextTruncated(false);
-
-    if (!embedView) {
-      setIsLoadingUrl(false);
-      return;
-    }
-
-    const fetchUrl = async () => {
-      setIsLoadingUrl(true);
-      try {
-        const serviceUrl = agent.service.toString();
-        const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-        const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${post.author.did}&cid=${embedView.cid}`;
-        setPlaybackUrl(blobUrl);
-      } catch (e) {
-        setPlaybackUrl(null);
-      } finally {
-        setIsLoadingUrl(false);
-      }
-    };
-    fetchUrl();
-  }, [agent, embedView, post.author.did]);
+  }, [post.uri]);
 
   const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
   useEffect(() => {
@@ -93,7 +102,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
   
   const showSpinner = isLoadingUrl || (status?.isBuffering && !status?.isPlaying);
   const toggleInternalPlayPause = () => setIsInternallyPaused(prev => !prev);
-  const toggleMute = (e: any) => { e.stopPropagation(); videoRef.current?.setIsMutedAsync(!status?.isMuted); };
+  const handleMuteToggle = (e: any) => { e.stopPropagation(); onMuteToggle(); };
   const toggleDescription = (e: any) => { e.stopPropagation(); setIsDescriptionExpanded(prev => !prev); };
   const needsTruncation = (record.text?.split('\n').length > 2 || record.text?.length > 100);
 
@@ -117,7 +126,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
             resizeMode={resizeMode}
             shouldPlay={!isExternallyPaused}
             isLooping
-            isMuted
+            isMuted={isMuted}
             onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s as AVPlaybackStatusSuccess) }}
           />
         )}
@@ -170,8 +179,8 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
               )}
             </View>
             <VideoActions post={post} />
-            <Pressable onPress={toggleMute} style={styles.muteButton}>
-              {status?.isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
+            <Pressable onPress={handleMuteToggle} style={styles.muteButton}>
+              {isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
             </Pressable>
             <View style={styles.progressBarContainer}>
               <View style={[styles.progressBar, { transform: [{ scaleX: progress }] }]} />

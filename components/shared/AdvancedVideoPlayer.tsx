@@ -1,18 +1,49 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform, Image } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } from 'expo-av';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
+import { useAtp } from '@/context/AtpContext';
+import { AppBskyEmbedVideo } from '@atproto/api';
 
 interface AdvancedVideoPlayerProps {
-  sourceUri: string;
-  posterUri?: string;
+  embed: AppBskyEmbedVideo.View;
+  authorDid: string;
   style?: any;
 }
 
-const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ sourceUri, posterUri, style }) => {
+const useVideoPlayback = (embed: AppBskyEmbedVideo.View, authorDid: string) => {
+    const { agent } = useAtp();
+    const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!embed || !authorDid) {
+            setIsLoading(false);
+            setPlaybackUrl(null);
+            return;
+        }
+        setIsLoading(true);
+        setError(null);
+
+        // Construct the direct blob URL, which is the official, stable method.
+        const serviceUrl = agent.service.toString();
+        const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+        const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${embed.cid}`;
+        
+        setPlaybackUrl(blobUrl);
+        setIsLoading(false);
+    }, [agent, embed, authorDid]);
+
+    return { playbackUrl, isLoading, error };
+};
+
+
+const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ embed, authorDid, style }) => {
+  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, authorDid);
   const videoRef = useRef<Video>(null);
   const containerRef = useRef<View>(null);
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -94,15 +125,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ sourceUri, po
   }, []);
 
   const progress = status?.durationMillis ? status.positionMillis / status.durationMillis : 0;
-  const showSpinner = status?.isBuffering && !status?.isPlaying;
+  const showSpinner = isLoadingUrl || (status?.isBuffering && !status?.isPlaying);
+
+  if (!playbackUrl && !isLoadingUrl) {
+    return (
+        <View style={[styles.container, style]}>
+            <Image source={{ uri: embed.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+            <View style={styles.errorOverlay}><Text style={styles.errorText}>Could not play video</Text></View>
+        </View>
+    )
+  }
 
   return (
     <Pressable ref={containerRef} style={[styles.container, style]} onPress={showControls}>
       <Video
         ref={videoRef}
-        source={{ uri: sourceUri }}
-        posterSource={posterUri ? { uri: posterUri } : undefined}
-        usePoster={!!posterUri}
+        source={{ uri: playbackUrl || undefined }}
+        posterSource={embed.thumbnail ? { uri: embed.thumbnail } : undefined}
+        usePoster={!!embed.thumbnail}
         style={StyleSheet.absoluteFill}
         resizeMode={ResizeMode.CONTAIN}
         shouldPlay={true}
@@ -135,7 +175,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ sourceUri, po
       )}
 
       {showSpinner && <ActivityIndicator size="large" color="white" style={StyleSheet.absoluteFill} />}
-      {error && <View style={styles.errorOverlay}><Text style={styles.errorText}>Could not play video</Text></View>}
+      {error && !showSpinner && <View style={styles.errorOverlay}><Text style={styles.errorText}>Could not play video</Text></View>}
     </Pressable>
   );
 };

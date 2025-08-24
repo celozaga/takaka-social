@@ -30,43 +30,9 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
-    const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
 
     const { width } = useWindowDimensions();
 
-
-    const fetchPlaybackUrl = useCallback(async (postUri: string, authorDid: string, videoCid: string) => {
-        if (playbackUrls.has(postUri)) return;
-        try {
-            // This is an undocumented endpoint, but used by the official client
-            const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({
-                did: authorDid,
-                cid: videoCid,
-            });
-            if (res.data.url) {
-                setPlaybackUrls(prev => new Map(prev).set(postUri, res.data.url));
-            }
-        } catch (e) {
-            console.warn(`Could not fetch playback URL for ${postUri}`, e);
-        }
-    }, [agent, playbackUrls]);
-
-    useEffect(() => {
-        if (post.embed) {
-            let videoEmbed: AppBskyEmbedVideo.View | undefined;
-            if (AppBskyEmbedVideo.isView(post.embed)) {
-                videoEmbed = post.embed;
-            } else if (AppBskyEmbedRecordWithMedia.isView(post.embed)) {
-                if (AppBskyEmbedVideo.isView(post.embed.media)) {
-                    videoEmbed = post.embed.media;
-                }
-            }
-
-            if (videoEmbed) {
-                fetchPlaybackUrl(post.uri, post.author.did, videoEmbed.cid);
-            }
-        }
-    }, [post.embed, post.uri, post.author.did, fetchPlaybackUrl]);
 
     const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
@@ -87,11 +53,15 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         if (!post.embed) return null;
 
         const mediaItems: MediaItem[] = [];
+        let videoEmbed: AppBskyEmbedVideo.View | undefined;
+
         const processEmbed = (embed: unknown) => {
             if (AppBskyEmbedImages.isView(embed)) {
                 mediaItems.push(...(embed as AppBskyEmbedImages.View).images);
             } else if (AppBskyEmbedVideo.isView(embed)) {
-                mediaItems.push({ type: 'video', view: embed as AppBskyEmbedVideo.View });
+                const view = embed as AppBskyEmbedVideo.View;
+                mediaItems.push({ type: 'video', view });
+                videoEmbed = view; // Capture video embed for single video case
             } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
                 processEmbed((embed as AppBskyEmbedRecordWithMedia.View).media);
             }
@@ -124,18 +94,11 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 backgroundColor: 'black'
             } as const;
 
-            if (isVideo) {
-                const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
-                const hlsUrl = playbackUrls.get(post.uri);
-                const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
-                blobUrl.searchParams.set('did', authorDid);
-                blobUrl.searchParams.set('cid', videoItem.view.cid);
-                const blobVideoUrl = blobUrl.toString();
-
+            if (isVideo && videoEmbed) {
                 return (
                     <AdvancedVideoPlayer
-                        sourceUri={hlsUrl || blobVideoUrl}
-                        posterUri={videoItem.view.thumbnail}
+                        embed={videoEmbed}
+                        authorDid={authorDid}
                         style={mediaStyle}
                     />
                 );
@@ -187,7 +150,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                     {isVideo ? (
                          (() => {
                             const videoItem = item as { type: 'video', view: AppBskyEmbedVideo.View };
-                            const hlsUrl = playbackUrls.get(post.uri);
                             const blobUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
                             blobUrl.searchParams.set('did', authorDid);
                             blobUrl.searchParams.set('cid', videoItem.view.cid);
@@ -198,7 +160,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                                         autoplay: false,
                                         controls: true,
                                         poster: videoItem.view.thumbnail,
-                                        sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }],
+                                        sources: [{ src: blobVideoUrl, type: 'video/mp4' }],
                                         loop: false,
                                         muted: false,
                                     }}

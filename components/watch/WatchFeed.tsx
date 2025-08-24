@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet, RefreshControl } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -17,6 +18,7 @@ interface Props {
 const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMore, onRefresh, isRefreshing }) => {
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isFeedMuted, setIsFeedMuted] = useState(true);
   const { height } = useWindowDimensions();
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -39,6 +41,8 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
           <VideoPlayer 
             postView={item} 
             paused={index !== activeIndex}
+            isMuted={isFeedMuted}
+            onMuteToggle={() => setIsFeedMuted(prev => !prev)}
           />
         </View>
       )}
