@@ -1,5 +1,6 @@
 
 
+
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions, KeyboardAvoidingView, StyleProp, ViewStyle } from 'react-native';
@@ -63,7 +64,7 @@ function AppLayout() {
   const isWatchPage = pathname.startsWith('/watch');
   const isPostPage = pathname.startsWith('/post');
   
-  const isFullScreenPage = isWatchPage || (isPostPage && !isDesktop);
+  const isFullScreenPage = (isWatchPage || isPostPage) && !isDesktop;
   const showNav = !isFullScreenPage;
 
   const appContainerStyle: StyleProp<ViewStyle> = [

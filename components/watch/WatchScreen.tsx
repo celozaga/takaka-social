@@ -75,7 +75,7 @@ const WatchScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'black',
+        backgroundColor: theme.colors.background,
         alignItems: 'center', // Center the feed container horizontally
         justifyContent: 'center',
     },
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
-    fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'black' },
+    fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background },
     backButton: { position: 'absolute', top: theme.spacing.l, left: theme.spacing.l, zIndex: 30, padding: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: 'rgba(0,0,0,0.4)' },
 });
 
