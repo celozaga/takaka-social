@@ -32,5 +32,12 @@
     "app/(tabs)/messages.tsx",
     "app/messages/[did].tsx",
     "components/post/QuotedPost.tsx"
+  ],
+  "extends": "expo/tsconfig.base",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ]
 }

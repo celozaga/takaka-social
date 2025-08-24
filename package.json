@@ -12,7 +12,7 @@
   "dependencies": {
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-native": "0.74.3",
+    "react-native": "0.74.5",
     "react-native-web": "~0.19.12",
     "expo": "~51.0.21",
     "expo-status-bar": "~1.12.1",
@@ -29,7 +29,8 @@
     "expo-linking": "~6.3.1",
     "expo-constants": "~16.0.2",
     "expo-av": "~14.0.6",
-    "react-native-video": "^6.2.0"
+    "react-native-video": "^6.2.0",
+    "react-native-screens": "3.31.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
