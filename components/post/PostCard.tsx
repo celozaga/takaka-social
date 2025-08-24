@@ -83,9 +83,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
         if (AppBskyEmbedImages.isView(mediaEmbed)) {
             const firstImage = mediaEmbed.images[0];
             const hasMultipleImages = mediaEmbed.images.length > 1;
-            const imageAspectRatio = imageWidth // Check for grid layout
-                ? 1 // Enforce square aspect ratio for grid
-                : firstImage.aspectRatio
+            const imageAspectRatio = firstImage.aspectRatio
                     ? firstImage.aspectRatio.width / firstImage.aspectRatio.height
                     : 1;
             
@@ -111,9 +109,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
 
         if (AppBskyEmbedVideo.isView(mediaEmbed)) {
             const posterUrl = mediaEmbed.thumbnail;
-            const videoAspectRatio = imageWidth // Check for grid layout
-                ? 1 // Enforce square for grid
-                : mediaEmbed.aspectRatio
+            const videoAspectRatio = mediaEmbed.aspectRatio
                     ? mediaEmbed.aspectRatio.width / mediaEmbed.aspectRatio.height
                     : 16 / 9;
             
@@ -124,7 +120,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
                         alt="Video poster" 
                         style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} 
                         width={imageWidth}
-                        contentFit={imageWidth ? 'cover' : 'contain'}
+                        contentFit={'cover'}
                     />
                     <View style={styles.mediaBadgeContainer}>
                         <View style={styles.mediaBadge}><PlayCircle size={14} color="white" /></View>

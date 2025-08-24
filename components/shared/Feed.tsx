@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -9,7 +7,7 @@ import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, FlatList, LayoutChangeEvent } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, FlatList, LayoutChangeEvent, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
 import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 import ErrorState from './ErrorState';
@@ -75,7 +73,7 @@ const Feed: React.FC<FeedProps> = ({
   const imageWidth = useMemo(() => {
     if (layout !== 'grid' || containerWidth === 0) return undefined;
     // containerWidth - horizontal padding - gap between columns
-    const contentWidth = containerWidth - (theme.spacing.l * 2) - theme.spacing.l;
+    const contentWidth = containerWidth - (theme.spacing.s * 2) - (theme.spacing.s * 2);
     return Math.floor(contentWidth / 2);
   }, [containerWidth, layout]);
 
@@ -327,7 +325,7 @@ const Feed: React.FC<FeedProps> = ({
       <View onLayout={onLayout}>
         {renderHeader()}
         {layout === 'grid' ? (
-          <View style={styles.masonryContainer}>
+          <View style={styles.skeletonContainer}>
             <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
             <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
           </View>
@@ -364,35 +362,65 @@ const Feed: React.FC<FeedProps> = ({
       )
   }
 
-  const renderGridItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => (
-    <View style={styles.gridItem}>
-        <PostCard feedViewPost={item} imageWidth={imageWidth} />
-    </View>
-  );
+  // Masonry layout for grid
+  const numColumns = 2;
+  const columns: AppBskyFeedDefs.FeedViewPost[][] = Array.from({ length: numColumns }, () => []);
+  moderatedFeed.forEach((item, i) => {
+      columns[i % numColumns].push(item);
+  });
 
   return (
-    <FlatList
-        onLayout={onLayout}
-        {...flatListProps}
-        numColumns={2}
-        renderItem={renderGridItem}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 60, paddingHorizontal: theme.spacing.l}}
-    />
+      <ScrollView
+          onLayout={onLayout}
+          refreshControl={
+              <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={onRefresh}
+                  tintColor={theme.colors.primary}
+              />
+          }
+          onScroll={({ nativeEvent }) => {
+              if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) {
+                  loadMorePosts();
+              }
+          }}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.scrollViewContentGrid}
+      >
+          {renderHeader()}
+          {moderatedFeed.length === 0 ? (
+              renderListEmptyComponent()
+          ) : (
+              <View style={styles.masonryContainer}>
+                  {columns.map((col, colIndex) => (
+                      <View key={colIndex} style={styles.column}>
+                          {col.map((item) => (
+                              <PostCard key={keyExtractor(item)} feedViewPost={item} imageWidth={imageWidth} />
+                          ))}
+                      </View>
+                  ))}
+              </View>
+          )}
+          {renderFooter()}
+      </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
     contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
-    masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
+    skeletonContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l },
     listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l },
-    column: { flex: 1, gap: theme.spacing.l, },
-    columnWrapper: {
-        gap: theme.spacing.l,
-        marginBottom: theme.spacing.l,
+    scrollViewContentGrid: {
+        paddingHorizontal: theme.spacing.s,
+        paddingBottom: 60,
     },
-    gridItem: {
+    masonryContainer: {
+        flexDirection: 'row',
+    },
+    column: {
         flex: 1,
+        gap: theme.spacing.l,
+        marginHorizontal: theme.spacing.s,
     },
     messageContainerWrapper: {
         padding: theme.spacing.l,
