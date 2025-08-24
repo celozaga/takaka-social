@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAtp } from '@/context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
 
-const VIDEOS_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/the-vids';
+const VIDEOS_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids';
 const POSTS_PER_PAGE = 25;
 
 export const useVideoManager = () => {

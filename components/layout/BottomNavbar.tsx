@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, usePathname } from 'expo-router';
@@ -8,7 +9,7 @@ import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/lib/theme';
 
-const NavItem = ({ item, isDesktop }) => {
+const NavItem: React.FC<{ item: any; isDesktop: boolean; }> = ({ item, isDesktop }) => {
   const { t } = useTranslation();
   const { unreadCount } = useAtp();
   
@@ -38,7 +39,7 @@ const NavItem = ({ item, isDesktop }) => {
     </View>
   );
 
-  const style = ({ pressed }) => [
+  const style = ({ pressed }: { pressed: boolean }) => [
     isDesktop ? styles.navRailItem : styles.navBarItem,
     pressed && styles.pressed,
   ];
