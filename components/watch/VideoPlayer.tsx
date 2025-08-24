@@ -114,7 +114,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
               ref={videoRef}
               source={{ uri: videoUrl }}
               style={styles.video}
-              resizeMode={ResizeMode.CONTAIN}
+              resizeMode={ResizeMode.COVER}
               isLooping
               shouldPlay={!isEffectivelyPaused}
               isMuted={isMuted}
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   thumbnail: { zIndex: 1 },
   video: { width: '100%', height: '100%', zIndex: 2 },
   loader: { position: 'absolute', zIndex: 4 },
-  infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: 96, zIndex: 3, gap: theme.spacing.s },
+  infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: theme.spacing.l, zIndex: 3, gap: theme.spacing.s },
   authorContainer: { position: 'relative', width: 48, height: 48, marginBottom: theme.spacing.xs },
   avatar: { width: 48, height: 48, borderRadius: theme.shape.full, borderWidth: 2, borderColor: 'white', backgroundColor: theme.colors.surfaceContainerHigh },
   badgeContainer: { position: 'absolute', bottom: -2, right: -2, backgroundColor: theme.colors.primary, borderRadius: theme.shape.full, padding: 2, borderWidth: 1, borderColor: 'black' },
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   },
   progressBarContainer: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 0,
     left: 0,
     right: 0,
     height: 4,

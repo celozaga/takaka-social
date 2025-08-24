@@ -40,7 +40,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { position: 'absolute', bottom: 96, right: theme.spacing.s, alignItems: 'center', gap: 20, zIndex: 20 },
+    container: { position: 'absolute', bottom: theme.spacing.l, right: theme.spacing.s, alignItems: 'center', gap: 20, zIndex: 20 },
     actionButton: { alignItems: 'center', gap: 6 },
     actionText: { ...theme.typography.labelLarge, fontWeight: '600', color: 'white' },
 });
