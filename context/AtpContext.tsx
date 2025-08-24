@@ -3,8 +3,26 @@ import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
 import { useToast } from '../components/ui/use-toast';
 import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const ATP_SESSION_KEY = 'atp-session';
+
+// Create a cross-platform storage adapter.
+// On native, it uses the secure keychain.
+// On web, it uses localStorage via AsyncStorage, which is persistent and standard.
+const sessionStore = {
+    getItem: () => {
+        return Platform.OS === 'web' ? AsyncStorage.getItem(ATP_SESSION_KEY) : getItemAsync(ATP_SESSION_KEY);
+    },
+    setItem: (value: string) => {
+        return Platform.OS === 'web' ? AsyncStorage.setItem(ATP_SESSION_KEY, value) : setItemAsync(ATP_SESSION_KEY, value);
+    },
+    deleteItem: () => {
+        return Platform.OS === 'web' ? AsyncStorage.removeItem(ATP_SESSION_KEY) : deleteItemAsync(ATP_SESSION_KEY);
+    }
+};
+
 
 interface AtpContextType {
   agent: BskyAgent;
@@ -35,13 +53,13 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         case 'create':
         case 'update':
           if (sess) {
-            setItemAsync(ATP_SESSION_KEY, JSON.stringify(sess));
+            sessionStore.setItem(JSON.stringify(sess));
             setSession(sess); // Keep React state in sync with the agent
           }
           break;
         case 'expired':
         case 'create-failed':
-          deleteItemAsync(ATP_SESSION_KEY);
+          sessionStore.deleteItem();
           setSession(null); // Clear React state
           break;
       }
@@ -53,7 +71,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const initialize = async () => {
       setIsLoadingSession(true);
       try {
-        const storedSessionString = await getItemAsync(ATP_SESSION_KEY);
+        const storedSessionString = await sessionStore.getItem();
         if (storedSessionString) {
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
@@ -62,7 +80,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       } catch (error) {
         console.error("Failed to resume session:", error);
-        await deleteItemAsync(ATP_SESSION_KEY);
+        await sessionStore.deleteItem();
         setSession(null);
       } finally {
         setIsLoadingSession(false);
