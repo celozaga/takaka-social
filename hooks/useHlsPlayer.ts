@@ -11,7 +11,8 @@ export const useHlsPlayer = (
     const [currentSource, setCurrentSource] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const hlsInstanceRef = useRef<Hls | null>(null);
-    
+    const hlsAttemptFailed = useRef(false);
+
     const triggerFallback = useCallback(() => {
         if (hlsInstanceRef.current) {
             hlsInstanceRef.current.destroy();
@@ -20,35 +21,45 @@ export const useHlsPlayer = (
 
         if (fallbackUrl && currentSource !== fallbackUrl) {
             console.log("HLS playback failed, attempting fallback to MP4.");
+            hlsAttemptFailed.current = true;
             setCurrentSource(fallbackUrl);
             setError(null);
         } else {
-            console.error("Fallback also failed or is unavailable.");
+            console.error("HLS failed and no fallback is available.");
             setError("Could not play video");
         }
     }, [fallbackUrl, currentSource]);
 
     useEffect(() => {
-        // Cleanup function to destroy HLS instance when component unmounts or URLs change
-        return () => {
-            if (hlsInstanceRef.current) {
-                hlsInstanceRef.current.destroy();
-                hlsInstanceRef.current = null;
-            }
-        };
-    }, [hlsUrl, fallbackUrl]);
-    
-    useEffect(() => {
-        const videoElement = videoRef.current;
-        const videoNode = (videoElement as any)?._video;
+        // Cleanup previous instances and reset state when inputs change
+        if (hlsInstanceRef.current) {
+            hlsInstanceRef.current.destroy();
+            hlsInstanceRef.current = null;
+        }
+        hlsAttemptFailed.current = false;
+        setError(null);
 
-        if (Platform.OS === 'web' && Hls.isSupported() && hlsUrl) {
-            if (hlsInstanceRef.current) {
-                hlsInstanceRef.current.destroy();
-            }
+        // Native or unsupported browsers get the URL directly
+        if (Platform.OS !== 'web' || !Hls.isSupported()) {
+            setCurrentSource(hlsUrl ?? fallbackUrl);
+            return;
+        }
+        
+        // Web with HLS.js support
+        if (!hlsUrl) {
+            setCurrentSource(fallbackUrl); // No HLS url, use fallback
+            return;
+        }
+        
+        // We will manage the source with HLS.js, so don't give a URL to <Video> yet
+        setCurrentSource(null);
+
+        // Function to attempt attaching HLS.js
+        const attemptAttachHls = (attempt = 1) => {
+            const videoNode = (videoRef.current as any)?._video;
 
             if (videoNode) {
-                // If the video node is ready, we have full control. Use HLS.js
+                console.log("Attaching HLS.js to video element.");
                 const hls = new Hls();
                 hlsInstanceRef.current = hls;
                 hls.loadSource(hlsUrl);
@@ -60,27 +71,31 @@ export const useHlsPlayer = (
                         triggerFallback();
                     }
                 });
-                // Let HLS.js manage the source, so we tell expo-av there's no source.
-                setCurrentSource(null);
+            } else if (attempt < 5) {
+                // If the video node isn't ready, wait and retry.
+                setTimeout(() => attemptAttachHls(attempt + 1), 100 * attempt);
             } else {
-                // If video node is not ready, we can't use HLS.js yet.
-                // Let's pass the HLS stream URL to the <Video> component directly.
-                // Many browsers support it. If not, onError will trigger the fallback.
-                setCurrentSource(hlsUrl);
+                console.warn("Could not find video node after several attempts. Falling back.");
+                triggerFallback();
             }
-        } else {
-            // For native or non-HLS browsers, let expo-av handle it
-            setCurrentSource(hlsUrl ?? fallbackUrl);
-        }
-    // We remove videoRef.current from dependencies as it's not a stable prop for effects.
-    // The effect will re-run when hlsUrl/fallbackUrl change, and by then the ref should be populated.
+        };
+        
+        attemptAttachHls();
+
+        return () => {
+            if (hlsInstanceRef.current) {
+                hlsInstanceRef.current.destroy();
+                hlsInstanceRef.current = null;
+            }
+        };
     }, [hlsUrl, fallbackUrl, videoRef, triggerFallback]);
 
-    const handleError = useCallback(() => {
-        // This is for the <Video> component's onError prop.
-        console.error(`Error playing source via <Video> component: ${currentSource}`);
+    const handleError = useCallback((err: any) => {
+        // This will be called if the <Video> component fails, which should only happen
+        // with the fallback URL or in a browser that doesn't use our HLS.js path.
+        console.error("Error in <Video> component. Triggering fallback.", err);
         triggerFallback();
-    }, [currentSource, triggerFallback]);
+    }, [triggerFallback]);
 
     return { currentSource, error, handleError };
 };
