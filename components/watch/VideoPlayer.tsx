@@ -75,21 +75,19 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
 
   const renderPlayerContent = () => (
       <>
-        {currentSource && (
-          <Video
-            ref={videoRef}
-            style={styles.video}
-            source={{ uri: currentSource }}
-            posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : undefined}
-            usePoster
-            resizeMode={resizeMode}
-            shouldPlay={!isExternallyPaused}
-            isLooping
-            isMuted={isMuted}
-            onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s as AVPlaybackStatusSuccess) }}
-            onError={handleError}
-          />
-        )}
+        <Video
+          ref={videoRef}
+          style={styles.video}
+          source={currentSource ? { uri: currentSource } : null}
+          posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : undefined}
+          usePoster
+          resizeMode={resizeMode}
+          shouldPlay={!isExternallyPaused}
+          isLooping
+          isMuted={isMuted}
+          onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s as AVPlaybackStatusSuccess) }}
+          onError={handleError}
+        />
         
         {showSpinner && <ActivityIndicator size="large" color="white" style={styles.loader} />}
         {playerError && !showSpinner && (

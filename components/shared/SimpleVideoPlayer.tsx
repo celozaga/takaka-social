@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { StyleSheet, StyleProp, ViewStyle, View, Text } from 'react-native';

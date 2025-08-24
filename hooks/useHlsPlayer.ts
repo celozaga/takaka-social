@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
 import Hls from 'hls.js';
@@ -41,12 +40,15 @@ export const useHlsPlayer = (
     
     useEffect(() => {
         const videoElement = videoRef.current;
-        // This is an internal property of expo-av on web, but necessary for HLS.js
         const videoNode = (videoElement as any)?._video;
 
         if (Platform.OS === 'web' && Hls.isSupported() && hlsUrl) {
+            if (hlsInstanceRef.current) {
+                hlsInstanceRef.current.destroy();
+            }
+
             if (videoNode) {
-                // If the video node is ready, set up HLS.js
+                // If the video node is ready, we have full control. Use HLS.js
                 const hls = new Hls();
                 hlsInstanceRef.current = hls;
                 hls.loadSource(hlsUrl);
@@ -58,17 +60,21 @@ export const useHlsPlayer = (
                         triggerFallback();
                     }
                 });
-                // Set source to null to ensure expo-av doesn't interfere
+                // Let HLS.js manage the source, so we tell expo-av there's no source.
                 setCurrentSource(null);
             } else {
-                // If video node is not ready, we still set source to null and wait for a re-render
-                setCurrentSource(null);
+                // If video node is not ready, we can't use HLS.js yet.
+                // Let's pass the HLS stream URL to the <Video> component directly.
+                // Many browsers support it. If not, onError will trigger the fallback.
+                setCurrentSource(hlsUrl);
             }
         } else {
             // For native or non-HLS browsers, let expo-av handle it
             setCurrentSource(hlsUrl ?? fallbackUrl);
         }
-    }, [hlsUrl, fallbackUrl, videoRef, triggerFallback, videoRef.current]); // Rely on videoRef.current to re-run this effect
+    // We remove videoRef.current from dependencies as it's not a stable prop for effects.
+    // The effect will re-run when hlsUrl/fallbackUrl change, and by then the ref should be populated.
+    }, [hlsUrl, fallbackUrl, videoRef, triggerFallback]);
 
     const handleError = useCallback(() => {
         // This is for the <Video> component's onError prop.
