@@ -48,6 +48,27 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     },
   }), []);
+  
+  // Effect for one-time session initialization
+  useEffect(() => {
+    const initialize = async () => {
+      setIsLoadingSession(true);
+      try {
+        const storedSessionString = await SecureStore.getItemAsync(ATP_SESSION_KEY);
+        if (storedSessionString) {
+          const parsedSession = JSON.parse(storedSessionString);
+          await agent.resumeSession(parsedSession);
+        }
+      } catch (error) {
+        console.error("Failed to resume session:", error);
+        await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
+        setSession(null);
+      } finally {
+        setIsLoadingSession(false);
+      }
+    };
+    initialize();
+  }, [agent]);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!agent.hasSession) return;
@@ -59,17 +80,19 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       throw error;
     }
   }, [agent]);
-  
-  const resetUnreadCount = useCallback(() => {
-    setUnreadCount(0);
-  }, []);
 
+  // Effect for polling, which depends on the session status
   useEffect(() => {
+    if (!session) {
+      setUnreadCount(0);
+      return;
+    }
+
     let pollInterval: ReturnType<typeof setInterval> | undefined;
     let pauseTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const pollFunction = async () => {
-      if (isPollingPaused || !agent.hasSession) return;
+      if (isPollingPaused) return;
       try {
         await fetchUnreadCount();
       } catch (error: any) {
@@ -90,40 +113,24 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     };
 
-    const initialize = async () => {
-      setIsLoadingSession(true);
-      const storedSessionString = await SecureStore.getItemAsync(ATP_SESSION_KEY);
-      if (storedSessionString) {
-        try {
-          const parsedSession = JSON.parse(storedSessionString);
-          await agent.resumeSession(parsedSession);
-          setSession(parsedSession);
-          await fetchUnreadCount().catch(() => {
-            // Ignore initial fetch errors, polling will handle it
-          });
-          pollInterval = setInterval(pollFunction, 30000);
-        } catch (error) {
-          console.error("Failed to resume session:", error);
-          await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
-          setSession(null);
-        }
-      }
-      setIsLoadingSession(false);
-    };
+    fetchUnreadCount().catch(() => {}); // Initial fetch
+    pollInterval = setInterval(pollFunction, 30000);
 
-    initialize();
-    
     return () => {
         if (pollInterval) clearInterval(pollInterval);
         if (pauseTimeout) clearTimeout(pauseTimeout);
     };
-  }, [agent, fetchUnreadCount, isPollingPaused, toast]);
+  }, [session, fetchUnreadCount, isPollingPaused, toast]);
+  
+  const resetUnreadCount = useCallback(() => {
+    setUnreadCount(0);
+  }, []);
 
   const login = async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => {
     const { identifier, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, token } = params;
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, authFactorToken: token });
+    // The persistSession callback will handle setting the session state
     if(agent.session) {
-        setSession(agent.session);
         await fetchUnreadCount();
     }
     return response;
@@ -131,8 +138,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = async () => {
     await agent.logout();
-    setSession(null);
-    setUnreadCount(0);
+    // The persistSession callback will handle clearing the session state
   };
 
   return (

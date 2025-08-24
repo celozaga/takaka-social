@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -119,7 +120,7 @@ const NotificationSettingsScreen: React.FC = () => {
             }
             try {
                 setIsSaving(true);
-                const token = (await Notifications.getPushTokenAsync()).data;
+                const token = (await Notifications.getExpoPushTokenAsync()).data;
 
                 await agent.app.bsky.notification.registerPush({
                     serviceDid: PUSH_SERVICE_DID,
