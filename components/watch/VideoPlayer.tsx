@@ -115,9 +115,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
 const styles = StyleSheet.create({
   container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', overflow: 'hidden' },
   video: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
+    ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
   },
