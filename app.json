@@ -14,7 +14,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "social.takaka.app"
+      "bundleIdentifier": "social.takaka.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to allow you to take and upload photos and videos to your posts.",
+        "NSPhotoLibraryUsageDescription": "This app uses the photo library to allow you to select and upload photos and videos for your posts.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone to allow you to record videos with audio to upload to your posts."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -28,7 +33,9 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-image-picker",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true
