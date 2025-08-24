@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text } from 'react-native';
+import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Link } from 'expo-router';
 import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -89,7 +89,6 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
 
   if (!embedView) return null;
   
-  const showThumbnail = !videoUrl || status === 'loading' || status === 'error';
   const showSpinner = status === 'buffering';
 
   const toggleInternalPlayPause = () => setIsInternallyPaused(prev => !prev);
@@ -101,14 +100,18 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
   return (
     <TouchableWithoutFeedback onPress={toggleInternalPlayPause}>
       <View style={styles.container}>
-        {showThumbnail && embedView.thumbnail && (
-          <Image 
-            source={{ uri: embedView.thumbnail }} 
-            style={[StyleSheet.absoluteFill, styles.thumbnail]}
-            resizeMode="contain" 
+        {/* Blurred Background */}
+        {embedView.thumbnail && (
+          <Image
+            source={{ uri: embedView.thumbnail }}
+            style={styles.backgroundImage}
+            resizeMode="cover"
+            blurRadius={Platform.OS === 'ios' ? 30 : 0}
           />
         )}
+        <View style={styles.backgroundOverlay} />
 
+        {/* The main video content, contained within the screen bounds */}
         {videoUrl && (
             <Video
               ref={videoRef}
@@ -156,8 +159,8 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
             <Play size={80} color="rgba(255, 255, 255, 0.7)" fill="rgba(255, 255, 255, 0.5)" />
           </View>
         )}
-
-        {!showThumbnail && (
+        
+        {status !== 'loading' && status !== 'error' && (
           <>
             <View style={styles.infoOverlay}>
               <View style={styles.authorContainer}>
@@ -212,8 +215,24 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
 };
 
 const styles = StyleSheet.create({
-  container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' },
-  thumbnail: { zIndex: 1 },
+  container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', overflow: 'hidden' },
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+    ...(Platform.OS === 'web' && {
+      filter: 'blur(25px) brightness(0.8)', // CSS filter for web
+      transform: [{ scale: '1.1' }], // Scale to cover edges after blur
+    } as any),
+  },
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Darken the background for better contrast
+    zIndex: 1,
+    // On Android, where blurRadius is not great, this overlay is more important.
+    ...(Platform.OS === 'android' && {
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    })
+  },
   video: { width: '100%', height: '100%', zIndex: 2 },
   loader: { position: 'absolute', zIndex: 4 },
   infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: theme.spacing.l, zIndex: 3, gap: theme.spacing.s },
