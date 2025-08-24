@@ -33,7 +33,7 @@ export const useVideoManager = () => {
         const MAX_ATTEMPTS = 5; // To prevent infinite loops
 
         // Keep fetching pages until we have enough video posts or run out of pages/attempts
-        while (accumulatedPosts.length < MIN_POSTS_TO_RENDER && attempts < MAX_ATTEMPTS && nextCursor !== undefined) {
+        while (accumulatedPosts.length < MIN_POSTS_TO_RENDER && attempts < MAX_ATTEMPTS && (attempts === 0 || nextCursor)) {
             if (attempts > 0 && nextCursor === undefined) break; // Stop if we run out of cursor
             
             const res = await agent.app.bsky.feed.getFeed({ feed: VIDEOS_FEED_URI, cursor: nextCursor, limit: POSTS_PER_PAGE });
