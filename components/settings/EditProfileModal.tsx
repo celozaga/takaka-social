@@ -1,13 +1,14 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { useTranslation } from 'react-i18next';
 import { AppBskyActorDefs } from '@atproto/api';
 import { X, Camera } from 'lucide-react';
-import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
+import * as ImagePicker from 'expo-image-picker';
 
 interface EditProfileModalProps {
   onClose: () => void;
@@ -26,12 +27,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
 
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
 
-  const avatarInputRef = Platform.OS === 'web' ? useRef<HTMLInputElement>(null) : null;
-  
   useEffect(() => {
     if (session?.did) {
       setIsLoading(true);
@@ -47,41 +46,48 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
     }
   }, [getProfile, session?.did, t]);
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const pickAvatar = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
 
-    if (file.size > 1000000) { // 1MB limit
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+
+    if (asset.fileSize && asset.fileSize > 1000000) { // 1MB limit
         toast({ title: t('editProfile.toast.imageTooLarge'), description: t('editProfile.toast.imageTooLargeDescription'), variant: "destructive" });
         return;
     }
-
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    
+    setAvatarPreview(asset.uri);
+    const response = await fetch(asset.uri);
+    const blob = await response.blob();
+    setAvatarBlob(blob);
   };
 
   const handleSave = async () => {
-    if (Platform.OS !== 'web') {
-        toast({ title: "Not implemented", description: "Image upload is not implemented for native yet." });
-        return;
-    }
     setIsSaving(true);
     try {
-      let avatarBlob;
-      if (avatarFile) {
-        const res = await agent.uploadBlob(new Uint8Array(await avatarFile.arrayBuffer()), { encoding: avatarFile.type });
-        avatarBlob = res.data.blob;
+      let avatarUploadResult;
+      if (avatarBlob) {
+        const res = await agent.uploadBlob(new Uint8Array(await avatarBlob.arrayBuffer()), { encoding: avatarBlob.type });
+        avatarUploadResult = res.data.blob;
       }
       await agent.upsertProfile((existing) => ({
         ...existing,
         displayName,
         description,
-        avatar: avatarBlob || existing?.avatar,
+        avatar: avatarUploadResult || existing?.avatar,
       }));
       if (session?.did) clearProfile(session.did);
       toast({ title: t('editProfile.toast.success') });
       onSuccess();
     } catch (error) {
+      console.error("Failed to save profile:", error);
       toast({ title: t('editProfile.toast.error'), variant: "destructive" });
     } finally {
       setIsSaving(false);
@@ -111,13 +117,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
         <ScrollView>
             <View style={styles.content}>
                 <View style={styles.avatarContainer}>
-                    <Pressable style={styles.avatarPressable} onPress={() => Platform.OS === 'web' && avatarInputRef?.current?.click()}>
+                    <Pressable style={styles.avatarPressable} onPress={pickAvatar}>
                         {avatarPreview && <Image source={{ uri: avatarPreview }} style={styles.avatarImage} />}
                         <View style={styles.avatarOverlay}>
                             <Camera color="white" size={32} />
                         </View>
                     </Pressable>
-                    {Platform.OS === 'web' && <input type="file" ref={avatarInputRef as any} onChange={handleFileChange} accept="image/jpeg, image/png, image/gif" style={{ display: 'none' }} />}
                 </View>
 
                 <View style={{ gap: theme.spacing.l }}>
