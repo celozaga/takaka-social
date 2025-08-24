@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
+import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform, useWindowDimensions, ViewStyle } from 'react-native';
 import { Link } from 'expo-router';
 import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
@@ -26,6 +26,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
   const [progress, setProgress] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isTextTruncated, setIsTextTruncated] = useState(false);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const { post } = postView;
   const record = post.record as any;
@@ -89,9 +90,14 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
 
   if (!embedView) return null;
 
-  // Use 'contain' for all videos to prevent cropping, which was the main user complaint.
-  // The video will be centered, and the blurred background will fill any empty space (letterboxing/pillarboxing).
-  const videoResizeMode = ResizeMode.CONTAIN;
+  const videoAspectRatio = embedView.aspectRatio ? embedView.aspectRatio.width / embedView.aspectRatio.height : 16 / 9;
+  const screenAspectRatio = screenWidth / screenHeight;
+
+  // Determine the correct styling to make the video fit the screen using "contain" logic,
+  // which will then be centered by the parent flex container.
+  const videoStyle: ViewStyle = videoAspectRatio > screenAspectRatio
+    ? { width: '100%', aspectRatio: videoAspectRatio } // Video is wider than screen, fit to width
+    : { height: '100%', aspectRatio: videoAspectRatio }; // Video is taller than screen, fit to height
   
   const showSpinner = status === 'buffering';
 
@@ -120,8 +126,8 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
             <Video
               ref={videoRef}
               source={{ uri: videoUrl }}
-              style={styles.video}
-              resizeMode={videoResizeMode}
+              style={[styles.video, videoStyle]}
+              resizeMode={ResizeMode.CONTAIN}
               isLooping
               shouldPlay={!isEffectivelyPaused}
               isMuted={isMuted}
@@ -237,7 +243,9 @@ const styles = StyleSheet.create({
       backgroundColor: 'rgba(0, 0, 0, 0.6)',
     })
   },
-  video: { width: '100%', height: '100%', zIndex: 2 },
+  video: {
+    zIndex: 2,
+  },
   loader: { position: 'absolute', zIndex: 4 },
   infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: theme.spacing.l, paddingBottom: theme.spacing.l, zIndex: 3, gap: theme.spacing.s },
   authorContainer: { position: 'relative', width: 48, height: 48, marginBottom: theme.spacing.xs },
