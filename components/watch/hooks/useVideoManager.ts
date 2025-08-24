@@ -1,9 +1,19 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAtp } from '@/context/AtpContext';
-import { AppBskyFeedDefs } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 
 const VIDEOS_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids';
 const POSTS_PER_PAGE = 25;
+
+// Helper to check if a post has a video embed
+const hasVideoEmbed = (post: AppBskyFeedDefs.PostView): boolean => {
+    if (!post.embed) return false;
+    if (AppBskyEmbedVideo.isView(post.embed)) return true;
+    if (AppBskyEmbedRecordWithMedia.isView(post.embed)) {
+        return AppBskyEmbedVideo.isView(post.embed.media);
+    }
+    return false;
+};
 
 export const useVideoManager = () => {
     const { agent } = useAtp();
@@ -14,10 +24,31 @@ export const useVideoManager = () => {
     const [error, setError] = useState<string | null>(null);
     const cursorRef = useRef<string | undefined>(undefined);
     const hasMoreRef = useRef(true);
+    const MIN_POSTS_TO_RENDER = 5;
 
     const fetchPage = useCallback(async (cursor?: string) => {
-        const res = await agent.app.bsky.feed.getFeed({ feed: VIDEOS_FEED_URI, cursor, limit: POSTS_PER_PAGE });
-        return { posts: res.data.feed, cursor: res.data.cursor };
+        let accumulatedPosts: AppBskyFeedDefs.FeedViewPost[] = [];
+        let nextCursor = cursor;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 5; // To prevent infinite loops
+
+        // Keep fetching pages until we have enough video posts or run out of pages/attempts
+        while (accumulatedPosts.length < MIN_POSTS_TO_RENDER && attempts < MAX_ATTEMPTS && nextCursor !== undefined) {
+            if (attempts > 0 && nextCursor === undefined) break; // Stop if we run out of cursor
+            
+            const res = await agent.app.bsky.feed.getFeed({ feed: VIDEOS_FEED_URI, cursor: nextCursor, limit: POSTS_PER_PAGE });
+            
+            const videoPosts = res.data.feed.filter(item => hasVideoEmbed(item.post));
+            accumulatedPosts.push(...videoPosts);
+
+            nextCursor = res.data.cursor;
+            attempts++;
+            
+            // If the feed returns no items, stop trying.
+            if (res.data.feed.length === 0) break;
+        }
+
+        return { posts: accumulatedPosts, cursor: nextCursor };
     }, [agent]);
 
     const loadPosts = useCallback(async (mode: 'initial' | 'refresh' | 'more') => {
@@ -42,7 +73,7 @@ export const useVideoManager = () => {
                 });
             }
             cursorRef.current = page.cursor;
-            hasMoreRef.current = !!page.cursor && page.posts.length > 0;
+            hasMoreRef.current = !!page.cursor;
         } catch (e: any) {
             console.error("Failed to fetch video feed:", e);
             setError(e.message || 'Could not load videos.');
@@ -55,7 +86,7 @@ export const useVideoManager = () => {
 
     useEffect(() => {
         loadPosts('initial');
-    }, [loadPosts]);
+    }, [loadPosts]); // This dependency is stable
 
     return {
         posts,
