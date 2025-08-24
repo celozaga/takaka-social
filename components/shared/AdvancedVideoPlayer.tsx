@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } from 'expo-av';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Rewind, FastForward } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
 
@@ -62,13 +62,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ sourceUri, po
     showControls();
   };
   
-  const handleSeek = async (forward: boolean) => {
-    if (!videoRef.current || !status) return;
-    const newPosition = status.positionMillis + (forward ? 10000 : -10000);
-    await videoRef.current.setPositionAsync(Math.max(0, newPosition));
-    showControls();
-  };
-
   const toggleMute = async () => {
     if (!videoRef.current) return;
     await videoRef.current.setIsMutedAsync(!status?.isMuted);
@@ -112,8 +105,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ sourceUri, po
         usePoster={!!posterUri}
         style={StyleSheet.absoluteFill}
         resizeMode={ResizeMode.CONTAIN}
-        shouldPlay
-        isMuted
+        shouldPlay={true}
+        isMuted={false}
         isLooping
         onPlaybackStatusUpdate={(s) => { if (s.isLoaded) setStatus(s); else if (s.isLoaded === false && s.error) setError(s.error) }}
         onFullscreenUpdate={(e) => setIsFullscreen(e.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_DID_PRESENT)}
@@ -123,11 +116,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ sourceUri, po
       {isControlsVisible && (
         <Pressable style={styles.controlsOverlay} onPress={showControls}>
           <View style={styles.centerControls}>
-            <Pressable onPress={() => handleSeek(false)} style={styles.seekButton}><Rewind size={32} color="white" /></Pressable>
             <Pressable onPress={togglePlayPause} style={styles.playPauseButton}>
               {status?.isPlaying ? <Pause size={48} color="white" fill="white" /> : <Play size={48} color="white" fill="white" />}
             </Pressable>
-            <Pressable onPress={() => handleSeek(true)} style={styles.seekButton}><FastForward size={32} color="white" /></Pressable>
           </View>
 
           <View style={styles.bottomControls}>
@@ -152,7 +143,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ sourceUri, po
 const styles = StyleSheet.create({
   container: { width: '100%', height: '100%', backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
   controlsOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', zIndex: 1 },
-  centerControls: { flexDirection: 'row', alignItems: 'center', gap: 48 },
+  centerControls: { flexDirection: 'row', alignItems: 'center' },
   playPauseButton: { padding: 16 },
   seekButton: { padding: 16 },
   bottomControls: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12, backgroundColor: 'rgba(0,0,0,0.6)' },
