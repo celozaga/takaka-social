@@ -7,7 +7,7 @@ import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, FlatList, LayoutChangeEvent, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, FlatList, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
 import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 import ErrorState from './ErrorState';
@@ -63,19 +63,6 @@ const Feed: React.FC<FeedProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  const onLayout = useCallback((event: LayoutChangeEvent) => {
-    const { width } = event.nativeEvent.layout;
-    setContainerWidth(width);
-  }, []);
-
-  const imageWidth = useMemo(() => {
-    if (layout !== 'grid' || containerWidth === 0) return undefined;
-    // containerWidth - horizontal padding - gap between columns
-    const contentWidth = containerWidth - (theme.spacing.s * 2) - (theme.spacing.s * 2);
-    return Math.floor(contentWidth / 2);
-  }, [containerWidth, layout]);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     // A. PRIVATE FEEDS (Bookmarks, Likes)
@@ -332,7 +319,7 @@ const Feed: React.FC<FeedProps> = ({
 
   if (isLoading) {
     return (
-      <View onLayout={onLayout}>
+      <View>
         {renderHeader()}
         {layout === 'grid' ? (
           <View style={{ paddingHorizontal: theme.spacing.s }}>
@@ -366,7 +353,6 @@ const Feed: React.FC<FeedProps> = ({
   if (layout === 'list') {
       return (
           <FlatList 
-              onLayout={onLayout}
               {...flatListProps}
               renderItem={({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>}
               ItemSeparatorComponent={() => <View style={{height: theme.spacing.s}} />}
@@ -383,7 +369,6 @@ const Feed: React.FC<FeedProps> = ({
 
   return (
       <ScrollView
-          onLayout={onLayout}
           refreshControl={
               <RefreshControl
                   refreshing={isRefreshing}
@@ -407,7 +392,7 @@ const Feed: React.FC<FeedProps> = ({
                   {columns.map((col, colIndex) => (
                       <View key={colIndex} style={styles.column}>
                           {col.map((item) => (
-                              <PostCard key={keyExtractor(item)} feedViewPost={item} imageWidth={imageWidth} />
+                              <PostCard key={keyExtractor(item)} feedViewPost={item} />
                           ))}
                       </View>
                   ))}

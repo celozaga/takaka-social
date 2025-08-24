@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AppBskyFeedDefs, RichText, AppBskyEmbedImages,AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
+import { AppBskyFeedDefs, RichText, AppBskyEmbedImages,AppBskyEmbedRecordWithMedia,AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { formatCompactNumber, formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { BadgeCheck, Heart } from 'lucide-react';
@@ -11,9 +11,9 @@ import { useUI } from '../../context/UIContext';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost, ModerationDecision } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
-import ResizedImage from '../shared/ResizedImage';
 import SimpleVideoPlayer from '../shared/VideoPlayer';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
@@ -101,7 +101,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     if (AppBskyEmbedImages.isView(mediaEmbed)) {
         const image = mediaEmbed.images[0]; // Show first image only in replies
         const imageAspectRatio = image.aspectRatio ? image.aspectRatio.width / image.aspectRatio.height : 1.5;
-        return <ResizedImage src={image.thumb} alt={image.alt || 'Reply image'} style={[styles.mediaPreview, { aspectRatio: imageAspectRatio }]} />;
+        return <Image source={image.thumb} accessibilityLabel={image.alt || 'Reply image'} style={[styles.mediaPreview, { aspectRatio: imageAspectRatio }]} contentFit="cover" placeholder={theme.colors.surfaceContainerHigh} transition={300} />;
     }
 
     if (AppBskyEmbedVideo.isView(mediaEmbed)) {

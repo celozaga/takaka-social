@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs, AppBskyFeedPost, AppBskyEmbedImages } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { formatCompactDate } from '@/lib/formatters';
 import { theme } from '@/lib/theme';
-import ResizedImage from '../shared/ResizedImage';
+import { Image } from 'expo-image';
 
 interface QuotedPostProps {
   embed: AppBskyEmbedRecord.View;
@@ -46,7 +46,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
         const firstEmbed = recordEmbed.embeds[0];
         if (AppBskyEmbedImages.isView(firstEmbed) && firstEmbed.images.length > 0) {
           const image = firstEmbed.images[0];
-          return <ResizedImage src={image.thumb} alt={image.alt || 'Quoted post image'} style={styles.mediaPreview} />;
+          return <Image source={image.thumb} accessibilityLabel={image.alt || 'Quoted post image'} style={styles.mediaPreview} contentFit="cover" placeholder={theme.colors.surfaceContainerHigh} transition={300} />;
         }
       }
       return null;

@@ -9,7 +9,7 @@ import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import PostCardSkeleton from './PostCardSkeleton';
-import ResizedImage from '../shared/ResizedImage';
+import { Image } from 'expo-image';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { theme } from '@/lib/theme';
 import Card from '../ui/Card';
@@ -18,10 +18,9 @@ import { formatCompactNumber } from '@/lib/formatters';
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
     isClickable?: boolean;
-    imageWidth?: number;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, imageWidth }) => {
+const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true }) => {
     const { setPostForNav } = useUI();
     const router = useRouter();
     const moderation = useModeration();
@@ -89,11 +88,13 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
             
             return (
                 <View>
-                    <ResizedImage 
-                        src={firstImage.thumb}
-                        alt={firstImage.alt || 'Post image'} 
-                        style={[styles.image, { aspectRatio: imageAspectRatio }]} 
-                        width={imageWidth}
+                    <Image 
+                        source={firstImage.thumb}
+                        accessibilityLabel={firstImage.alt || 'Post image'} 
+                        style={[styles.image, { aspectRatio: imageAspectRatio }]}
+                        contentFit="cover"
+                        placeholder={theme.colors.surfaceContainerHigh}
+                        transition={300}
                     />
                     {hasMultipleImages && (
                          <View style={styles.mediaBadgeContainer}>
@@ -115,12 +116,13 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
             
             return (
                 <View>
-                    <ResizedImage 
-                        src={posterUrl || ''} 
-                        alt="Video poster" 
-                        style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} 
-                        width={imageWidth}
+                    <Image 
+                        source={posterUrl || ''} 
+                        accessibilityLabel="Video poster" 
+                        style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]}
                         contentFit={'cover'}
+                        placeholder={theme.colors.surfaceContainerHigh}
+                        transition={300}
                     />
                     <View style={styles.mediaBadgeContainer}>
                         <View style={styles.mediaBadge}><PlayCircle size={14} color="white" /></View>
@@ -153,9 +155,9 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
                 <View style={styles.footer}>
                     <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
                     <Pressable style={styles.authorContainer}>
-                        <ResizedImage 
-                            src={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} 
-                            alt={`${author.displayName}'s avatar`} 
+                        <Image 
+                            source={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} 
+                            accessibilityLabel={`${author.displayName}'s avatar`} 
                             style={styles.avatar} 
                         />
                         <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>

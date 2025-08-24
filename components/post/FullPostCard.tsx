@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform, StyleProp, ViewStyle, useWindowDimensions, FlatListProps } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, FlatList, Platform, StyleProp, ViewStyle, useWindowDimensions, FlatListProps } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
@@ -9,7 +9,7 @@ import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRi
 import RichTextRenderer from '../shared/RichTextRenderer';
 import AdvancedVideoPlayer from '../shared/AdvancedVideoPlayer';
 import SimpleVideoPlayer from '../shared/VideoPlayer';
-import ResizedImage from '../shared/ResizedImage';
+import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
@@ -111,7 +111,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             onMouseLeave: () => setIsHovered(false),
                         } as any)}
                     >
-                        <ResizedImage src={imageItem.thumb} alt={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                        <Image source={imageItem.thumb} accessibilityLabel={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} contentFit="contain" placeholder={theme.colors.surfaceContainerHigh} transition={300} />
                         <View style={[styles.imageOverlay, { opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0 }]}><ExternalLink color="white" size={24} /></View>
                     </Pressable>
                 );
@@ -167,7 +167,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         <SlideshowVideoItem item={item as { type: 'video', view: AppBskyEmbedVideo.View }} />
                     ) : (
                         <Pressable style={{width: '100%', height: '100%'}} onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
-                           <ResizedImage src={(item as AppBskyEmbedImages.ViewImage).thumb} alt={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} resizeMode="contain" />
+                           <Image source={(item as AppBskyEmbedImages.ViewImage).thumb} accessibilityLabel={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} contentFit="contain" placeholder={theme.colors.surfaceContainerHigh} transition={300} />
                         </Pressable>
                     )}
                 </View>

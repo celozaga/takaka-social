@@ -1,4 +1,3 @@
-
 /**
  * ============================================================================
  * App Configuration
@@ -34,11 +33,3 @@ export const WEB_CLIENT_URL = 'https://bsky.app';
  * Feature Flags
  * ============================================================================
  */
-
-/**
- * Enables or disables image resizing through an external proxy (images.weserv.nl).
- * When enabled, image URLs are rewritten to serve optimized, cached, and resized
- * versions, which can significantly improve performance and reduce data usage.
- * Set to `false` to use original image URLs directly.
- */
-export const ENABLE_IMAGE_RESIZING = true;
