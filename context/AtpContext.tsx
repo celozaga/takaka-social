@@ -89,15 +89,18 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 credentialsStore.deleteItem();
                 setSession(null);
                 setServiceUrl(PDS_URL);
+            }).finally(() => {
+                setIsLoadingSession(false);
             });
           }, 0);
+        } else {
+            setIsLoadingSession(false);
         }
       } catch (error) {
         console.error("Failed to initialize session:", error);
         await credentialsStore.deleteItem();
         setSession(null);
         setServiceUrl(PDS_URL);
-      } finally {
         setIsLoadingSession(false);
       }
     };
