@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform, useWindowDimensions } from 'react-native';
+import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Link } from 'expo-router';
-import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
+import videojs from 'video.js';
+import type Player from 'video.js/dist/types/player';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -14,15 +15,45 @@ interface Props {
   paused: boolean;
 }
 
+const VideoJSElement: React.FC<{
+    onVideoNode: (node: HTMLVideoElement) => void;
+    resizeMode: 'contain' | 'cover';
+}> = ({ onVideoNode, resizeMode }) => {
+    const containerRef = useRef<View>(null);
+
+    useEffect(() => {
+        if (containerRef.current && Platform.OS === 'web') {
+            const el = containerRef.current as any as HTMLDivElement;
+            const videoEl = document.createElement('video');
+            videoEl.className = 'video-js vjs-fill';
+            videoEl.setAttribute('playsinline', '');
+            videoEl.style.objectFit = resizeMode;
+
+            while(el.firstChild) {
+                el.removeChild(el.firstChild);
+            }
+            
+            el.appendChild(videoEl);
+            onVideoNode(videoEl);
+        }
+    }, [onVideoNode, resizeMode]);
+
+    return <View ref={containerRef} style={StyleSheet.absoluteFill} />;
+}
+
 const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) => {
   const { agent, session } = useAtp();
-  const videoRef = useRef<Video>(null);
+  const playerRef = useRef<Player | null>(null);
+  const [videoNode, setVideoNode] = useState<HTMLVideoElement | null>(null);
+  
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [isLoadingUrl, setIsLoadingUrl] = useState(true);
+  
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
+
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isTextTruncated, setIsTextTruncated] = useState(false);
 
@@ -46,7 +77,6 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
   useEffect(() => {
     setIsInternallyPaused(false);
     setProgress(0);
-
     if (!embedView) {
       setIsLoadingUrl(false);
       setPlaybackUrl(null);
@@ -56,69 +86,85 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
     const fetchUrl = async () => {
       setIsLoadingUrl(true);
       try {
-        const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({ did: post.author.did, cid: embedView.cid });
-        setPlaybackUrl(res.data.url);
-      } catch (e) {
-        console.warn("Could not fetch playback URL, falling back to blob", e);
-        try {
-          const serviceUrl = agent.service.toString();
-          const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-          const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${post.author.did}&cid=${embedView.cid}`;
-          setPlaybackUrl(blobUrl);
-        } catch (blobError) {
-          console.error("Failed to construct blob URL", blobError);
-          setPlaybackUrl(null);
-        }
+        const serviceUrl = agent.service.toString();
+        const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
+        const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${post.author.did}&cid=${embedView.cid}`;
+        setPlaybackUrl(blobUrl);
+      } catch (blobError) {
+        console.error("Failed to construct blob URL", blobError);
+        setPlaybackUrl(null);
       } finally {
         setIsLoadingUrl(false);
       }
     };
-
     fetchUrl();
   }, [agent, embedView, post.author.did]);
 
+  useEffect(() => {
+      if (!videoNode || !playbackUrl) return;
+
+      const player = videojs(videoNode, {
+          autoplay: false,
+          muted: true,
+          controls: false,
+          sources: [{ src: playbackUrl, type: 'video/mp4' }],
+          loop: true,
+      });
+      playerRef.current = player;
+      
+      player.on('waiting', () => setIsBuffering(true));
+      player.on('playing', () => setIsBuffering(false));
+      player.on('volumechange', () => setIsMuted(player.muted() ?? true));
+      player.on('timeupdate', () => {
+          const currentTime = player.currentTime() || 0;
+          const duration = player.duration() || 1;
+          setProgress(isFinite(duration) && duration > 0 ? (currentTime / duration) : 0);
+      });
+      
+      return () => {
+          if (player && !player.isDisposed()) {
+              player.dispose();
+              playerRef.current = null;
+          }
+      };
+  }, [videoNode, playbackUrl]);
+  
   const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
   useEffect(() => {
-    videoRef.current?.[isEffectivelyPaused ? 'pauseAsync' : 'playAsync']();
-  }, [isEffectivelyPaused]);
+    if (playerRef.current) {
+        if (isEffectivelyPaused) {
+            playerRef.current.pause();
+        } else {
+            playerRef.current.play()?.catch(e => {
+                if ((e as Error).name !== 'NotAllowedError') {
+                    console.log("Play interrupted:", e);
+                }
+            });
+        }
+    }
+  }, [isEffectivelyPaused, playerRef.current]);
 
   const resizeMode = useMemo(() => {
-    if (!embedView?.aspectRatio) return ResizeMode.CONTAIN;
+    if (!embedView?.aspectRatio) return 'contain' as const;
     const { width, height } = embedView.aspectRatio;
-    return width < height ? ResizeMode.COVER : ResizeMode.CONTAIN;
+    return width < height ? 'cover' as const : 'contain' as const;
   }, [embedView]);
   
   const showSpinner = isLoadingUrl || isBuffering;
   const toggleInternalPlayPause = () => setIsInternallyPaused(prev => !prev);
-  const toggleMuteLocal = (e: any) => { e.stopPropagation(); setIsMuted(prev => !prev); };
+  const toggleMuteLocal = (e: any) => { e.stopPropagation(); if (playerRef.current) { playerRef.current.muted(!playerRef.current.muted()); } };
   const toggleDescription = (e: any) => { e.stopPropagation(); setIsDescriptionExpanded(prev => !prev); };
   const needsTruncation = (record.text?.split('\n').length > 2 || record.text?.length > 100);
 
   return (
     <TouchableWithoutFeedback onPress={toggleInternalPlayPause}>
       <View style={styles.container}>
-        {resizeMode === ResizeMode.CONTAIN && embedView?.thumbnail && (
+        {resizeMode === 'contain' && embedView?.thumbnail && (
           <Image source={{ uri: embedView.thumbnail }} style={styles.backgroundImage} resizeMode="cover" blurRadius={Platform.OS === 'ios' ? 30 : 15} />
         )}
         <View style={styles.backgroundOverlay} />
         
-        {playbackUrl && (
-          <Video
-            ref={videoRef}
-            source={{ uri: playbackUrl }}
-            style={StyleSheet.absoluteFill}
-            resizeMode={resizeMode}
-            isLooping
-            shouldPlay={!isEffectivelyPaused}
-            isMuted={isMuted}
-            onPlaybackStatusUpdate={(s: AVPlaybackStatus) => {
-              if (s.isLoaded) {
-                setIsBuffering(s.isBuffering);
-                setProgress((s.positionMillis / (s.durationMillis || 1)) || 0);
-              }
-            }}
-          />
-        )}
+        {Platform.OS === 'web' && playbackUrl && <VideoJSElement onVideoNode={setVideoNode} resizeMode={resizeMode} />}
         
         {showSpinner && <ActivityIndicator size="large" color="white" style={styles.loader} />}
         {!playbackUrl && !isLoadingUrl && (
