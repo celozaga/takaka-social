@@ -240,6 +240,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     }
     if (!profile) return null; // Should be covered by error state
     
+    const profileUrl = `https://bsky.app/profile/${profile.handle}`;
+    const truncatedDescription = profile.description ? (profile.description.length > 155 ? profile.description.substring(0, 155) + '...' : profile.description) : `View the profile of ${profile.displayName || `@${profile.handle}`} on Takaka.`;
+
     if (profile.viewer?.blockedBy) return <><TopAppBar title={profile.handle} /><View style={styles.centered}><Shield size={48} color={theme.colors.onSurfaceVariant} /><Text style={styles.blockedTitle}>{t('profile.blockedBy')}</Text></View></>;
 
     if (profile.viewer?.blocking) {
@@ -258,7 +261,16 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
 
     return (
         <>
-            <Head><title>{profile.displayName || `@${profile.handle}`}</title>{profile.description && <meta name="description" content={profile.description} />}{profile.avatar && <meta property="og:image" content={profile.avatar} />}</Head>
+            <Head>
+                <title>{`${profile.displayName || `@${profile.handle}`} | Takaka`}</title>
+                <meta name="description" content={truncatedDescription} />
+                {/* Open Graph Tags */}
+                <meta property="og:title" content={`${profile.displayName || `@${profile.handle}`}`} />
+                <meta property="og:description" content={truncatedDescription} />
+                <meta property="og:url" content={profileUrl} />
+                <meta property="og:type" content="profile" />
+                {profile.avatar && <meta property="og:image" content={profile.avatar} />}
+            </Head>
             <View style={styles.container}>
                  <TopAppBar 
                     title={`@${profile.handle}`}

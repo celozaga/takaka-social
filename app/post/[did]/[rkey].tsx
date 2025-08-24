@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useAtp } from '@/context/AtpContext';
 import { useTranslation } from 'react-i18next';
-import { AppBskyFeedDefs } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import PostScreen from '@/components/post/PostScreen';
 import ScreenHeader from '@/components/layout/ScreenHeader';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
@@ -82,14 +82,38 @@ export default function PostPage() {
     return null;
   }
   
-  const postText = (thread.post.record as any)?.text?.substring(0, 100);
+  const postRecord = (thread.post.record as any);
+  const postText = postRecord?.text || '';
+  const truncatedText = postText.length > 155 ? postText.substring(0, 155) + '...' : postText;
   const postAuthor = thread.post.author.displayName || `@${thread.post.author.handle}`;
+  const postUrl = `https://bsky.app/profile/${thread.post.author.did}/post/${rkey}`;
+
+  let ogImage = thread.post.author.avatar; // Default to author avatar
+  const embed = thread.post.embed;
+  if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) {
+    ogImage = embed.images[0].fullsize;
+  } else if (AppBskyEmbedVideo.isView(embed)) {
+    ogImage = embed.thumbnail;
+  } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+      if (AppBskyEmbedImages.isView(embed.media) && embed.media.images.length > 0) {
+          ogImage = embed.media.images[0].fullsize;
+      } else if (AppBskyEmbedVideo.isView(embed.media)) {
+          ogImage = embed.media.thumbnail;
+      }
+  }
 
   return (
     <>
         <Head>
-            <title>{`${t('common.post')} by ${postAuthor}`}</title>
-            {postText && <meta name="description" content={postText} />}
+            <title>{`${postAuthor}: "${postText.substring(0, 50)}..." | Takaka`}</title>
+            <meta name="description" content={truncatedText} />
+            {/* Open Graph Tags */}
+            <meta property="og:title" content={`${postAuthor} on Takaka`} />
+            <meta property="og:description" content={truncatedText} />
+            <meta property="og:url" content={postUrl} />
+            <meta property="og:type" content="article" />
+            <meta property="article:author" content={postAuthor} />
+            {ogImage && <meta property="og:image" content={ogImage} />}
         </Head>
         <PostScreen thread={thread} />
     </>

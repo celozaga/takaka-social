@@ -75,11 +75,19 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
         );
     }
 
+    const feedUrl = `https://bsky.app/profile/${handle}/feed/${rkey}`;
+    const truncatedDescription = feedView?.description ? (feedView.description.length > 155 ? feedView.description.substring(0, 155) + '...' : feedView.description) : `View the '${feedView?.displayName}' feed on Takaka.`;
+
     return (
         <>
             <Head>
-                <title>{feedView ? `${t('common.feeds')}: ${feedView.displayName}` : t('common.feeds')}</title>
-                {feedView?.description && <meta name="description" content={feedView.description} />}
+                <title>{feedView ? `${feedView.displayName} Feed | Takaka` : t('common.feeds')}</title>
+                <meta name="description" content={truncatedDescription} />
+                 {/* Open Graph Tags */}
+                <meta property="og:title" content={feedView ? `${feedView.displayName} Feed` : 'Bluesky Feed'} />
+                <meta property="og:description" content={truncatedDescription} />
+                <meta property="og:url" content={feedUrl} />
+                <meta property="og:type" content="website" />
                 {feedView?.avatar && <meta property="og:image" content={feedView.avatar} />}
             </Head>
             <View style={{flex: 1}}>
