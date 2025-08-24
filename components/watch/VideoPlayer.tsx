@@ -88,6 +88,10 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
   else if (AppBskyEmbedRecordWithMedia.isView(post.embed) && AppBskyEmbedVideo.isView(post.embed.media)) embedView = post.embed.media as AppBskyEmbedVideo.View;
 
   if (!embedView) return null;
+
+  const videoAspectRatio = embedView.aspectRatio ? embedView.aspectRatio.width / embedView.aspectRatio.height : 16 / 9;
+  const isVideoVertical = videoAspectRatio < 1;
+  const videoResizeMode = isVideoVertical ? ResizeMode.COVER : ResizeMode.CONTAIN;
   
   const showSpinner = status === 'buffering';
 
@@ -117,7 +121,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
               ref={videoRef}
               source={{ uri: videoUrl }}
               style={styles.video}
-              resizeMode={ResizeMode.CONTAIN}
+              resizeMode={videoResizeMode}
               isLooping
               shouldPlay={!isEffectivelyPaused}
               isMuted={isMuted}
