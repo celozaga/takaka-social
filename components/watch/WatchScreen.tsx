@@ -80,11 +80,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     desktopFeedContainer: {
-        width: 450, // A good width for a vertical feed on desktop
+        width: '100%', // A good width for a vertical feed on desktop
         height: '100%',
-        borderLeftWidth: 1,
-        borderRightWidth: 1,
-        borderColor: theme.colors.outline,
         overflow: 'hidden', // Ensures the FlatList stays within the bounds
     },
     mobileFeedContainer: {
