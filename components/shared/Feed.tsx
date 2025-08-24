@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
@@ -8,7 +9,7 @@ import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList, FlatListProps, LayoutChangeEvent } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, FlatList, LayoutChangeEvent } from 'react-native';
 import { theme } from '@/lib/theme';
 import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 import ErrorState from './ErrorState';
@@ -255,53 +256,13 @@ const Feed: React.FC<FeedProps> = ({
     return feed.filter(item => moderatePost(item.post, moderation).visibility !== 'hide');
   }, [feed, moderation]);
 
-  const { column1Items, column2Items } = useMemo(() => {
-    if (layout !== 'grid') return { column1Items: [], column2Items: [] };
-    const col1: AppBskyFeedDefs.FeedViewPost[] = [];
-    const col2:AppBskyFeedDefs.FeedViewPost[] = [];
-    moderatedFeed.forEach((item, index) => {
-        if (index % 2 === 0) col1.push(item);
-        else col2.push(item);
-    });
-    return { column1Items: col1, column2Items: col2 };
-  }, [moderatedFeed, layout]);
-
-  const renderHeader = () => {
-    if (!ListHeaderComponent) {
-      return null;
-    }
-    // Handle both Component and Element types
-    if (typeof ListHeaderComponent === 'function') {
-      const Header = ListHeaderComponent;
-      return <Header />;
-    }
-    return ListHeaderComponent;
-  };
-
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => `${item.post.cid}-${AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : ''}`;
-  
-  const handleScroll = ({ nativeEvent }: { nativeEvent: { layoutMeasurement: any, contentOffset: any, contentSize: any } }) => {
-    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 500;
-    if (isCloseToBottom && !isLoadingMore && hasMore) {
-        loadMorePosts();
-    }
-  };
 
   const renderFooter = () => {
     if (isLoadingMore) {
-      if (layout === 'grid') {
-        return (
-          <View style={[styles.masonryContainer, { marginTop: theme.spacing.l }]}>
-            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-          </View>
-        );
-      }
       return (
-        <View style={{ paddingHorizontal: theme.spacing.l, gap: theme.spacing.s, marginTop: theme.spacing.s }}>
-          <FullPostCardSkeleton />
-          <FullPostCardSkeleton />
+        <View style={{ paddingVertical: theme.spacing.xl }}>
+          <ActivityIndicator size="large" color={theme.colors.onSurface} />
         </View>
       );
     }
@@ -312,6 +273,8 @@ const Feed: React.FC<FeedProps> = ({
   };
   
   const renderListEmptyComponent = () => {
+    if (isLoading) return null; // Don't show empty message while initially loading
+
     if (error) {
         const isNonRecoverableError = error === t('profile.privateLikes') || error === t('profile.blockedBy');
         
@@ -348,79 +311,80 @@ const Feed: React.FC<FeedProps> = ({
     );
   };
 
+  const renderHeader = () => {
+    if (!ListHeaderComponent) {
+      return null;
+    }
+    if (React.isValidElement(ListHeaderComponent)) {
+      return ListHeaderComponent;
+    }
+    const Header = ListHeaderComponent as React.ComponentType<any>;
+    return <Header />;
+  };
+
   if (isLoading) {
     return (
       <View onLayout={onLayout}>
-        <>
-          {renderHeader()}
-          {layout === 'grid' ? (
-            <View style={styles.masonryContainer}>
-              <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-              <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-            </View>
-          ) : (
-            <View style={styles.listContainer}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>
-          )}
-        </>
+        {renderHeader()}
+        {layout === 'grid' ? (
+          <View style={styles.masonryContainer}>
+            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+          </View>
+        ) : (
+          <View style={styles.listContainer}>
+            <FullPostCardSkeleton />
+            <FullPostCardSkeleton />
+          </View>
+        )}
       </View>
     );
   }
 
-  if (moderatedFeed.length === 0 && !isLoading) {
-      return (
-          <ScrollView 
-            contentContainerStyle={{paddingTop: theme.spacing.l}}
-            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-          >
-              <View onLayout={onLayout}>
-                <>
-                  {renderHeader()}
-                  {renderListEmptyComponent()}
-                </>
-              </View>
-          </ScrollView>
-      )
-  }
+  const flatListProps = {
+      data: moderatedFeed,
+      keyExtractor,
+      ListHeaderComponent,
+      ListFooterComponent: renderFooter,
+      ListEmptyComponent: renderListEmptyComponent,
+      onEndReached: loadMorePosts,
+      onEndReachedThreshold: 0.7,
+      refreshControl: <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />,
+      contentContainerStyle: {paddingTop: theme.spacing.l, paddingBottom: 60}
+  };
 
   if (layout === 'list') {
-      const flatListProps = {
-          data: moderatedFeed,
-          renderItem: ({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>,
-          keyExtractor,
-          ItemSeparatorComponent: () => <View style={{height: theme.spacing.s}} />,
-          ListHeaderComponent,
-          ListFooterComponent: renderFooter,
-          onEndReached: loadMorePosts,
-          onEndReachedThreshold: 0.7,
-          refreshControl: <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />,
-          contentContainerStyle: {paddingTop: theme.spacing.l, paddingBottom: 60}
-      };
       return (
-          <FlatList onLayout={onLayout} {...flatListProps} />
+          <FlatList 
+              onLayout={onLayout}
+              {...flatListProps}
+              renderItem={({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>}
+              ItemSeparatorComponent={() => <View style={{height: theme.spacing.s}} />}
+          />
       )
   }
 
   return (
-    <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
-        <View style={styles.contentContainer} onLayout={onLayout}>
-            <>
-              {renderHeader()}
-              <View style={styles.masonryContainer}>
-                  <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} imageWidth={imageWidth} />)}</View>
-                  <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} imageWidth={imageWidth} />)}</View>
-              </View>
-              {renderFooter()}
-            </>
-        </View>
-    </ScrollView>
+    <FlatList
+        onLayout={onLayout}
+        {...flatListProps}
+        numColumns={2}
+        renderItem={({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <PostCard feedViewPost={item} imageWidth={imageWidth} />}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={{paddingTop: theme.spacing.l, paddingBottom: 60, paddingHorizontal: theme.spacing.l}}
+    />
   );
 };
 
 const styles = StyleSheet.create({
     contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
     masonryContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l, },
-    listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, alignItems: 'center' },
+    listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l },
     column: { flex: 1, gap: theme.spacing.l, },
+    columnWrapper: {
+        gap: theme.spacing.l,
+        marginBottom: theme.spacing.l,
+    },
     messageContainerWrapper: {
         padding: theme.spacing.l,
     },

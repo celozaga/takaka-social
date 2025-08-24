@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useRouter } from 'expo-router';
 import { AppBskyFeedDefs, AppBskyEmbedImages,AppBskyActorDefs, RichText,AppBskyEmbedRecordWithMedia, AppBskyEmbedVideo } from '@atproto/api';
-import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
 import { Images, PlayCircle, Heart, Repeat } from 'lucide-react';
@@ -56,6 +55,23 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
         }
         return null;
     }
+
+    const renderContext = () => {
+        if (reason && AppBskyFeedDefs.isReasonRepost(reason)) {
+            return (
+                <View style={styles.contextContainer}>
+                    <Repeat size={14} color={theme.colors.onSurfaceVariant} />
+                    <Text style={styles.contextText} numberOfLines={1}>
+                        Reposted by{' '}
+                        <Link href={`/profile/${reason.by.handle}` as any} onPress={e => e.stopPropagation()} asChild>
+                            <Text style={styles.contextLink}>{reason.by.displayName || `@${reason.by.handle}`}</Text>
+                        </Link>
+                    </Text>
+                </View>
+            );
+        }
+        return null;
+    };
     
     const mediaInfo = getMediaInfo(post);
 
@@ -63,7 +79,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
         if (!mediaInfo) return null;
         
         const { mediaEmbed } = mediaInfo;
-        const isRepost = reason && AppBskyFeedDefs.isReasonRepost(reason);
 
         if (AppBskyEmbedImages.isView(mediaEmbed)) {
             const firstImage = mediaEmbed.images[0];
@@ -80,15 +95,12 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
                         style={[styles.image, { aspectRatio: imageAspectRatio }]} 
                         width={imageWidth}
                     />
-                    {(hasMultipleImages || isRepost) && (
+                    {hasMultipleImages && (
                          <View style={styles.mediaBadgeContainer}>
-                            {isRepost && <View style={styles.mediaBadge}><Repeat size={14} color="white" /></View>}
-                            {hasMultipleImages && (
-                                <View style={[styles.mediaBadge, { flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-                                    <Images size={14} color="white" />
-                                    <Text style={styles.mediaBadgeText}>{mediaEmbed.images.length}</Text>
-                                </View>
-                            )}
+                            <View style={[styles.mediaBadge, { flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                                <Images size={14} color="white" />
+                                <Text style={styles.mediaBadgeText}>{mediaEmbed.images.length}</Text>
+                            </View>
                         </View>
                     )}
                 </View>
@@ -110,7 +122,6 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
                         width={imageWidth}
                     />
                     <View style={styles.mediaBadgeContainer}>
-                        {isRepost && <View style={styles.mediaBadge}><Repeat size={14} color="white" /></View>}
                         <View style={styles.mediaBadge}><PlayCircle size={14} color="white" /></View>
                     </View>
                 </View>
@@ -130,6 +141,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, i
 
     return (
         <Card onPress={handlePress}>
+            {renderContext()}
             {mediaElement}
             <View style={styles.content}>
                 {record?.text && (
@@ -176,6 +188,22 @@ const styles = StyleSheet.create({
     authorName: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant, flexShrink: 1 },
     likeButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, padding: theme.spacing.xs, margin: -theme.spacing.xs },
     likeCount: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant },
+    contextContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.s,
+        paddingHorizontal: theme.spacing.m,
+        paddingTop: theme.spacing.m,
+    },
+    contextText: {
+        ...theme.typography.bodySmall,
+        color: theme.colors.onSurfaceVariant,
+        flexShrink: 1
+    },
+    contextLink: {
+        fontWeight: 'bold',
+        color: theme.colors.onSurfaceVariant,
+    },
 });
 
 export default React.memo(PostCard);
