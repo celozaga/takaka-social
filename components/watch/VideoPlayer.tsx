@@ -9,6 +9,7 @@ import RichTextRenderer from '../shared/RichTextRenderer';
 import { Volume2, VolumeX, Play, Plus, Check, BadgeCheck } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useAtp } from '@/context/AtpContext';
+import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;
@@ -16,34 +17,6 @@ interface Props {
   isMuted: boolean;
   onMuteToggle: () => void;
 }
-
-const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, authorDid: string) => {
-    const { agent } = useAtp();
-    const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!embed || !authorDid) {
-            setIsLoading(false);
-            setPlaybackUrl(null);
-            return;
-        }
-        setIsLoading(true);
-        setError(null);
-
-        // Construct the direct blob URL, which is the official, stable method.
-        const serviceUrl = agent.service.toString();
-        const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-        const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${embed.cid}`;
-        
-        setPlaybackUrl(blobUrl);
-        setIsLoading(false);
-    }, [agent, embed, authorDid]);
-
-    return { playbackUrl, isLoading, error };
-};
-
 
 const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, isMuted, onMuteToggle }) => {
   const videoRef = useRef<Video>(null);
@@ -73,7 +46,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
     return undefined;
   }, [post.embed]);
 
-  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embedView, post.author.did);
+  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(post.uri, embedView, post.author.did);
 
   useEffect(() => {
     // Reset state for new video

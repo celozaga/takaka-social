@@ -5,45 +5,18 @@ import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } fro
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
-import { useAtp } from '@/context/AtpContext';
-import { AppBskyEmbedVideo } from '@atproto/api';
+import { AppBskyFeedDefs, AppBskyEmbedVideo } from '@atproto/api';
+import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
 interface AdvancedVideoPlayerProps {
-  embed: AppBskyEmbedVideo.View;
-  authorDid: string;
+  post: AppBskyFeedDefs.PostView;
   style?: any;
 }
 
-const useVideoPlayback = (embed: AppBskyEmbedVideo.View, authorDid: string) => {
-    const { agent } = useAtp();
-    const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }) => {
+  const embed = post.embed as AppBskyEmbedVideo.View;
+  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(post.uri, embed, post.author.did);
 
-    useEffect(() => {
-        if (!embed || !authorDid) {
-            setIsLoading(false);
-            setPlaybackUrl(null);
-            return;
-        }
-        setIsLoading(true);
-        setError(null);
-
-        // Construct the direct blob URL, which is the official, stable method.
-        const serviceUrl = agent.service.toString();
-        const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
-        const blobUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${embed.cid}`;
-        
-        setPlaybackUrl(blobUrl);
-        setIsLoading(false);
-    }, [agent, embed, authorDid]);
-
-    return { playbackUrl, isLoading, error };
-};
-
-
-const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ embed, authorDid, style }) => {
-  const { playbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, authorDid);
   const videoRef = useRef<Video>(null);
   const containerRef = useRef<View>(null);
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);

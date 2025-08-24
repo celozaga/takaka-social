@@ -97,8 +97,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             if (isVideo && videoEmbed) {
                 return (
                     <AdvancedVideoPlayer
-                        embed={videoEmbed}
-                        authorDid={authorDid}
+                        post={post}
                         style={mediaStyle}
                     />
                 );
