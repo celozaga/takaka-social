@@ -8,7 +8,7 @@ import PopularFeeds from './PopularFeeds';
 import { useUI } from '../../context/UIContext';
 import ScreenHeader from '../layout/ScreenHeader';
 import FeedAvatar from './FeedAvatar';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
 import { theme } from '@/lib/theme';

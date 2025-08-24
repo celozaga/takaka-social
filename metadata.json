@@ -1,5 +1,7 @@
 {
   "name": "Takaka",
   "description": "A Bluesky client focused on creative content and lifestyle.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

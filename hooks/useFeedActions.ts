@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
@@ -6,6 +7,7 @@ import { useToast } from '../components/ui/use-toast';
 import { useSavedFeeds } from './useSavedFeeds';
 import {AppBskyFeedDefs} from '@atproto/api';
 import { WEB_CLIENT_URL } from '../lib/config';
+import * as Clipboard from 'expo-clipboard';
 
 export const useFeedActions = (feedUri?: string) => {
     const { agent, session } = useAtp();
@@ -92,12 +94,12 @@ export const useFeedActions = (feedUri?: string) => {
         }
     };
 
-    const handleShare = () => {
+    const handleShare = async () => {
         if (!feedView) return;
         const handle = feedView.creator.handle;
         const rkey = new URL(feedView.uri).pathname.split('/').pop();
         const url = `${WEB_CLIENT_URL}/profile/${handle}/feed/${rkey}`;
-        navigator.clipboard.writeText(url);
+        await Clipboard.setStringAsync(url);
         toast({ title: t('post.linkCopied'), description: t('post.linkCopiedDescription') });
     };
 

@@ -6,7 +6,7 @@ import { useUI } from '../../context/UIContext';
 import { AppBskyActorDefs, AppBskyGraphGetFollowers, AppBskyGraphGetFollows } from '@atproto/api';
 import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
 

@@ -9,7 +9,7 @@ import {
     Settings, List, Search, 
     Bell, Users, UserCheck, Clapperboard, ChevronRight, Bookmark, Heart
 } from 'lucide-react';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, Image, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
 

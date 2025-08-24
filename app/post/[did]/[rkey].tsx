@@ -7,7 +7,7 @@ import PostScreen from '@/components/post/PostScreen';
 import ScreenHeader from '@/components/layout/ScreenHeader';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
-import Head from '@/components/shared/Head';
+import { Head } from 'expo-router/head';
 import FullPostCardSkeleton from '@/components/post/FullPostCardSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import { FileX2 } from 'lucide-react';

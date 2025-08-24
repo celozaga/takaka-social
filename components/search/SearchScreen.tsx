@@ -12,7 +12,7 @@ import SuggestedFollows from '../profile/SuggestedFollows';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import TrendingTopics from './TrendingTopics';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useSearchHistory } from '../../hooks/useSearchHistory';
 import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, Pressable, Platform } from 'react-native';

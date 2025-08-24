@@ -4,7 +4,7 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-nati
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react';
 import { theme } from '@/lib/theme';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import WatchFeed from './WatchFeed';
 import { useVideoManager } from './hooks/useVideoManager';
 import ErrorState from '../shared/ErrorState';

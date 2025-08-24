@@ -5,7 +5,7 @@ import { useAtp } from '../../context/AtpContext';
 import { AppBskyNotificationListNotifications } from '@atproto/api';
 import NotificationItem from './NotificationItem';
 import ScreenHeader from '../layout/ScreenHeader';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import NotificationItemSkeleton from './NotificationItemSkeleton';

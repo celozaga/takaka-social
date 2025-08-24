@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import BottomNavbar from '@/components/layout/BottomNavbar';
 import LoginPrompt from '@/components/auth/LoginPrompt';
 import { theme } from '@/lib/theme';
-import Head from '@/components/shared/Head';
+import { Head } from 'expo-router/head';
 
 import '@/lib/i18n';
 

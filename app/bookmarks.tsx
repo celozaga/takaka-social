@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Head from '@/components/shared/Head';
+import { Head } from 'expo-router/head';
 import ScreenHeader from '@/components/layout/ScreenHeader';
 import Feed from '@/components/shared/Feed';
 import { useAtp } from '@/context/AtpContext';

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface HiddenPostsContextType {
   hiddenPostUris: Set<string>;
@@ -14,25 +14,26 @@ export const HiddenPostsProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [hiddenPostUris, setHiddenPostUris] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+    const loadHiddenPosts = async () => {
       try {
-        const storedUris = localStorage.getItem(HIDDEN_POSTS_STORAGE_KEY);
+        const storedUris = await AsyncStorage.getItem(HIDDEN_POSTS_STORAGE_KEY);
         if (storedUris) {
           setHiddenPostUris(new Set(JSON.parse(storedUris)));
         }
       } catch (e) {
-        console.error("Failed to load hidden posts from localStorage", e);
+        console.error("Failed to load hidden posts from storage", e);
       }
-    }
+    };
+    loadHiddenPosts();
   }, []);
 
   const hidePost = useCallback((uri: string) => {
     setHiddenPostUris(prev => {
       const newSet = new Set(prev);
       newSet.add(uri);
-      if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-        localStorage.setItem(HIDDEN_POSTS_STORAGE_KEY, JSON.stringify(Array.from(newSet)));
-      }
+      AsyncStorage.setItem(HIDDEN_POSTS_STORAGE_KEY, JSON.stringify(Array.from(newSet))).catch(e => {
+        console.error("Failed to save hidden posts to storage", e);
+      });
       return newSet;
     });
   }, []);

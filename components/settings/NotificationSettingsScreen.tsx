@@ -5,7 +5,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
 import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell } from 'lucide-react';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';

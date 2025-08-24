@@ -4,7 +4,6 @@ import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
 import Feed from '../shared/Feed';
 import FeedSelector from '../feeds/FeedSelector';
-import Head from '../shared/Head';
 import { View, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
 
@@ -78,7 +77,6 @@ const HomeScreen: React.FC = () => {
 
   return (
     <>
-      <Head><title>{t('nav.home')}</title></Head>
       <View style={styles.container}>
         <FeedSelector
           feeds={feeds}

@@ -4,7 +4,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import Feed from '../shared/Feed';
 import FeedViewHeader from './FeedViewHeader';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import { useFeedActions } from '../../hooks/useFeedActions';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';

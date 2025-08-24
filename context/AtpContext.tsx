@@ -1,9 +1,12 @@
 
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
 import { useToast } from '../components/ui/use-toast';
-import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+
+const ATP_SESSION_KEY = 'atp-session';
 
 interface AtpContextType {
   agent: BskyAgent;
@@ -26,22 +29,22 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const agent = useMemo(() => new BskyAgent({
     service: PDS_URL,
-    persistSession: (evt: AtpSessionEvent, sess?: AtpSessionData) => {
-      if (Platform.OS !== 'web' || typeof localStorage === 'undefined') {
-        return;
-      }
+    persistSession: async (evt: AtpSessionEvent, sess?: AtpSessionData) => {
       switch (evt) {
         case 'create':
         case 'update':
           if (sess) {
-            localStorage.setItem('atp-session', JSON.stringify(sess));
+            await SecureStore.setItemAsync(ATP_SESSION_KEY, JSON.stringify(sess));
             setSession(sess);
           } else {
-            // If sess is undefined, the session has been cleared.
-            localStorage.removeItem('atp-session');
+            await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
             setSession(null);
           }
           break;
+        case 'create-failed':
+            await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
+            setSession(null);
+            break;
       }
     },
   }), []);
@@ -89,22 +92,20 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const initialize = async () => {
       setIsLoadingSession(true);
-      if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-        const storedSessionString = localStorage.getItem('atp-session');
-        if (storedSessionString) {
-          try {
-            const parsedSession = JSON.parse(storedSessionString);
-            await agent.resumeSession(parsedSession);
-            setSession(parsedSession);
-            await fetchUnreadCount().catch(() => {
-              // Ignore initial fetch errors, polling will handle it
-            });
-            pollInterval = setInterval(pollFunction, 30000);
-          } catch (error) {
-            console.error("Failed to resume session:", error);
-            localStorage.removeItem('atp-session');
-            setSession(null);
-          }
+      const storedSessionString = await SecureStore.getItemAsync(ATP_SESSION_KEY);
+      if (storedSessionString) {
+        try {
+          const parsedSession = JSON.parse(storedSessionString);
+          await agent.resumeSession(parsedSession);
+          setSession(parsedSession);
+          await fetchUnreadCount().catch(() => {
+            // Ignore initial fetch errors, polling will handle it
+          });
+          pollInterval = setInterval(pollFunction, 30000);
+        } catch (error) {
+          console.error("Failed to resume session:", error);
+          await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
+          setSession(null);
         }
       }
       setIsLoadingSession(false);

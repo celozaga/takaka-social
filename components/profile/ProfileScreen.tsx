@@ -11,7 +11,7 @@ import Feed from '../shared/Feed';
 import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit, X, ArrowLeft, Grid, Repeat, Frown } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import TopAppBar from '../ui/TopAppBar';
 import { theme } from '@/lib/theme';
 import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';

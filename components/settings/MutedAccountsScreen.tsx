@@ -6,7 +6,7 @@ import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs } from '@atproto/api';
 import { Link } from 'expo-router';
 import ScreenHeader from '../layout/ScreenHeader';
-import Head from '../shared/Head';
+import { Head } from 'expo-router/head';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Image, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
 import { BadgeCheck } from 'lucide-react';
