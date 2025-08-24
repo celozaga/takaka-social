@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        paddingHorizontal: 16,
+        paddingHorizontal: theme.spacing.l,
         backgroundColor: theme.colors.background,
         zIndex: 30,
     },
@@ -46,12 +46,11 @@ const styles = StyleSheet.create({
     leftContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: theme.spacing.l,
     },
     button: {
-        padding: 8,
-        marginHorizontal: -8,
-        borderRadius: 999,
+        padding: theme.spacing.s,
+        borderRadius: theme.shape.full,
     },
     title: {
         fontSize: 20,
