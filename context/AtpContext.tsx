@@ -4,7 +4,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode, useCa
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
 import { useToast } from '../components/ui/use-toast';
-import * as SecureStore from 'expo-secure-store';
+import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 const ATP_SESSION_KEY = 'atp-session';
 
@@ -39,7 +39,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const initialize = async () => {
       setIsLoadingSession(true);
       try {
-        const storedSessionString = await SecureStore.getItemAsync(ATP_SESSION_KEY);
+        const storedSessionString = await getItemAsync(ATP_SESSION_KEY);
         if (storedSessionString) {
           const parsedSession = JSON.parse(storedSessionString);
           await agent.resumeSession(parsedSession);
@@ -48,7 +48,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       } catch (error) {
         console.error("Failed to resume session:", error);
-        await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
+        await deleteItemAsync(ATP_SESSION_KEY);
         setSession(null);
       } finally {
         setIsLoadingSession(false);
@@ -121,7 +121,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     // 2. Manually persist the session to SecureStore and update React state.
     if (agent.session) {
-        await SecureStore.setItemAsync(ATP_SESSION_KEY, JSON.stringify(agent.session));
+        await setItemAsync(ATP_SESSION_KEY, JSON.stringify(agent.session));
         setSession(agent.session);
         await fetchUnreadCount();
     }
@@ -132,7 +132,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // 1. Clear the agent's internal session.
     await agent.logout();
     // 2. Manually clear the persisted session and React state.
-    await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
+    await deleteItemAsync(ATP_SESSION_KEY);
     setSession(null);
   }, [agent]);
 
