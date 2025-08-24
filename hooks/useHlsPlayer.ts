@@ -18,15 +18,15 @@ export const useHlsPlayer = (
             hlsInstanceRef.current = null;
         }
 
-        if (fallbackUrl && currentSource !== fallbackUrl) {
-            console.log("HLS playback failed, attempting fallback to MP4.");
+        if (fallbackUrl) {
+            console.log("HLS playback failed or not supported, attempting fallback to MP4.");
             setCurrentSource(fallbackUrl);
             setError(null);
         } else {
             console.error("HLS failed and no fallback is available.");
             setError("Could not play video");
         }
-    }, [fallbackUrl, currentSource]);
+    }, [fallbackUrl]);
 
     useEffect(() => {
         // Cleanup previous instances and reset state when inputs change

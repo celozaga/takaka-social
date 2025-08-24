@@ -80,11 +80,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
     overflow: 'hidden'
   },
-  video: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'black'
-  },
   errorContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
