@@ -335,9 +335,11 @@ const Feed: React.FC<FeedProps> = ({
       <View onLayout={onLayout}>
         {renderHeader()}
         {layout === 'grid' ? (
-          <View style={styles.skeletonContainer}>
-            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-            <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+          <View style={{ paddingHorizontal: theme.spacing.s }}>
+            <View style={styles.masonryContainer}>
+                <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+                <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+            </View>
           </View>
         ) : (
           <View style={styles.listContainer}>
@@ -418,7 +420,6 @@ const Feed: React.FC<FeedProps> = ({
 
 const styles = StyleSheet.create({
     contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
-    skeletonContainer: { flexDirection: 'row', gap: theme.spacing.l, paddingHorizontal: theme.spacing.l },
     listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l },
     scrollViewContentGrid: {
         paddingHorizontal: theme.spacing.s,
