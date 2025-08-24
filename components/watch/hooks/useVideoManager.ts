@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAtp } from '@/context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
+import { useModeration } from '@/context/ModerationContext';
+import { moderatePost } from '@/lib/moderation';
 
 const VIDEOS_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids';
 const POSTS_PER_PAGE = 25;
@@ -17,6 +19,7 @@ const hasVideoEmbed = (post: AppBskyFeedDefs.PostView): boolean => {
 
 export const useVideoManager = () => {
     const { agent } = useAtp();
+    const moderation = useModeration();
     const [posts, setPosts] = useState<AppBskyFeedDefs.FeedViewPost[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -38,7 +41,13 @@ export const useVideoManager = () => {
             
             const res = await agent.app.bsky.feed.getFeed({ feed: VIDEOS_FEED_URI, cursor: nextCursor, limit: POSTS_PER_PAGE });
             
-            const videoPosts = res.data.feed.filter(item => hasVideoEmbed(item.post));
+            const videoPosts = res.data.feed
+                .filter(item => hasVideoEmbed(item.post))
+                .filter(item => {
+                    if (!moderation.isReady) return true; // Default to showing if moderation isn't ready
+                    return moderatePost(item.post, moderation).visibility !== 'hide';
+                });
+
             accumulatedPosts.push(...videoPosts);
 
             nextCursor = res.data.cursor;
@@ -49,7 +58,7 @@ export const useVideoManager = () => {
         }
 
         return { posts: accumulatedPosts, cursor: nextCursor };
-    }, [agent]);
+    }, [agent, moderation]);
 
     const loadPosts = useCallback(async (mode: 'initial' | 'refresh' | 'more') => {
         if (mode === 'more' && (isLoadingMore || !hasMoreRef.current)) return;

@@ -7,6 +7,9 @@ import { Volume2, VolumeX, Play } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 import { useHlsPlayer } from '@/hooks/useHlsPlayer';
+import { useModeration } from '@/context/ModerationContext';
+import { moderatePost, ModerationDecision } from '@/lib/moderation';
+import ContentWarning from '@/components/shared/ContentWarning';
 
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;
@@ -20,14 +23,22 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
   
   const [isInternallyPaused, setIsInternallyPaused] = useState(false);
   const [status, setStatus] = useState<AVPlaybackStatusSuccess | null>(null);
+  const [isContentVisible, setIsContentVisible] = useState(false);
   
   const { post } = postView;
+  const moderation = useModeration();
   
   useEffect(() => {
     // Reset state for new video
     setIsInternallyPaused(false);
     setStatus(null);
+    setIsContentVisible(false);
   }, [post.uri]);
+
+  const modDecision: ModerationDecision = useMemo(() => {
+    if (!moderation.isReady) return { visibility: 'show' };
+    return moderatePost(post, moderation);
+  }, [post, moderation]);
 
   const embedView = useMemo(() => {
     if (AppBskyEmbedVideo.isView(post.embed)) return post.embed;
@@ -61,14 +72,8 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
 
   const progress = status ? (status.positionMillis / (status.durationMillis || 1)) : 0;
 
-  return (
-    <TouchableWithoutFeedback onPress={toggleInternalPlayPause}>
-      <View style={styles.container}>
-        {embedView?.thumbnail && (
-          <Image source={{ uri: embedView.thumbnail }} style={styles.backgroundImage} resizeMode="cover" blurRadius={Platform.OS === 'ios' ? 30 : 15} />
-        )}
-        <View style={styles.backgroundOverlay} />
-        
+  const renderPlayerContent = () => (
+      <>
         {currentSource && (
           <Video
             ref={videoRef}
@@ -106,6 +111,25 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
               <View style={[styles.progressBar, { transform: [{ scaleX: progress }] }]} />
             </View>
           </>
+        )}
+      </>
+  );
+
+  return (
+    <TouchableWithoutFeedback onPress={toggleInternalPlayPause}>
+      <View style={styles.container}>
+        {embedView?.thumbnail && (
+          <Image source={{ uri: embedView.thumbnail }} style={styles.backgroundImage} resizeMode="cover" blurRadius={Platform.OS === 'ios' ? 30 : 15} />
+        )}
+        <View style={styles.backgroundOverlay} />
+        
+        {modDecision.visibility === 'warn' && !isContentVisible ? (
+          <ContentWarning
+            reason={modDecision.reason!}
+            onShow={() => setIsContentVisible(true)}
+          />
+        ) : (
+          renderPlayerContent()
         )}
       </View>
     </TouchableWithoutFeedback>
