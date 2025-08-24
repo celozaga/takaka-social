@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { StyleSheet, StyleProp, ViewStyle } from 'react-native';
@@ -5,7 +6,7 @@ import { StyleSheet, StyleProp, ViewStyle } from 'react-native';
 // The player ref will be an expo-av Video component instance
 export type PlayerRef = Video;
 
-interface VideoPlayerProps {
+interface SimpleVideoPlayerProps {
   options: {
     autoplay?: boolean;
     controls?: boolean;
@@ -22,7 +23,7 @@ interface VideoPlayerProps {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
 }
 
-const SharedVideoPlayer: React.FC<VideoPlayerProps> = ({ options, onReady, style, onPlay, onPause, onEnded, onPlaybackStatusUpdate: onStatusUpdateProp }) => {
+const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({ options, onReady, style, onPlay, onPause, onEnded, onPlaybackStatusUpdate: onStatusUpdateProp }) => {
   const videoRef = useRef<Video>(null);
   const onReadyRef = React.useRef(onReady);
 
@@ -80,4 +81,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SharedVideoPlayer;
+export default SimpleVideoPlayer;

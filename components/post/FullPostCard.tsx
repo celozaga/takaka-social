@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Linking, FlatList, Platform, StyleProp, ViewStyle, useWindowDimensions, FlatListProps } from 'react-native';
 import { Link, useRouter } from 'expo-router';
@@ -5,12 +6,12 @@ import { AppBskyFeedDefs, AppBskyEmbedImages, RichText, AppBskyEmbedRecordWithMe
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { formatCompactDate } from '@/lib/formatters';
-import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, PlayCircle, VolumeX, Volume2 } from 'lucide-react';
+import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import SharedVideoPlayer, { PlayerRef } from '../shared/VideoPlayer';
+import AdvancedVideoPlayer from '../shared/AdvancedVideoPlayer';
+import SimpleVideoPlayer from '../shared/VideoPlayer';
 import ResizedImage from '../shared/ResizedImage';
 import { theme } from '@/lib/theme';
-import type { AVPlaybackStatusSuccess } from 'expo-av';
 
 interface FullPostCardProps {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -31,14 +32,13 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     const flatListRef = useRef<FlatList>(null);
     const [playbackUrls, setPlaybackUrls] = useState<Map<string, string>>(new Map());
 
-    const playerRef = useRef<PlayerRef | null>(null);
-    const [videoStatus, setVideoStatus] = useState<AVPlaybackStatusSuccess | null>(null);
     const { width } = useWindowDimensions();
 
 
     const fetchPlaybackUrl = useCallback(async (postUri: string, authorDid: string, videoCid: string) => {
         if (playbackUrls.has(postUri)) return;
         try {
+            // This is an undocumented endpoint, but used by the official client
             const res = await (agent.api.app.bsky.video as any).getPlaybackUrl({
                 did: authorDid,
                 cid: videoCid,
@@ -81,21 +81,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     const handlePress = () => {
         setPostForNav(feedViewPost);
         router.push(postLink);
-    };
-
-    const handleVideoPress = async () => {
-        if (!playerRef.current) return;
-        if (videoStatus?.isPlaying) {
-            await playerRef.current.pauseAsync();
-        } else {
-            await playerRef.current.playAsync();
-        }
-    };
-
-    const toggleMute = async (e: any) => {
-        e.stopPropagation();
-        if (!playerRef.current) return;
-        await playerRef.current.setIsMutedAsync(!videoStatus?.isMuted);
     };
 
     const renderMedia = () => {
@@ -148,29 +133,11 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                 const blobVideoUrl = blobUrl.toString();
 
                 return (
-                    <Pressable onPress={handleVideoPress} style={mediaStyle}>
-                        <SharedVideoPlayer
-                            onReady={(player) => { playerRef.current = player; }}
-                            onPlaybackStatusUpdate={(status) => { if(status.isLoaded) setVideoStatus(status as AVPlaybackStatusSuccess) }}
-                            options={{
-                                autoplay: true,
-                                controls: false,
-                                poster: videoItem.view.thumbnail,
-                                sources: [{ src: hlsUrl || blobVideoUrl, type: hlsUrl ? 'application/x-mpegURL' : 'video/mp4' }],
-                                loop: true,
-                                muted: true,
-                            }}
-                            style={{ width: '100%', height: '100%' }}
-                        />
-                        {videoStatus && !videoStatus.isPlaying && (
-                            <View style={styles.playButtonOverlay}>
-                                <PlayCircle size={64} color="rgba(255, 255, 255, 0.8)" fill="rgba(0,0,0,0.3)" />
-                            </View>
-                        )}
-                        <Pressable onPress={toggleMute} style={styles.muteButton}>
-                            {videoStatus?.isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
-                        </Pressable>
-                    </Pressable>
+                    <AdvancedVideoPlayer
+                        sourceUri={hlsUrl || blobVideoUrl}
+                        posterUri={videoItem.view.thumbnail}
+                        style={mediaStyle}
+                    />
                 );
             } else {
                 const imageItem = item as AppBskyEmbedImages.ViewImage;
@@ -226,7 +193,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             blobUrl.searchParams.set('cid', videoItem.view.cid);
                             const blobVideoUrl = blobUrl.toString();
                             return (
-                                <SharedVideoPlayer
+                                <SimpleVideoPlayer
                                     options={{
                                         autoplay: false,
                                         controls: true,
@@ -261,7 +228,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             }
         };
 
-        const flatListProps = {
+        const flatListProps: FlatListProps<MediaItem> = {
             data: mediaItems,
             renderItem: renderSlideshowItem,
             horizontal: true,
@@ -442,22 +409,7 @@ const styles = StyleSheet.create({
     },
     dotActive: {
         backgroundColor: theme.colors.primary,
-    },
-    playButtonOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1,
-    },
-    muteButton: {
-        position: 'absolute',
-        bottom: theme.spacing.m,
-        right: theme.spacing.m,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: theme.spacing.s,
-        borderRadius: theme.shape.full,
-        zIndex: 1,
-    },
+    }
 });
 
 export default FullPostCard;

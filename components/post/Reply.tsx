@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,7 @@ import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
 import ResizedImage from '../shared/ResizedImage';
-import SharedVideoPlayer from '../shared/VideoPlayer';
+import SimpleVideoPlayer from '../shared/VideoPlayer';
 
 const MAX_REPLY_DEPTH = 6;
 
@@ -92,7 +93,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
         const aspectRatio = mediaEmbed.aspectRatio ? mediaEmbed.aspectRatio.width / mediaEmbed.aspectRatio.height : 16/9;
         return (
             <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>
-                <SharedVideoPlayer 
+                <SimpleVideoPlayer 
                     options={{
                         autoplay: false,
                         controls: true,
