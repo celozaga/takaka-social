@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react';
 import { theme } from '@/lib/theme';
@@ -23,6 +23,8 @@ const WatchScreen: React.FC = () => {
         refresh,
         loadMore,
     } = useVideoManager();
+    const { width } = useWindowDimensions();
+    const isDesktop = width >= 768;
 
     if (isLoading) {
         return (
@@ -52,14 +54,16 @@ const WatchScreen: React.FC = () => {
         <>
             <Head><title>{t('more.watch')}</title></Head>
             <View style={styles.container}>
-                <WatchFeed 
-                    videoPosts={posts}
-                    loadMore={loadMore}
-                    isLoadingMore={isLoadingMore}
-                    hasMore={hasMore}
-                    onRefresh={refresh}
-                    isRefreshing={isRefreshing}
-                />
+                <View style={isDesktop ? styles.desktopFeedContainer : styles.mobileFeedContainer}>
+                    <WatchFeed 
+                        videoPosts={posts}
+                        loadMore={loadMore}
+                        isLoadingMore={isLoadingMore}
+                        hasMore={hasMore}
+                        onRefresh={refresh}
+                        isRefreshing={isRefreshing}
+                    />
+                </View>
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <ArrowLeft size={24} color="#FFFFFF" />
                 </Pressable>
@@ -69,7 +73,24 @@ const WatchScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: 'black' },
+    container: {
+        flex: 1,
+        backgroundColor: 'black',
+        alignItems: 'center', // Center the feed container horizontally
+        justifyContent: 'center',
+    },
+    desktopFeedContainer: {
+        width: 450, // A good width for a vertical feed on desktop
+        height: '100%',
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderColor: theme.colors.outline,
+        overflow: 'hidden', // Ensures the FlatList stays within the bounds
+    },
+    mobileFeedContainer: {
+        width: '100%',
+        height: '100%',
+    },
     fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'black' },
     backButton: { position: 'absolute', top: theme.spacing.l, left: theme.spacing.l, zIndex: 30, padding: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: 'rgba(0,0,0,0.4)' },
 });
