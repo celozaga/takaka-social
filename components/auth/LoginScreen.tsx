@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { AtSign, KeyRound, LogIn, ShieldCheck } from 'lucide-react';
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Linking, Platform } from 'react-native';
+import { AtSign, KeyRound, LogIn, ShieldCheck, Globe, Pencil, Check, X } from 'lucide-react';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Linking, Platform, Modal } from 'react-native';
 import { theme } from '@/lib/theme';
+import { PDS_URL } from '@/lib/config';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -20,6 +21,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const { login } = useAtp();
   const { t } = useTranslation();
+  
+  // State for hosting provider
+  const [serviceUrl, setServiceUrl] = useState(PDS_URL);
+  const [isProviderModalVisible, setProviderModalVisible] = useState(false);
+  const [providerSelection, setProviderSelection] = useState<'bluesky' | 'custom'>('bluesky');
+  const [customUrlInput, setCustomUrlInput] = useState('');
+
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -28,17 +36,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
       await login({
         identifier,
         appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: appPassword,
-        ...(loginStep === 'token' && { token }),
+        token: loginStep === 'token' ? token : undefined,
+        serviceUrl: serviceUrl
       });
       onSuccess();
     } catch (err: any) {
-      // Robustly check for a 2FA/AuthFactorRequired error.
-      // The presence of the `factors` array is a strong indicator.
       if (loginStep === 'credentials' && (err.error === 'AuthFactorRequired' || Array.isArray(err.factors))) {
         const emailFactor = Array.isArray(err.factors) 
           ? err.factors.find((f: any) => f.type === 'email' && f.hint)
           : null;
-          
         if (emailFactor) {
           setLoginStep('token');
           setEmailHint(emailFactor.hint);
@@ -60,6 +66,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
     setLoginStep('credentials');
     setError(null);
     setToken('');
+  };
+
+  const handleProviderModalDone = () => {
+    if (providerSelection === 'bluesky') {
+        setServiceUrl(PDS_URL);
+    } else {
+        let finalUrl = customUrlInput.trim();
+        if (!finalUrl.startsWith('https://') && !finalUrl.startsWith('http://')) {
+            finalUrl = `https://${finalUrl}`;
+        }
+        setServiceUrl(finalUrl);
+    }
+    setProviderModalVisible(false);
   };
 
   if (loginStep === 'token') {
@@ -109,65 +128,130 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.textCenter}>
-        <Text style={styles.title}>{t('signIn.title')}</Text>
-        <Text style={styles.description}>{t('signIn.description')}</Text>
-      </View>
-      <View style={styles.formContainer}>
-        <View style={styles.inputContainer}>
-          <AtSign style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
-          <TextInput
-            value={identifier}
-            onChangeText={setIdentifier}
-            placeholder={t('signIn.handlePlaceholder')}
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-            style={styles.input}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+    <>
+      <View style={styles.container}>
+        <View style={styles.textCenter}>
+          <Text style={styles.title}>{t('signIn.title')}</Text>
+          <Text style={styles.description}>{t('signIn.description')}</Text>
         </View>
-        <View style={styles.inputContainer}>
-          <KeyRound style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
-          <TextInput
-            value={appPassword}
-            onChangeText={setAppPassword}
-            placeholder={t('signIn.appPasswordPlaceholder')}
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-            style={styles.input}
-            secureTextEntry
-          />
-        </View>
-        <Text style={styles.noticeText}>
-            {/* @ts-ignore Trans component is causing a type error in this environment */}
-            <Trans
-                i18nKey="signIn.appPasswordNotice"
-                components={{
-                    1: <Text style={styles.link} onPress={openAppPasswordLink} />,
-                    strong: <Text style={{fontWeight: 'bold'}}/>
-                }}
+        <View style={styles.formContainer}>
+          <View>
+            <Text style={styles.label}>{t('signIn.hostingProvider')}</Text>
+            <Pressable style={styles.inputContainer} onPress={() => setProviderModalVisible(true)}>
+                <Globe style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
+                <Text style={[styles.input, styles.providerInput]} numberOfLines={1}>
+                    {serviceUrl === PDS_URL ? 'Bluesky Social' : serviceUrl}
+                </Text>
+                <Pencil style={styles.providerEditIcon} color={theme.colors.onSurfaceVariant} size={16} />
+            </Pressable>
+          </View>
+          <View>
+            <Text style={styles.label}>{t('signIn.account')}</Text>
+            <View style={styles.inputContainer}>
+                <AtSign style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
+                <TextInput
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                    placeholder={t('signIn.handlePlaceholder')}
+                    placeholderTextColor={theme.colors.onSurfaceVariant}
+                    style={styles.input}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                />
+            </View>
+          </View>
+          <View style={styles.inputContainer}>
+            <KeyRound style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
+            <TextInput
+              value={appPassword}
+              onChangeText={setAppPassword}
+              placeholder={t('signIn.appPasswordPlaceholder')}
+              placeholderTextColor={theme.colors.onSurfaceVariant}
+              style={styles.input}
+              secureTextEntry
             />
-        </Text>
-        {error && <Text style={styles.errorText}>{error}</Text>}
-        <Pressable
-          onPress={handleLogin}
-          disabled={isLoading || !identifier.trim() || !appPassword.trim()}
-          style={({ pressed }) => [styles.button, (isLoading || pressed || !identifier.trim() || !appPassword.trim()) && styles.buttonDisabled]}
-        >
-          {isLoading ? (
-            <>
-              <ActivityIndicator size="small" color={theme.colors.onPrimary} />
-              <Text style={styles.buttonText}>{t('signIn.buttonLoading')}</Text>
-            </>
-          ) : (
-            <>
-              <LogIn color={theme.colors.onPrimary} size={20} />
-              <Text style={styles.buttonText}>{t('signIn.button')}</Text>
-            </>
-          )}
-        </Pressable>
+          </View>
+          <Text style={styles.noticeText}>
+              <Trans
+                  i18nKey="signIn.appPasswordNotice"
+                  components={{
+                      1: <Text style={styles.link} onPress={openAppPasswordLink} />,
+                      strong: <Text style={{fontWeight: 'bold'}}/>
+                  }}
+              />
+          </Text>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          <Pressable
+            onPress={handleLogin}
+            disabled={isLoading || !identifier.trim() || !appPassword.trim()}
+            style={({ pressed }) => [styles.button, (isLoading || pressed || !identifier.trim() || !appPassword.trim()) && styles.buttonDisabled]}
+          >
+            {isLoading ? (
+              <>
+                <ActivityIndicator size="small" color={theme.colors.onPrimary} />
+                <Text style={styles.buttonText}>{t('signIn.buttonLoading')}</Text>
+              </>
+            ) : (
+              <>
+                <LogIn color={theme.colors.onPrimary} size={20} />
+                <Text style={styles.buttonText}>{t('signIn.button')}</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
       </View>
-    </View>
+      <Modal visible={isProviderModalVisible} transparent animationType="fade" onRequestClose={() => setProviderModalVisible(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setProviderModalVisible(false)}>
+            <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
+                <Text style={styles.modalTitle}>{t('signIn.chooseProviderTitle')}</Text>
+                <View style={styles.modalTabs}>
+                    <Pressable style={[styles.modalTab, providerSelection === 'bluesky' && styles.modalTabActive]} onPress={() => setProviderSelection('bluesky')}>
+                        <Text style={[styles.modalTabText, providerSelection === 'bluesky' && styles.modalTabTextActive]}>{t('signIn.providerBluesky')}</Text>
+                    </Pressable>
+                     <Pressable style={[styles.modalTab, providerSelection === 'custom' && styles.modalTabActive]} onPress={() => setProviderSelection('custom')}>
+                        <Text style={[styles.modalTabText, providerSelection === 'custom' && styles.modalTabTextActive]}>{t('signIn.providerCustom')}</Text>
+                    </Pressable>
+                </View>
+                {providerSelection === 'custom' && (
+                    <View style={{marginTop: 16}}>
+                        <Text style={styles.label}>{t('signIn.serverAddress')}</Text>
+                         <View style={styles.inputContainer}>
+                            <Globe style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
+                            <TextInput
+                                value={customUrlInput}
+                                onChangeText={setCustomUrlInput}
+                                placeholder={t('signIn.customServerPlaceholder')}
+                                placeholderTextColor={theme.colors.onSurfaceVariant}
+                                style={styles.input}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                autoFocus
+                            />
+                        </View>
+                    </View>
+                )}
+                <Text style={styles.modalDescription}>
+                    <Trans
+                        i18nKey="signIn.providerDescription"
+                        components={{
+                            1: <Text style={styles.link} onPress={() => Linking.openURL('https://bsky.social/about/blog/5-23-2023-a-new-dawn-for-social')} />,
+                        }}
+                    />
+                </Text>
+                <View style={styles.modalActions}>
+                     <Pressable style={[styles.modalButton, styles.modalButtonSecondary]} onPress={() => setProviderModalVisible(false)}>
+                        <X color={theme.colors.onSurface} size={20} />
+                        <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>{t('common.close')}</Text>
+                     </Pressable>
+                     <Pressable style={[styles.modalButton, styles.modalButtonPrimary]} onPress={handleProviderModalDone}>
+                        <Check color={theme.colors.onPrimary} size={20} />
+                        <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>{t('signIn.done')}</Text>
+                     </Pressable>
+                </View>
+            </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 };
 
@@ -195,6 +279,12 @@ const styles = StyleSheet.create({
   formContainer: {
     gap: 24,
   },
+  label: {
+    ...theme.typography.labelMedium,
+    color: theme.colors.onSurfaceVariant,
+    marginBottom: 8,
+    paddingLeft: 4
+  },
   inputContainer: {
     position: 'relative',
     justifyContent: 'center',
@@ -218,6 +308,16 @@ const styles = StyleSheet.create({
         outlineStyle: 'none',
       }
     }) as any,
+  },
+  providerInput: {
+    paddingRight: 40,
+    paddingTop: 12,
+    paddingBottom: 12,
+    lineHeight: 20
+  },
+  providerEditIcon: {
+    position: 'absolute',
+    right: 16,
   },
   noticeText: {
     fontSize: 12,
@@ -253,6 +353,87 @@ const styles = StyleSheet.create({
     color: theme.colors.onPrimary,
     fontWeight: 'bold',
     fontSize: 16
+  },
+  // Modal Styles
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surfaceContainer,
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    ...theme.typography.titleLarge,
+    color: theme.colors.onSurface,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalTabs: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.surfaceContainerHigh,
+    borderRadius: 8,
+    padding: 2,
+  },
+  modalTab: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  modalTabActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  modalTabText: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.onSurfaceVariant,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalTabTextActive: {
+    color: theme.colors.onPrimary,
+  },
+  modalDescription: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.onSurfaceVariant,
+    marginTop: 16,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  modalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: theme.shape.full,
+  },
+  modalButtonSecondary: {
+    backgroundColor: theme.colors.surfaceContainerHigh,
+  },
+  modalButtonPrimary: {
+    backgroundColor: theme.colors.primary,
+  },
+  modalButtonText: {
+    ...theme.typography.labelLarge,
+    fontWeight: 'bold',
+  },
+  modalButtonTextSecondary: {
+    color: theme.colors.onSurface,
+  },
+  modalButtonTextPrimary: {
+    color: theme.colors.onPrimary,
   },
 });
 

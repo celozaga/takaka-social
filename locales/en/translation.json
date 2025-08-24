@@ -51,7 +51,7 @@
   "signIn": {
     "title": "Sign In to Takaka",
     "description": "to interact and post",
-    "handlePlaceholder": "your-handle.bsky.social",
+    "handlePlaceholder": "Username or email address",
     "appPasswordPlaceholder": "App Password",
     "appPasswordNotice": "<strong>Important:</strong> For security, please use an <1>App Password</1>, not your main password.",
     "button": "Sign In",
@@ -63,7 +63,16 @@
     "verifyButton": "Verify",
     "verifyingButton": "Verifying...",
     "backToLogin": "Back to login",
-    "invalidToken": "Invalid token. Please try again."
+    "invalidToken": "Invalid token. Please try again.",
+    "hostingProvider": "Hosting provider",
+    "account": "Account",
+    "chooseProviderTitle": "Choose your account provider",
+    "providerBluesky": "Bluesky",
+    "providerCustom": "Custom",
+    "providerDescription": "Bluesky is an open network where you can choose your hosting provider. If you're a developer, you can host your own server. <1>Learn more.</1>",
+    "serverAddress": "Server address",
+    "customServerPlaceholder": "my-server.com",
+    "done": "Done"
   },
   "loginPrompt": {
     "title": "Experience the full Takaka",
@@ -124,6 +133,7 @@
     "title": "Notifications",
     "loadingError": "Could not load your notifications. Please try again later.",
     "empty": "You don't have any notifications here.",
+    "all": "All",
     "likes": "Likes",
     "mentions": "Mentions",
     "reposts": "Reposts",

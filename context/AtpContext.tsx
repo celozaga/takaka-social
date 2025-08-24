@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
@@ -6,29 +7,33 @@ import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-const ATP_SESSION_KEY = 'atp-session';
+const ATP_CREDENTIALS_KEY = 'atp-credentials';
 
-// Create a cross-platform storage adapter.
-// On native, it uses the secure keychain.
-// On web, it uses localStorage via AsyncStorage, which is persistent and standard.
-const sessionStore = {
-    getItem: () => {
-        return Platform.OS === 'web' ? AsyncStorage.getItem(ATP_SESSION_KEY) : getItemAsync(ATP_SESSION_KEY);
+interface StoredCredentials {
+  session: AtpSessionData;
+  serviceUrl: string;
+}
+
+const credentialsStore = {
+    getItem: async (): Promise<StoredCredentials | null> => {
+        const stored = Platform.OS === 'web' ? await AsyncStorage.getItem(ATP_CREDENTIALS_KEY) : await getItemAsync(ATP_CREDENTIALS_KEY);
+        return stored ? JSON.parse(stored) : null;
     },
-    setItem: (value: string) => {
-        return Platform.OS === 'web' ? AsyncStorage.setItem(ATP_SESSION_KEY, value) : setItemAsync(ATP_SESSION_KEY, value);
+    setItem: (creds: StoredCredentials) => {
+        const value = JSON.stringify(creds);
+        return Platform.OS === 'web' ? AsyncStorage.setItem(ATP_CREDENTIALS_KEY, value) : setItemAsync(ATP_CREDENTIALS_KEY, value);
     },
     deleteItem: () => {
-        return Platform.OS === 'web' ? AsyncStorage.removeItem(ATP_SESSION_KEY) : deleteItemAsync(ATP_SESSION_KEY);
+        return Platform.OS === 'web' ? AsyncStorage.removeItem(ATP_CREDENTIALS_KEY) : deleteItemAsync(ATP_CREDENTIALS_KEY);
     }
 };
-
 
 interface AtpContextType {
   agent: BskyAgent;
   session: AtpSessionData | null;
+  serviceUrl: string;
   isLoadingSession: boolean;
-  login: (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => Promise<any>;
+  login: (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; serviceUrl: string; }) => Promise<any>;
   logout: () => Promise<void>;
   unreadCount: number;
   resetUnreadCount: () => void;
@@ -38,56 +43,66 @@ const AtpContext = createContext<AtpContextType | undefined>(undefined);
 
 export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<AtpSessionData | null>(null);
+  const [serviceUrl, setServiceUrl] = useState(PDS_URL);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPollingPaused, setIsPollingPaused] = useState(false);
   const { toast } = useToast();
 
-  // The agent is now configured with the `persistSession` callback, which is the
-  // recommended way to handle session lifecycle events. This centralizes all
-  // session storage logic and ensures it's synchronized with the agent's state.
   const agent = useMemo(() => new BskyAgent({
-    service: PDS_URL,
+    service: serviceUrl,
     persistSession: (evt: AtpSessionEvent, sess?: AtpSessionData) => {
       switch (evt) {
         case 'create':
         case 'update':
           if (sess) {
-            sessionStore.setItem(JSON.stringify(sess));
-            setSession(sess); // Keep React state in sync with the agent
+            credentialsStore.setItem({ session: sess, serviceUrl });
+            setSession(sess);
           }
           break;
         case 'expired':
         case 'create-failed':
-          sessionStore.deleteItem();
-          setSession(null); // Clear React state
+          credentialsStore.deleteItem();
+          setSession(null);
+          setServiceUrl(PDS_URL); // Reset to default on logout/failure
           break;
       }
     },
-  }), []);
+  }), [serviceUrl]);
   
-  // Effect for one-time session initialization
   useEffect(() => {
     const initialize = async () => {
       setIsLoadingSession(true);
       try {
-        const storedSessionString = await sessionStore.getItem();
-        if (storedSessionString) {
-          const parsedSession = JSON.parse(storedSessionString);
-          await agent.resumeSession(parsedSession);
-          // `resumeSession` triggers the `update` event in `persistSession`,
-          // which automatically calls `setSession` and keeps the state consistent.
+        const storedCreds = await credentialsStore.getItem();
+        if (storedCreds) {
+          // Set service URL first to ensure agent is created correctly
+          setServiceUrl(storedCreds.serviceUrl || PDS_URL);
+          // The agent will be recreated by the useMemo.
+          // We then resume the session with this new agent instance.
+          // A short delay ensures the state update for serviceUrl propagates.
+          setTimeout(() => {
+            agent.resumeSession(storedCreds.session).then(() => {
+                setSession(storedCreds.session);
+            }).catch(e => {
+                console.error("Session resumption failed, clearing credentials.", e);
+                credentialsStore.deleteItem();
+                setSession(null);
+                setServiceUrl(PDS_URL);
+            });
+          }, 0);
         }
       } catch (error) {
-        console.error("Failed to resume session:", error);
-        await sessionStore.deleteItem();
+        console.error("Failed to initialize session:", error);
+        await credentialsStore.deleteItem();
         setSession(null);
+        setServiceUrl(PDS_URL);
       } finally {
         setIsLoadingSession(false);
       }
     };
     initialize();
-  }, [agent]);
+  }, []); // Run only once on mount. Agent dependency removed to avoid re-initialization loop.
 
   const fetchUnreadCount = useCallback(async () => {
     if (!agent.hasSession) return;
@@ -100,7 +115,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [agent]);
 
-  // Effect for polling, which depends on the session status
   useEffect(() => {
     if (!session) {
       setUnreadCount(0);
@@ -112,27 +126,17 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const pollFunction = async () => {
       if (isPollingPaused) return;
-      try {
-        await fetchUnreadCount();
-      } catch (error: any) {
+      try { await fetchUnreadCount(); } catch (error: any) {
         if (error && error.status === 429) {
-          console.warn("Rate limit hit. Pausing polling for 60 seconds.");
           setIsPollingPaused(true);
-          toast({
-              title: "Rate limit reached",
-              description: "Too many requests. Will retry automatically in a minute.",
-              variant: "destructive"
-          });
+          toast({ title: "Rate limit reached", description: "Too many requests. Will retry automatically.", variant: "destructive" });
           if (pauseTimeout) clearTimeout(pauseTimeout);
-          pauseTimeout = setTimeout(() => {
-              setIsPollingPaused(false);
-              console.log("Resuming polling.");
-          }, 60000);
+          pauseTimeout = setTimeout(() => setIsPollingPaused(false), 60000);
         }
       }
     };
 
-    fetchUnreadCount().catch(() => {}); // Initial fetch
+    fetchUnreadCount().catch(() => {});
     pollInterval = setInterval(pollFunction, 30000);
 
     return () => {
@@ -141,27 +145,54 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, [session, fetchUnreadCount, isPollingPaused, toast]);
   
-  const resetUnreadCount = useCallback(() => {
-    setUnreadCount(0);
-  }, []);
+  const resetUnreadCount = useCallback(() => setUnreadCount(0), []);
 
-  const login = useCallback(async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => {
-    // The agent's login method will now automatically trigger the `persistSession`
-    // callback, which handles storing the session and updating React state.
-    const response = await agent.login({ identifier: params.identifier, password: params.appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, authFactorToken: params.token });
-    await fetchUnreadCount();
-    return response;
+  const login = useCallback(async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; serviceUrl: string; }) => {
+    // Create a temporary agent for the login attempt with the chosen service
+    const tempAgent = new BskyAgent({ service: params.serviceUrl });
+    
+    const { data: sessionResponse } = await tempAgent.login({ 
+      identifier: params.identifier, 
+      password: params.appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, 
+      authFactorToken: params.token 
+    });
+
+    // Manually construct AtpSessionData to satisfy the stricter type, ensuring 'active' is set.
+    const newSession: AtpSessionData = {
+      did: sessionResponse.did,
+      handle: sessionResponse.handle,
+      email: sessionResponse.email,
+      emailConfirmed: sessionResponse.emailConfirmed,
+      didDoc: sessionResponse.didDoc,
+      accessJwt: sessionResponse.accessJwt,
+      refreshJwt: sessionResponse.refreshJwt,
+      active: sessionResponse.active ?? true,
+    };
+
+    // If successful, store credentials and update the provider's state
+    await credentialsStore.setItem({ session: newSession, serviceUrl: params.serviceUrl });
+    setServiceUrl(params.serviceUrl);
+    setSession(newSession);
+    
+    // The main agent will be re-created via useMemo due to serviceUrl change.
+    // The new session is set, and the UI will update accordingly.
+    // We can trigger an immediate notification fetch with the new session.
+    // A slight delay allows the new agent to be ready.
+    setTimeout(async () => {
+        if (agent.hasSession) {
+           await fetchUnreadCount();
+        }
+    }, 100);
+
   }, [agent, fetchUnreadCount]);
 
   const logout = useCallback(async () => {
-    // The agent's logout method will automatically trigger the 'expired' event
-    // in `persistSession`, handling the cleanup.
-    await agent.logout();
+    await agent.logout(); // This triggers 'expired' in persistSession
   }, [agent]);
 
   return (
     <AtpContext.Provider value={{ 
-        agent, session, isLoadingSession, login, logout, 
+        agent, session, serviceUrl, isLoadingSession, login, logout, 
         unreadCount, resetUnreadCount
     }}>
       {children}

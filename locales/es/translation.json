@@ -51,7 +51,7 @@
   "signIn": {
     "title": "Inicia sesión en Takaka",
     "description": "para interactuar y publicar",
-    "handlePlaceholder": "tu-handle.bsky.social",
+    "handlePlaceholder": "Nombre de usuario o correo electrónico",
     "appPasswordPlaceholder": "Contraseña de aplicación",
     "appPasswordNotice": "<strong>Importante:</strong> Por seguridad, utiliza una <1>contraseña de aplicación</1>, no tu contraseña principal.",
     "button": "Iniciar sesión",
@@ -63,7 +63,16 @@
     "verifyButton": "Verificar",
     "verifyingButton": "Verificando...",
     "backToLogin": "Volver al inicio de sesión",
-    "invalidToken": "Token inválido. Por favor, inténtalo de nuevo."
+    "invalidToken": "Token inválido. Por favor, inténtalo de nuevo.",
+    "hostingProvider": "Proveedor de alojamiento",
+    "account": "Cuenta",
+    "chooseProviderTitle": "Elige tu proveedor de cuenta",
+    "providerBluesky": "Bluesky",
+    "providerCustom": "Personalizado",
+    "providerDescription": "Bluesky es una red abierta donde puedes elegir tu proveedor de alojamiento. Si eres desarrollador, puedes alojar tu propio servidor. <1>Saber más.</1>",
+    "serverAddress": "Dirección del servidor",
+    "customServerPlaceholder": "mi-servidor.com",
+    "done": "Hecho"
   },
   "loginPrompt": {
     "title": "Experimenta Takaka al completo",
@@ -124,6 +133,7 @@
     "title": "Notificaciones",
     "loadingError": "No se pudieron cargar tus notificaciones. Por favor, inténtalo de nuevo más tarde.",
     "empty": "No tienes ninguna notificación aquí.",
+    "all": "Todo",
     "likes": "Me gusta",
     "mentions": "Menciones",
     "reposts": "Reposts",
