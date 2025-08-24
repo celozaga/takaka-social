@@ -105,7 +105,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
           <Image 
             source={{ uri: embedView.thumbnail }} 
             style={[StyleSheet.absoluteFill, styles.thumbnail]}
-            resizeMode="cover" 
+            resizeMode="contain" 
           />
         )}
 
@@ -114,7 +114,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused }) 
               ref={videoRef}
               source={{ uri: videoUrl }}
               style={styles.video}
-              resizeMode={ResizeMode.COVER}
+              resizeMode={ResizeMode.CONTAIN}
               isLooping
               shouldPlay={!isEffectivelyPaused}
               isMuted={isMuted}
