@@ -27,26 +27,11 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isPollingPaused, setIsPollingPaused] = useState(false);
   const { toast } = useToast();
 
+  // The agent is now created without the `persistSession` callback.
+  // Session management will be handled manually in the `login`, `logout`,
+  // and `initialize` functions for better control with async storage.
   const agent = useMemo(() => new BskyAgent({
     service: PDS_URL,
-    persistSession: async (evt: AtpSessionEvent, sess?: AtpSessionData) => {
-      switch (evt) {
-        case 'create':
-        case 'update':
-          if (sess) {
-            await SecureStore.setItemAsync(ATP_SESSION_KEY, JSON.stringify(sess));
-            setSession(sess);
-          } else {
-            await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
-            setSession(null);
-          }
-          break;
-        case 'create-failed':
-            await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
-            setSession(null);
-            break;
-      }
-    },
   }), []);
   
   // Effect for one-time session initialization
@@ -128,20 +113,28 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUnreadCount(0);
   }, []);
 
-  const login = async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => {
+  const login = useCallback(async (params: { identifier: string; appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE: string; token?: string; }) => {
     const { identifier, appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, token } = params;
+    
+    // 1. Call agent.login() which updates the agent's internal session state.
     const response = await agent.login({ identifier, password: appPassword_DO_NOT_USE_REGULAR_PASSWORD_HERE, authFactorToken: token });
-    if(agent.session) {
+    
+    // 2. Manually persist the session to SecureStore and update React state.
+    if (agent.session) {
+        await SecureStore.setItemAsync(ATP_SESSION_KEY, JSON.stringify(agent.session));
+        setSession(agent.session);
         await fetchUnreadCount();
     }
     return response;
-  };
+  }, [agent, fetchUnreadCount]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
+    // 1. Clear the agent's internal session.
     await agent.logout();
+    // 2. Manually clear the persisted session and React state.
     await SecureStore.deleteItemAsync(ATP_SESSION_KEY);
     setSession(null);
-  };
+  }, [agent]);
 
   return (
     <AtpContext.Provider value={{ 
