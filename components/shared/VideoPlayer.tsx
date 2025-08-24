@@ -1,7 +1,6 @@
-import React from 'react';
-import { VideoView, useVideoPlayer, StatusChangeEvent } from 'expo-video';
+import React, { useState, useEffect } from 'react';
+import { VideoView, useVideoPlayer, VideoStatusUpdateEvent } from 'expo-video';
 import { StyleSheet, StyleProp, ViewStyle, View, Text } from 'react-native';
-import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 
 interface SimpleVideoPlayerProps {
   hlsUrl: string | null;
@@ -14,7 +13,7 @@ interface SimpleVideoPlayerProps {
     muted?: boolean;
   };
   style?: StyleProp<ViewStyle>;
-  onPlaybackStatusUpdate?: (status: StatusChangeEvent) => void;
+  onPlaybackStatusUpdate?: (status: VideoStatusUpdateEvent) => void;
 }
 
 const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({ 
@@ -24,7 +23,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
   style, 
   onPlaybackStatusUpdate 
 }) => {
-  const videoRef = React.useRef<VideoView>(null);
+  const [error, setError] = useState<string | null>(null);
   const player = useVideoPlayer(null, (p) => {
     p.loop = videoOptions.loop ?? false;
     p.muted = videoOptions.muted ?? false;
@@ -33,23 +32,41 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     }
   });
 
-  const { error } = useHlsPlayer(player, hlsUrl, fallbackUrl, videoRef);
+  useEffect(() => {
+    const sourceToPlay = hlsUrl || fallbackUrl;
+    if (sourceToPlay) {
+      player.replace(sourceToPlay);
+    }
+  }, [hlsUrl, fallbackUrl, player]);
 
-  React.useEffect(() => {
-    if (!onPlaybackStatusUpdate) return;
+  useEffect(() => {
     const subscription = player.addListener('statusChange', (event) => {
-        onPlaybackStatusUpdate(event);
+      onPlaybackStatusUpdate?.(event);
+
+      if (typeof event.status === 'object' && event.status.error) {
+        console.error('VideoPlayer error:', event.status.error);
+        const currentSourceUri = player.currentSource?.uri;
+
+        if (currentSourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+          console.log('HLS stream failed, attempting fallback to MP4.');
+          player.replace(fallbackUrl);
+          setError(null); // Clear previous error
+        } else {
+          setError("Could not play video.");
+        }
+      } else {
+        setError(null);
+      }
     });
     return () => subscription.remove();
-  }, [player, onPlaybackStatusUpdate]);
-
+  }, [player, onPlaybackStatusUpdate, hlsUrl, fallbackUrl]);
+  
   return (
     <View style={[styles.video, style]}>
       <VideoView
-        ref={videoRef}
         player={player}
         style={StyleSheet.absoluteFill}
-        poster={videoOptions.poster}
+        posterSource={videoOptions.poster ? { uri: videoOptions.poster } : null}
         contentFit="contain"
         allowsFullscreen
         nativeControls={videoOptions.controls}

@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { VideoView, useVideoPlayer, FullscreenState, StatusChangeEvent, TimeUpdateEvent } from 'expo-video';
+import { VideoView, useVideoPlayer, VideoFullscreenUpdateState, VideoStatusUpdateEvent, VideoTimeUpdateEvent, VideoFullscreenUpdateEvent } from 'expo-video';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
 import { AppBskyFeedDefs, AppBskyEmbedVideo } from '@atproto/api';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
-import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 
 interface AdvancedVideoPlayerProps {
   post: AppBskyFeedDefs.PostView;
@@ -19,8 +18,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, post.author.did);
 
   const containerRef = useRef<View>(null);
-  const videoRef = useRef<VideoView>(null);
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [playerError, setPlayerError] = useState<string | null>(null);
 
   const player = useVideoPlayer(null, p => {
     p.muted = false;
@@ -28,7 +27,13 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
     p.play();
   });
 
-  const { error: playerError } = useHlsPlayer(player, hlsUrl, fallbackUrl, videoRef);
+  useEffect(() => {
+    const sourceToPlay = hlsUrl || fallbackUrl;
+    if (sourceToPlay) {
+        player.replace(sourceToPlay);
+    }
+  }, [hlsUrl, fallbackUrl, player]);
+
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -39,26 +44,42 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
 
 
   useEffect(() => {
-      const statusSubscription = player.addListener('statusChange', (event: StatusChangeEvent) => {
+      const statusSubscription = player.addListener('statusChange', (event: VideoStatusUpdateEvent) => {
           const status = event.status;
           if (status) {
             setIsPlaying(status.isPlaying);
             setIsMuted(status.isMuted);
             setIsLoading(status.isLoading);
-            if (Platform.OS !== 'web') {
-              setIsFullscreen(status.fullscreenState === FullscreenState.ENTERED);
+          }
+          if (status.error) {
+            console.error('VideoPlayer error:', status.error);
+            const currentSourceUri = player.currentSource?.uri;
+            if (currentSourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+                console.log('HLS stream failed, attempting fallback to MP4.');
+                player.replace(fallbackUrl);
+                setPlayerError(null);
+            } else {
+                setPlayerError("Could not play video.");
             }
+          } else {
+            setPlayerError(null);
           }
       });
-      const timeSubscription = player.addListener('timeUpdate', (event: TimeUpdateEvent) => {
+      const timeSubscription = player.addListener('timeUpdate', (event: VideoTimeUpdateEvent) => {
           setPosition(event.position);
           setDuration(event.duration);
+      });
+      const fullscreenSubscription = player.addListener('fullscreenUpdate', (event: VideoFullscreenUpdateEvent) => {
+        if (Platform.OS !== 'web') {
+          setIsFullscreen(event.fullscreenState === VideoFullscreenUpdateState.ENTERED);
+        }
       });
       return () => {
           statusSubscription.remove();
           timeSubscription.remove();
+          fullscreenSubscription.remove();
       };
-  }, [player]);
+  }, [player, hlsUrl, fallbackUrl]);
 
   const [isControlsVisible, setControlsVisible] = useState(true);
   
@@ -107,9 +128,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
       }
     } else {
         if (isFullscreen) {
-            await player.dismissFullscreenPlayer();
+            await player.exitFullscreen();
         } else {
-            await player.presentFullscreenPlayer();
+            await player.enterFullscreen();
         }
     }
   }, [player, isFullscreen]);
@@ -137,10 +158,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   return (
     <Pressable ref={containerRef} style={[styles.container, style]} onPress={showControls}>
       <VideoView
-        ref={videoRef}
         player={player}
         style={StyleSheet.absoluteFill}
-        poster={embed.thumbnail}
+        posterSource={embed.thumbnail ? { uri: embed.thumbnail } : null}
         contentFit='contain'
         allowsFullscreen
       />

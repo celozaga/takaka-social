@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { VideoView, useVideoPlayer, TimeUpdateEvent, StatusChangeEvent } from 'expo-video';
+import { VideoView, useVideoPlayer, VideoStatusUpdateEvent, VideoTimeUpdateEvent } from 'expo-video';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
 import { Volume2, VolumeX, Play } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
-import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 import { useModeration } from '@/context/ModerationContext';
 import { moderatePost, ModerationDecision } from '@/lib/moderation';
 import ContentWarning from '@/components/shared/ContentWarning';
@@ -24,7 +23,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
   const [isContentVisible, setIsContentVisible] = useState(false);
   const { post } = postView;
   const moderation = useModeration();
-  const videoRef = useRef<VideoView>(null);
+  const [playerError, setPlayerError] = useState<string | null>(null);
   
   useEffect(() => {
     // Reset state for new video
@@ -49,7 +48,12 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
     p.loop = true;
   });
 
-  const { error: playerError } = useHlsPlayer(player, hlsUrl, fallbackUrl, videoRef);
+  useEffect(() => {
+    const sourceToPlay = hlsUrl || fallbackUrl;
+    if (sourceToPlay) {
+        player.replace(sourceToPlay);
+    }
+  }, [player, hlsUrl, fallbackUrl]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [position, setPosition] = useState(0);
@@ -57,8 +61,23 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
 
   useEffect(() => {
     const subscriptions = [
-        player.addListener('statusChange', (event: StatusChangeEvent) => setIsLoading(event.status.isLoading)),
-        player.addListener('timeUpdate', (event: TimeUpdateEvent) => {
+        player.addListener('statusChange', (event) => {
+          setIsLoading(event.status.isLoading)
+          if (event.status.error) {
+              console.error('VideoPlayer error:', event.status.error);
+              const currentSourceUri = player.currentSource?.uri;
+              if (currentSourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+                  console.log('HLS stream failed, attempting fallback to MP4.');
+                  player.replace(fallbackUrl);
+                  setPlayerError(null);
+              } else {
+                  setPlayerError("Could not play video.");
+              }
+          } else {
+              setPlayerError(null);
+          }
+        }),
+        player.addListener('timeUpdate', (event) => {
             setPosition(event.position);
             setDuration(event.duration);
         }),
@@ -66,7 +85,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
     return () => {
         subscriptions.forEach(sub => sub.remove());
     };
-  }, [player]);
+  }, [player, hlsUrl, fallbackUrl]);
 
 
   const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
@@ -97,10 +116,9 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
   const renderPlayerContent = () => (
       <>
         <VideoView
-          ref={videoRef}
           player={player}
           style={styles.video}
-          poster={embedView?.thumbnail}
+          posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : null}
           contentFit={contentFit}
           allowsFullscreen
         />
