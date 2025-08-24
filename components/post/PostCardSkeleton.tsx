@@ -37,13 +37,13 @@ const styles = StyleSheet.create({
   },
   contentPlaceholder: {
     padding: theme.spacing.m,
-    gap: theme.spacing.s,
   },
   textLineLg: {
     height: 16,
     width: '83.3333%', // w-5/6
     backgroundColor: theme.colors.surfaceContainerHigh,
     borderRadius: theme.shape.small,
+    marginBottom: theme.spacing.s,
   },
   footer: {
     flexDirection: 'row',
