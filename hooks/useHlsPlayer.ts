@@ -11,7 +11,6 @@ export const useHlsPlayer = (
     const [currentSource, setCurrentSource] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const hlsInstanceRef = useRef<Hls | null>(null);
-    const hlsAttemptFailed = useRef(false);
 
     const triggerFallback = useCallback(() => {
         if (hlsInstanceRef.current) {
@@ -21,7 +20,6 @@ export const useHlsPlayer = (
 
         if (fallbackUrl && currentSource !== fallbackUrl) {
             console.log("HLS playback failed, attempting fallback to MP4.");
-            hlsAttemptFailed.current = true;
             setCurrentSource(fallbackUrl);
             setError(null);
         } else {
@@ -36,7 +34,6 @@ export const useHlsPlayer = (
             hlsInstanceRef.current.destroy();
             hlsInstanceRef.current = null;
         }
-        hlsAttemptFailed.current = false;
         setError(null);
 
         // Native or unsupported browsers get the URL directly
@@ -55,34 +52,49 @@ export const useHlsPlayer = (
         setCurrentSource(null);
 
         // Function to attempt attaching HLS.js
-        const attemptAttachHls = (attempt = 1) => {
+        const attachHlsWithRetry = (attempt = 1) => {
+             if (!videoRef.current) { // Check if the component is even mounted
+                if (attempt < 10) {
+                    setTimeout(() => attachHlsWithRetry(attempt + 1), 50 * attempt);
+                } else {
+                    console.warn("Video component ref not available. Falling back.");
+                    triggerFallback();
+                }
+                return;
+            }
+            
             const videoNode = (videoRef.current as any)?._video;
 
             if (videoNode) {
                 console.log("Attaching HLS.js to video element.");
+                if (hlsInstanceRef.current) hlsInstanceRef.current.destroy();
+                
                 const hls = new Hls();
                 hlsInstanceRef.current = hls;
-                hls.loadSource(hlsUrl);
-                hls.attachMedia(videoNode);
-
+                
                 hls.on(Hls.Events.ERROR, (_event, data) => {
                     console.error('HLS.js error:', data.details);
                     if (data.fatal) {
                         triggerFallback();
                     }
                 });
-            } else if (attempt < 5) {
+
+                hls.loadSource(hlsUrl);
+                hls.attachMedia(videoNode);
+            } else if (attempt < 10) {
                 // If the video node isn't ready, wait and retry.
-                setTimeout(() => attemptAttachHls(attempt + 1), 100 * attempt);
+                setTimeout(() => attachHlsWithRetry(attempt + 1), 50 * attempt);
             } else {
                 console.warn("Could not find video node after several attempts. Falling back.");
                 triggerFallback();
             }
         };
         
-        attemptAttachHls();
+        // Use a timeout to ensure the component has had a chance to render the video element
+        const timeoutId = setTimeout(attachHlsWithRetry, 0);
 
         return () => {
+            clearTimeout(timeoutId);
             if (hlsInstanceRef.current) {
                 hlsInstanceRef.current.destroy();
                 hlsInstanceRef.current = null;
@@ -91,9 +103,9 @@ export const useHlsPlayer = (
     }, [hlsUrl, fallbackUrl, videoRef, triggerFallback]);
 
     const handleError = useCallback((err: any) => {
-        // This will be called if the <Video> component fails, which should only happen
-        // with the fallback URL or in a browser that doesn't use our HLS.js path.
-        console.error("Error in <Video> component. Triggering fallback.", err);
+        // This handler is for errors from the <Video> component itself.
+        // It's most likely to happen when we're trying to play the fallback URL.
+        console.error("Error in <Video> component (likely during fallback). Triggering fallback.", err);
         triggerFallback();
     }, [triggerFallback]);
 
