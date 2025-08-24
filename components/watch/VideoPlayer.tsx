@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Link } from 'expo-router';
-import { Video, ResizeMode, AVPlaybackStatusSuccess } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
@@ -93,7 +93,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
         {currentSource && (
           <Video
             ref={videoRef}
-            style={StyleSheet.absoluteFill}
+            style={styles.videoPlayer}
             source={{ uri: currentSource }}
             posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : undefined}
             usePoster
@@ -169,6 +169,10 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
 
 const styles = StyleSheet.create({
   container: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', overflow: 'hidden' },
+  videoPlayer: {
+    width: '100%',
+    height: '100%',
+  },
   backgroundImage: { ...StyleSheet.absoluteFillObject, zIndex: 0, ...(Platform.OS === 'web' && { filter: 'blur(25px) brightness(0.8)', transform: [{ scale: '1.1' }] } as any) },
   backgroundOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.3)', zIndex: 1 },
   loader: { position: 'absolute', zIndex: 4 },
