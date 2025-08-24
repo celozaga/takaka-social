@@ -68,15 +68,31 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
     setToken('');
   };
 
+  const openProviderModal = () => {
+    if (serviceUrl === PDS_URL) {
+        setProviderSelection('bluesky');
+        setCustomUrlInput('');
+    } else {
+        setProviderSelection('custom');
+        setCustomUrlInput(serviceUrl.replace(/^https?:\/\//, ''));
+    }
+    setProviderModalVisible(true);
+  };
+
   const handleProviderModalDone = () => {
     if (providerSelection === 'bluesky') {
         setServiceUrl(PDS_URL);
     } else {
         let finalUrl = customUrlInput.trim();
-        if (!finalUrl.startsWith('https://') && !finalUrl.startsWith('http://')) {
-            finalUrl = `https://${finalUrl}`;
+        if (!finalUrl) {
+            // If custom input is cleared, revert to default Bluesky Social
+            setServiceUrl(PDS_URL);
+        } else {
+            if (!finalUrl.startsWith('https://') && !finalUrl.startsWith('http://')) {
+                finalUrl = `https://${finalUrl}`;
+            }
+            setServiceUrl(finalUrl);
         }
-        setServiceUrl(finalUrl);
     }
     setProviderModalVisible(false);
   };
@@ -137,7 +153,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
         <View style={styles.formContainer}>
           <View>
             <Text style={styles.label}>{t('signIn.hostingProvider')}</Text>
-            <Pressable style={styles.inputContainer} onPress={() => setProviderModalVisible(true)}>
+            <Pressable style={styles.inputContainer} onPress={openProviderModal}>
                 <Globe style={styles.icon} color={theme.colors.onSurfaceVariant} size={20} />
                 <Text style={[styles.input, styles.providerInput]} numberOfLines={1}>
                     {serviceUrl === PDS_URL ? 'Bluesky Social' : serviceUrl}

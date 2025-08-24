@@ -163,7 +163,6 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       handle: sessionResponse.handle,
       email: sessionResponse.email,
       emailConfirmed: sessionResponse.emailConfirmed,
-      didDoc: sessionResponse.didDoc,
       accessJwt: sessionResponse.accessJwt,
       refreshJwt: sessionResponse.refreshJwt,
       active: sessionResponse.active ?? true,
