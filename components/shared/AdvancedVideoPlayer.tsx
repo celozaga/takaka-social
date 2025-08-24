@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { VideoView, useVideoPlayer, FullscreenState, StatusChangeEvent, TimeUpdateEvent } from 'expo-video';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
@@ -19,6 +19,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, post.author.did);
 
   const containerRef = useRef<View>(null);
+  const videoRef = useRef<VideoView>(null);
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const player = useVideoPlayer(null, p => {
@@ -27,33 +28,40 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
     p.play();
   });
 
-  const { error: playerError } = useHlsPlayer(player, hlsUrl, fallbackUrl);
+  const { error: playerError } = useHlsPlayer(player, hlsUrl, fallbackUrl, videoRef);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
 
   useEffect(() => {
-      const subscriptions = [
-          player.addListener('playingChange', (event) => setIsPlaying(event.isPlaying)),
-          player.addListener('mutedChange', (event) => setIsMuted(event.isMuted)),
-          player.addListener('loadingChange', (event) => setIsLoading(event.isLoading)),
-          player.addListener('timeUpdate', (event) => {
-              setPosition(event.position);
-              setDuration(event.duration);
-          }),
-      ];
+      const statusSubscription = player.addListener('statusChange', (event: StatusChangeEvent) => {
+          const status = event.status;
+          if (status) {
+            setIsPlaying(status.isPlaying);
+            setIsMuted(status.isMuted);
+            setIsLoading(status.isLoading);
+            if (Platform.OS !== 'web') {
+              setIsFullscreen(status.fullscreenState === FullscreenState.ENTERED);
+            }
+          }
+      });
+      const timeSubscription = player.addListener('timeUpdate', (event: TimeUpdateEvent) => {
+          setPosition(event.position);
+          setDuration(event.duration);
+      });
       return () => {
-          subscriptions.forEach(sub => sub.remove());
+          statusSubscription.remove();
+          timeSubscription.remove();
       };
   }, [player]);
 
-
   const [isControlsVisible, setControlsVisible] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
+  
   const hideControls = useCallback(() => {
     if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
     controlsTimeout.current = setTimeout(() => {
@@ -98,24 +106,21 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
         }
       }
     } else {
-        if (player.fullscreen) {
-            await player.exitFullscreen();
+        if (isFullscreen) {
+            await player.dismissFullscreenPlayer();
         } else {
-            await player.enterFullscreen();
+            await player.presentFullscreenPlayer();
         }
     }
-  }, [player]);
+  }, [player, isFullscreen]);
   
   useEffect(() => {
     const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     if (Platform.OS === 'web') {
       document.addEventListener('fullscreenchange', onFullscreenChange);
       return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
-    } else {
-        const sub = player.addListener('fullscreenChange', (e) => setIsFullscreen(e.fullscreen));
-        return () => sub.remove();
     }
-  }, [player]);
+  }, []);
 
   const progress = duration ? position / duration : 0;
   const showSpinner = isLoadingUrl || isLoading;
@@ -132,6 +137,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   return (
     <Pressable ref={containerRef} style={[styles.container, style]} onPress={showControls}>
       <VideoView
+        ref={videoRef}
         player={player}
         style={StyleSheet.absoluteFill}
         poster={embed.thumbnail}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { VideoView, useVideoPlayer, TimeUpdateEvent, StatusChangeEvent } from 'expo-video';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
 import { Volume2, VolumeX, Play } from 'lucide-react';
@@ -24,6 +24,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
   const [isContentVisible, setIsContentVisible] = useState(false);
   const { post } = postView;
   const moderation = useModeration();
+  const videoRef = useRef<VideoView>(null);
   
   useEffect(() => {
     // Reset state for new video
@@ -48,7 +49,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
     p.loop = true;
   });
 
-  const { error: playerError } = useHlsPlayer(player, hlsUrl, fallbackUrl);
+  const { error: playerError } = useHlsPlayer(player, hlsUrl, fallbackUrl, videoRef);
 
   const [isLoading, setIsLoading] = useState(false);
   const [position, setPosition] = useState(0);
@@ -56,8 +57,8 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
 
   useEffect(() => {
     const subscriptions = [
-        player.addListener('loadingChange', (event) => setIsLoading(event.isLoading)),
-        player.addListener('timeUpdate', (event) => {
+        player.addListener('statusChange', (event: StatusChangeEvent) => setIsLoading(event.status.isLoading)),
+        player.addListener('timeUpdate', (event: TimeUpdateEvent) => {
             setPosition(event.position);
             setDuration(event.duration);
         }),
@@ -96,6 +97,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
   const renderPlayerContent = () => (
       <>
         <VideoView
+          ref={videoRef}
           player={player}
           style={styles.video}
           poster={embedView?.thumbnail}

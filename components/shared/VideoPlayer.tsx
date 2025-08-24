@@ -1,5 +1,5 @@
 import React from 'react';
-import { VideoView, useVideoPlayer, VideoPlayerStatus } from 'expo-video';
+import { VideoView, useVideoPlayer, StatusChangeEvent } from 'expo-video';
 import { StyleSheet, StyleProp, ViewStyle, View, Text } from 'react-native';
 import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 
@@ -14,7 +14,7 @@ interface SimpleVideoPlayerProps {
     muted?: boolean;
   };
   style?: StyleProp<ViewStyle>;
-  onPlaybackStatusUpdate?: (status: VideoPlayerStatus) => void;
+  onPlaybackStatusUpdate?: (status: StatusChangeEvent) => void;
 }
 
 const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({ 
@@ -24,6 +24,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
   style, 
   onPlaybackStatusUpdate 
 }) => {
+  const videoRef = React.useRef<VideoView>(null);
   const player = useVideoPlayer(null, (p) => {
     p.loop = videoOptions.loop ?? false;
     p.muted = videoOptions.muted ?? false;
@@ -32,12 +33,12 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     }
   });
 
-  const { error } = useHlsPlayer(player, hlsUrl, fallbackUrl);
+  const { error } = useHlsPlayer(player, hlsUrl, fallbackUrl, videoRef);
 
   React.useEffect(() => {
     if (!onPlaybackStatusUpdate) return;
-    const subscription = player.addListener('statusChange', (status) => {
-        onPlaybackStatusUpdate(status);
+    const subscription = player.addListener('statusChange', (event) => {
+        onPlaybackStatusUpdate(event);
     });
     return () => subscription.remove();
   }, [player, onPlaybackStatusUpdate]);
@@ -45,6 +46,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
   return (
     <View style={[styles.video, style]}>
       <VideoView
+        ref={videoRef}
         player={player}
         style={StyleSheet.absoluteFill}
         poster={videoOptions.poster}
