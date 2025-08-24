@@ -8,7 +8,7 @@ import FullPostCard from '../post/FullPostCard';
 import PostCardSkeleton from '../post/PostCardSkeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList, FlatListProps } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl, FlatList, FlatListProps, LayoutChangeEvent } from 'react-native';
 import { theme } from '@/lib/theme';
 import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 import ErrorState from './ErrorState';
@@ -64,6 +64,19 @@ const Feed: React.FC<FeedProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setContainerWidth(width);
+  }, []);
+
+  const imageWidth = useMemo(() => {
+    if (layout !== 'grid' || containerWidth === 0) return undefined;
+    // containerWidth - horizontal padding - gap between columns
+    const contentWidth = containerWidth - (theme.spacing.l * 2) - theme.spacing.l;
+    return Math.floor(contentWidth / 2);
+  }, [containerWidth, layout]);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     // A. PRIVATE FEEDS (Bookmarks, Likes)
@@ -337,7 +350,7 @@ const Feed: React.FC<FeedProps> = ({
 
   if (isLoading) {
     return (
-      <View>
+      <View onLayout={onLayout}>
         <>
           {renderHeader()}
           {layout === 'grid' ? (
@@ -359,7 +372,7 @@ const Feed: React.FC<FeedProps> = ({
             contentContainerStyle={{paddingTop: theme.spacing.l}}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
           >
-              <View>
+              <View onLayout={onLayout}>
                 <>
                   {renderHeader()}
                   {renderListEmptyComponent()}
@@ -383,18 +396,18 @@ const Feed: React.FC<FeedProps> = ({
           contentContainerStyle: {paddingTop: theme.spacing.l, paddingBottom: 60}
       };
       return (
-          <FlatList {...flatListProps} />
+          <FlatList onLayout={onLayout} {...flatListProps} />
       )
   }
 
   return (
     <ScrollView onScroll={handleScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
-        <View style={styles.contentContainer}>
+        <View style={styles.contentContainer} onLayout={onLayout}>
             <>
               {renderHeader()}
               <View style={styles.masonryContainer}>
-                  <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
-                  <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} />)}</View>
+                  <View style={styles.column}>{column1Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} imageWidth={imageWidth} />)}</View>
+                  <View style={styles.column}>{column2Items.map(item => <PostCard key={keyExtractor(item)} feedViewPost={item} imageWidth={imageWidth} />)}</View>
               </View>
               {renderFooter()}
             </>

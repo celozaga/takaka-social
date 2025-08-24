@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { List } from 'lucide-react';
-import { View, Image, StyleSheet, StyleProp, ImageStyle } from 'react-native';
+import { View, StyleSheet, StyleProp } from 'react-native';
+import { Image, ImageStyle } from 'expo-image';
 import { theme } from '@/lib/theme';
 
 interface FeedAvatarProps {
@@ -23,10 +24,11 @@ const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, style }) => {
 
   return (
     <Image
-      source={{ uri: src }}
+      source={src}
       accessibilityLabel={alt}
       style={style}
       onError={handleError}
+      transition={300}
     />
   );
 };

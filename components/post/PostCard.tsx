@@ -19,9 +19,10 @@ import { formatCompactNumber } from '@/lib/formatters';
 type PostCardProps = {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
     isClickable?: boolean;
+    imageWidth?: number;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true }) => {
+const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true, imageWidth }) => {
     const { setPostForNav } = useUI();
     const router = useRouter();
     const moderation = useModeration();
@@ -77,6 +78,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
                         src={firstImage.thumb}
                         alt={firstImage.alt || 'Post image'} 
                         style={[styles.image, { aspectRatio: imageAspectRatio }]} 
+                        width={imageWidth}
                     />
                     {(hasMultipleImages || isRepost) && (
                          <View style={styles.mediaBadgeContainer}>
@@ -101,7 +103,12 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
             
             return (
                 <View>
-                    <ResizedImage src={posterUrl || ''} alt="Video poster" style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} />
+                    <ResizedImage 
+                        src={posterUrl || ''} 
+                        alt="Video poster" 
+                        style={[styles.image, styles.videoPoster, {backgroundColor: '#000', aspectRatio: videoAspectRatio}]} 
+                        width={imageWidth}
+                    />
                     <View style={styles.mediaBadgeContainer}>
                         {isRepost && <View style={styles.mediaBadge}><Repeat size={14} color="white" /></View>}
                         <View style={styles.mediaBadge}><PlayCircle size={14} color="white" /></View>
@@ -156,7 +163,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
 };
 
 const styles = StyleSheet.create({
-    image: { width: '100%', resizeMode: 'cover' },
+    image: { width: '100%' },
     videoPoster: { resizeMode: 'contain' },
     mediaBadgeContainer: { position: 'absolute', top: theme.spacing.s, right: theme.spacing.s, flexDirection: 'row', gap: theme.spacing.xs },
     mediaBadge: { backgroundColor: 'rgba(0,0,0,0.7)', padding: theme.spacing.xs, borderRadius: theme.shape.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },

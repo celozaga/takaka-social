@@ -14,7 +14,8 @@ import {
 import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } from 'lucide-react';
 import { formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { View, Text, Image, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 
 interface NotificationItemProps {

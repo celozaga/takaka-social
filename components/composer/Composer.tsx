@@ -4,7 +4,8 @@ import { useAtp } from '../../context/AtpContext';
 import { RichText,AppBskyActorDefs } from '@atproto/api';
 import { ImageUp, Send, X, Video } from 'lucide-react';
 import { useToast } from '../ui/use-toast';
-import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView, Modal, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, ScrollView, Modal, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 

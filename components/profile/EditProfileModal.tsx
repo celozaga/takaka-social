@@ -5,7 +5,8 @@ import { useProfileCache } from '../../context/ProfileCacheContext';
 import { useTranslation } from 'react-i18next';
 import { AppBskyActorDefs } from '@atproto/api';
 import { X, Camera } from 'lucide-react';
-import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 

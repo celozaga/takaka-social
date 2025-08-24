@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } from 'expo-av';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
@@ -105,7 +106,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   if (!currentSource && !isLoadingUrl) {
     return (
         <View style={[styles.container, style]}>
-            <Image source={{ uri: embed.thumbnail }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+            <Image source={{ uri: embed.thumbnail }} style={StyleSheet.absoluteFill} contentFit="contain" />
             <View style={styles.errorOverlay}><Text style={styles.errorText}>{playerError || "Could not play video"}</Text></View>
         </View>
     )

@@ -4,7 +4,8 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { BadgeCheck, Loader2 } from 'lucide-react';
-import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 
 interface ActorSearchResultCardProps {

@@ -11,7 +11,8 @@ import {
     Bell, Users, UserCheck, Clapperboard, ChevronRight, Bookmark, Heart
 } from 'lucide-react';
 import Head from 'expo-router/head';
-import { View, Text, Pressable, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 
 // --- Reusable Icon Components for the new SuperApp Layout ---

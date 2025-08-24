@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { AppBskyFeedDefs } from '@atproto/api';
 import VideoActions from './VideoActions';

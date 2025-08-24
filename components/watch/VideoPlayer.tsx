@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, Image, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
+import { View, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { Video, ResizeMode, AVPlaybackStatusSuccess, VideoFullscreenUpdate } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
@@ -119,7 +120,7 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
     <TouchableWithoutFeedback onPress={toggleInternalPlayPause}>
       <View style={styles.container}>
         {embedView?.thumbnail && (
-          <Image source={{ uri: embedView.thumbnail }} style={styles.backgroundImage} resizeMode="cover" blurRadius={Platform.OS === 'ios' ? 30 : 15} />
+          <Image source={{ uri: embedView.thumbnail }} style={styles.backgroundImage} contentFit="cover" blurRadius={Platform.OS === 'ios' ? 30 : 15} />
         )}
         <View style={styles.backgroundOverlay} />
         
