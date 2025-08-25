@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -15,6 +15,8 @@ interface Props {
 
 const VideoPostOverlay: React.FC<Props> = ({ post }) => {
   const { agent, session } = useAtp();
+  const { width, height } = useWindowDimensions();
+  const isMobile = width < 768;
   const record = post.record as any;
   const isMe = session?.did === post.author.did;
   const profileLink = `/profile/${post.author.handle}`;
@@ -34,7 +36,7 @@ const VideoPostOverlay: React.FC<Props> = ({ post }) => {
 
   return (
     <>
-      <View style={styles.infoOverlay}>
+      <View style={[styles.infoOverlay, isMobile && styles.infoOverlayMobile]}>
         <View style={styles.authorContainer}>
           <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
             <Pressable>
@@ -58,9 +60,9 @@ const VideoPostOverlay: React.FC<Props> = ({ post }) => {
         {record.text && (
           <>
             <Text 
-              style={styles.descriptionText} 
-              numberOfLines={isDescriptionExpanded ? undefined : 2}
-              onTextLayout={e => { if (needsTruncation) setIsTextTruncated(e.nativeEvent.lines.length >= 2); }}
+              style={[styles.descriptionText, isMobile && styles.descriptionTextMobile]} 
+              numberOfLines={isDescriptionExpanded ? undefined : (isMobile ? 3 : 2)}
+              onTextLayout={e => { if (needsTruncation) setIsTextTruncated(e.nativeEvent.lines.length >= (isMobile ? 3 : 2)); }}
             >
               <RichTextRenderer record={record} />
             </Text>
@@ -78,14 +80,47 @@ const VideoPostOverlay: React.FC<Props> = ({ post }) => {
 };
 
 const styles = StyleSheet.create({
-  infoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 80, padding: theme.spacing.l, zIndex: 3, gap: theme.spacing.s },
+  infoOverlay: { 
+    position: 'absolute', 
+    bottom: 80, // Aumentar o bottom para dar espaço aos controles do vídeo
+    left: 0, 
+    right: 80, 
+    padding: theme.spacing.l, 
+    zIndex: 3, 
+    gap: theme.spacing.s,
+    maxHeight: '40%', // Limitar altura máxima para evitar sobreposição
+  },
+  infoOverlayMobile: {
+    bottom: 120, // Aumentar o bottom para dar espaço aos controles do vídeo em dispositivos móveis
+    left: 0, 
+    right: 0, 
+    padding: theme.spacing.m,
+    maxHeight: '35%', // Reduzir altura máxima em dispositivos móveis
+    overflow: 'hidden', // Garantir que o conteúdo não transborde
+  },
   authorContainer: { position: 'relative', width: 48, height: 48, marginBottom: theme.spacing.xs },
   avatar: { width: 48, height: 48, borderRadius: theme.shape.full, borderWidth: 2, borderColor: 'white', backgroundColor: theme.colors.surfaceContainerHigh },
   badgeContainer: { position: 'absolute', bottom: -2, right: -2, backgroundColor: theme.colors.primary, borderRadius: theme.shape.full, padding: 2 },
   followButton: { position: 'absolute', bottom: -8, left: '50%', transform: [{ translateX: -12 }], width: 24, height: 24, borderRadius: theme.shape.full, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
   followButtonActive: { backgroundColor: theme.colors.primary },
   authorText: { ...theme.typography.titleSmall, color: 'white', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-  descriptionText: { ...theme.typography.bodyMedium, color: 'white', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  descriptionText: { 
+    ...theme.typography.bodyMedium, 
+    color: 'white', 
+    textShadowColor: 'rgba(0, 0, 0, 0.75)', 
+    textShadowOffset: { width: 0, height: 1 }, 
+    textShadowRadius: 2,
+    lineHeight: 20, // Adicionar line-height para melhor legibilidade
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', // Adicionar fundo semi-transparente
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.shape.small,
+  },
+  descriptionTextMobile: {
+    fontSize: theme.typography.bodySmall.fontSize,
+    lineHeight: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Fundo mais escuro em dispositivos móveis
+  },
   readMoreText: { ...theme.typography.bodyMedium, fontWeight: 'bold', color: 'white', marginTop: theme.spacing.xs },
 });
 

@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet, RefreshControl } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
-import VideoPlayer from './VideoPlayer';
+import SmartVideoPlayer from './SmartVideoPlayer';
 import { theme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
 
@@ -38,7 +38,7 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
       keyExtractor={(item: AppBskyFeedDefs.FeedViewPost) => item.post.uri}
       renderItem={({ item, index }: { item: AppBskyFeedDefs.FeedViewPost; index: number }) => (
         <View style={{ height }}>
-          <VideoPlayer 
+          <SmartVideoPlayer 
             postView={item} 
             paused={index !== activeIndex}
             isMuted={isFeedMuted}
