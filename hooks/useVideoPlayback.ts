@@ -82,7 +82,11 @@ const testHlsAvailability = async (url: string): Promise<boolean> => {
  * 3. Streaming URL (MP4 with Range support)
  * 4. Fallback URL (basic MP4)
  */
-export const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, authorDid: string | undefined) => {
+export const useVideoPlayback = (
+    embed: AppBskyEmbedVideo.View | undefined,
+    authorDid: string | undefined,
+    enabled: boolean = true,
+) => {
     console.log('🔍 useVideoPlayback: init', { embedCid: embed?.cid, authorDid });
 
     console.log('🔍 useVideoPlayback: atp');
@@ -117,6 +121,13 @@ export const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, auth
     
     console.log('🔍 useVideoPlayback: About to define useEffect');
     useEffect(() => {
+        if (!enabled) {
+            setPlaybackUrls(prev => ({
+                ...prev,
+                isLoading: false,
+            }));
+            return;
+        }
         console.log('🔍 useVideoPlayback: effect', { embed: !!embed, authorDid });
         
         const resolveUrls = async () => {
@@ -418,7 +429,7 @@ export const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, auth
                 isLoading: false 
             }));
         }
-    }, [agent, embed, authorDid]);
+    }, [agent, embed, authorDid, enabled]);
 
     return { ...playbackUrls, error };
 };

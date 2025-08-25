@@ -7,10 +7,14 @@ interface Props {
   paused: boolean;
   isMuted: boolean;
   onMuteToggle: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
+  isActive?: boolean;
 }
 
 const SmartVideoPlayer: React.FC<Props> = (props) => {
   // Use VideoPlayer directly since it's the only player we need
+  // Pass through all props including the new navigation props
   return <VideoPlayer {...props} />;
 };
 

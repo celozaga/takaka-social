@@ -65,23 +65,36 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
 const styles = StyleSheet.create({
     container: { 
         position: 'absolute', 
-        bottom: 20, // Ajustar para dar mais espaço
-        right: theme.spacing.s, 
+        bottom: 80, // Posição mais alta para não conflitar com info do autor
+        right: theme.spacing.m, 
         alignItems: 'center', 
-        gap: 20, 
+        gap: theme.spacing.l, // Mais espaçamento entre botões
         zIndex: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)', // Adicionar fundo semi-transparente
-        padding: theme.spacing.s,
-        borderRadius: theme.shape.medium,
+        paddingVertical: theme.spacing.s,
     },
     containerMobile: {
-        bottom: 10, // Ajustar para dar mais espaço em dispositivos móveis
+        bottom: 70, // Ajustar para mobile
         right: theme.spacing.s,
+        gap: theme.spacing.m,
     },
-    actionButton: { alignItems: 'center', gap: 6, minHeight: 56 },
-    actionText: { ...theme.typography.labelLarge, fontWeight: '600', color: 'white' },
+    actionButton: { 
+        alignItems: 'center', 
+        gap: theme.spacing.xs,
+        minHeight: 48,
+        minWidth: 48,
+        justifyContent: 'center',
+    },
+    actionText: { 
+        ...theme.typography.labelSmall, 
+        fontWeight: '700', 
+        color: 'white',
+        fontSize: 12,
+        textShadowColor: 'rgba(0, 0, 0, 0.8)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 1,
+    },
     actionTextMobile: {
-        fontSize: theme.typography.labelSmall.fontSize,
+        fontSize: 11,
     },
 });
 

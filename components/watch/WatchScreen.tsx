@@ -22,6 +22,7 @@ const WatchScreen: React.FC = () => {
         hasMore,
         refresh,
         loadMore,
+        preloadFromIndex,
     } = useVideoManager();
     const { width } = useWindowDimensions();
     const isDesktop = width >= 768;
@@ -62,6 +63,7 @@ const WatchScreen: React.FC = () => {
                         hasMore={hasMore}
                         onRefresh={refresh}
                         isRefreshing={isRefreshing}
+                        onActiveIndexChange={preloadFromIndex}
                     />
                 </View>
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
