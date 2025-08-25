@@ -141,11 +141,12 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         const finalHeight = Math.min(calculatedHeight, 700);
 
         const SlideshowVideoItem: React.FC<{item: { type: 'video', view: AppBskyEmbedVideo.View }}> = ({item}) => {
-            const {hlsUrl, fallbackUrl} = useVideoPlayback(item.view, authorDid);
+            const {hlsUrl, fallbackUrl, streamingUrl} = useVideoPlayback(item.view, authorDid);
             return (
                 <SimpleVideoPlayer
                     hlsUrl={hlsUrl}
                     fallbackUrl={fallbackUrl}
+                    streamingUrl={streamingUrl}
                     videoOptions={{
                         autoplay: false,
                         controls: true,

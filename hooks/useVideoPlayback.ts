@@ -10,7 +10,11 @@ const HLS_BASE_URL = 'https://video.bsky.app/watch';
  */
 export const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, authorDid: string | undefined) => {
     const { agent } = useAtp();
-    const [playbackUrls, setPlaybackUrls] = useState<{ hlsUrl: string | null; fallbackUrl: string | null }>({ hlsUrl: null, fallbackUrl: null });
+    const [playbackUrls, setPlaybackUrls] = useState<{ 
+        hlsUrl: string | null; 
+        fallbackUrl: string | null;
+        streamingUrl: string | null;
+    }>({ hlsUrl: null, fallbackUrl: null, streamingUrl: null });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -26,15 +30,19 @@ export const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, auth
             }
             
             try {
-                // 1. Construct HLS URL
+                // 1. Construct HLS URL (for future use if service is restored)
                 const hlsUrl = `${HLS_BASE_URL}/${authorDid}/${embed.cid}/playlist.m3u8`;
 
                 // 2. Construct fallback getBlob URL
                 const serviceUrl = agent.service.toString();
                 const baseUrl = serviceUrl.endsWith('/') ? serviceUrl : `${serviceUrl}/`;
                 const fallbackUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${embed.cid}`;
+
+                // 3. Construct streaming URL with Range request support
+                // This URL will support HTTP Range requests for progressive loading
+                const streamingUrl = `${baseUrl}xrpc/com.atproto.sync.getBlob?did=${authorDid}&cid=${embed.cid}&streaming=true`;
                 
-                setPlaybackUrls({ hlsUrl, fallbackUrl });
+                setPlaybackUrls({ hlsUrl, fallbackUrl, streamingUrl });
             } catch (e) {
                 console.error("Failed to construct video URLs", e);
                 setError("Could not determine video URL.");

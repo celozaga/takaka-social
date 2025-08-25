@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-video';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
@@ -15,7 +15,7 @@ interface AdvancedVideoPlayerProps {
 
 const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }) => {
   const embed = post.embed as AppBskyEmbedVideo.View;
-  const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, post.author.did);
+  const { hlsUrl, fallbackUrl, streamingUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, post.author.did);
 
   const containerRef = useRef<View>(null);
   const videoRef = useRef<Video>(null);
@@ -23,7 +23,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   const [playerError, setPlayerError] = useState<string | null>(null);
 
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
-  const [sourceUri, setSourceUri] = useState<string | undefined>(hlsUrl || fallbackUrl || undefined);
+  const [sourceUri, setSourceUri] = useState<string | undefined>(streamingUrl || hlsUrl || fallbackUrl || undefined);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isControlsVisible, setControlsVisible] = useState(true);
 
@@ -34,8 +34,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   const duration = status?.isLoaded ? status.durationMillis : 0;
   
   useEffect(() => {
-    setSourceUri(hlsUrl || fallbackUrl || undefined);
-  }, [hlsUrl, fallbackUrl]);
+    setSourceUri(streamingUrl || hlsUrl || fallbackUrl || undefined);
+  }, [streamingUrl, hlsUrl, fallbackUrl]);
   
   const hideControls = useCallback(() => {
     if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
@@ -113,7 +113,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
         setPlayerError(null);
     } else {
         console.error('VideoPlayer error: Video could not be loaded');
-        if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+        if (sourceUri === streamingUrl && fallbackUrl) {
+            console.log('Streaming failed, attempting fallback to MP4.');
+            setSourceUri(fallbackUrl);
+            setPlayerError(null);
+        } else if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
             console.log('HLS stream failed, attempting fallback to MP4.');
             setSourceUri(fallbackUrl);
             setPlayerError(null);

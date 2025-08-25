@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-video';
 import { StyleSheet, StyleProp, ViewStyle, View, Text } from 'react-native';
 
 interface SimpleVideoPlayerProps {
   hlsUrl: string | null;
   fallbackUrl: string | null;
+  streamingUrl: string | null;
   videoOptions: {
     autoplay?: boolean;
     controls?: boolean;
@@ -16,24 +17,29 @@ interface SimpleVideoPlayerProps {
   onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
 }
 
-const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({ 
-  hlsUrl, 
-  fallbackUrl, 
-  videoOptions, 
-  style, 
-  onPlaybackStatusUpdate 
+const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
+  hlsUrl,
+  fallbackUrl,
+  streamingUrl,
+  videoOptions,
+  style,
+  onPlaybackStatusUpdate
 }) => {
   const [error, setError] = useState<string | null>(null);
-  const [sourceUri, setSourceUri] = useState<string | undefined>(hlsUrl || fallbackUrl || undefined);
+  const [sourceUri, setSourceUri] = useState<string | undefined>(streamingUrl || hlsUrl || fallbackUrl || undefined);
   const videoRef = useRef<Video>(null);
 
   useEffect(() => {
-    setSourceUri(hlsUrl || fallbackUrl || undefined);
-  }, [hlsUrl, fallbackUrl]);
+    setSourceUri(streamingUrl || hlsUrl || fallbackUrl || undefined);
+  }, [streamingUrl, hlsUrl, fallbackUrl]);
 
   const handleError = ({ error }: { error: string | undefined }) => {
     console.error('VideoPlayer error:', error);
-    if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+    if (sourceUri === streamingUrl && fallbackUrl) {
+      console.log('Streaming failed, attempting fallback to MP4.');
+      setSourceUri(fallbackUrl);
+      setError(null);
+    } else if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
       console.log('HLS stream failed, attempting fallback to MP4.');
       setSourceUri(fallbackUrl);
       setError(null);

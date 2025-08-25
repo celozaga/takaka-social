@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-video';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
 import { Volume2, VolumeX, Play } from 'lucide-react';
@@ -44,12 +44,12 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
     return undefined;
   }, [post.embed]);
 
-  const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embedView, post.author.did);
+  const { hlsUrl, fallbackUrl, streamingUrl, isLoading: isLoadingUrl } = useVideoPlayback(embedView, post.author.did);
   const [sourceUri, setSourceUri] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-      setSourceUri(hlsUrl || fallbackUrl || undefined);
-  }, [hlsUrl, fallbackUrl]);
+      setSourceUri(streamingUrl || hlsUrl || fallbackUrl || undefined);
+  }, [streamingUrl, hlsUrl, fallbackUrl]);
   
   const isEffectivelyPaused = isExternallyPaused || isInternallyPaused;
   const isLoading = status?.isLoaded ? status.isBuffering : true;
@@ -80,7 +80,11 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
         setPlayerError(null);
     } else {
         console.error('VideoPlayer error: Video could not be loaded');
-        if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+        if (sourceUri === streamingUrl && fallbackUrl) {
+            console.log('Streaming failed, attempting fallback to MP4.');
+            setSourceUri(fallbackUrl);
+            setPlayerError(null);
+        } else if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
             console.log('HLS stream failed, attempting fallback to MP4.');
             setSourceUri(fallbackUrl);
             setPlayerError(null);
