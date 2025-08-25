@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
 
@@ -10,6 +9,11 @@ interface ReplyToProps {
 interface ComposerOptions {
   replyTo?: ReplyToProps;
   initialText?: string;
+}
+
+interface RepliesModalData {
+  post: AppBskyFeedDefs.PostView;
+  thread: AppBskyFeedDefs.ThreadViewPost;
 }
 
 interface UIContextType {
@@ -44,6 +48,10 @@ interface UIContextType {
   repostModalPost?: AppBskyFeedDefs.PostView;
   openRepostModal: (post: AppBskyFeedDefs.PostView) => void;
   closeRepostModal: () => void;
+  isRepliesModalOpen: boolean;
+  repliesModalData?: RepliesModalData;
+  openRepliesModal: (data: RepliesModalData) => void;
+  closeRepliesModal: () => void;
   postForNav?: AppBskyFeedDefs.FeedViewPost;
   setPostForNav: (post?: AppBskyFeedDefs.FeedViewPost) => void;
 }
@@ -65,6 +73,8 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [mediaActionsModalPost, setMediaActionsModalPost] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostModalPost, setRepostModalPost] = useState<AppBskyFeedDefs.PostView | undefined>(undefined);
+  const [isRepliesModalOpen, setIsRepliesModalOpen] = useState(false);
+  const [repliesModalData, setRepliesModalData] = useState<RepliesModalData | undefined>(undefined);
   const [postForNav, setPostForNav] = useState<AppBskyFeedDefs.FeedViewPost | undefined>(undefined);
 
 
@@ -121,6 +131,16 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setIsRepostModalOpen(false);
     setTimeout(() => setRepostModalPost(undefined), 300);
   }, []);
+  
+  const openRepliesModal = useCallback((data: RepliesModalData) => {
+    setRepliesModalData(data);
+    setIsRepliesModalOpen(true);
+  }, []);
+
+  const closeRepliesModal = useCallback(() => {
+    setIsRepliesModalOpen(false);
+    setTimeout(() => setRepliesModalData(undefined), 300); // Delay clear for animation
+  }, []);
 
   return (
     <UIContext.Provider value={{ 
@@ -133,6 +153,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         isUpdateHandleModalOpen, openUpdateHandleModal, closeUpdateHandleModal,
         isMediaActionsModalOpen, mediaActionsModalPost, openMediaActionsModal, closeMediaActionsModal,
         isRepostModalOpen, repostModalPost, openRepostModal, closeRepostModal,
+        isRepliesModalOpen, repliesModalData, openRepliesModal, closeRepliesModal,
         postForNav, setPostForNav,
     }}>
       {children}

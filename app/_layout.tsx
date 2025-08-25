@@ -1,6 +1,3 @@
-
-
-
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions, KeyboardAvoidingView, StyleProp, ViewStyle } from 'react-native';
@@ -29,6 +26,7 @@ const UpdateEmailModal = lazy(() => import('@/components/settings/UpdateEmailMod
 const UpdateHandleModal = lazy(() => import('@/components/settings/UpdateHandleModal'));
 const MediaActionsModal = lazy(() => import('@/components/shared/MediaActionsModal'));
 const RepostModal = lazy(() => import('@/components/shared/RepostModal'));
+const RepliesModal = lazy(() => import('@/components/replies/RepliesModal'));
 
 const ModalSuspenseFallback = () => (
   <View style={styles.modalDialogShell}>
@@ -47,6 +45,7 @@ function AppLayout() {
     isUpdateHandleModalOpen, closeUpdateHandleModal,
     isMediaActionsModalOpen, closeMediaActionsModal, mediaActionsModalPost,
     isRepostModalOpen, closeRepostModal, repostModalPost,
+    isRepliesModalOpen, repliesModalData, closeRepliesModal,
   } = useUI();
 
   if (isLoadingSession) {
@@ -166,6 +165,15 @@ function AppLayout() {
                 </Pressable>
              </Pressable>
           )}
+          {isRepliesModalOpen && repliesModalData && (
+             <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeRepliesModal}>
+                <Pressable style={[styles.bottomSheet, styles.repliesSheet] as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<ModalSuspenseFallback />}>
+                        <RepliesModal data={repliesModalData} onClose={closeRepliesModal} />
+                    </Suspense>
+                </Pressable>
+             </Pressable>
+          )}
         </Suspense>
       </SafeAreaView>
   );
@@ -272,12 +280,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     maxWidth: 640,
-    maxHeight: '90%',
     backgroundColor: theme.colors.surfaceContainer,
     borderTopLeftRadius: theme.shape.extraLarge,
     borderTopRightRadius: theme.shape.extraLarge,
     padding: theme.spacing.s,
     paddingBottom: theme.spacing.xl, // For home bar
+  },
+  repliesSheet: {
+      height: '85%',
+      maxHeight: 800,
+      padding: 0,
+      paddingBottom: 0,
   },
   fullScreenLoader: {
     flex: 1,

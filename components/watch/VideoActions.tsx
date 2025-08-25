@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Heart, MessageCircle, Repeat, Share2, MoreHorizontal } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useUI } from '../../context/UIContext';
+import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
 import { formatCompactNumber } from '@/lib/formatters';
 
@@ -12,10 +13,30 @@ interface VideoActionsProps {
 }
 
 const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
-    const { openComposer, openMediaActionsModal } = useUI();
+    const { agent } = useAtp();
+    const { openComposer, openMediaActionsModal, openRepliesModal } = useUI();
     const { likeUri, likeCount, isLiking, handleLike, repostUri, repostCount, isReposting, handleRepost } = usePostActions(post);
+    const [isFetchingThread, setIsFetchingThread] = useState(false);
     
-    const handleComment = (e: any) => { e.stopPropagation(); openComposer({ replyTo: { uri: post.uri, cid: post.cid } }); };
+    const handleComment = async (e: any) => {
+        e.stopPropagation();
+        if (isFetchingThread) return;
+
+        setIsFetchingThread(true);
+        try {
+            const { data } = await agent.getPostThread({ uri: post.uri, depth: 10 });
+            if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
+                openRepliesModal({ post, thread: data.thread });
+            }
+        } catch (error) {
+            console.error("Failed to fetch thread for replies modal:", error);
+            // Fallback to composer if thread fetch fails
+            openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
+        } finally {
+            setIsFetchingThread(false);
+        }
+    };
+    
     const handleMoreClick = (e: any) => { e.stopPropagation(); openMediaActionsModal(post); };
 
     return (
@@ -25,7 +46,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                 <Text style={styles.actionText}>{formatCompactNumber(likeCount)}</Text>
             </Pressable>
             <Pressable onPress={handleComment} style={styles.actionButton}>
-                <MessageCircle size={32} color="white"/>
+                {isFetchingThread ? <ActivityIndicator color="white" size={32} /> : <MessageCircle size={32} color="white"/>}
                 <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
             </Pressable>
             <Pressable onPress={(e) => { e.stopPropagation(); handleRepost(e as any); }} disabled={isReposting} style={styles.actionButton}>
@@ -41,7 +62,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
 
 const styles = StyleSheet.create({
     container: { position: 'absolute', bottom: theme.spacing.l, right: theme.spacing.s, alignItems: 'center', gap: 20, zIndex: 20 },
-    actionButton: { alignItems: 'center', gap: 6 },
+    actionButton: { alignItems: 'center', gap: 6, minHeight: 56 },
     actionText: { ...theme.typography.labelLarge, fontWeight: '600', color: 'white' },
 });
 

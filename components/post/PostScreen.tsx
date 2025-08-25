@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions, FlatListProps } from 'react-native';
+import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import PostHeader from './PostHeader';
 import FullPostCard from './FullPostCard';
 import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
+import PostPageWebActionBar from './PostPageWebActionBar';
 import { useTranslation } from 'react-i18next';
 import { theme } from '@/lib/theme';
 
@@ -16,12 +17,14 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
+  const isWeb = Platform.OS === 'web';
 
   const replies = thread.replies?.filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[] || [];
 
   const ListHeader = () => (
     <View>
       <FullPostCard feedViewPost={{ post: thread.post }} />
+      {isWeb && isDesktop && <PostPageWebActionBar post={thread.post} />}
       {thread.post.replyCount > 0 && (
           <View style={styles.repliesHeader}>
               <Text style={styles.repliesHeaderText}>{t('common.replies', { count: thread.post.replyCount })}</Text>
@@ -45,26 +48,17 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
       return null;
   }
   
-  const renderFooter = () => {
-      // Show action bar in footer only on desktop web
-      if (Platform.OS === 'web' && isDesktop) {
-          return <PostScreenActionBar post={thread.post} />;
-      }
-      // On mobile web and native, it's rendered absolutely, so no footer needed.
-      return null;
-  }
-
   const flatListProps = {
     data: replies,
     renderItem,
     keyExtractor: (item: AppBskyFeedDefs.ThreadViewPost) => item.post.cid,
     ListHeaderComponent: ListHeader,
     ListEmptyComponent: ListEmpty,
-    ListFooterComponent: renderFooter,
+    ListFooterComponent: null, // Footer is no longer needed
     contentContainerStyle: [
         styles.listContentContainer,
         // Add padding for the absolute action bar on mobile, but not desktop
-        { paddingBottom: (Platform.OS === 'web' && isDesktop) ? theme.spacing.l : 80 }
+        { paddingBottom: (isWeb && isDesktop) ? theme.spacing.l : 80 }
     ],
     ItemSeparatorComponent: () => <View style={styles.separator} />,
   };
@@ -74,7 +68,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
       <PostHeader post={thread.post} />
       <FlatList {...flatListProps} />
       {/* Render floating action bar on mobile (native and web) */}
-      {!(Platform.OS === 'web' && isDesktop) && <PostScreenActionBar post={thread.post} />}
+      {!(isWeb && isDesktop) && <PostScreenActionBar post={thread.post} />}
     </View>
   );
 };

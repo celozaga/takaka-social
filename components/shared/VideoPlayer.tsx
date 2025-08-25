@@ -31,7 +31,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     setSourceUri(hlsUrl || fallbackUrl || undefined);
   }, [hlsUrl, fallbackUrl]);
 
-  const handleError = ({ error }: { error: string }) => {
+  const handleError = ({ error }: { error: string | undefined }) => {
     console.error('VideoPlayer error:', error);
     if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
       console.log('HLS stream failed, attempting fallback to MP4.');
@@ -53,10 +53,10 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     if (onPlaybackStatusUpdate) {
         onPlaybackStatusUpdate(status);
     }
-    if (!status.isLoaded) {
-        handleError({ error: status.error });
-    } else {
+    if (status.isLoaded) {
         setError(null);
+    } else {
+        handleError({ error: status.error });
     }
   }
 

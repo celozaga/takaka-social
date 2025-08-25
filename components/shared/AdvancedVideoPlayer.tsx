@@ -109,7 +109,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
 
   const handleStatusUpdate = (newStatus: AVPlaybackStatus) => {
     setStatus(newStatus);
-    if (!newStatus.isLoaded) {
+    if (newStatus.isLoaded) {
+        setPlayerError(null);
+    } else {
         console.error('VideoPlayer error:', newStatus.error);
         if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
             console.log('HLS stream failed, attempting fallback to MP4.');
@@ -118,8 +120,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
         } else {
             setPlayerError("Could not play video.");
         }
-    } else {
-        setPlayerError(null);
     }
   };
 

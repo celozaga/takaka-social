@@ -76,7 +76,9 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
   
   const handleStatusUpdate = (newStatus: AVPlaybackStatus) => {
     setStatus(newStatus);
-    if (!newStatus.isLoaded) {
+    if (newStatus.isLoaded) {
+        setPlayerError(null);
+    } else {
         console.error('VideoPlayer error:', newStatus.error);
         if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
             console.log('HLS stream failed, attempting fallback to MP4.');
@@ -85,8 +87,6 @@ const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, is
         } else {
             setPlayerError("Could not play video.");
         }
-    } else {
-        setPlayerError(null);
     }
   };
 
