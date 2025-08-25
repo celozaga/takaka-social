@@ -72,7 +72,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      let avatarUploadResult;
+      let avatarUploadResult: any;
       if (avatarBlob) {
         const res = await agent.uploadBlob(new Uint8Array(await avatarBlob.arrayBuffer()), { encoding: avatarBlob.type });
         avatarUploadResult = res.data.blob;

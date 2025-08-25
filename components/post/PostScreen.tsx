@@ -25,7 +25,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
     <View>
       <FullPostCard feedViewPost={{ post: thread.post }} />
       {isWeb && isDesktop && <PostPageWebActionBar post={thread.post} />}
-      {thread.post.replyCount > 0 && (
+      {thread.post.replyCount && thread.post.replyCount > 0 && (
           <View style={styles.repliesHeader}>
               <Text style={styles.repliesHeaderText}>{t('common.replies', { count: thread.post.replyCount })}</Text>
           </View>

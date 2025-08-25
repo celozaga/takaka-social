@@ -40,7 +40,7 @@ const PostCard: React.FC<PostCardProps> = ({ feedViewPost, isClickable = true })
     const handlePress = () => {
         if (!isClickable) return;
         setPostForNav(feedViewPost);
-        router.push(postLink);
+        router.push(postLink as any);
     };
 
     const getMediaInfo = (p: AppBskyFeedDefs.PostView): { mediaEmbed: (AppBskyEmbedImages.View | AppBskyEmbedVideo.View) } | null => {

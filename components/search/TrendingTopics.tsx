@@ -16,7 +16,7 @@ const TrendingTopics: React.FC = () => {
             try {
                 const { data } = await (agent.api.app.bsky.unspecced as any).getTrendingHashtags({ limit: 10 });
                 if (data.hashtags) {
-                    setTrends(data.hashtags.map(h => h.tag));
+                    setTrends(data.hashtags.map((h: any) => h.tag));
                 }
             } catch (error) {
                 console.error("Failed to fetch trending topics:", error);

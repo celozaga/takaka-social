@@ -45,7 +45,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
     const handlePress = () => {
         setPostForNav(feedViewPost);
-        router.push(postLink);
+        router.push(postLink as any);
     };
 
     const renderMedia = () => {
@@ -77,10 +77,10 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
             const aspectRatio = isVideo
                 ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio
-                    ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio.width / (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio.height
+                    ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio?.width / (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio?.height
                     : 16 / 9
                 : (item as AppBskyEmbedImages.ViewImage).aspectRatio
-                    ? (item as AppBskyEmbedImages.ViewImage).aspectRatio.width / (item as AppBskyEmbedImages.ViewImage).aspectRatio.height
+                    ? (item as AppBskyEmbedImages.ViewImage).aspectRatio?.width / (item as AppBskyEmbedImages.ViewImage).aspectRatio?.height
                     : 1.5;
 
             const mediaStyle = {

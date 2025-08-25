@@ -89,24 +89,24 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
     if (isNavigating) return;
 
     if (!isPostLink) {
-      router.push(profileLink);
+      router.push(profileLink as any);
       return;
     }
 
     setIsNavigating(true);
     try {
       const res = await agent.getPosts({ uris: [uri] });
-      if (res.data.posts[0]) {
-        setPostForNav({ post: res.data.posts[0] });
-        router.push(postLink);
-      } else {
-        // Fallback or show error
-        router.push(postLink);
-      }
+              if (res.data.posts[0]) {
+          setPostForNav({ post: res.data.posts[0] });
+          router.push(postLink as any);
+        } else {
+          // Fallback or show error
+          router.push(postLink as any);
+        }
     } catch (e) {
       console.error("Failed to fetch post for navigation:", e);
       // Fallback to direct navigation even if pre-fetch fails
-      router.push(postLink);
+      router.push(postLink as any);
     } finally {
       setIsNavigating(false);
     }

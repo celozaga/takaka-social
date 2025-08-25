@@ -169,7 +169,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
                 <View style={[styles.sliderProgress, { flex: progress }]} />
                 <View style={{ flex: 1 - progress }} />
             </View>
-            <Text style={styles.timeText}>{formatPlayerTime(duration)}</Text>
+            <Text style={styles.timeText}>{formatPlayerTime(duration || 0)}</Text>
             <Pressable onPress={toggleMute} style={styles.iconButton}>{isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}</Pressable>
             <Pressable onPress={handleFullscreen} style={styles.iconButton}>{isFullscreen ? <Minimize size={20} color="white" /> : <Maximize size={20} color="white" />}</Pressable>
           </View>
