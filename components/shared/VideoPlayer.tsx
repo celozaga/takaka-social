@@ -56,7 +56,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     if (status.isLoaded) {
         setError(null);
     } else {
-        handleError({ error: status.error });
+        handleError({ error: "Video could not be loaded" });
     }
   }
 

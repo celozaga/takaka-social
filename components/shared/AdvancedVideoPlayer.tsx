@@ -112,7 +112,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
     if (newStatus.isLoaded) {
         setPlayerError(null);
     } else {
-        console.error('VideoPlayer error:', newStatus.error);
+        console.error('VideoPlayer error: Video could not be loaded');
         if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
             console.log('HLS stream failed, attempting fallback to MP4.');
             setSourceUri(fallbackUrl);
