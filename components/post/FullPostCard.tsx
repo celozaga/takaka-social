@@ -7,11 +7,10 @@ import { useUI } from '../../context/UIContext';
 import { formatCompactDate } from '@/lib/formatters';
 import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import AdvancedVideoPlayer from '../shared/AdvancedVideoPlayer';
-import SimpleVideoPlayer from '../shared/VideoPlayer';
+import VideoPlayer from '../shared/VideoPlayer';
 import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
-import { useVideoPlayback } from '@/hooks/useVideoPlayback';
+// removed direct useVideoPlayback in slideshow; we reuse shared VideoPlayer
 
 interface FullPostCardProps {
     feedViewPost: AppBskyFeedDefs.FeedViewPost;
@@ -20,9 +19,25 @@ interface FullPostCardProps {
 type MediaItem = AppBskyEmbedImages.ViewImage | { type: 'video', view: AppBskyEmbedVideo.View };
 
 const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
-    const { setPostForNav } = useUI();
-    const router = useRouter();
-    const { post, reason } = feedViewPost;
+  console.log('🎬 FullPostCard: COMPONENT CALLED with feedViewPost:', {
+    hasFeedViewPost: !!feedViewPost,
+    hasPost: !!feedViewPost?.post,
+    postUri: feedViewPost?.post?.uri,
+    hasEmbed: !!feedViewPost?.post?.embed,
+    embedType: feedViewPost?.post?.embed?.$type
+  });
+
+  console.log('🎬 FullPostCard: ABOUT TO CALL useUI()');
+  const { setPostForNav } = useUI();
+  console.log('🎬 FullPostCard: useUI() called successfully');
+  
+  console.log('🎬 FullPostCard: ABOUT TO CALL useRouter()');
+  const router = useRouter();
+  console.log('🎬 FullPostCard: useRouter() called successfully');
+  
+  console.log('🎬 FullPostCard: ABOUT TO DESTRUCTURE feedViewPost');
+  const { post, reason } = feedViewPost;
+  console.log('🎬 FullPostCard: Destructuring successful:', { hasPost: !!post, hasReason: !!reason });
     const author = post.author;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
@@ -49,31 +64,69 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     };
 
     const renderMedia = () => {
-        if (!post.embed) return null;
+        if (!post.embed) {
+            console.log('🎬 FullPostCard: No post.embed found');
+            return null;
+        }
+
+        console.log('🎬 FullPostCard: Post has embed:', {
+            embedType: post.embed.$type,
+            hasEmbed: !!post.embed
+        });
 
         const mediaItems: MediaItem[] = [];
         let videoEmbed: AppBskyEmbedVideo.View | undefined;
 
         const processEmbed = (embed: unknown) => {
+            console.log('🎬 FullPostCard: Processing embed:', {
+                embedType: (embed as any)?.$type,
+                isVideo: AppBskyEmbedVideo.isView(embed),
+                isImage: AppBskyEmbedImages.isView(embed),
+                isRecordWithMedia: AppBskyEmbedRecordWithMedia.isView(embed)
+            });
+
             if (AppBskyEmbedImages.isView(embed)) {
+                console.log('🎬 FullPostCard: Processing image embed');
                 mediaItems.push(...(embed as AppBskyEmbedImages.View).images);
             } else if (AppBskyEmbedVideo.isView(embed)) {
+                console.log('🎬 FullPostCard: Processing video embed');
                 const view = embed as AppBskyEmbedVideo.View;
                 mediaItems.push({ type: 'video', view });
                 videoEmbed = view; // Capture video embed for single video case
+                console.log('🎬 FullPostCard: Video embed captured:', {
+                    cid: view.cid,
+                    hasPlaylist: !!view.playlist,
+                    playlistUrl: view.playlist
+                });
             } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+                console.log('🎬 FullPostCard: Processing record with media embed');
                 processEmbed((embed as AppBskyEmbedRecordWithMedia.View).media);
             }
         };
         processEmbed(post.embed);
 
-        if (mediaItems.length === 0) return null;
+        console.log('🎬 FullPostCard: Media processing complete:', {
+            mediaItemsLength: mediaItems.length,
+            hasVideoEmbed: !!videoEmbed,
+            mediaItemTypes: mediaItems.map(item => 'type' in item ? item.type : 'image')
+        });
+
+        if (mediaItems.length === 0) {
+            console.log('🎬 FullPostCard: No media items found');
+            return null;
+        }
         
         const authorDid = (post.author as AppBskyActorDefs.ProfileViewBasic).did;
         
         if (mediaItems.length === 1) {
             const item = mediaItems[0];
             const isVideo = 'view' in item;
+
+            console.log('🎬 FullPostCard: Single media item:', {
+                isVideo,
+                itemType: 'type' in item ? item.type : 'image',
+                hasVideoEmbed: !!videoEmbed
+            });
 
             const aspectRatio = isVideo
                 ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio
@@ -94,13 +147,15 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             } as const;
 
             if (isVideo && videoEmbed) {
+                console.log('🎬 FullPostCard: Rendering VideoPlayer');
                 return (
-                    <AdvancedVideoPlayer
+                    <VideoPlayer
                         post={post}
                         style={mediaStyle}
                     />
                 );
             } else {
+                console.log('🎬 FullPostCard: Rendering image (not video or no videoEmbed)');
                 const imageItem = item as AppBskyEmbedImages.ViewImage;
                 return (
                     <Pressable 
@@ -141,22 +196,13 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         const finalHeight = Math.min(calculatedHeight, 700);
 
         const SlideshowVideoItem: React.FC<{item: { type: 'video', view: AppBskyEmbedVideo.View }}> = ({item}) => {
-            const {hlsUrl, fallbackUrl, streamingUrl} = useVideoPlayback(item.view, authorDid);
-            return (
-                <SimpleVideoPlayer
-                    hlsUrl={hlsUrl}
-                    fallbackUrl={fallbackUrl}
-                    streamingUrl={streamingUrl}
-                    videoOptions={{
-                        autoplay: false,
-                        controls: true,
-                        poster: item.view.thumbnail,
-                        loop: false,
-                        muted: false,
-                    }}
-                    style={{ width: '100%', height: '100%' }}
-                />
-            );
+            // Monta um PostView mínimo para reutilizar o VideoPlayer unificado
+            const miniPost = {
+                uri: `${post.uri}#slideshow`,
+                author: { ...(post.author as any), did: authorDid },
+                embed: item.view,
+            } as unknown as AppBskyFeedDefs.PostView;
+            return <VideoPlayer post={miniPost} style={{ width: '100%', height: '100%' }} />;
         }
 
         const renderSlideshowItem = ({ item }: { item: MediaItem }) => {

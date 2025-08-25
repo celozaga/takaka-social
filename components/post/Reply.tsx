@@ -14,7 +14,7 @@ import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
-import SimpleVideoPlayer from '../shared/VideoPlayer';
+import VideoPlayer from '../shared/VideoPlayer';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
 const MAX_REPLY_DEPTH = 6;
@@ -25,23 +25,11 @@ interface ReplyProps {
 }
 
 const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> = ({embed, authorDid}) => {
-    const {hlsUrl, fallbackUrl, streamingUrl} = useVideoPlayback(embed, authorDid);
     const aspectRatio = embed.aspectRatio ? embed.aspectRatio.width / embed.aspectRatio.height : 16/9;
-    
     return (
-        <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>
-            <SimpleVideoPlayer 
-                hlsUrl={hlsUrl}
-                fallbackUrl={fallbackUrl}
-                streamingUrl={streamingUrl}
-                videoOptions={{
-                    autoplay: false,
-                    controls: true,
-                    poster: embed.thumbnail
-                }}
-                style={{ width: '100%', height: '100%' }}
-            />
-        </View>
+      <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>
+        <VideoPlayer post={{...({} as any), embed, author: { did: authorDid } as any } as any} />
+      </View>
     );
 };
 

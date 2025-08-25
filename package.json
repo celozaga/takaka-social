@@ -17,7 +17,6 @@
     "@react-native-async-storage/async-storage": "2.1.2",
     "date-fns": "^4.1.0",
     "expo": "53.0.22",
-    "expo-av": "~15.1.7",
     "expo-clipboard": "~7.1.5",
     "expo-constants": "~17.1.7",
     "expo-image": "~2.4.0",
@@ -28,6 +27,7 @@
     "expo-secure-store": "~14.2.4",
     "expo-status-bar": "~2.2.3",
     "expo-video": "~2.2.2",
+    "hls.js": "^1.6.10",
     "i18next": "^23.11.5",
     "i18next-browser-languagedetector": "^8.0.0",
     "lucide-react": "0.539.0",
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",
+    "@types/hls.js": "^0.13.3",
     "@types/react": "~19.0.10",
     "typescript": "~5.8.3"
   },
