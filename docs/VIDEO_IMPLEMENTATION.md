@@ -1,50 +1,41 @@
-# Implementação de Vídeo com Bluesky Video
+# Implementação de Vídeo com Expo AV Otimizado
 
-Este documento descreve a implementação do sistema de vídeo melhorado usando a biblioteca `@haileyok/bluesky-video` do Bluesky Social.
+Este documento descreve a implementação do sistema de vídeo otimizado usando `expo-av` com configurações de performance avançadas, similar ao que o app oficial do Bluesky usa.
 
 ## Visão Geral
 
-O sistema de vídeo foi redesenhado para oferecer uma experiência de reprodução mais robusta e otimizada, com fallback automático para o player padrão do Expo quando necessário.
+O sistema de vídeo foi redesenhado para oferecer uma experiência de reprodução otimizada usando `expo-av` com configurações de performance avançadas. Este é agora o player principal do app, usado para todos os vídeos incluindo posts normais e a seção `/watch`.
 
 ## Componentes Principais
 
 ### 1. SmartVideoPlayer
-Componente wrapper que escolhe automaticamente entre o player Bluesky e o fallback baseado na disponibilidade da biblioteca e configurações do usuário.
+Componente wrapper que usa diretamente o VideoPlayer.
 
 **Localização:** `components/watch/SmartVideoPlayer.tsx`
 
 **Funcionalidades:**
-- Detecção automática da disponibilidade da biblioteca Bluesky
-- Fallback para expo-av quando necessário
-- Integração com sistema de configuração
+- Wrapper simples para o VideoPlayer
+- Interface consistente para o sistema
 
-### 2. BlueskyVideoPlayer
-Player de vídeo que usa a biblioteca `@haileyok/bluesky-video` para reprodução nativa otimizada.
+### 2. VideoPlayer
+Player de vídeo principal que usa `expo-av` com configurações otimizadas para reprodução de alta performance.
 
-**Localização:** `components/watch/BlueskyVideoPlayer.tsx`
+**Localização:** `components/watch/VideoPlayer.tsx`
 
 **Vantagens:**
-- Reprodução nativa otimizada
+- Reprodução otimizada com expo-av
 - Melhor performance em dispositivos móveis
 - Suporte a controles nativos (fullscreen, mute, etc.)
 - Gerenciamento automático de estado
-
-### 3. VideoPlayerFallback
-Player de vídeo que usa `expo-av` como fallback quando a biblioteca Bluesky não está disponível.
-
-**Localização:** `components/watch/VideoPlayerFallback.tsx`
-
-**Funcionalidades:**
-- Reprodução usando expo-av
-- Fallback automático entre diferentes formatos de vídeo
-- Controles personalizados
+- Configurações de performance avançadas
+- Player principal para todo o app
 
 ## Hooks
 
-### useBlueskyVideo
-Hook personalizado para gerenciar o estado e controles do player Bluesky.
+### useVideoPlayer
+Hook personalizado para gerenciar o estado e controles do player de vídeo.
 
-**Localização:** `hooks/useBlueskyVideo.ts`
+**Localização:** `hooks/useVideoPlayer.ts`
 
 **Funcionalidades:**
 - Gerenciamento de estado do player
@@ -57,17 +48,16 @@ Hook personalizado para gerenciar o estado e controles do player Bluesky.
 ### VideoConfig
 Sistema de configuração para personalizar o comportamento do player de vídeo.
 
-**Localização:** `lib/videoConfig.ts`
+**Localização:** `lib/video.ts`
 
 **Opções disponíveis:**
-- `preferredPlayer`: 'bluesky' | 'expo' | 'auto'
+- `preferredPlayer`: 'bluesky' (sempre)
 - `preferredQuality`: 'auto' | 'high' | 'medium' | 'low'
 - `autoplay`: boolean
 - `loop`: boolean
 - `muted`: boolean
 - `enableHLS`: boolean
 - `enableStreaming`: boolean
-- `enableFallback`: boolean
 - `showControls`: boolean
 - `showProgressBar`: boolean
 - `showFullscreenButton`: boolean
@@ -77,10 +67,10 @@ Sistema de configuração para personalizar o comportamento do player de vídeo.
 
 ## Instalação
 
-A biblioteca `@haileyok/bluesky-video` já está instalada no projeto:
+As dependências necessárias já estão instaladas no projeto:
 
 ```bash
-npm install @haileyok/bluesky-video
+npm install expo-av expo-video
 ```
 
 ## Uso
@@ -98,29 +88,41 @@ import SmartVideoPlayer from '@/components/watch/SmartVideoPlayer';
 />
 ```
 
+### Uso Direto do VideoPlayer
+
+```tsx
+import VideoPlayer from '@/components/watch/VideoPlayer';
+
+<VideoPlayer
+  postView={postView}
+  paused={false}
+  isMuted={true}
+  onMuteToggle={() => setIsMuted(!isMuted)}
+/>
+```
+
 ### Configuração Personalizada
 
 ```tsx
-import { videoConfig } from '@/lib/videoConfig';
+import { videoManager } from '@/lib/video';
 
 // Atualizar configurações
-videoConfig.updateConfig({
-  preferredPlayer: 'bluesky',
+videoManager.updateConfig({
   preferredQuality: 'high',
   enableHardwareAcceleration: true
 });
 
 // Obter configuração atual
-const config = videoConfig.getConfig();
+const config = videoManager.getConfig();
 ```
 
 ## Migração
 
-### De VideoPlayer para SmartVideoPlayer
+### De VideoPlayer Antigo para Novo VideoPlayer
 
 **Antes:**
 ```tsx
-import VideoPlayer from './VideoPlayer';
+import VideoPlayer from './VideoPlayer'; // Player antigo com expo-av básico
 
 <VideoPlayer 
   postView={item} 
@@ -132,36 +134,64 @@ import VideoPlayer from './VideoPlayer';
 
 **Depois:**
 ```tsx
-import SmartVideoPlayer from './SmartVideoPlayer';
+import VideoPlayer from './VideoPlayer'; // Novo player com expo-av otimizado
 
-<SmartVideoPlayer 
+<VideoPlayer 
   postView={item} 
   paused={index !== activeIndex}
   isMuted={isFeedMuted}
-  onMutedToggle={() => setIsFeedMuted(prev => !prev)}
+  onMuteToggle={() => setIsFeedMuted(prev => !prev)}
 />
 ```
 
 ## Vantagens da Nova Implementação
 
-1. **Performance Melhorada**: Player nativo otimizado para dispositivos móveis
-2. **Fallback Robusto**: Sistema automático de fallback para garantir compatibilidade
-3. **Configurabilidade**: Sistema flexível de configuração para diferentes cenários
-4. **Manutenibilidade**: Código mais limpo e organizado
-5. **Compatibilidade**: Suporte a diferentes plataformas e dispositivos
+1. **Performance Melhorada**: Player otimizado com expo-av
+2. **Código Mais Limpo**: Sem complexidade de fallback
+3. **Configurabilidade**: Sistema flexível de configuração
+4. **Manutenibilidade**: Código mais simples e direto
+5. **Compatibilidade**: Suporte nativo a diferentes plataformas
+6. **Unificação**: Mesmo player para todos os vídeos do app
+7. **Otimizações**: Configurações de performance avançadas
+
+## Estrutura de Arquivos
+
+```
+components/watch/
+├── VideoPlayer.tsx           # Player principal do app
+├── SmartVideoPlayer.tsx      # Wrapper simples
+└── VideoPostOverlay.tsx      # Overlay de informações
+
+hooks/
+└── useVideoPlayer.ts         # Hook principal
+
+lib/
+└── video.ts                  # Configuração e gerenciamento
+```
+
+## Otimizações de Performance
+
+O novo VideoPlayer inclui várias otimizações:
+
+- **useNativeControls={false}**: Controles personalizados para melhor UX
+- **shouldCorrectPitch={false}**: Desabilita correção de pitch para melhor performance
+- **progressUpdateIntervalMillis={100}**: Atualizações de progresso otimizadas
+- **ResizeMode otimizado**: Melhor renderização baseada no aspect ratio
+- **Gerenciamento de estado eficiente**: Sincronização otimizada entre estado interno e expo-av
 
 ## Troubleshooting
 
 ### Problema: Vídeo não reproduz
-1. Verificar se a biblioteca Bluesky está instalada
+1. Verificar se expo-av está instalado
 2. Verificar configurações de vídeo
 3. Verificar logs de erro no console
-4. Usar fallback automático
+4. Verificar se o dispositivo suporta o formato de vídeo
 
 ### Problema: Performance ruim
 1. Verificar configuração de qualidade
-2. Verificar se hardware acceleration está habilitado
+2. Verificar se as otimizações estão habilitadas
 3. Ajustar buffer size conforme necessário
+4. Verificar se o dispositivo tem hardware acceleration
 
 ### Problema: Controles não funcionam
 1. Verificar se o player está ativo
@@ -175,10 +205,11 @@ Para contribuir com melhorias no sistema de vídeo:
 1. Testar em diferentes dispositivos e plataformas
 2. Verificar compatibilidade com diferentes formatos de vídeo
 3. Documentar novas funcionalidades
-4. Manter compatibilidade com o sistema de fallback
+4. Manter compatibilidade com expo-av
+5. Otimizar configurações de performance
 
 ## Referências
 
-- [Bluesky Video Library](https://github.com/bluesky-social/bluesky-video)
 - [Expo AV Documentation](https://docs.expo.dev/versions/latest/sdk/av/)
+- [Expo Video Documentation](https://docs.expo.dev/versions/latest/sdk/video/)
 - [React Native Video](https://github.com/react-native-video/react-native-video)

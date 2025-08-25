@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@atproto/api": "^0.16.2",
-    "@haileyok/bluesky-video": "^0.3.2",
     "@react-native-async-storage/async-storage": "2.1.2",
     "date-fns": "^4.1.0",
     "expo": "53.0.22",

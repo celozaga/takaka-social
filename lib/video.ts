@@ -1,6 +1,6 @@
 export interface VideoConfig {
   // Player preferences
-  preferredPlayer: 'bluesky' | 'expo' | 'auto';
+  preferredPlayer: 'bluesky';
   
   // Quality settings
   preferredQuality: 'auto' | 'high' | 'medium' | 'low';
@@ -13,7 +13,6 @@ export interface VideoConfig {
   // Performance settings
   enableHLS: boolean;
   enableStreaming: boolean;
-  enableFallback: boolean;
   
   // UI settings
   showControls: boolean;
@@ -27,14 +26,13 @@ export interface VideoConfig {
 }
 
 export const DEFAULT_VIDEO_CONFIG: VideoConfig = {
-  preferredPlayer: 'auto',
+  preferredPlayer: 'bluesky',
   preferredQuality: 'auto',
   autoplay: true,
   loop: true,
   muted: true,
   enableHLS: true,
   enableStreaming: true,
-  enableFallback: true,
   showControls: true,
   showProgressBar: true,
   showFullscreenButton: true,
@@ -43,19 +41,19 @@ export const DEFAULT_VIDEO_CONFIG: VideoConfig = {
   enableHardwareAcceleration: true,
 };
 
-export class VideoConfigManager {
-  private static instance: VideoConfigManager;
+export class VideoManager {
+  private static instance: VideoManager;
   private config: VideoConfig;
 
   private constructor() {
     this.config = { ...DEFAULT_VIDEO_CONFIG };
   }
 
-  static getInstance(): VideoConfigManager {
-    if (!VideoConfigManager.instance) {
-      VideoConfigManager.instance = new VideoConfigManager();
+  static getInstance(): VideoManager {
+    if (!VideoManager.instance) {
+      VideoManager.instance = new VideoManager();
     }
-    return VideoConfigManager.instance;
+    return VideoManager.instance;
   }
 
   getConfig(): VideoConfig {
@@ -72,9 +70,7 @@ export class VideoConfigManager {
 
   // Helper methods for common configurations
   shouldUseBlueskyPlayer(): boolean {
-    if (this.config.preferredPlayer === 'bluesky') return true;
-    if (this.config.preferredPlayer === 'expo') return false;
-    return this.config.preferredPlayer === 'auto';
+    return true; // Always use Bluesky player
   }
 
   shouldEnableHLS(): boolean {
@@ -96,4 +92,4 @@ export class VideoConfigManager {
 }
 
 // Export singleton instance
-export const videoConfig = VideoConfigManager.getInstance();
+export const videoManager = VideoManager.getInstance();

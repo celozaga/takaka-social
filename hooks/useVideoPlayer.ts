@@ -4,7 +4,7 @@ import { AppBskyEmbedVideo } from '@atproto/api';
 
 const HLS_BASE_URL = 'https://video.bsky.app/watch';
 
-export interface BlueskyVideoState {
+export interface VideoPlayerState {
   isPlaying: boolean;
   isMuted: boolean;
   isFullscreen: boolean;
@@ -16,7 +16,7 @@ export interface BlueskyVideoState {
   currentTime: number;
 }
 
-export interface BlueskyVideoControls {
+export interface VideoPlayerControls {
   play: () => void;
   pause: () => void;
   togglePlayPause: () => void;
@@ -26,14 +26,14 @@ export interface BlueskyVideoControls {
   reset: () => void;
 }
 
-export const useBlueskyVideo = (
+export const useVideoPlayer = (
   embed: AppBskyEmbedVideo.View | undefined,
   authorDid: string | undefined
 ) => {
   const { agent } = useAtp();
   const videoRef = useRef<any>(null);
   
-  const [state, setState] = useState<BlueskyVideoState>({
+  const [state, setState] = useState<VideoPlayerState>({
     isPlaying: false,
     isMuted: false,
     isFullscreen: false,
@@ -89,7 +89,6 @@ export const useBlueskyVideo = (
   // Event handlers for BlueskyVideoView
   const handleActiveChange = useCallback((e: any) => {
     const isActive = e.nativeEvent.isActive;
-    // Handle when video becomes active/inactive
     console.log('Video active state changed:', isActive);
   }, []);
 
@@ -137,7 +136,7 @@ export const useBlueskyVideo = (
 
   const handleError = useCallback((e: any) => {
     const error = e.nativeEvent.error;
-    console.error('BlueskyVideo error:', error);
+    console.error('Video player error:', error);
     setState(prev => ({ 
       ...prev, 
       hasError: true, 
@@ -202,7 +201,7 @@ export const useBlueskyVideo = (
     });
   }, []);
 
-  const controls: BlueskyVideoControls = {
+  const controls: VideoPlayerControls = {
     play,
     pause,
     togglePlayPause,

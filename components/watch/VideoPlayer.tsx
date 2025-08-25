@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
-import { BlueskyVideoView } from '@haileyok/bluesky-video';
 import VideoPostOverlay from './VideoPostOverlay';
 import { Volume2, VolumeX, Play, Fullscreen } from 'lucide-react';
 import { theme } from '@/lib/theme';
-import { useBlueskyVideo } from '@/hooks/useBlueskyVideo';
+import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { useModeration } from '@/context/ModerationContext';
 import { moderatePost, ModerationDecision } from '@/lib/moderation';
 import ContentWarning from '@/components/shared/ContentWarning';
@@ -18,11 +18,13 @@ interface Props {
   onMuteToggle: () => void;
 }
 
-const BlueskyVideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, isMuted, onMuteToggle }) => {
+const VideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPaused, isMuted, onMuteToggle }) => {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const { post } = postView;
   const moderation = useModeration();
+  const videoRef = useRef<Video>(null);
+  const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
 
   const modDecision: ModerationDecision = useMemo(() => {
     if (!moderation.isReady) return { visibility: 'show' };
@@ -38,10 +40,9 @@ const BlueskyVideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPau
   const { 
     state, 
     controls, 
-    videoRef, 
     playbackUrls, 
     eventHandlers 
-  } = useBlueskyVideo(embedView, post.author.did);
+  } = useVideoPlayer(embedView, post.author.did);
 
   const [isContentVisible, setIsContentVisible] = useState(false);
 
@@ -52,25 +53,75 @@ const BlueskyVideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPau
 
   const isEffectivelyPaused = isExternallyPaused || !state.isPlaying;
   const showSpinner = playbackUrls.isLoading || state.isLoading;
+  const isLoading = status?.isLoaded ? status.isBuffering : true;
+  const position = status?.isLoaded ? status.positionMillis : 0;
+  const duration = status?.isLoaded ? status.durationMillis : 0;
+
+  // Sync mute state with expo-av
+  useEffect(() => {
+    videoRef.current?.setIsMutedAsync(isMuted);
+  }, [isMuted]);
+
+  // Sync play/pause state with expo-av
+  useEffect(() => {
+    if (isEffectivelyPaused) {
+      videoRef.current?.pauseAsync();
+    } else {
+      videoRef.current?.playAsync();
+    }
+  }, [isEffectivelyPaused]);
+
+  const contentFit = useMemo(() => {
+    if (!embedView?.aspectRatio) return ResizeMode.CONTAIN;
+    return embedView.aspectRatio.width > embedView.aspectRatio.height ? ResizeMode.CONTAIN : ResizeMode.COVER;
+  }, [embedView]);
+
+  const handleStatusUpdate = (newStatus: AVPlaybackStatus) => {
+    setStatus(newStatus);
+    if (newStatus.isLoaded) {
+      // Update our state based on expo-av status
+      if (newStatus.isPlaying !== state.isPlaying) {
+        controls.togglePlayPause();
+      }
+    }
+  };
 
   const handleMuteToggle = (e: any) => { 
     e.stopPropagation(); 
     onMuteToggle(); 
   };
 
+  const togglePlayPause = () => {
+    if (videoRef.current) {
+      if (isEffectivelyPaused) {
+        videoRef.current.playAsync();
+      } else {
+        videoRef.current.pauseAsync();
+      }
+    }
+  };
+
+  const progress = duration ? (position / duration) : 0;
+
   const renderPlayerContent = () => (
     <>
       {playbackUrls.streamingUrl && (
-        <BlueskyVideoView
+        <Video
           ref={videoRef}
-          url={playbackUrls.streamingUrl}
-          autoplay={!isEffectivelyPaused}
-          beginMuted={isMuted}
-          forceTakeover={false}
-          accessibilityLabel={`Video from ${post.author.displayName || post.author.handle}`}
-          accessibilityHint="Double tap to play or pause"
-          {...eventHandlers}
           style={styles.video}
+          source={{ uri: playbackUrls.streamingUrl }}
+          posterSource={embedView?.thumbnail ? { uri: embedView.thumbnail } : undefined}
+          resizeMode={contentFit}
+          shouldPlay={!isEffectivelyPaused}
+          isLooping
+          isMuted={isMuted}
+          onPlaybackStatusUpdate={handleStatusUpdate}
+          // Performance optimizations
+          useNativeControls={false}
+          shouldCorrectPitch={false}
+          // Buffer settings for better performance
+          progressUpdateIntervalMillis={100}
+          positionMillis={0}
         />
       )}
       
@@ -99,7 +150,7 @@ const BlueskyVideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPau
             </Pressable>
           </View>
           <View style={[styles.progressBarContainer, isMobile && styles.progressBarContainerMobile]}>
-            <View style={[styles.progressBar, { transform: [{ scaleX: state.progress }] }]} />
+            <View style={[styles.progressBar, { transform: [{ scaleX: progress }] }]} />
           </View>
         </>
       )}
@@ -107,7 +158,7 @@ const BlueskyVideoPlayer: React.FC<Props> = ({ postView, paused: isExternallyPau
   );
 
   return (
-    <TouchableWithoutFeedback onPress={controls.togglePlayPause}>
+    <TouchableWithoutFeedback onPress={togglePlayPause}>
       <View style={styles.container}>
         {embedView?.thumbnail && (
           <Image 
@@ -216,4 +267,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(BlueskyVideoPlayer);
+export default React.memo(VideoPlayer);

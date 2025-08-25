@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
-import BlueskyVideoPlayer from './BlueskyVideoPlayer';
+import VideoPlayer from './VideoPlayer';
 
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;
@@ -10,8 +10,8 @@ interface Props {
 }
 
 const SmartVideoPlayer: React.FC<Props> = (props) => {
-  // Use BlueskyVideoPlayer directly since it's the only player we need
-  return <BlueskyVideoPlayer {...props} />;
+  // Use VideoPlayer directly since it's the only player we need
+  return <VideoPlayer {...props} />;
 };
 
 export default SmartVideoPlayer;
