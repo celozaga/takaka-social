@@ -22,9 +22,9 @@ export const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, auth
         const resolveUrls = () => {
             setIsLoading(true);
             setError(null);
-            setPlaybackUrls({ hlsUrl: null, fallbackUrl: null });
+            setPlaybackUrls({ hlsUrl: null, fallbackUrl: null, streamingUrl: null });
 
-            if (!embed || !authorDid) {
+            if (!embed || !authorDid || !agent?.service) {
                 setIsLoading(false);
                 return;
             }
@@ -51,8 +51,13 @@ export const useVideoPlayback = (embed: AppBskyEmbedVideo.View | undefined, auth
             }
         };
 
-        resolveUrls();
-    }, [agent.service, embed, authorDid]);
+        // Only resolve URLs if agent is ready
+        if (agent && agent.service) {
+            resolveUrls();
+        } else {
+            setIsLoading(false);
+        }
+    }, [agent, embed, authorDid]);
 
     return { ...playbackUrls, isLoading, error };
 };

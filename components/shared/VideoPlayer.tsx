@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-video';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { StyleSheet, StyleProp, ViewStyle, View, Text } from 'react-native';
 
 interface SimpleVideoPlayerProps {

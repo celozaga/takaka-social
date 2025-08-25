@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-video';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';

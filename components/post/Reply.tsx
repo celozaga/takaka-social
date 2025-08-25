@@ -25,7 +25,7 @@ interface ReplyProps {
 }
 
 const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> = ({embed, authorDid}) => {
-    const {hlsUrl, fallbackUrl} = useVideoPlayback(embed, authorDid);
+    const {hlsUrl, fallbackUrl, streamingUrl} = useVideoPlayback(embed, authorDid);
     const aspectRatio = embed.aspectRatio ? embed.aspectRatio.width / embed.aspectRatio.height : 16/9;
     
     return (
@@ -33,6 +33,7 @@ const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> =
             <SimpleVideoPlayer 
                 hlsUrl={hlsUrl}
                 fallbackUrl={fallbackUrl}
+                streamingUrl={streamingUrl}
                 videoOptions={{
                     autoplay: false,
                     controls: true,

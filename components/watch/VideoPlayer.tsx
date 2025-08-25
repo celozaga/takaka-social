@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableWithoutFeedback, ActivityIndicator, Pressable, Text, Platform } from 'react-native';
+
 import { Image } from 'expo-image';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-video';
+import { Video, AVPlaybackStatus } from 'expo-av';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
 import { Volume2, VolumeX, Play } from 'lucide-react';
@@ -10,6 +11,7 @@ import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 import { useModeration } from '@/context/ModerationContext';
 import { moderatePost, ModerationDecision } from '@/lib/moderation';
 import ContentWarning from '@/components/shared/ContentWarning';
+import { ResizeMode } from 'expo-av';
 
 interface Props {
   postView: AppBskyFeedDefs.FeedViewPost;

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../components/ui/use-toast';
-import { AppBskyFeedPost} from '@atproto/api';
+import { AppBskyFeedPost } from '@atproto/api';
 
 interface PostActionable {
   uri: string;
@@ -82,7 +82,7 @@ export const usePostActions = (post: PostActionable) => {
     e?.preventDefault();
     if (!ensureSession('repost') || isReposting) return;
 
-    if (AppBskyFeedPost.isRecord(post.record) && (post.record as AppBskyFeedPost.Record).reply) {
+    if (AppBskyFeedPost.isRecord(post.record) && (post.record as any).reply) {
         toast({ title: t('hooks.repostReplyError'), variant: "destructive" });
         return;
     }
