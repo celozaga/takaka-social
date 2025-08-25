@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { VideoView, useVideoPlayer, VideoFullscreenUpdateState, VideoStatusUpdateEvent, VideoTimeUpdateEvent, VideoFullscreenUpdateEvent } from 'expo-video';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
@@ -18,70 +18,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
   const { hlsUrl, fallbackUrl, isLoading: isLoadingUrl } = useVideoPlayback(embed, post.author.did);
 
   const containerRef = useRef<View>(null);
+  const videoRef = useRef<Video>(null);
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
 
-  const player = useVideoPlayer(null, p => {
-    p.muted = false;
-    p.loop = true;
-    p.play();
-  });
-
-  useEffect(() => {
-    const sourceToPlay = hlsUrl || fallbackUrl;
-    if (sourceToPlay) {
-        player.replace(sourceToPlay);
-    }
-  }, [hlsUrl, fallbackUrl, player]);
-
-
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
+  const [sourceUri, setSourceUri] = useState<string | undefined>(hlsUrl || fallbackUrl || undefined);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-
-  useEffect(() => {
-      const statusSubscription = player.addListener('statusChange', (event: VideoStatusUpdateEvent) => {
-          const status = event.status;
-          if (status) {
-            setIsPlaying(status.isPlaying);
-            setIsMuted(status.isMuted);
-            setIsLoading(status.isLoading);
-          }
-          if (status.error) {
-            console.error('VideoPlayer error:', status.error);
-            const currentSourceUri = player.currentSource?.uri;
-            if (currentSourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
-                console.log('HLS stream failed, attempting fallback to MP4.');
-                player.replace(fallbackUrl);
-                setPlayerError(null);
-            } else {
-                setPlayerError("Could not play video.");
-            }
-          } else {
-            setPlayerError(null);
-          }
-      });
-      const timeSubscription = player.addListener('timeUpdate', (event: VideoTimeUpdateEvent) => {
-          setPosition(event.position);
-          setDuration(event.duration);
-      });
-      const fullscreenSubscription = player.addListener('fullscreenUpdate', (event: VideoFullscreenUpdateEvent) => {
-        if (Platform.OS !== 'web') {
-          setIsFullscreen(event.fullscreenState === VideoFullscreenUpdateState.ENTERED);
-        }
-      });
-      return () => {
-          statusSubscription.remove();
-          timeSubscription.remove();
-          fullscreenSubscription.remove();
-      };
-  }, [player, hlsUrl, fallbackUrl]);
-
   const [isControlsVisible, setControlsVisible] = useState(true);
+
+  const isPlaying = status?.isLoaded ? status.isPlaying : false;
+  const isMuted = status?.isLoaded ? status.isMuted : false;
+  const isLoading = status?.isLoaded ? status.isBuffering : true;
+  const position = status?.isLoaded ? status.positionMillis : 0;
+  const duration = status?.isLoaded ? status.durationMillis : 0;
+  
+  useEffect(() => {
+    setSourceUri(hlsUrl || fallbackUrl || undefined);
+  }, [hlsUrl, fallbackUrl]);
   
   const hideControls = useCallback(() => {
     if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
@@ -112,9 +66,19 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
       if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
     };
   }, [isPlaying, hideControls]);
-
-  const togglePlayPause = () => (player.playing ? player.pause() : player.play());
-  const toggleMute = () => { player.muted = !player.muted };
+  
+  const togglePlayPause = () => {
+      if (!status?.isLoaded) return;
+      if (status.isPlaying) {
+          videoRef.current?.pauseAsync();
+      } else {
+          videoRef.current?.playAsync();
+      }
+  };
+  const toggleMute = () => {
+      if (!status?.isLoaded) return;
+      videoRef.current?.setIsMutedAsync(!status.isMuted);
+  };
 
   const handleFullscreen = useCallback(async () => {
     if (Platform.OS === 'web') {
@@ -128,12 +92,12 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
       }
     } else {
         if (isFullscreen) {
-            await player.exitFullscreen();
+            await videoRef.current?.dismissFullscreenPlayer();
         } else {
-            await player.enterFullscreen();
+            await videoRef.current?.presentFullscreenPlayer();
         }
     }
-  }, [player, isFullscreen]);
+  }, [isFullscreen]);
   
   useEffect(() => {
     const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -142,6 +106,22 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
       return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }
   }, []);
+
+  const handleStatusUpdate = (newStatus: AVPlaybackStatus) => {
+    setStatus(newStatus);
+    if (!newStatus.isLoaded) {
+        console.error('VideoPlayer error:', newStatus.error);
+        if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+            console.log('HLS stream failed, attempting fallback to MP4.');
+            setSourceUri(fallbackUrl);
+            setPlayerError(null);
+        } else {
+            setPlayerError("Could not play video.");
+        }
+    } else {
+        setPlayerError(null);
+    }
+  };
 
   const progress = duration ? position / duration : 0;
   const showSpinner = isLoadingUrl || isLoading;
@@ -157,14 +137,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
 
   return (
     <Pressable ref={containerRef} style={[styles.container, style]} onPress={showControls}>
-      <VideoView
-        player={player}
-        style={StyleSheet.absoluteFill}
-        posterSource={embed.thumbnail ? { uri: embed.thumbnail } : null}
-        contentFit='contain'
-        allowsFullscreen
-      />
-
+      {sourceUri && (
+          <Video
+            ref={videoRef}
+            style={StyleSheet.absoluteFill}
+            source={{ uri: sourceUri }}
+            posterSource={embed.thumbnail ? { uri: embed.thumbnail } : undefined}
+            resizeMode={ResizeMode.CONTAIN}
+            shouldPlay
+            isLooping
+            isMuted={false}
+            onPlaybackStatusUpdate={handleStatusUpdate}
+            onFullscreenUpdate={({ fullscreenUpdate }) => {
+                if (Platform.OS !== 'web') {
+                    setIsFullscreen(fullscreenUpdate === 1 || fullscreenUpdate === 3); // WillPresent, DidPresent
+                }
+            }}
+          />
+      )}
       {isControlsVisible && (
         <Pressable style={styles.controlsOverlay} onPress={showControls}>
           <View style={styles.centerControls}>
@@ -174,12 +164,12 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ post, style }
           </View>
 
           <View style={styles.bottomControls}>
-            <Text style={styles.timeText}>{formatPlayerTime(position * 1000)}</Text>
+            <Text style={styles.timeText}>{formatPlayerTime(position)}</Text>
             <View style={styles.sliderContainer}>
                 <View style={[styles.sliderProgress, { flex: progress }]} />
                 <View style={{ flex: 1 - progress }} />
             </View>
-            <Text style={styles.timeText}>{formatPlayerTime(duration * 1000)}</Text>
+            <Text style={styles.timeText}>{formatPlayerTime(duration)}</Text>
             <Pressable onPress={toggleMute} style={styles.iconButton}>{isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}</Pressable>
             <Pressable onPress={handleFullscreen} style={styles.iconButton}>{isFullscreen ? <Minimize size={20} color="white" /> : <Maximize size={20} color="white" />}</Pressable>
           </View>

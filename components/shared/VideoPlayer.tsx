@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { VideoView, useVideoPlayer, VideoStatusUpdateEvent } from 'expo-video';
+import React, { useState, useEffect, useRef } from 'react';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { StyleSheet, StyleProp, ViewStyle, View, Text } from 'react-native';
 
 interface SimpleVideoPlayerProps {
@@ -13,7 +13,7 @@ interface SimpleVideoPlayerProps {
     muted?: boolean;
   };
   style?: StyleProp<ViewStyle>;
-  onPlaybackStatusUpdate?: (status: VideoStatusUpdateEvent) => void;
+  onPlaybackStatusUpdate?: (status: AVPlaybackStatus) => void;
 }
 
 const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({ 
@@ -24,52 +24,55 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
   onPlaybackStatusUpdate 
 }) => {
   const [error, setError] = useState<string | null>(null);
-  const player = useVideoPlayer(null, (p) => {
-    p.loop = videoOptions.loop ?? false;
-    p.muted = videoOptions.muted ?? false;
-    if (videoOptions.autoplay) {
-      p.play();
-    }
-  });
+  const [sourceUri, setSourceUri] = useState<string | undefined>(hlsUrl || fallbackUrl || undefined);
+  const videoRef = useRef<Video>(null);
 
   useEffect(() => {
-    const sourceToPlay = hlsUrl || fallbackUrl;
-    if (sourceToPlay) {
-      player.replace(sourceToPlay);
+    setSourceUri(hlsUrl || fallbackUrl || undefined);
+  }, [hlsUrl, fallbackUrl]);
+
+  const handleError = ({ error }: { error: string }) => {
+    console.error('VideoPlayer error:', error);
+    if (sourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
+      console.log('HLS stream failed, attempting fallback to MP4.');
+      setSourceUri(fallbackUrl);
+      setError(null);
+    } else {
+      setError("Could not play video.");
     }
-  }, [hlsUrl, fallbackUrl, player]);
-
-  useEffect(() => {
-    const subscription = player.addListener('statusChange', (event) => {
-      onPlaybackStatusUpdate?.(event);
-
-      if (typeof event.status === 'object' && event.status.error) {
-        console.error('VideoPlayer error:', event.status.error);
-        const currentSourceUri = player.currentSource?.uri;
-
-        if (currentSourceUri === hlsUrl && fallbackUrl && hlsUrl !== fallbackUrl) {
-          console.log('HLS stream failed, attempting fallback to MP4.');
-          player.replace(fallbackUrl);
-          setError(null); // Clear previous error
-        } else {
-          setError("Could not play video.");
-        }
-      } else {
-        setError(null);
-      }
-    });
-    return () => subscription.remove();
-  }, [player, onPlaybackStatusUpdate, hlsUrl, fallbackUrl]);
+  };
   
+  if (!sourceUri) {
+      return (
+        <View style={[styles.video, style, styles.errorContainer]}>
+        </View>
+      );
+  }
+
+  const handleStatusUpdate = (status: AVPlaybackStatus) => {
+    if (onPlaybackStatusUpdate) {
+        onPlaybackStatusUpdate(status);
+    }
+    if (!status.isLoaded) {
+        handleError({ error: status.error });
+    } else {
+        setError(null);
+    }
+  }
+
   return (
     <View style={[styles.video, style]}>
-      <VideoView
-        player={player}
+      <Video
+        ref={videoRef}
         style={StyleSheet.absoluteFill}
-        posterSource={videoOptions.poster ? { uri: videoOptions.poster } : null}
-        contentFit="contain"
-        allowsFullscreen
-        nativeControls={videoOptions.controls}
+        source={{ uri: sourceUri }}
+        posterSource={videoOptions.poster ? { uri: videoOptions.poster } : undefined}
+        useNativeControls={videoOptions.controls}
+        resizeMode={ResizeMode.CONTAIN}
+        isLooping={videoOptions.loop}
+        isMuted={videoOptions.muted}
+        shouldPlay={videoOptions.autoplay}
+        onPlaybackStatusUpdate={handleStatusUpdate}
       />
       {error && (
         <View style={styles.errorContainer}>
