@@ -687,11 +687,15 @@ const Feed: React.FC<FeedProps> = ({
   const renderFooter = () => {
     if (isLoadingMore) {
       if (layout === 'grid') {
-        // Render skeletons in a 2-column layout to match the grid
+        // Render skeletons in masonry layout to match the grid
         return (
-          <View style={[styles.masonryContainer, { marginTop: theme.spacing.lg }]}>
-            <View style={styles.column}><PostCardSkeleton /></View>
-            <View style={styles.column}><PostCardSkeleton /></View>
+          <View style={{ flexDirection: 'row', marginTop: theme.spacing.lg }}>
+            <View style={{ flex: 1, marginHorizontal: theme.spacing.xs }}>
+              <PostCardSkeleton />
+            </View>
+            <View style={{ flex: 1, marginHorizontal: theme.spacing.xs }}>
+              <PostCardSkeleton />
+            </View>
           </View>
         );
       }
@@ -763,10 +767,16 @@ const Feed: React.FC<FeedProps> = ({
       <View style={{ flex: 1 }}>
         {renderHeader()}
         {layout === 'grid' ? (
-          <View style={{ paddingHorizontal: theme.spacing.sm }}>
-            <View style={styles.masonryContainer}>
-                <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
-                <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
+          <View style={{ paddingHorizontal: theme.spacing.sm, paddingTop: theme.spacing.lg }}>
+            <View style={{ flexDirection: 'row' }}>
+              <View style={{ flex: 1, marginHorizontal: theme.spacing.xs }}>
+                <PostCardSkeleton />
+                <PostCardSkeleton />
+              </View>
+              <View style={{ flex: 1, marginHorizontal: theme.spacing.xs }}>
+                <PostCardSkeleton />
+                <PostCardSkeleton />
+              </View>
             </View>
           </View>
         ) : (

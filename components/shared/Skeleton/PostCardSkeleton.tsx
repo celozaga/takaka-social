@@ -35,20 +35,24 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderRadius: theme.radius.lg,
     overflow: 'hidden',
     flexDirection: 'column',
+    // Match the masonry layout spacing
+    marginBottom: theme.spacing.md,
   },
   mediaPlaceholder: {
     width: '100%',
     backgroundColor: theme.colors.surfaceContainerHigh,
-    height: 250,
+    height: 200, // Reduced height to match grid cards
   },
   contentPlaceholder: {
     padding: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   authorInfo: {
     flexDirection: 'row',

@@ -124,17 +124,39 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
         if (AppBskyEmbedImages.isView(mediaEmbed)) {
             const firstImage = mediaEmbed.images[0];
             const hasMultipleImages = mediaEmbed.images.length > 1;
-            // Use a more consistent aspect ratio for better masonry layout
-            const imageAspectRatio = firstImage.aspectRatio
-                    ? Math.min(Math.max(firstImage.aspectRatio.width / firstImage.aspectRatio.height, 0.5), 2.0)
-                    : 1;
+            
+            // Calculate image dimensions with max height constraint
+            let imageHeight = 300; // Default height for better visual balance
+            let imageAspectRatio = 1; // Default aspect ratio
+            
+            if (firstImage.aspectRatio) {
+                const originalAspectRatio = firstImage.aspectRatio.width / firstImage.aspectRatio.height;
+                // Constrain aspect ratio between 0.5 and 2.0 for better masonry layout
+                imageAspectRatio = Math.min(Math.max(originalAspectRatio, 0.5), 2.0);
+                
+                // Use aspect ratio to determine height, but ensure minimum and maximum bounds
+                if (imageAspectRatio > 1) {
+                    // Landscape images: use aspect ratio to calculate height
+                    imageHeight = Math.min(300 / imageAspectRatio, 500);
+                } else {
+                    // Portrait images: use aspect ratio but cap at 500px
+                    imageHeight = Math.min(300 * (1 / imageAspectRatio), 500);
+                }
+                
+                // Ensure minimum height for very wide images
+                imageHeight = Math.max(imageHeight, 150);
+            }
             
             return (
                 <View style={styles.mediaContainer}>
                     <OptimizedImage 
                         source={firstImage.thumb}
                         accessibilityLabel={firstImage.alt || 'Post image'} 
-                        style={[styles.image, { aspectRatio: imageAspectRatio }]}
+                        style={[styles.image, { 
+                            height: imageHeight,
+                            maxHeight: 500,
+                            aspectRatio: imageAspectRatio 
+                        }]}
                         contentFit="cover"
                         transition={200}
                     />
@@ -240,8 +262,12 @@ const createStyles = (theme: any) => StyleSheet.create({
         mediaContainer: {
             width: '100%',
             position: 'relative',
+            overflow: 'hidden', // Ensure images don't overflow
         },
-        image: { width: '100%' },
+        image: { 
+            width: '100%',
+            objectFit: 'cover', // CSS cover behavior
+        },
         videoPoster: { resizeMode: 'contain' },
 
         mediaBadgeContainer: { position: 'absolute', top: theme.spacing.sm, right: theme.spacing.sm, flexDirection: 'row', gap: theme.spacing.xs },
