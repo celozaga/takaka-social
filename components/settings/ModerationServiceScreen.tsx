@@ -6,8 +6,8 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { BadgeCheck } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
-import ScreenHeader from '../layout/ScreenHeader';
 import { theme } from '@/lib/theme';
+import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 interface ModerationServiceScreenProps {
   serviceDid: string;
@@ -43,17 +43,28 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
     }, [getProfile, serviceDid]);
     
     if (isLoading) {
-        return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>;
+        return (
+            <SettingsScreenLayout title="Loading...">
+                <View style={styles.centered}>
+                    <ActivityIndicator size="large" color={theme.colors.onSurface} />
+                </View>
+            </SettingsScreenLayout>
+        );
     }
 
     if (!serviceProfile) {
-        return <View style={styles.centered}><Text style={styles.errorText}>Could not load moderation service details.</Text></View>;
+        return (
+            <SettingsScreenLayout title="Error">
+                <View style={styles.centered}>
+                    <Text style={styles.errorText}>Could not load moderation service details.</Text>
+                </View>
+            </SettingsScreenLayout>
+        );
     }
 
     return (
-        <View>
-            <ScreenHeader title={serviceProfile.displayName || ''} />
-            <View style={theme.settingsStyles.scrollContainer}>
+        <SettingsScreenLayout title={serviceProfile.displayName || ''}>
+            <SettingsSection>
                 <View style={styles.profileHeader}>
                     <Image source={{ uri: serviceProfile.avatar }} style={styles.avatar} />
                     <View>
@@ -64,42 +75,46 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                         <Text style={styles.handle}>@{serviceProfile.handle}</Text>
                     </View>
                 </View>
-                {serviceProfile.description && <Text style={[theme.settingsStyles.description, {marginBottom: 0, marginTop: theme.spacing.l}]}>{serviceProfile.description}</Text>}
+                {serviceProfile.description && (
+                    <Text style={[theme.settingsStyles.description, {marginBottom: 0, marginTop: theme.spacing.l}]}>
+                        {serviceProfile.description}
+                    </Text>
+                )}
+            </SettingsSection>
 
-                <View style={styles.labelsContainer}>
-                    {configurableLabels.map(labelId => {
-                        const def = blueskyLabelDefs[labelId];
-                        const isDisabled = !isReady || (def.adult && !adultContentEnabled);
-                        const currentVisibility = labelPreferences.get(def.id) || (def.adult ? 'warn' : 'show');
-                        
-                        return (
-                            <View key={def.id} style={[styles.labelCard, isDisabled && theme.settingsStyles.disabled]}>
-                                <Text style={styles.labelTitle}>{def.title}</Text>
-                                <Text style={theme.settingsStyles.sublabel}>{def.description}</Text>
-                                {isDisabled && <Text style={styles.disabledText}>Configured in moderation settings.</Text>}
+            <SettingsSection title="Content Labels">
+                {configurableLabels.map(labelId => {
+                    const def = blueskyLabelDefs[labelId];
+                    const isDisabled = !isReady || (def.adult && !adultContentEnabled);
+                    const currentVisibility = labelPreferences.get(def.id) || (def.adult ? 'warn' : 'show');
+                    
+                    return (
+                        <View key={def.id} style={[styles.labelCard, isDisabled && theme.settingsStyles.disabled]}>
+                            <Text style={styles.labelTitle}>{def.title}</Text>
+                            <Text style={theme.settingsStyles.sublabel}>{def.description}</Text>
+                            {isDisabled && <Text style={styles.disabledText}>Configured in moderation settings.</Text>}
 
-                                <View style={styles.optionsContainer}>
-                                    {(['Hide', 'Warn', 'Show'] as const).map(option => {
-                                        const value = option.toLowerCase() as LabelVisibility;
-                                        const isActive = currentVisibility === value;
-                                        return (
-                                            <Pressable 
-                                                key={option}
-                                                onPress={() => setLabelPreference(def.id, value)}
-                                                disabled={isDisabled}
-                                                style={[styles.optionButton, isActive && styles.optionButtonActive]}
-                                            >
-                                                <Text style={[styles.optionText, isActive && styles.optionTextActive]}>{option}</Text>
-                                            </Pressable>
-                                        );
-                                    })}
-                                </View>
+                            <View style={styles.optionsContainer}>
+                                {(['Hide', 'Warn', 'Show'] as const).map(option => {
+                                    const value = option.toLowerCase() as LabelVisibility;
+                                    const isActive = currentVisibility === value;
+                                    return (
+                                        <Pressable 
+                                            key={option}
+                                            onPress={() => setLabelPreference(def.id, value)}
+                                            disabled={isDisabled}
+                                            style={[styles.optionButton, isActive && styles.optionButtonActive]}
+                                        >
+                                            <Text style={[styles.optionText, isActive && styles.optionTextActive]}>{option}</Text>
+                                        </Pressable>
+                                    );
+                                })}
                             </View>
-                        );
-                    })}
-                </View>
-            </View>
-        </View>
+                        </View>
+                    );
+                })}
+            </SettingsSection>
+        </SettingsScreenLayout>
     );
 };
 

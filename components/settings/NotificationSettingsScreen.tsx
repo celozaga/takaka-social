@@ -3,14 +3,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
-import ScreenHeader from '../layout/ScreenHeader';
 import { Ionicons } from '@expo/vector-icons';
 import Head from 'expo-router/head';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
 import SettingsDivider from '@/components/ui/SettingsDivider';
+import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 
@@ -98,42 +98,34 @@ const NotificationSettingsScreen: React.FC = () => {
             const { data: currentPrefs } = await agent.app.bsky.actor.getPreferences();
             const otherPrefs = currentPrefs.preferences.filter(p => p.$type !== 'app.bsky.actor.defs#pushNotificationsPref');
             
+            const pushPref: PushNotificationsPref = {
+                $type: 'app.bsky.actor.defs#pushNotificationsPref',
+                primary: {
+                    enabled: true,
+                    disabled: disabledReasons,
+                }
+            };
+
             await agent.app.bsky.actor.putPreferences({
-                preferences: [
-                    ...otherPrefs,
-                    {
-                        $type: 'app.bsky.actor.defs#pushNotificationsPref',
-                        primary: { enabled: true, disabled: disabledReasons }
-                    } as any,
-                ]
+                preferences: [...otherPrefs, pushPref]
             });
 
-            toast({ title: t('notificationSettings.toast.saveSuccess') });
+            setSettings(newSettings);
+            toast({ title: t('common.success'), description: t('notificationSettings.toast.saved') });
         } catch (error) {
-            console.error("Failed to save notification settings:", error);
-            toast({ title: "Error", description: t('notificationSettings.toast.saveError'), variant: "destructive" });
+            console.error("Failed to save notification preferences:", error);
+            toast({ title: t('common.error'), description: t('notificationSettings.toast.saveError'), variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
     }, [agent, toast, t]);
-    
-    const handleSettingToggle = (key: SettingsKey, value: boolean) => {
-        const newSettings = { ...settings, [key]: value };
-        setSettings(newSettings);
-        saveSettings(newSettings);
-    };
+
+    const handleSettingToggle = useCallback(async (key: SettingsKey, checked: boolean) => {
+        const newSettings = { ...settings, [key]: checked };
+        await saveSettings(newSettings);
+    }, [settings, saveSettings]);
 
     const handleMasterToggle = async (enabled: boolean) => {
-        // Skip notifications in Expo Go due to SDK 53 limitations
-        if (isExpoGo) {
-            toast({ 
-                title: "Push notifications unavailable", 
-                description: "Push notifications are not available in Expo Go with SDK 53. Please use a development build or production app.", 
-                variant: "destructive"
-            });
-            return;
-        }
-        
         if (enabled) {
             try {
                 const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -183,53 +175,46 @@ const NotificationSettingsScreen: React.FC = () => {
 
     if (isLoading) {
         return (
-            <View style={{flex: 1}}>
-                <ScreenHeader title={t('notificationSettings.title')} />
+            <SettingsScreenLayout title={t('notificationSettings.title')}>
                 <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                     <ActivityIndicator size="large" color={theme.colors.onSurface} />
                 </View>
-            </View>
+            </SettingsScreenLayout>
         )
     }
 
     return (
         <>
             <Head><title>{t('notificationSettings.title')}</title></Head>
-            <View style={{flex: 1}}>
-                <ScreenHeader title={t('notificationSettings.title')} />
-                <ScrollView contentContainerStyle={theme.settingsStyles.container}>
-                     <View style={theme.settingsStyles.section}>
-                        <SettingsListItem
-                            icon={(props: any) => <Ionicons name="notifications-outline" {...props} />}
-                            label={t('notificationSettings.enablePush')}
-                            sublabel={t('notificationSettings.getAlerts')}
-                            control={<ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />}
-                        />
-                    </View>
+            <SettingsScreenLayout title={t('notificationSettings.title')}>
+                <SettingsSection>
+                    <SettingsListItem
+                        icon={(props: any) => <Ionicons name="notifications-outline" {...props} />}
+                        label={t('notificationSettings.enablePush')}
+                        sublabel={t('notificationSettings.getAlerts')}
+                        control={<ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />}
+                    />
+                </SettingsSection>
 
-                    <View style={!pushEnabled ? theme.settingsStyles.disabled : undefined}>
-                        <Text style={theme.settingsStyles.sectionHeader}>{t('notificationSettings.notifyMeAbout')}</Text>
-                        <View style={theme.settingsStyles.section}>
-                             {settingsItems.map((item, index) => (
-                                <React.Fragment key={item.key}>
-                                    <SettingsListItem
-                                        icon={item.icon}
-                                        label={item.title}
-                                        control={
-                                            <ToggleSwitch
-                                                checked={settings[item.key]}
-                                                onChange={(checked) => handleSettingToggle(item.key, checked)}
-                                                disabled={isSaving || !pushEnabled}
-                                            />
-                                        }
+                <SettingsSection title={t('notificationSettings.notifyMeAbout')}>
+                    {settingsItems.map((item, index) => (
+                        <React.Fragment key={item.key}>
+                            <SettingsListItem
+                                icon={item.icon}
+                                label={item.title}
+                                control={
+                                    <ToggleSwitch
+                                        checked={settings[item.key]}
+                                        onChange={(checked) => handleSettingToggle(item.key, checked)}
+                                        disabled={isSaving || !pushEnabled}
                                     />
-                                    {index < settingsItems.length - 1 && <SettingsDivider />}
-                                </React.Fragment>
-                            ))}
-                        </View>
-                    </View>
-                </ScrollView>
-            </View>
+                                }
+                            />
+                            {index < settingsItems.length - 1 && <SettingsDivider />}
+                        </React.Fragment>
+                    ))}
+                </SettingsSection>
+            </SettingsScreenLayout>
         </>
     );
 };

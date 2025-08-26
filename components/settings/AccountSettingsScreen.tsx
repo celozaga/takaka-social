@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useToast } from '../ui/use-toast';
-import ScreenHeader from '../layout/ScreenHeader';
 import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ShieldCheck } from 'lucide-react';
 import Head from 'expo-router/head';
-import { View, Text, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
 import SettingsDivider from '@/components/ui/SettingsDivider';
+import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const AccountSettingsScreen: React.FC = () => {
     const { session, agent, logout } = useAtp();
@@ -91,29 +91,45 @@ const AccountSettingsScreen: React.FC = () => {
     return (
         <>
             <Head><title>{t('accountSettings.title')}</title></Head>
-            <View style={{flex: 1}}>
-                <ScreenHeader title={t('accountSettings.title')} />
-                <ScrollView contentContainerStyle={theme.settingsStyles.container}>
-                    <View style={theme.settingsStyles.section}>
-                        <SettingsListItem icon={Mail} label={t('accountSettings.email')} value={emailValue} />
-                        <SettingsDivider />
-                        <SettingsListItem icon={Edit} label={t('accountSettings.updateEmail')} onPress={openUpdateEmailModal} disabled={!!actionInProgress} />
-                        <SettingsDivider />
-                        <SettingsListItem icon={Lock} label={t('accountSettings.password')} href="https://bsky.app/settings/password" />
-                        <SettingsDivider />
-                        <SettingsListItem icon={AtSign} label={t('accountSettings.handle')} value={`@${session?.handle}`} onPress={openUpdateHandleModal} disabled={!!actionInProgress} />
-                        <SettingsDivider />
-                        <SettingsListItem icon={Cake} label={t('accountSettings.birthday')} href="https://bsky.app/settings/birthday" />
-                    </View>
-                    <View style={theme.settingsStyles.section}>
-                        <SettingsListItem icon={Download} label={t('accountSettings.exportData')} onPress={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
-                        <SettingsDivider />
-                        <SettingsListItem icon={Power} label={t('accountSettings.deactivateAccount')} onPress={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
-                        <SettingsDivider />
-                        <SettingsListItem icon={Trash2} label={t('accountSettings.deleteAccount')} onPress={handleDeleteAccount} isDestructive isLoading={actionInProgress === 'delete'} disabled={!!actionInProgress} />
-                    </View>
-                </ScrollView>
-            </View>
+            <SettingsScreenLayout title={t('accountSettings.title')}>
+                <SettingsSection>
+                    <SettingsListItem icon={Mail} label={t('accountSettings.email')} value={emailValue} />
+                    <SettingsDivider />
+                    <SettingsListItem icon={Edit} label={t('accountSettings.updateEmail')} onPress={openUpdateEmailModal} disabled={!!actionInProgress} />
+                    <SettingsDivider />
+                    <SettingsListItem icon={Lock} label={t('accountSettings.password')} onPress={() => {
+                        if (Platform.OS === 'web') {
+                            window.open('https://bsky.app/settings/password', '_blank');
+                        } else {
+                            toast({ 
+                                title: t('common.info'), 
+                                description: t('accountSettings.passwordRedirectInfo') 
+                            });
+                        }
+                    }} />
+                    <SettingsDivider />
+                    <SettingsListItem icon={AtSign} label={t('accountSettings.handle')} value={`@${session?.handle}`} onPress={openUpdateHandleModal} disabled={!!actionInProgress} />
+                    <SettingsDivider />
+                    <SettingsListItem icon={Cake} label={t('accountSettings.birthday')} onPress={() => {
+                        if (Platform.OS === 'web') {
+                            window.open('https://bsky.app/settings/birthday', '_blank');
+                        } else {
+                            toast({ 
+                                title: t('common.info'), 
+                                description: t('accountSettings.birthdayRedirectInfo') 
+                            });
+                        }
+                    }} />
+                </SettingsSection>
+                
+                <SettingsSection title={t('accountSettings.accountActions')}>
+                    <SettingsListItem icon={Download} label={t('accountSettings.exportData')} onPress={handleExportData} isLoading={actionInProgress === 'export'} disabled={!!actionInProgress} />
+                    <SettingsDivider />
+                    <SettingsListItem icon={Power} label={t('accountSettings.deactivateAccount')} onPress={handleDeactivate} isDestructive isLoading={actionInProgress === 'deactivate'} disabled={!!actionInProgress} />
+                    <SettingsDivider />
+                    <SettingsListItem icon={Trash2} label={t('accountSettings.deleteAccount')} onPress={handleDeleteAccount} isDestructive isLoading={actionInProgress === 'delete'} disabled={!!actionInProgress} />
+                </SettingsSection>
+            </SettingsScreenLayout>
         </>
     );
 };

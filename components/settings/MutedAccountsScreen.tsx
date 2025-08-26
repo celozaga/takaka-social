@@ -6,13 +6,13 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { AppBskyActorDefs } from '@atproto/api';
 import { Link } from 'expo-router';
-import ScreenHeader from '../layout/ScreenHeader';
 import Head from 'expo-router/head';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, FlatListProps } from 'react-native';
 import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import { BadgeCheck } from 'lucide-react';
 import SettingsDivider from '../ui/SettingsDivider';
+import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const MutedAccountItem: React.FC<{
     actor: AppBskyActorDefs.ProfileView;
@@ -98,42 +98,40 @@ const MutedAccountsScreen: React.FC = () => {
     const handleUnmute = useCallback(async (did: string) => {
         setUnmutingDid(did);
         try {
-            await agent.unmute(did);
-            setAccounts(prev => prev.filter(acc => acc.did !== did));
-            toast({ title: t('mutedAccounts.toast.unmuteSuccess') });
-        } catch (e) {
-            console.error(e);
-            toast({ title: t('common.error'), description: t('mutedAccounts.toast.unmuteError'), variant: 'destructive' });
+            await agent.app.bsky.graph.unmuteActor({ actor: did });
+            setAccounts(prev => prev.filter(account => account.did !== did));
+            toast({ title: t('mutedAccounts.unmuted'), description: t('mutedAccounts.unmutedDescription') });
+        } catch (error) {
+            console.error('Failed to unmute account:', error);
+            toast({ title: t('common.error'), description: t('mutedAccounts.unmuteError'), variant: "destructive" });
         } finally {
             setUnmutingDid(null);
         }
     }, [agent, toast, t]);
 
-    const renderItem = ({ item }: { item: AppBskyActorDefs.ProfileView }) => (
+    const renderItem = useCallback(({ item }: { item: AppBskyActorDefs.ProfileView }) => (
         <MutedAccountItem
             actor={item}
             onUnmute={handleUnmute}
             isUnmuting={unmutingDid === item.did}
         />
-    );
+    ), [handleUnmute, unmutingDid]);
 
-    const renderListEmptyComponent = () => (
-        <View style={theme.settingsStyles.section}>
-            <View style={styles.centeredMessage}>
-                {error ? (
-                    <Text style={styles.errorText}>{error}</Text>
-                ) : (
-                    <Text style={styles.infoText}>{t('mutedAccounts.empty')}</Text>
-                )}
-            </View>
+    const renderListEmptyComponent = useCallback(() => (
+        <View style={styles.centeredMessage}>
+            {error ? (
+                <Text style={styles.errorText}>{error}</Text>
+            ) : (
+                <Text style={styles.infoText}>{t('mutedAccounts.empty')}</Text>
+            )}
         </View>
-    );
+    ), [error, t]);
 
     const flatListProps: FlatListProps<AppBskyActorDefs.ProfileView> = {
         data: accounts,
         renderItem,
         keyExtractor: (item: AppBskyActorDefs.ProfileView) => item.did,
-        contentContainerStyle: theme.settingsStyles.scrollContainer,
+        contentContainerStyle: theme.settingsStyles.container,
         ListHeaderComponent: <Text style={theme.settingsStyles.description}>{t('mutedAccounts.description')}</Text>,
         ListEmptyComponent: renderListEmptyComponent,
         onEndReached: loadMore,
@@ -142,17 +140,24 @@ const MutedAccountsScreen: React.FC = () => {
         ListFooterComponent: isLoadingMore ? <ActivityIndicator style={{ marginVertical: 20 }} color={theme.colors.onSurface} /> : null,
     };
 
+    if (isLoading) {
+        return (
+            <SettingsScreenLayout title={t('mutedAccounts.title')}>
+                <View style={styles.centeredMessage}>
+                    <ActivityIndicator size="large" color={theme.colors.onSurface} />
+                </View>
+            </SettingsScreenLayout>
+        );
+    }
+
     return (
         <>
             <Head><title>{t('mutedAccounts.title')}</title></Head>
-            <View style={{ flex: 1 }}>
-                <ScreenHeader title={t('mutedAccounts.title')} />
-                {isLoading ? (
-                    <View style={styles.centeredMessage}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>
-                ) : (
+            <SettingsScreenLayout title={t('mutedAccounts.title')}>
+                <SettingsSection>
                     <FlatList {...flatListProps} />
-                )}
-            </View>
+                </SettingsSection>
+            </SettingsScreenLayout>
         </>
     );
 };

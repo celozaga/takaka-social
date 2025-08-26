@@ -1,12 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import ScreenHeader from '../layout/ScreenHeader';
 import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
 import Head from 'expo-router/head';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { Pressable } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsDivider from '../ui/SettingsDivider';
+import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const LanguageSettingsScreen: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -18,26 +18,25 @@ const LanguageSettingsScreen: React.FC = () => {
     return (
         <>
             <Head><title>{t('languageSettings.title')}</title></Head>
-            <View style={{flex: 1}}>
-                <ScreenHeader title={t('languageSettings.title')} />
-                <ScrollView contentContainerStyle={theme.settingsStyles.scrollContainer}>
-                    <Text style={theme.settingsStyles.description}>{t('languageSettings.description')}</Text>
-                    <View style={theme.settingsStyles.section}>
-                        {supportedLanguages.map((lang, index) => (
-                            <React.Fragment key={lang.code}>
-                                <Pressable
-                                    onPress={() => changeLanguage(lang.code)}
-                                    style={({ pressed }) => [theme.settingsStyles.item, pressed && theme.settingsStyles.pressed]}
-                                >
-                                    <Text style={theme.settingsStyles.label}>{lang.name}</Text>
-                                    {i18n.language.startsWith(lang.code) && <Check color={theme.colors.onSurface} size={20} />}
-                                </Pressable>
-                                {index < supportedLanguages.length - 1 && <SettingsDivider />}
-                            </React.Fragment>
-                        ))}
-                    </View>
-                </ScrollView>
-            </View>
+            <SettingsScreenLayout
+                title={t('languageSettings.title')}
+                description={t('languageSettings.description')}
+            >
+                <SettingsSection>
+                    {supportedLanguages.map((lang, index) => (
+                        <React.Fragment key={lang.code}>
+                            <Pressable
+                                onPress={() => changeLanguage(lang.code)}
+                                style={({ pressed }) => [theme.settingsStyles.item, pressed && theme.settingsStyles.pressed]}
+                            >
+                                <Text style={theme.settingsStyles.label}>{lang.name}</Text>
+                                {i18n.language.startsWith(lang.code) && <Check color={theme.colors.onSurface} size={20} />}
+                            </Pressable>
+                            {index < supportedLanguages.length - 1 && <SettingsDivider />}
+                        </React.Fragment>
+                    ))}
+                </SettingsSection>
+            </SettingsScreenLayout>
         </>
     );
 };

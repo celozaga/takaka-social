@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useModeration } from '../../context/ModerationContext';
-import ScreenHeader from '../layout/ScreenHeader';
 import { Trash2, Tag, Plus } from 'lucide-react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsDivider from '../ui/SettingsDivider';
+import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const MutedWordsScreen: React.FC = () => {
     const { isReady, mutedWords, addMutedWord, removeMutedWord } = useModeration();
@@ -27,12 +27,11 @@ const MutedWordsScreen: React.FC = () => {
     }
 
     return (
-        <View style={{ flex: 1 }}>
-            <ScreenHeader title="Muted Words & Tags" />
-            <ScrollView contentContainerStyle={theme.settingsStyles.scrollContainer}>
-                <Text style={theme.settingsStyles.description}>
-                    Posts containing these words or tags will be hidden from your feeds. Muting is case-insensitive.
-                </Text>
+        <SettingsScreenLayout 
+            title="Muted Words & Tags"
+            description="Posts containing these words or tags will be hidden from your feeds. Muting is case-insensitive."
+        >
+            <SettingsSection>
                 <View style={styles.formContainer}>
                     <View style={styles.inputContainer}>
                         <Tag style={styles.inputIcon} color={theme.colors.onSurfaceVariant} size={20}/>
@@ -50,28 +49,28 @@ const MutedWordsScreen: React.FC = () => {
                         <Text style={styles.addButtonText}>Add</Text>
                     </Pressable>
                 </View>
+            </SettingsSection>
 
-                <View style={[theme.settingsStyles.section, {marginTop: theme.spacing.xl}]}>
-                    {!isReady ? (
-                        <View style={styles.centered}><ActivityIndicator size="large" /></View>
-                    ) : mutedWords.length === 0 ? (
-                        <View style={styles.centered}><Text style={styles.infoText}>You haven't muted any words yet.</Text></View>
-                    ) : (
-                        mutedWords.map((word, index) => (
-                            <React.Fragment key={word.value}>
-                                <View style={theme.settingsStyles.item}>
-                                    <Text style={theme.settingsStyles.label}>{word.value}</Text>
-                                    <Pressable onPress={() => handleRemove(word.value)} style={styles.removeButton}>
-                                        <Trash2 size={18} color={theme.colors.onSurfaceVariant} />
-                                    </Pressable>
-                                </View>
-                                {index < mutedWords.length - 1 && <SettingsDivider />}
-                            </React.Fragment>
-                        ))
-                    )}
-                </View>
-            </ScrollView>
-        </View>
+            <SettingsSection title="Muted Words">
+                {!isReady ? (
+                    <View style={styles.centered}><ActivityIndicator size="large" /></View>
+                ) : mutedWords.length === 0 ? (
+                    <View style={styles.centered}><Text style={styles.infoText}>You haven't muted any words yet.</Text></View>
+                ) : (
+                    mutedWords.map((word, index) => (
+                        <React.Fragment key={word.value}>
+                            <View style={theme.settingsStyles.item}>
+                                <Text style={theme.settingsStyles.label}>{word.value}</Text>
+                                <Pressable onPress={() => handleRemove(word.value)} style={styles.removeButton}>
+                                    <Trash2 size={18} color={theme.colors.onSurfaceVariant} />
+                                </Pressable>
+                            </View>
+                            {index < mutedWords.length - 1 && <SettingsDivider />}
+                        </React.Fragment>
+                    ))
+                )}
+            </SettingsSection>
+        </SettingsScreenLayout>
     );
 };
 
