@@ -129,14 +129,7 @@ const VideoPlayer: React.FC<Props> = ({
       failOffsetX={[-50, 50]}
     >
       <View style={styles.container}>
-        {embedView?.thumbnail && (
-          <Image 
-            source={{ uri: embedView.thumbnail }} 
-            style={styles.backgroundImage} 
-            contentFit="cover" 
-            blurRadius={Platform.OS === 'ios' ? 30 : 15} 
-          />
-        )}
+        {/* Removido o backgroundImage com blur que estava impedindo interação */}
         <View style={styles.backgroundOverlay} />
         
         {modDecision.visibility === 'warn' && !isContentVisible ? (
@@ -159,7 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center', 
     backgroundColor: 'black', 
-    overflow: 'hidden' 
+    overflow: 'hidden' // Alterado para hidden para evitar problemas de layout
   },
   video: {
     ...StyleSheet.absoluteFillObject,
@@ -169,19 +162,12 @@ const styles = StyleSheet.create({
   videoContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 2,
-  },
-  backgroundImage: { 
-    ...StyleSheet.absoluteFillObject, 
-    zIndex: 0, 
-    ...(Platform.OS === 'web' && { 
-      filter: 'blur(25px) brightness(0.8)', 
-      transform: [{ scale: '1.1' }] 
-    } as any) 
+    overflow: 'visible',
   },
   backgroundOverlay: { 
     ...StyleSheet.absoluteFillObject, 
     backgroundColor: 'rgba(0, 0, 0, 0.3)', 
-    zIndex: 1 
+    zIndex: 0 // Reduzido para não interferir com botões
   },
   errorOverlay: { 
     ...StyleSheet.absoluteFillObject, 

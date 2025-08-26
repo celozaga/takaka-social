@@ -39,21 +39,46 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
 
     const handleRepostAction = async () => {
         const wasReposted = !!repostUri;
-        await handleRepost();
-        toast({ title: wasReposted ? t('repostModal.undoSuccess') : t('repostModal.repostSuccess') });
-        onClose();
+        try {
+            await handleRepost();
+            toast({ title: wasReposted ? t('repostModal.undoSuccess') : t('repostModal.repostSuccess') });
+        } catch (error) {
+            console.error('Erro ao repostar:', error);
+        } finally {
+            onClose();
+        }
     };
 
     const handleShare = async () => {
-        const postUrl = `https://bsky.app/profile/${post.author.did}/post/${new AtUri(post.uri).rkey}`;
+        const postUrl = `https://bsky.app/profile/${post.author.handle}/post/${new AtUri(post.uri).rkey}`;
+        const shareText = `${post.author.displayName || post.author.handle}: ${post.record?.text || 'Check out this post!'}`;
+        
         try {
-            await Share.share({
-                message: postUrl,
-                url: postUrl,
-            });
-        } catch (error) {
             if (Platform.OS === 'web') {
-                Clipboard.setString(postUrl);
+                // Web: usar Web Share API se disponível
+                if (navigator.share) {
+                    await navigator.share({
+                        title: 'Takaka Post',
+                        text: shareText,
+                        url: postUrl,
+                    });
+                } else {
+                    // Fallback: copiar para clipboard
+                    await Clipboard.setString(`${shareText}\n\n${postUrl}`);
+                    toast({ title: t('post.linkCopied') });
+                }
+            } else {
+                // Mobile: usar menu de compartilhamento nativo
+                await Share.share({
+                    message: shareText + '\n\n' + postUrl,
+                    url: postUrl,
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao compartilhar:', error);
+            if (Platform.OS === 'web') {
+                // Fallback final para web
+                await Clipboard.setString(postUrl);
                 toast({ title: t('post.linkCopied') });
             }
         }
@@ -63,7 +88,7 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
     return (
         <View>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>{t('common.share')}</Text>
+                <Text style={styles.headerTitle}>Repost & Share</Text>
                 <Pressable onPress={onClose} style={styles.closeButton}><X color={theme.colors.onSurface} /></Pressable>
             </View>
             

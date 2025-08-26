@@ -10,9 +10,9 @@
     "post": "Post",
     "posts": "Posts",
     "reply": "Reply",
-    "replies": "Reply",
-    "replies_one": "{{count}} Reply",
-    "replies_other": "{{count}} Reply",
+    "replies": "replies",
+    "replies_one": "{{count}} reply",
+    "replies_other": "{{count}} replies",
     "follow": "Follow",
     "following": "Following",
     "followers": "Followers",
@@ -29,8 +29,12 @@
     "videos_noun": "videos",
     "back": "Back",
     "share": "Share",
+    "readMore": "Read more",
+    "readLess": "Read less",
     "rateLimitError": "Please wait a moment before trying again.",
-    "rateLimitTitle": "Rate limit reached"
+    "rateLimitTitle": "Rate limit reached",
+    "nested": "nested",
+    "view": "View"
   },
   "nav": {
     "home": "Home",

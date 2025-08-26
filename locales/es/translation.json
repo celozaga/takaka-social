@@ -10,9 +10,9 @@
     "post": "Publicación",
     "posts": "Publicaciones",
     "reply": "Responder",
-    "replies": "Respuesta",
-    "replies_one": "{{count}} Respuesta",
-    "replies_other": "{{count}} Respuesta",
+    "replies": "respuestas",
+    "replies_one": "{{count}} respuesta",
+    "replies_other": "{{count}} respuestas",
     "follow": "Seguir",
     "following": "Siguiendo",
     "followers": "Seguidores",
@@ -29,8 +29,12 @@
     "videos_noun": "vídeos",
     "back": "Atrás",
     "share": "Compartir",
+    "readMore": "Leer más",
+    "readLess": "Leer menos",
     "rateLimitError": "Por favor, espera un momento antes de volver a intentarlo.",
-    "rateLimitTitle": "Límite de peticiones alcanzado"
+    "rateLimitTitle": "Límite de peticiones alcanzado",
+    "nested": "anidadas",
+    "view": "Ver"
   },
   "nav": {
     "home": "Inicio",

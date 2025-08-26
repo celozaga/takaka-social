@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, Text, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Platform, useWindowDimensions, Text } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import PostHeader from './PostHeader';
 import FullPostCard from './FullPostCard';
-import Reply from './Reply';
 import PostScreenActionBar from './PostScreenActionBar';
 import PostPageWebActionBar from './PostPageWebActionBar';
+import RepliesList from '@/components/replies/RepliesList';
 import { useTranslation } from 'react-i18next';
 import { theme } from '@/lib/theme';
 
@@ -19,54 +19,35 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
   const isDesktop = width >= 768;
   const isWeb = Platform.OS === 'web';
 
-  const replies = thread.replies?.filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[] || [];
-
   const ListHeader = () => (
     <View>
       <FullPostCard feedViewPost={{ post: thread.post }} />
       {isWeb && isDesktop && <PostPageWebActionBar post={thread.post} />}
       {thread.post.replyCount && thread.post.replyCount > 0 && (
-          <View style={styles.repliesHeader}>
-              <Text style={styles.repliesHeaderText}>{t('common.replies', { count: thread.post.replyCount })}</Text>
-          </View>
+        <View style={styles.repliesHeader}>
+          <Text style={styles.repliesHeaderText}>
+            {t('common.replies', { count: thread.post.replyCount })}
+          </Text>
+        </View>
       )}
     </View>
   );
 
-  const renderItem = ({ item }: { item: AppBskyFeedDefs.ThreadViewPost }) => (
-    <Reply reply={item} />
-  );
-  
-  const ListEmpty = () => {
-      if(thread.post.replyCount === 0) {
-          return (
-            <View style={styles.messageContainer}>
-              <Text style={styles.infoText}>{t('post.noReplies')}</Text>
-            </View>
-          )
-      }
-      return null;
-  }
-  
-  const flatListProps = {
-    data: replies,
-    renderItem,
-    keyExtractor: (item: AppBskyFeedDefs.ThreadViewPost) => item.post.cid,
-    ListHeaderComponent: ListHeader,
-    ListEmptyComponent: ListEmpty,
-    ListFooterComponent: null, // Footer is no longer needed
-    contentContainerStyle: [
-        styles.listContentContainer,
-        // Add padding for the absolute action bar on mobile, but not desktop
-        { paddingBottom: (isWeb && isDesktop) ? theme.spacing.l : 80 }
-    ],
-    ItemSeparatorComponent: () => <View style={styles.separator} />,
-  };
+  const contentContainerStyle = [
+    // Add padding for the absolute action bar on mobile, but not desktop
+    { paddingBottom: (isWeb && isDesktop) ? theme.spacing.l : 80 }
+  ];
 
   return (
     <View style={styles.container}>
       <PostHeader post={thread.post} />
-      <FlatList {...flatListProps} />
+      <RepliesList 
+        post={thread.post}
+        thread={thread}
+        showActionBar={!(isWeb && isDesktop)}
+        contentContainerStyle={contentContainerStyle}
+        ListHeaderComponent={ListHeader}
+      />
       {/* Render floating action bar on mobile (native and web) */}
       {!(isWeb && isDesktop) && <PostScreenActionBar post={thread.post} />}
     </View>
@@ -78,31 +59,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  listContentContainer: {
-    padding: theme.spacing.l,
-  },
   repliesHeader: {
-    marginTop: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.s,
+    backgroundColor: theme.colors.surfaceContainer,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.outline,
   },
   repliesHeaderText: {
-      ...theme.typography.titleMedium,
-      color: theme.colors.onSurface,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: theme.colors.outline,
-    marginVertical: theme.spacing.s,
-  },
-   messageContainer: {
-    padding: theme.spacing.xxl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: theme.spacing.l,
-  },
-  infoText: {
-    ...theme.typography.bodyLarge,
+    ...theme.typography.bodySmall,
     color: theme.colors.onSurfaceVariant,
-    textAlign: 'center'
   },
 });
 

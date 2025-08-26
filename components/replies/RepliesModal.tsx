@@ -1,11 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { X } from 'lucide-react';
 import { theme } from '@/lib/theme';
-import Reply from '@/components/post/Reply';
-import PostScreenActionBar from '@/components/post/PostScreenActionBar';
+import RepliesList from './RepliesList';
 
 interface RepliesModalProps {
   data: {
@@ -19,32 +18,24 @@ const RepliesModal: React.FC<RepliesModalProps> = ({ data, onClose }) => {
   const { post, thread } = data;
   const { t } = useTranslation();
 
-  const replies = thread.replies?.filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[] || [];
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.dragHandle} />
-        <Text style={styles.headerTitle}>{t('common.replies', { count: post.replyCount || 0 })}</Text>
+        <View style={styles.headerTitle}>
+          <Text style={styles.headerTitleText}>{t('common.replies', { count: post.replyCount || 0 })}</Text>
+        </View>
         <Pressable onPress={onClose} style={styles.closeButton}>
           <X color={theme.colors.onSurface} />
         </Pressable>
       </View>
       
-      <FlatList
-        data={replies}
-        renderItem={({ item }) => <Reply reply={item} />}
-        keyExtractor={(item) => item.post.cid}
+      <RepliesList 
+        post={post} 
+        thread={thread} 
+        showActionBar={true}
         contentContainerStyle={styles.listContentContainer}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={() => (
-          <View style={styles.messageContainer}>
-            <Text style={styles.infoText}>{t('post.noReplies')}</Text>
-          </View>
-        )}
       />
-
-      <PostScreenActionBar post={post} />
     </View>
   );
 };
@@ -73,6 +64,11 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.outline,
     },
     headerTitle: {
+        flex: 1, // Allow title to take available space
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitleText: {
         ...theme.typography.titleMedium,
         color: theme.colors.onSurface,
         textAlign: 'center',

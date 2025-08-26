@@ -11,9 +11,10 @@ import { formatCompactNumber } from '@/lib/formatters';
 
 interface PostScreenActionBarProps {
     post: AppBskyFeedDefs.PostView;
+    onReplyPress?: () => void;
 }
 
-const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
+const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post, onReplyPress }) => {
     const { session } = useAtp();
     const { openComposer, openRepostModal } = useUI();
     const {
@@ -26,10 +27,18 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post }) => {
 
     if (!session) return null;
 
+    const handleReplyPress = () => {
+        if (onReplyPress) {
+            onReplyPress();
+        } else {
+            openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
+        }
+    };
+
     return (
         <View style={isMobile ? styles.containerMobile : styles.containerWeb}>
             <Pressable
-                onPress={() => openComposer({ replyTo: { uri: post.uri, cid: post.cid } })}
+                onPress={handleReplyPress}
                 style={styles.replyButton}
             >
                 <Text style={styles.replyButtonText}>Reply...</Text>

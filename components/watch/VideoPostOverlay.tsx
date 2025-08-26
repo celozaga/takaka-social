@@ -1,13 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
-import { Link } from 'expo-router';
 import { AppBskyFeedDefs } from '@atproto/api';
 import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { Plus, Check, BadgeCheck, ChevronUp, ChevronDown, Play, Pause } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { theme } from '@/lib/theme';
-import { useAtp } from '@/context/AtpContext';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   post: AppBskyFeedDefs.PostView;
@@ -18,52 +16,68 @@ interface Props {
 }
 
 const VideoPostOverlay: React.FC<Props> = ({ post, onNext, onPrevious, isPlaying, onTogglePlayPause }) => {
-  const { agent, session } = useAtp();
   const { width, height } = useWindowDimensions();
   const isMobile = width < 768;
   const record = post.record as any;
-  const isMe = session?.did === post.author.did;
-  const profileLink = `/profile/${post.author.handle}`;
+  const { t } = useTranslation();
 
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [isTextTruncated, setIsTextTruncated] = useState(false);
-  
-  const [followUri, setFollowUri] = useState(post.author.viewer?.following);
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
-  useEffect(() => setFollowUri(post.author.viewer?.following), [post.author.viewer?.following]);
-  
-  const handleFollow = useCallback((e: any) => { e.stopPropagation(); if (isFollowLoading || isMe || followUri) return; setIsFollowLoading(true); agent.follow(post.author.did).then(({ uri }) => setFollowUri(uri)).finally(() => setIsFollowLoading(false)); }, [agent, isFollowLoading, isMe, followUri, post.author.did]);
-  const handleUnfollow = useCallback((e: any) => { e.stopPropagation(); if (isFollowLoading || isMe || !followUri) return; setIsFollowLoading(true); agent.deleteFollow(followUri).then(() => setFollowUri(undefined)).finally(() => setIsFollowLoading(false)); }, [agent, isFollowLoading, isMe, followUri]);
 
-  const toggleDescription = (e: any) => { e.stopPropagation(); setIsDescriptionExpanded(prev => !prev); };
-  const needsTruncation = (record.text?.split('\n').length > 2 || record.text?.length > 100);
+  const toggleDescription = useCallback((e: any) => { 
+    e.stopPropagation(); 
+    setIsDescriptionExpanded(prev => !prev); 
+  }, []);
+  const needsTruncation = record.text && (record.text.length > 100 || record.text.includes('\n'));
+
+  // Função para truncar o nome do usuário se for muito longo
+  const truncateUsername = (name: string, maxLength: number = 20) => {
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + '...';
+  };
+
+  // Formatar data em formato relativo (ex: "20 min ago", "1h ago", "23w ago")
+  const formatRelativeTime = (timestamp: string) => {
+    const now = new Date();
+    const postDate = new Date(timestamp);
+    const diffInMs = now.getTime() - postDate.getTime();
+    
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    const diffInMonths = Math.floor(diffInDays / 30);
+    const diffInYears = Math.floor(diffInDays / 365);
+    
+    if (diffInMinutes < 1) {
+      return 'agora mesmo';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} min atrás`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h atrás`;
+    } else if (diffInDays < 7) {
+      return `${diffInDays}d atrás`;
+    } else if (diffInWeeks < 4) {
+      return `${diffInWeeks}w atrás`;
+    } else if (diffInMonths < 12) {
+      return `${diffInMonths}m atrás`;
+    } else {
+      return `${diffInYears}y atrás`;
+    }
+  };
 
   return (
     <>
-      {/* Layout estilo TikTok - informações na parte inferior esquerda */}
+      {/* Layout estilo TikTok - informações do usuário e descrição na parte inferior esquerda */}
       <View style={[styles.bottomInfoContainer, isMobile && styles.bottomInfoContainerMobile]}>
-        {/* Informações do autor */}
-        <View style={styles.authorRow}>
-          <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
-            <Pressable style={styles.authorInfo}>
-              <Image source={{ uri: post.author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatarTikTok} />
-              <View style={styles.authorTextContainer}>
-                <Text style={styles.authorNameTikTok}>{post.author.displayName || `@${post.author.handle}`}</Text>
-                <Text style={styles.authorHandleTikTok}>@{post.author.handle}</Text>
-              </View>
-              {post.author.labels?.some(l => l.val === 'blue-check') && (
-                <BadgeCheck size={16} color="white" fill={theme.colors.primary} style={styles.verifiedBadge} />
-              )}
-            </Pressable>
-          </Link>
-          
-          {!isMe && (
-            <Pressable onPress={followUri ? handleUnfollow : handleFollow} disabled={isFollowLoading} style={[styles.followButtonTikTok, followUri && styles.followingButton]}>
-              <Text style={styles.followButtonText}>
-                {followUri ? "Seguindo" : "Seguir"}
-              </Text>
-            </Pressable>
-          )}
+        {/* Nome do usuário e data */}
+        <View style={styles.userInfoRow}>
+          <Text style={[styles.userNameTikTok, isMobile && styles.userNameTikTokMobile]} numberOfLines={1}>
+            {truncateUsername(post.author.displayName || post.author.handle)}
+          </Text>
+          <Text style={styles.dateSeparator}> · </Text>
+          <Text style={styles.postDateTikTok}>
+            {formatRelativeTime(post.indexedAt)}
+          </Text>
         </View>
 
         {/* Descrição do post */}
@@ -71,15 +85,21 @@ const VideoPostOverlay: React.FC<Props> = ({ post, onNext, onPrevious, isPlaying
           <View style={styles.descriptionContainer}>
             <Text 
               style={[styles.descriptionTikTok, isMobile && styles.descriptionTikTokMobile]} 
-              numberOfLines={isDescriptionExpanded ? undefined : (isMobile ? 2 : 2)}
-              onTextLayout={e => { if (needsTruncation) setIsTextTruncated(e.nativeEvent.lines.length >= 2); }}
+              numberOfLines={isDescriptionExpanded ? undefined : 2}
             >
-              <RichTextRenderer record={record} />
+              {record.text}
             </Text>
-            {(isTextTruncated || (needsTruncation && !isDescriptionExpanded)) && (
+            {!isDescriptionExpanded && needsTruncation && (
+              <Pressable onPress={toggleDescription}>
+                <Text style={styles.readMoreTextTikTok}>
+                  {t('common.readMore')}
+                </Text>
+              </Pressable>
+            )}
+            {isDescriptionExpanded && needsTruncation && (
               <Pressable onPress={toggleDescription} style={styles.readMoreButton}>
                 <Text style={styles.readMoreTextTikTok}>
-                  {isDescriptionExpanded ? "menos" : "mais"}
+                  {t('common.readLess')}
                 </Text>
               </Pressable>
             )}
@@ -98,7 +118,7 @@ const VideoPostOverlay: React.FC<Props> = ({ post, onNext, onPrevious, isPlaying
         </Pressable>
       )}
 
-      {/* Ações laterais estilo TikTok */}
+      {/* Ações laterais estilo TikTok (incluindo avatar + botão de seguir) */}
       <VideoActions post={post} />
     </>
   );
@@ -113,7 +133,7 @@ const styles = StyleSheet.create({
     right: 80, // Espaço para ações laterais
     paddingHorizontal: theme.spacing.m,
     paddingVertical: theme.spacing.s,
-    zIndex: 10,
+    zIndex: 30, // Aumentado para garantir que esteja acima de tudo
   },
   bottomInfoContainerMobile: {
     bottom: 15,
@@ -121,86 +141,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.s,
   },
 
-  // Linha do autor (avatar + nome + botão seguir)
-  authorRow: {
+  // Linha de informações do usuário
+  userInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.s,
+    flexWrap: 'nowrap', // Evita quebra de linha
   },
-  authorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  
-  // Avatar estilo TikTok
-  avatarTikTok: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'white',
-    marginRight: theme.spacing.s,
-  },
-  
-  // Textos do autor
-  authorTextContainer: {
-    flex: 1,
-    marginRight: theme.spacing.s,
-  },
-  authorNameTikTok: {
+  userNameTikTok: {
     ...theme.typography.titleSmall,
     color: 'white',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 16,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
-    marginBottom: 2,
+    maxWidth: 120, // Largura máxima para evitar sobreposição
+    flexShrink: 1, // Permite que o texto encolha se necessário
   },
-  authorHandleTikTok: {
+  userNameTikTokMobile: {
+    maxWidth: 80, // Largura menor para mobile
+  },
+  dateSeparator: {
     ...theme.typography.bodySmall,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginHorizontal: theme.spacing.xs,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
+    flexShrink: 0, // Não permite que o separador encolha
   },
-  
-  // Badge verificado
-  verifiedBadge: {
-    marginLeft: theme.spacing.xs,
-  },
-  
-  // Botão seguir estilo TikTok
-  followButtonTikTok: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'white',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  followingButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  followButtonText: {
+  postDateTikTok: {
     ...theme.typography.bodySmall,
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
+    flexShrink: 0, // Não permite que a data encolha
   },
-  
+
   // Container da descrição
   descriptionContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   
   // Texto da descrição estilo TikTok
@@ -212,21 +195,22 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     flex: 1,
+    flexWrap: 'wrap',
   },
   descriptionTikTokMobile: {
     fontSize: 14,
     lineHeight: 16,
   },
   
-  // Botão "mais/menos"
+  // Botão "mais/menos" - estilo minimalista
   readMoreButton: {
-    marginLeft: theme.spacing.xs,
+    // Sem margem para integrar com o texto
   },
   readMoreTextTikTok: {
     ...theme.typography.bodyMedium,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 13,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
@@ -237,7 +221,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 5,
+    zIndex: 15, // Aumentado para estar acima do backgroundOverlay
   },
   playButtonContainer: {
     width: 80,

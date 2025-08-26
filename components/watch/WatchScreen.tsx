@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     desktopFeedContainer: {
         width: '100%', // A good width for a vertical feed on desktop
         height: '100%',
-        overflow: 'hidden', // Ensures the FlatList stays within the bounds
+        overflow: 'visible', // Allow action buttons to be visible
     },
     mobileFeedContainer: {
         width: '100%',

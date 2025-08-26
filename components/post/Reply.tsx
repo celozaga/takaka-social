@@ -4,20 +4,21 @@ import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs, RichText, AppBskyEmbedImages,AppBskyEmbedRecordWithMedia,AppBskyEmbedVideo, AppBskyActorDefs } from '@atproto/api';
 import { formatCompactNumber, formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
-import { BadgeCheck, Heart } from 'lucide-react';
+import { BadgeCheck, Heart, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePostActions } from '../../hooks/usePostActions';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost, ModerationDecision } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import VideoPlayer from '../shared/VideoPlayer';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
-const MAX_REPLY_DEPTH = 6;
+const MAX_REPLY_DEPTH = 4; // Reduzido de 6 para 4 para evitar distorção
+const MAX_VISUAL_DEPTH = 3; // Máximo de níveis com indentação visual
 
 interface ReplyProps {
   reply: AppBskyFeedDefs.ThreadViewPost;
@@ -35,8 +36,10 @@ const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> =
 
 const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   const { t } = useTranslation();
+  const { width: screenWidth } = useWindowDimensions();
   const moderation = useModeration();
   const [isContentVisible, setIsContentVisible] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const { post, replies } = reply;
   if(!post) return null;
@@ -53,6 +56,17 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
 
   const timeAgo = formatCompactDate(record.createdAt);
 
+  // Calcular indentação baseada na profundidade e largura da tela
+  const getIndentation = () => {
+    if (depth >= MAX_VISUAL_DEPTH) {
+      return 0; // Sem indentação visual após o máximo
+    }
+    
+    // Indentação proporcional à largura da tela
+    const baseIndent = Math.min(screenWidth * 0.08, 24); // Máximo de 8% da tela ou 24px
+    return baseIndent * (depth + 1);
+  };
+
   const ensureSession = () => {
     if (!session) {
       openLoginModal();
@@ -66,6 +80,10 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     e.preventDefault();
     if (!ensureSession()) return;
     openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
+  };
+
+  const handleToggleExpanded = () => {
+    setIsExpanded(!isExpanded);
   };
   
   const renderMedia = () => {
@@ -140,6 +158,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
                         {likeCount > 0 && <Text style={[styles.footerText, !!likeUri && {color: theme.colors.pink}]}>{formatCompactNumber(likeCount)}</Text>}
                     </Pressable>
                      <Pressable onPress={handleReplyClick} style={styles.footerButton}>
+                         <MessageCircle size={16} color={theme.colors.onSurfaceVariant} />
                          <Text style={styles.footerText}>{t('common.reply')}</Text>
                     </Pressable>
                 </View>
@@ -148,42 +167,151 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     </View>
   );
   
+  const indentation = getIndentation();
+  const showThreadLine = depth < MAX_VISUAL_DEPTH && subReplies.length > 0;
+  const hasSubReplies = subReplies.length > 0;
+  
   return (
     <View>
-        <View style={styles.replyContainer}>
+        <View style={[styles.replyContainer, { marginLeft: indentation }]}>
             <View style={styles.avatarThreadContainer}>
                 <Link href={`/profile/${author.handle}` as any} asChild>
                     <Pressable>
                         <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
                     </Pressable>
                 </Link>
-                {subReplies.length > 0 && <View style={styles.threadLine} />}
+                {showThreadLine && <View style={styles.threadLine} />}
             </View>
             {content}
         </View>
-        {subReplies.length > 0 && depth < MAX_REPLY_DEPTH &&
+        
+        {/* Botão para expandir/recolher replies aninhados */}
+        {hasSubReplies && (
+          <View style={[styles.expandButtonContainer, { marginLeft: indentation + 48 }]}>
+            <Pressable 
+              onPress={handleToggleExpanded}
+              style={styles.expandButton}
+            >
+              <Text style={styles.expandButtonText}>
+                Ver {subReplies.length} respostas
+              </Text>
+              {isExpanded ? (
+                <ChevronUp size={16} color={theme.colors.onSurfaceVariant} />
+              ) : (
+                <ChevronDown size={16} color={theme.colors.onSurfaceVariant} />
+              )}
+            </Pressable>
+          </View>
+        )}
+        
+        {/* Replies aninhados expandidos */}
+        {hasSubReplies && isExpanded && depth < MAX_REPLY_DEPTH && (
             <View style={styles.nestedRepliesContainer}>
-                {subReplies.map(nestedReply => <Reply key={nestedReply.post.cid} reply={nestedReply} depth={depth + 1} />)}
+                {subReplies.map(nestedReply => (
+                  <Reply key={nestedReply.post.cid} reply={nestedReply} depth={depth + 1} />
+                ))}
             </View>
-        }
+        )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-    replyContainer: { flexDirection: 'row', gap: theme.spacing.m, marginTop: theme.spacing.l },
-    avatarThreadContainer: { alignItems: 'center', flexShrink: 0 },
-    avatar: { width: 40, height: 40, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
-    threadLine: { width: 2, flex: 1, marginVertical: theme.spacing.s, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-    authorContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, flexShrink: 1 },
-    authorName: { ...theme.typography.titleSmall, color: theme.colors.onSurface },
-    timeAgo: { ...theme.typography.bodySmall, color: theme.colors.onSurfaceVariant },
-    postText: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, marginVertical: theme.spacing.xs },
-    footer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, marginTop: theme.spacing.s },
-    footerButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-    footerText: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant },
-    nestedRepliesContainer: { paddingLeft: 20 + theme.spacing.m, borderLeftWidth: 2, borderLeftColor: theme.colors.surfaceContainerHigh, marginLeft: 20 },
+    replyContainer: { 
+        flexDirection: 'row', 
+        gap: theme.spacing.m, 
+        marginTop: theme.spacing.l,
+        flex: 1,
+    },
+    avatarThreadContainer: { 
+        alignItems: 'center', 
+        flexShrink: 0,
+        position: 'relative',
+    },
+    avatar: { 
+        width: 40, 
+        height: 40, 
+        borderRadius: theme.shape.full, 
+        backgroundColor: theme.colors.surfaceContainerHigh 
+    },
+    threadLine: { 
+        width: 2, 
+        flex: 1, 
+        marginVertical: theme.spacing.s, 
+        backgroundColor: theme.colors.outline, 
+        borderRadius: 1,
+        opacity: 0.6,
+    },
+    header: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: theme.spacing.xs,
+        flexWrap: 'wrap',
+    },
+    authorContainer: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: theme.spacing.xs, 
+        flexShrink: 1 
+    },
+    authorName: { 
+        ...theme.typography.titleSmall, 
+        color: theme.colors.onSurface,
+        flexShrink: 1,
+    },
+    timeAgo: { 
+        ...theme.typography.bodySmall, 
+        color: theme.colors.onSurfaceVariant,
+        flexShrink: 0,
+    },
+    postText: { 
+        ...theme.typography.bodyMedium, 
+        color: theme.colors.onSurface, 
+        marginVertical: theme.spacing.xs,
+        flexShrink: 1,
+    },
+    footer: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: theme.spacing.l, 
+        marginTop: theme.spacing.s,
+        flexWrap: 'wrap',
+    },
+    footerButton: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: theme.spacing.xs,
+        flexShrink: 0,
+    },
+    footerText: { 
+        ...theme.typography.labelMedium, 
+        color: theme.colors.onSurfaceVariant 
+    },
+    expandButtonContainer: {
+        marginTop: theme.spacing.s,
+        marginBottom: theme.spacing.xs,
+    },
+    expandButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.m,
+        paddingVertical: theme.spacing.xs,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.shape.small,
+        alignSelf: 'flex-start',
+        borderWidth: 1,
+        borderColor: theme.colors.outline,
+    },
+    expandButtonText: {
+        ...theme.typography.bodySmall,
+        color: theme.colors.onSurfaceVariant,
+        fontWeight: '500',
+    },
+    nestedRepliesContainer: { 
+        marginTop: theme.spacing.s,
+        marginLeft: theme.spacing.m,
+    },
     mediaPreview: {
         width: '100%',
         borderRadius: theme.shape.medium,

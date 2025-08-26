@@ -1,12 +1,12 @@
 
 
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../components/ui/use-toast';
-import { AppBskyFeedPost } from '@atproto/api';
+import { AppBskyFeedDefs } from '@atproto/api';
 
 interface PostActionable {
   uri: string;
@@ -33,6 +33,12 @@ export const usePostActions = (post: PostActionable) => {
   const [repostUri, setRepostUri] = useState(post.viewer?.repost);
   const [repostCount, setRepostCount] = useState(post.repostCount || 0);
   const [isReposting, setIsReposting] = useState(false);
+
+  // Sincronizar estado quando o post mudar
+  useEffect(() => {
+    setRepostUri(post.viewer?.repost);
+    setRepostCount(post.repostCount || 0);
+  }, [post.viewer?.repost, post.repostCount]);
 
   const ensureSession = (action: string) => {
     if (!session) {
@@ -82,7 +88,7 @@ export const usePostActions = (post: PostActionable) => {
     e?.preventDefault();
     if (!ensureSession('repost') || isReposting) return;
 
-    if (AppBskyFeedPost.isRecord(post.record) && (post.record as any).reply) {
+    if (post.record && typeof post.record === 'object' && 'reply' in post.record) {
         toast({ title: t('hooks.repostReplyError'), variant: "destructive" });
         return;
     }
@@ -94,10 +100,12 @@ export const usePostActions = (post: PostActionable) => {
 
     try {
       if (repostUri) {
+        // Undo repost
         setRepostUri(undefined);
         setRepostCount(c => Math.max(0, c - 1));
         await agent.deleteRepost(repostUri);
       } else {
+        // Do repost
         const tempUri = 'temp-uri';
         setRepostUri(tempUri);
         setRepostCount(c => c + 1);
@@ -106,13 +114,15 @@ export const usePostActions = (post: PostActionable) => {
       }
     } catch (error: any) {
       console.error('Failed to repost:', error);
+      // Reverter estado em caso de erro
+      setRepostUri(originalRepostUri);
+      setRepostCount(originalRepostCount);
+      
       if (error && error.status === 429) {
         toast({ title: t('common.rateLimitTitle'), description: t('common.rateLimitError'), variant: "destructive" });
       } else {
         toast({ title: t('hooks.actionFailed'), description: t('hooks.repostError'), variant: "destructive" });
       }
-      setRepostUri(originalRepostUri);
-      setRepostCount(originalRepostCount);
     } finally {
       setIsReposting(false);
     }
