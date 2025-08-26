@@ -5,8 +5,7 @@ import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { useAtp } from '@/context/AtpContext';
 import { useUI } from '@/context/UIContext';
-import { useToast } from '@/components/ui/use-toast';
-import { theme } from '@/lib/theme';
+import { useToast, useTheme } from '@/components/shared';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useTranslation } from 'react-i18next';
 import { OptimizedImage } from '../ui';
@@ -22,6 +21,9 @@ export default function PostHeader({ post }: PostHeaderProps) {
   const { requireAuth } = useAuthGuard();
   const { agent, session } = useAtp();
   const { toast } = useToast();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
 
   const author = post.author;
   const [viewerState, setViewerState] = useState(author.viewer);
@@ -107,13 +109,13 @@ export default function PostHeader({ post }: PostHeaderProps) {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     height: 64,
-    paddingHorizontal: theme.spacing.m,
+    paddingHorizontal: theme.spacing.md,
     backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.surfaceContainerHigh,
@@ -121,39 +123,39 @@ const styles = StyleSheet.create({
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.m,
+    gap: theme.spacing.md,
     flex: 1,
     minWidth: 0,
   },
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.s,
+    gap: theme.spacing.sm,
     flexShrink: 0,
   },
   iconButton: {
-    padding: theme.spacing.s,
+    padding: theme.spacing.sm,
   },
   authorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.s,
+    gap: theme.spacing.sm,
     flexShrink: 1,
   },
   avatar: {
     width: 40,
     height: 40,
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
     backgroundColor: theme.colors.surfaceContainerHigh,
   },
   displayName: {
-    ...theme.typography.titleSmall,
+    fontSize: theme.typography.titleSmall.fontSize,
     color: theme.colors.onSurface,
   },
   followButton: {
-    paddingVertical: theme.spacing.s,
-    paddingHorizontal: theme.spacing.l,
-    borderRadius: theme.shape.full,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radius.full,
     backgroundColor: theme.colors.surfaceContainerHigh,
     justifyContent: 'center',
     alignItems: 'center',
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   followButtonText: {
-    ...theme.typography.labelLarge,
+    fontSize: theme.typography.labelLarge.fontSize,
     color: theme.colors.onSurface,
     fontWeight: 'bold',
   },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '../Theme';
 
 interface PrimaryButtonProps {
   title: string;
@@ -21,48 +21,44 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   textStyle,
   icon
 }) => {
+  const { theme } = useTheme();
+
+  const getButtonStyles = (pressed: boolean): any => [
+    {
+      width: '100%' as const,
+      backgroundColor: theme.colors.primary,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: theme.spacing.sm,
+      paddingVertical: theme.spacing.md,
+      paddingHorizontal: theme.spacing.lg,
+      borderRadius: theme.radius.full,
+      opacity: (disabled || loading) ? 0.7 : pressed ? 0.8 : 1,
+    },
+    style
+  ];
+
+  const getTextStyles = () => [
+    {
+      color: theme.colors.onPrimary,
+      ...theme.typography.labelLarge,
+    },
+    textStyle
+  ];
+
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      style={({ pressed }) => [
-        styles.button,
-        (disabled || loading) && styles.buttonDisabled,
-        pressed && !disabled && !loading && styles.buttonPressed,
-        style
-      ]}
+      style={({ pressed }) => getButtonStyles(pressed)}
     >
       {icon && <>{icon}</>}
-      <Text style={[styles.buttonText, textStyle]}>
-        {loading ? 'Carregando...' : title}
+      <Text style={getTextStyles()}>
+        {loading ? 'Loading...' : title}
       </Text>
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  button: {
-    width: '100%',
-    backgroundColor: theme.colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: theme.shape.full,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonPressed: {
-    backgroundColor: theme.colors.primaryContainer,
-  },
-  buttonText: {
-    color: theme.colors.onPrimary,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-});
 
 export default PrimaryButton;

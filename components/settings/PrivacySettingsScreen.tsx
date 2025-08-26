@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { Lock, Eye, EyeOff, Shield, Users, UserCheck, Globe } from 'lucide-react';
 import Head from 'expo-router/head';
 import SettingsListItem from './SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { SettingsDivider, Switch } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const PrivacySettingsScreen: React.FC = () => {
@@ -43,12 +42,12 @@ const PrivacySettingsScreen: React.FC = () => {
             if (privacyPrefs && 'profileViewable' in privacyPrefs) {
                 // Map ATProto privacy preferences to local state
                 setSettings({
-                    profileViewable: privacyPrefs.profileViewable ?? true,
-                    followsVisible: privacyPrefs.followsVisible ?? true,
-                    followersVisible: privacyPrefs.followersVisible ?? true,
-                    postsVisible: privacyPrefs.postsVisible ?? true,
-                    repliesVisible: privacyPrefs.repliesVisible ?? true,
-                    mentionsVisible: privacyPrefs.mentionsVisible ?? true,
+                                         profileViewable: (privacyPrefs as any).profileViewable ?? true,
+                     followsVisible: (privacyPrefs as any).followsVisible ?? true,
+                     followersVisible: (privacyPrefs as any).followersVisible ?? true,
+                     postsVisible: (privacyPrefs as any).postsVisible ?? true,
+                     repliesVisible: (privacyPrefs as any).repliesVisible ?? true,
+                     mentionsVisible: (privacyPrefs as any).mentionsVisible ?? true,
                 });
             } else {
                 // Default values if no privacy preferences found
@@ -140,7 +139,7 @@ const PrivacySettingsScreen: React.FC = () => {
                         label={t('privacySettings.profileViewable')}
                         sublabel={t('privacySettings.profileViewableDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.profileViewable}
                                 onChange={(value) => handleSettingToggle('profileViewable', value)}
                                 disabled={isLoading || isSaving}
@@ -153,7 +152,7 @@ const PrivacySettingsScreen: React.FC = () => {
                         label={t('privacySettings.followsVisible')}
                         sublabel={t('privacySettings.followsVisibleDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.followsVisible}
                                 onChange={(value) => handleSettingToggle('followsVisible', value)}
                                 disabled={isLoading || isSaving}
@@ -166,7 +165,7 @@ const PrivacySettingsScreen: React.FC = () => {
                         label={t('privacySettings.followersVisible')}
                         sublabel={t('privacySettings.followersVisibleDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.followersVisible}
                                 onChange={(value) => handleSettingToggle('followersVisible', value)}
                                 disabled={isLoading || isSaving}
@@ -181,7 +180,7 @@ const PrivacySettingsScreen: React.FC = () => {
                         label={t('privacySettings.postsVisible')}
                         sublabel={t('privacySettings.postsVisibleDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.postsVisible}
                                 onChange={(value) => handleSettingToggle('postsVisible', value)}
                                 disabled={isLoading || isSaving}
@@ -194,7 +193,7 @@ const PrivacySettingsScreen: React.FC = () => {
                         label={t('privacySettings.repliesVisible')}
                         sublabel={t('privacySettings.repliesVisibleDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.repliesVisible}
                                 onChange={(value) => handleSettingToggle('repliesVisible', value)}
                                 disabled={isLoading || isSaving}
@@ -207,7 +206,7 @@ const PrivacySettingsScreen: React.FC = () => {
                         label={t('privacySettings.mentionsVisible')}
                         sublabel={t('privacySettings.mentionsVisibleDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.mentionsVisible}
                                 onChange={(value) => handleSettingToggle('mentionsVisible', value)}
                                 disabled={isLoading || isSaving}

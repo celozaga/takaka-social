@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { AppBskyActorDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { BadgeCheck, Loader2 } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { OptimizedImage } from '../ui';

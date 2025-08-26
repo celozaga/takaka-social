@@ -5,7 +5,7 @@ import { AppBskyFeedDefs } from '@atproto/api';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface FeedSelectorProps {
@@ -22,6 +22,9 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
   const { openLoginModal } = useUI();
   const { requireAuth } = useAuthGuard();
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
 
   const handleFollowingClick = () => {
     if (requireAuth('feed_customization')) {
@@ -74,28 +77,28 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         backgroundColor: theme.colors.background,
-        paddingVertical: theme.spacing.m,
+        paddingVertical: theme.spacing.md,
     },
     scrollContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.spacing.s,
-        paddingHorizontal: theme.spacing.l,
+        gap: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.lg,
     },
     tab: {
-        paddingVertical: theme.spacing.s,
-        paddingHorizontal: theme.spacing.l,
-        borderRadius: theme.shape.full,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.lg,
+        borderRadius: theme.radius.full,
         backgroundColor: theme.colors.surfaceContainer,
     },
     tabActive: {
-        backgroundColor: theme.colors.onSurface,
+        backgroundColor: theme.colors.primary,
     },
     tabText: {
-        ...theme.typography.titleSmall,
+        fontSize: theme.typography.titleSmall.fontSize,
         fontWeight: '500',
         color: theme.colors.onSurface,
     },
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
         height: 38,
         width: 96,
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
     }
 });
 

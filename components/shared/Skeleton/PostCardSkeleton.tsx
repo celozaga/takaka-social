@@ -1,10 +1,14 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import SkeletonLine from './SkeletonLine';
 import SkeletonAvatar from './SkeletonAvatar';
 
 const PostCardSkeleton: React.FC = () => {
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
+  
   return (
     <View style={styles.container}>
       {/* Media placeholder */}
@@ -25,10 +29,10 @@ const PostCardSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: theme.shape.large,
+    borderRadius: theme.radius.lg,
     overflow: 'hidden',
     flexDirection: 'column',
   },
@@ -38,18 +42,18 @@ const styles = StyleSheet.create({
     height: 250,
   },
   contentPlaceholder: {
-    padding: theme.spacing.m,
+    padding: theme.spacing.md,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.spacing.s,
+    gap: theme.spacing.sm,
   },
   authorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.s,
+    gap: theme.spacing.sm,
   },
 });
 

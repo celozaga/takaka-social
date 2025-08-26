@@ -1,27 +1,30 @@
 import { Platform, StyleSheet } from 'react-native';
+import { darkTheme, lightTheme, darkColors, lightColors, spacing as newSpacing, typography as newTypography, radius } from '@/src/design/tokens';
 
 /**
  * ============================================================================
- * App Design Tokens
+ * App Design Tokens (Legacy Bridge)
  * ============================================================================
  *
- * This file is the single source of truth for all stylistic choices in the app,
- * including colors, spacing, typography, and shapes. By centralizing these
- * "design tokens," we ensure a consistent and scalable UI.
+ * This file now bridges to the new universal design tokens in src/design/tokens.ts
+ * while maintaining backward compatibility for existing components.
  *
- * All components should import the `theme` object from this file to access
- * these values, rather than using hardcoded styles.
+ * DEPRECATED: Use ThemeProvider and useTheme() hook for new components.
+ * Import directly from '@/src/design/tokens' for new implementations.
+ *
+ * For new components, use:
+ * - import { useTheme } from '@/components/shared/ThemeProvider'
+ * - const theme = useTheme()
  *
  */
 
+// Re-export new tokens for compatibility
+export { darkTheme, lightTheme } from '@/src/design/tokens';
+
 /**
  * ============================================================================
- * Color Palette
+ * Legacy Color Palette (DEPRECATED)
  * ============================================================================
- *
- * This section defines the base colors used throughout the application.
- * Naming is abstract to allow for easy theming (e.g., light vs. dark).
- *
  */
 const palette = {
   // Brand Colors
@@ -44,96 +47,53 @@ const palette = {
 
 /**
  * ============================================================================
- * Theme Colors
+ * Legacy Theme Colors (DEPRECATED - Use darkColors/lightColors from tokens)
  * ============================================================================
- *
- * Maps the abstract palette colors to semantic theme roles (e.g., 'background').
- * This is the active color set for the application.
- *
  */
-const darkThemeColors = {
-  primary: palette.brandPrimary,
-  onPrimary: palette.black,
-  background: palette.black,
-  surface: palette.black,
-  surfaceContainer: palette.darkGray,
-  surfaceContainerHigh: '#2a2a2a', // Slightly lighter than darkGray for pressed states
-  surfaceContainerHighest: palette.midGray,
-  surfaceContainerHover: palette.white_10,
-  onSurface: palette.offWhite,
-  onSurfaceVariant: palette.midGray,
-  outline: '#3c3c3c', // A subtle outline color
-  error: palette.error,
-  errorContainer: palette.errorContainer,
-  onErrorContainer: palette.onErrorContainer,
-  pink: '#ec4899',
-};
-
-// Example structure for a future light theme
-const lightThemeColors = {
-  primary: palette.black,
-  onPrimary: palette.offWhite,
-  background: palette.offWhite,
-  surface: palette.offWhite,
-  surfaceContainer: '#E0E0E0', // Example light gray
-  surfaceContainerHigh: '#BDBDBD', // Example mid light gray
-  surfaceContainerHighest: '#9E9E9E', // Example dark light gray
-  surfaceContainerHover: 'rgba(0, 0, 0, 0.1)',
-  onSurface: palette.black,
-  onSurfaceVariant: palette.midGray,
-  outline: '#E0E0E0',
-  error: palette.error,
-  errorContainer: '#F9DEDC',
-  onErrorContainer: '#410E0B',
-  pink: '#ec4899',
-};
+const darkThemeColors = darkColors;
+const lightThemeColors = lightColors;
 
 /**
  * ============================================================================
- * Design Tokens
+ * Legacy Design Tokens (DEPRECATED)
  * ============================================================================
- *
- * Provides consistent spacing, shapes, and typography for the entire app.
- * Using these tokens ensures a uniform and predictable design.
- *
  */
 const shape = {
-  small: 4,
-  medium: 8,
-  large: 12,
-  extraLarge: 16,
-  full: 9999,
+  small: radius.sm,
+  medium: radius.md,
+  large: radius.lg,
+  extraLarge: radius.xl,
+  full: radius.full,
 };
 
 const spacing = {
-  xs: 4,
-  s: 8,
-  m: 12,
-  l: 16,
-  xl: 24,
-  xxl: 32,
+  xs: newSpacing.xs,
+  s: newSpacing.sm,
+  m: newSpacing.md,
+  l: newSpacing.lg,
+  xl: newSpacing.xl,
+  xxl: newSpacing['2xl'],
 };
 
 const typography = {
-  titleLarge: { fontSize: 22, fontWeight: 'bold' as const },
-  titleMedium: { fontSize: 18, fontWeight: 'bold' as const },
-  titleSmall: { fontSize: 16, fontWeight: '600' as const },
-  labelLarge: { fontSize: 14, fontWeight: '600' as const },
-  labelMedium: { fontSize: 12, fontWeight: '500' as const },
-  labelSmall: { fontSize: 11, fontWeight: '500' as const },
-  bodyLarge: { fontSize: 16, lineHeight: 24 },
-  bodyMedium: { fontSize: 14, lineHeight: 20 },
-  bodySmall: { fontSize: 12, lineHeight: 16 },
+  titleLarge: newTypography.titleLarge,
+  titleMedium: newTypography.titleMedium,
+  titleSmall: newTypography.titleSmall,
+  labelLarge: newTypography.labelLarge,
+  labelMedium: newTypography.labelMedium,
+  labelSmall: newTypography.labelSmall,
+  bodyLarge: newTypography.bodyLarge,
+  bodyMedium: newTypography.bodyMedium,
+  bodySmall: newTypography.bodySmall,
 };
 
 /**
  * ============================================================================
- * Exported Theme Object
+ * Legacy Exported Theme Object (DEPRECATED)
  * ============================================================================
  *
- * This is the single source of truth for all design tokens and shared styles.
- * Components should import this object to access theme values.
- * To switch themes, change `colors` to `lightThemeColors`.
+ * This maintains backward compatibility for existing components.
+ * New components should use ThemeProvider and useTheme() hook.
  *
  */
 export const theme = {
@@ -144,6 +104,7 @@ export const theme = {
 
   /**
    * Centralized styles for all settings-related screens to ensure consistency.
+   * NOTE: These styles now use the bridged tokens from the new design system.
    */
   settingsStyles: StyleSheet.create({
     // Page level styles
@@ -234,3 +195,6 @@ export const theme = {
     },
   }),
 };
+
+// For backward compatibility, export palette and individual objects
+export { palette, darkThemeColors, lightThemeColors, shape, spacing, typography };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { useTranslation } from 'react-i18next';
 import { AppBskyActorDefs } from '@atproto/api';

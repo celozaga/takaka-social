@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { AppBskyActorDefs } from '@atproto/api';
 import { Link } from 'expo-router';
 import Head from 'expo-router/head';
@@ -11,7 +11,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, FlatLis
 import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 import { BadgeCheck } from 'lucide-react';
-import SettingsDivider from '../ui/SettingsDivider';
+import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const MutedAccountItem: React.FC<{

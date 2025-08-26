@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '@/components/shared';
 import { useSavedFeeds } from './useSavedFeeds';
 import {AppBskyFeedDefs} from '@atproto/api';
 import { WEB_CLIENT_URL } from '../lib/config';

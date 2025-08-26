@@ -4,7 +4,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { BskyAgent, AtpSessionData, AtpSessionEvent } from '@atproto/api';
 import { PDS_URL } from '../lib/config';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '@/components/shared';
 import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';

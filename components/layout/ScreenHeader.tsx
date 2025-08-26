@@ -2,9 +2,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import TopAppBar from '../ui/TopAppBar';
-import { BackButton } from '@/components/shared';
-import { theme } from '@/lib/theme';
+import { BackButton, TopAppBar, useTheme } from '@/components/shared';
 
 interface ScreenHeaderProps {
     title: string;
@@ -13,6 +11,9 @@ interface ScreenHeaderProps {
 
 const ScreenHeader: React.FC<ScreenHeaderProps> = ({ title, children }) => {
     const { t } = useTranslation();
+    const { theme } = useTheme();
+
+    const styles = createStyles(theme);
 
     const leadingAction = (
         <BackButton 
@@ -26,9 +27,9 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({ title, children }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     button: {
-        marginLeft: -theme.spacing.s, // To align with edge
+        marginLeft: -theme.spacing.sm, // To align with edge
     },
 });
 

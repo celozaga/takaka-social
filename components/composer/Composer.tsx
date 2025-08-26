@@ -4,10 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { RichText, AppBskyActorDefs } from '@atproto/api';
 import { Ionicons } from '@expo/vector-icons';
-import { useToast } from '../ui/use-toast';
+import { useToast, useTheme } from '@/components/shared';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, ScrollView, Modal, Platform } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { FEATURES, MEDIA_CONFIG, isFeatureEnabled } from '@/lib/config';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
@@ -46,6 +45,7 @@ const LANGUAGES = [
 ];
 
 const CharacterCount: React.FC<{ remainingChars: number }> = ({ remainingChars }) => {
+    const { theme } = useTheme();
     const color = remainingChars < 0 ? theme.colors.error : (remainingChars < 20 ? theme.colors.primary : theme.colors.onSurfaceVariant);
     if (remainingChars > 20) return null;
 
@@ -61,6 +61,9 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const { toast } = useToast();
   const { requireAuth } = useAuthGuard();
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   const [text, setText] = useState(initialText || '');
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isPosting, setIsPosting] = useState(false);
@@ -403,7 +406,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                 )}
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
                 <Pressable onPress={() => setIsLangMenuOpen(true)} style={styles.langButton}>
                     <Text style={styles.langButtonText}>
                         {selectedLangs.length > 0 ? LANGUAGES.find(l => l.code === selectedLangs[0])?.name : 'English'}
@@ -450,31 +453,31 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.colors.surfaceContainer },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.s, flexShrink: 0 },
-    cancelButton: { paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.sm, flexShrink: 0 },
+    cancelButton: { paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.sm },
     cancelButtonText: { color: theme.colors.primary, fontWeight: '500' },
-    postButton: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingVertical: 6, paddingHorizontal: 20, borderRadius: theme.shape.full },
+    postButton: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, paddingVertical: 6, paddingHorizontal: 20, borderRadius: theme.radius.full },
     postButtonDisabled: { opacity: 0.5 },
     postButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
-    main: { flexDirection: 'row', gap: theme.spacing.l, padding: theme.spacing.l, flexGrow: 1 },
-    avatar: { width: 48, height: 48, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    main: { flexDirection: 'row', gap: theme.spacing.lg, padding: theme.spacing.lg, flexGrow: 1 },
+    avatar: { width: 48, height: 48, borderRadius: theme.radius.full, backgroundColor: theme.colors.surfaceContainerHigh },
     textInput: { color: theme.colors.onSurface, fontSize: 20, textAlignVertical: 'top', minHeight: 100 },
-    mediaGrid: { marginTop: theme.spacing.l, gap: theme.spacing.s, flexDirection: 'row', flexWrap: 'wrap' },
+    mediaGrid: { marginTop: theme.spacing.lg, gap: theme.spacing.sm, flexDirection: 'row', flexWrap: 'wrap' },
     mediaItem: { position: 'relative' },
-    mediaPreview: { width: '100%', aspectRatio: 1, borderRadius: theme.shape.medium, resizeMode: 'cover' },
-    removeMediaButton: { position: 'absolute', top: theme.spacing.s, right: theme.spacing.s, backgroundColor: 'rgba(0,0,0,0.6)', padding: theme.spacing.xs, borderRadius: theme.shape.full },
-    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.s, borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainerHigh },
-    iconButton: { padding: theme.spacing.s },
+    mediaPreview: { width: '100%', aspectRatio: 1, borderRadius: theme.radius.md, resizeMode: 'cover' },
+    removeMediaButton: { position: 'absolute', top: theme.spacing.sm, right: theme.spacing.sm, backgroundColor: 'rgba(0,0,0,0.6)', padding: theme.spacing.xs, borderRadius: theme.radius.full },
+    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.sm, borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainerHigh },
+    iconButton: { padding: theme.spacing.sm },
     iconButtonDisabled: { opacity: 0.5 },
-    langButton: { paddingHorizontal: theme.spacing.m, paddingVertical: theme.spacing.xs, borderRadius: theme.shape.full },
-    langButtonText: { color: theme.colors.primary, ...theme.typography.labelMedium, fontWeight: '500' },
+    langButton: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.xs, borderRadius: theme.radius.full },
+    langButtonText: { color: theme.colors.primary, fontSize: theme.typography.labelMedium.fontSize, fontWeight: '500' },
     divider: { width: 1, height: 20, backgroundColor: theme.colors.surfaceContainerHigh },
     langModalBackdrop: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-    langModalContent: { width: '100%', maxHeight: '50%', backgroundColor: theme.colors.surfaceContainerHigh, borderTopLeftRadius: theme.shape.large, borderTopRightRadius: theme.shape.large, overflow: 'hidden' },
-    langSearchInput: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderBottomWidth: 1, borderBottomColor: theme.colors.outline, color: theme.colors.onSurface },
-    langOption: { width: '100%', padding: theme.spacing.m },
+    langModalContent: { width: '100%', maxHeight: '50%', backgroundColor: theme.colors.surfaceContainerHigh, borderTopLeftRadius: theme.radius.lg, borderTopRightRadius: theme.radius.lg, overflow: 'hidden' },
+    langSearchInput: { width: '100%', padding: theme.spacing.md, backgroundColor: theme.colors.surfaceContainer, borderBottomWidth: 1, borderBottomColor: theme.colors.outline, color: theme.colors.onSurface },
+    langOption: { width: '100%', padding: theme.spacing.md },
     langOptionSelected: { backgroundColor: theme.colors.primary },
     langOptionText: { color: theme.colors.onSurface },
     langOptionTextSelected: { color: theme.colors.onPrimary },
@@ -491,17 +494,17 @@ const styles = StyleSheet.create({
     },
     playIconContainer: { 
         backgroundColor: 'rgba(0,0,0,0.6)', 
-        borderRadius: theme.shape.full, 
-        padding: theme.spacing.m 
+        borderRadius: theme.radius.full, 
+        padding: theme.spacing.md 
     },
     durationContainer: { 
         position: 'absolute', 
-        bottom: theme.spacing.s, 
-        right: theme.spacing.s, 
+        bottom: theme.spacing.sm, 
+        right: theme.spacing.sm, 
         backgroundColor: 'rgba(0,0,0,0.7)', 
         paddingHorizontal: theme.spacing.xs, 
         paddingVertical: 2, 
-        borderRadius: theme.shape.small 
+        borderRadius: theme.radius.sm 
     },
     durationText: { 
         color: 'white', 
@@ -519,11 +522,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.7)', 
         justifyContent: 'center', 
         alignItems: 'center',
-        borderRadius: theme.shape.medium
+        borderRadius: theme.radius.md
     },
     progressContainer: { 
         alignItems: 'center', 
-        gap: theme.spacing.s 
+        gap: theme.spacing.sm 
     },
     progressText: { 
         color: 'white', 

@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast, Switch, SettingsDivider } from '@/components/shared';
 import { Eye, Volume2, Smartphone, Zap, Type, Contrast, Move, Play } from 'lucide-react';
 import Head from 'expo-router/head';
-import ToggleSwitch from '../ui/ToggleSwitch';
 import SettingsListItem from './SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -177,7 +175,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.reduceMotion')}
                         sublabel={t('accessibilitySettings.reduceMotionDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.reduceMotion} 
                                 onChange={(value) => handleSettingToggle('reduceMotion', value)}
                                 disabled={isSaving}
@@ -190,7 +188,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.increaseContrast')}
                         sublabel={t('accessibilitySettings.increaseContrastDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.increaseContrast} 
                                 onChange={(value) => handleSettingToggle('increaseContrast', value)}
                                 disabled={isSaving}
@@ -203,7 +201,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.largerText')}
                         sublabel={t('accessibilitySettings.largerTextDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.largerText} 
                                 onChange={(value) => handleSettingToggle('largerText', value)}
                                 disabled={isSaving}
@@ -216,7 +214,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.boldText')}
                         sublabel={t('accessibilitySettings.boldTextDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.boldText} 
                                 onChange={(value) => handleSettingToggle('boldText', value)}
                                 disabled={isSaving}
@@ -231,7 +229,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.autoPlayVideos')}
                         sublabel={t('accessibilitySettings.autoPlayVideosDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.autoPlayVideos} 
                                 onChange={(value) => handleSettingToggle('autoPlayVideos', value)}
                                 disabled={isSaving}
@@ -244,7 +242,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.showAltText')}
                         sublabel={t('accessibilitySettings.showAltTextDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.showAltText} 
                                 onChange={(value) => handleSettingToggle('showAltText', value)}
                                 disabled={isSaving}
@@ -259,7 +257,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.soundEffects')}
                         sublabel={t('accessibilitySettings.soundEffectsDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.soundEffects} 
                                 onChange={(value) => handleSettingToggle('soundEffects', value)}
                                 disabled={isSaving}
@@ -272,7 +270,7 @@ const AccessibilitySettingsScreen: React.FC = () => {
                         label={t('accessibilitySettings.hapticFeedback')}
                         sublabel={t('accessibilitySettings.hapticFeedbackDesc')}
                         control={
-                            <ToggleSwitch 
+                            <Switch 
                                 checked={settings.hapticFeedback} 
                                 onChange={(value) => handleSettingToggle('hapticFeedback', value)}
                                 disabled={isSaving}

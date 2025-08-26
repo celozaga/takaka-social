@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAtp } from '@/context/AtpContext';
 import { View, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -16,6 +16,7 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
   redirectTo = '/home' 
 }) => {
   const { session, isLoadingSession } = useAtp();
+  const { theme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {

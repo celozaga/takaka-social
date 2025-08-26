@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import IconButton from './IconButton';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface BackButtonProps {
   onPress?: () => void;
@@ -18,6 +18,7 @@ const BackButton: React.FC<BackButtonProps> = ({
 }) => {
   const router = useRouter();
   const { t } = useTranslation();
+  const { theme } = useTheme();
 
   const handlePress = () => {
     if (onPress) {

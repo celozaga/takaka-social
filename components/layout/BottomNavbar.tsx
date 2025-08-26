@@ -9,11 +9,15 @@ import { useUI } from '../../context/UIContext';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const NavItem: React.FC<{ item: any; isDesktop: boolean; }> = ({ item, isDesktop }) => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const { unreadCount } = useAtp();
+  
+  // Create dynamic styles for this component
+  const styles = createStyles(theme);
   
   const isNotifications = item.labelKey === 'nav.notifications';
   const hasNotificationBadge = isNotifications && unreadCount > 0;
@@ -63,12 +67,16 @@ const NavItem: React.FC<{ item: any; isDesktop: boolean; }> = ({ item, isDesktop
 };
 
 const BottomNavbar = () => {
+  const { theme } = useTheme();
   const { session, logout } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
   const isDesktop = width >= 768;
+
+  // Create dynamic styles
+  const styles = createStyles(theme);
 
   const navItems = [
     { href: '/home', labelKey: 'nav.home', iconName: 'home-outline', activeCondition: pathname === '/home' || pathname === '/' },
@@ -89,7 +97,7 @@ const BottomNavbar = () => {
     const logoutItem = { isAction: true, action: logout, labelKey: 'nav.logout', iconName: 'log-out-outline', activeCondition: false, href: '#' };
     
     return (
-      <View style={[styles.navRail, { paddingTop: top + theme.spacing.l, paddingBottom: bottom + theme.spacing.l }]}>
+             <View style={[styles.navRail, { paddingTop: top + theme.spacing.lg, paddingBottom: bottom + theme.spacing.lg }]}>
         <View style={styles.navRailSection}>
           {desktopNavItems.map(item => <NavItem key={item.labelKey} item={item} isDesktop />)}
         </View>
@@ -113,7 +121,8 @@ const BottomNavbar = () => {
   );
 };
 
-const styles = StyleSheet.create({
+// Create dynamic styles function  
+const createStyles = (theme: any) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
@@ -133,7 +142,7 @@ const styles = StyleSheet.create({
     top: -2,
     right: -4,
     backgroundColor: theme.colors.error,
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
     paddingHorizontal: 4,
     minWidth: 16,
     height: 16,
@@ -188,7 +197,7 @@ const styles = StyleSheet.create({
   },
   navRailSection: {
     alignItems: 'center',
-    gap: theme.spacing.m,
+    gap: theme.spacing.md,
     width: '100%',
   },
   navRailItem: {
@@ -206,7 +215,7 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
     position: 'relative',
   },
 });

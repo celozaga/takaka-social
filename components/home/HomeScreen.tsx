@@ -6,12 +6,13 @@ import { AppBskyFeedDefs, AppBskyActorDefs } from '@atproto/api';
 import Feed from '../shared/Feed';
 import FeedSelector from '../feeds/FeedSelector';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 
 const HomeScreen: React.FC = () => {
   const { agent, session } = useAtp();
+  const { theme } = useTheme();
   const { t } = useTranslation();
   const [feeds, setFeeds] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
   const [selectedFeed, setSelectedFeed] = useState<string>(session ? 'following' : DISCOVER_FEED_URI);
@@ -83,6 +84,8 @@ const HomeScreen: React.FC = () => {
     }
   }, [session]);
 
+  const styles = createStyles(theme);
+
   return (
     <>
       <View style={styles.container}>
@@ -100,7 +103,7 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

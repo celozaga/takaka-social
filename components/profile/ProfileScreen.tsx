@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Linking, Alert, Platform } from 'react-native';
 import { OptimizedImage } from '../ui';
@@ -14,7 +14,7 @@ import { BadgeCheck, MoreHorizontal, UserX, Shield, AlertTriangle, MicOff, Edit,
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from 'expo-router/head';
-import TopAppBar from '../ui/TopAppBar';
+import { TopAppBar } from '@/components/shared';
 import { theme } from '@/lib/theme';
 import { PostCardSkeleton, ProfileHeaderSkeleton } from '@/components/shared';
 import { formatCompactNumber } from '@/lib/formatters';

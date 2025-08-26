@@ -6,7 +6,7 @@ import { usePostActions } from '../../hooks/usePostActions';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { formatCompactNumber } from '@/lib/formatters';
 
 interface PostActionsProps {
@@ -17,6 +17,9 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   const { session } = useAtp();
   const { openLoginModal, openComposer } = useUI();
   const { requireAuth } = useAuthGuard();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   const {
     likeUri, likeCount, isLiking, handleLike,
     repostUri, repostCount, isReposting, handleRepost
@@ -72,11 +75,11 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.spacing.m,
+        gap: theme.spacing.md,
     },
     actionButton: {
         flexDirection: 'row',
@@ -84,7 +87,7 @@ const styles = StyleSheet.create({
         gap: theme.spacing.xs,
     },
     actionText: {
-        ...theme.typography.labelLarge,
+        fontSize: theme.typography.labelLarge.fontSize,
         fontWeight: '600',
         color: theme.colors.onSurfaceVariant,
     },

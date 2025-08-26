@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { List } from 'lucide-react';
 import { View, StyleSheet, StyleProp } from 'react-native';
+import { ImageStyle } from 'expo-image';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface FeedAvatarProps {
   src?: string;
@@ -13,6 +14,10 @@ interface FeedAvatarProps {
 
 const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, style }) => {
   const [hasError, setHasError] = useState(!src);
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
+  
   const handleError = () => { if (!hasError) setHasError(true); };
 
   if (hasError) {
@@ -34,7 +39,7 @@ const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, style }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     fallback: {
         alignItems: 'center',
         justifyContent: 'center',

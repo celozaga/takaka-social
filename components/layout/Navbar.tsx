@@ -3,9 +3,12 @@ import React from 'react';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform, Pressable } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const Navbar: React.FC = () => {
+  const { theme } = useTheme();
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.header}>
       <View style={styles.container}>
@@ -26,7 +29,7 @@ const Navbar: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   header: {
     position: Platform.OS === 'web' ? ('fixed' as any) : 'absolute',
     top: 0,
@@ -47,7 +50,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 'auto' as any, // RN web specific
     width: '100%',
     maxWidth: 640,
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.md,
   },
   innerContainer: {
     flexDirection: 'row',
@@ -56,7 +59,7 @@ const styles = StyleSheet.create({
     height: 64,
   },
   link: {
-    padding: 8,
+    padding: theme.spacing.xs,
   },
 });
 

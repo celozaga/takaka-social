@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { BackHeader, IconButton } from '@/components/shared';
 import { MoreHorizontal, Share2 } from 'lucide-react';
 import { useFeedActions } from '@/hooks/useFeedActions';
@@ -18,6 +18,9 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({
     openFeedModal 
 }) => {
     const { feedView, isLoading, likeCount } = useFeedActions(feedUri);
+    const { theme } = useTheme();
+    
+    const styles = createStyles(theme);
 
     if (isLoading) {
         return (
@@ -56,14 +59,14 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({
 
     return (
         <BackHeader 
-            title={feedView.displayName || feedView.name} 
+            title={feedView.displayName || feedView.uri} 
             onBackPress={onBack}
             rightAction={rightActions}
         />
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     skeletonContainer: {
         position: 'absolute',
         top: 0,
@@ -81,7 +84,7 @@ const styles = StyleSheet.create({
         width: 20,
         height: 20,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
     },
     actions: {
         flexDirection: 'row',

@@ -8,10 +8,9 @@ import RichTextRenderer from '../shared/RichTextRenderer';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
-import { PostCardSkeleton } from '@/components/shared';
+import { PostCardSkeleton, useTheme, Typography, Avatar } from '@/components/shared';
+import Card from '@/components/shared/Card';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { theme } from '@/lib/theme';
-import Card from '../ui/Card';
 import { formatCompactNumber } from '@/lib/formatters';
 import { OptimizedImage } from '../ui';
 
@@ -24,7 +23,11 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
     const { setPostForNav } = useUI();
     const router = useRouter();
     const moderation = useModeration();
+    const { theme } = useTheme();
     const [isContentVisible, setIsContentVisible] = React.useState(false);
+
+    // Create dynamic styles
+    const styles = createStyles(theme);
 
     const { post, reason } = feedViewPost;
     
@@ -190,24 +193,27 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
     }
 
     return (
-        <Card onPress={handlePress}>
+        <Card onPress={handlePress} pressable={true} padding="none">
             {renderContext()}
             {mediaElement}
             <View style={styles.content}>
                 {record?.text && (
-                    <Text style={styles.postText} numberOfLines={2}>
+                    <Typography variant="bodyMedium" color="onSurface" numberOfLines={2}>
                         <RichTextRenderer record={record} />
-                    </Text>
+                    </Typography>
                 )}
                 <View style={styles.footer}>
                     <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
                     <Pressable style={styles.authorContainer}>
-                        <OptimizedImage 
-                            source={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} 
+                        <Avatar 
+                            uri={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} 
+                            size="sm"
+                            fallback={author.displayName?.charAt(0) || author.handle.charAt(0)}
                             accessibilityLabel={`${author.displayName}'s avatar`} 
-                            style={styles.avatar} 
                         />
-                        <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
+                        <Typography variant="labelMedium" color="onSurfaceVariant" style={styles.authorName} numberOfLines={1}>
+                            {author.displayName || `@${author.handle}`}
+                        </Typography>
                     </Pressable>
                     </Link>
                     <Pressable 
@@ -224,37 +230,36 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
     );
 });
 
-const styles = StyleSheet.create({
-    image: { width: '100%' },
-    videoPoster: { resizeMode: 'contain' },
+// Create dynamic styles function
+const createStyles = (theme: any) => StyleSheet.create({
+        image: { width: '100%' },
+        videoPoster: { resizeMode: 'contain' },
 
-    mediaBadgeContainer: { position: 'absolute', top: theme.spacing.s, right: theme.spacing.s, flexDirection: 'row', gap: theme.spacing.xs },
-    mediaBadge: { backgroundColor: 'rgba(0,0,0,0.7)', padding: theme.spacing.xs, borderRadius: theme.shape.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-    mediaBadgeText: { ...theme.typography.labelSmall, color: 'white' },
-    content: { padding: theme.spacing.m, gap: theme.spacing.s },
-    postText: { ...theme.typography.bodyMedium, color: theme.colors.onSurface },
-    footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.s },
-    authorContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, flex: 1, minWidth: 0 },
-    avatar: { width: 24, height: 24, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
-    authorName: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant, flexShrink: 1 },
-    likeButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, padding: theme.spacing.xs, margin: -theme.spacing.xs },
-    likeCount: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant },
-    contextContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing.s,
-        paddingHorizontal: theme.spacing.m,
-        paddingTop: theme.spacing.m,
-    },
-    contextText: {
-        ...theme.typography.bodySmall,
-        color: theme.colors.onSurfaceVariant,
-        flexShrink: 1
-    },
-    contextLink: {
-        fontWeight: 'bold',
-        color: theme.colors.onSurfaceVariant,
-    },
-});
+        mediaBadgeContainer: { position: 'absolute', top: theme.spacing.sm, right: theme.spacing.sm, flexDirection: 'row', gap: theme.spacing.xs },
+        mediaBadge: { backgroundColor: 'rgba(0,0,0,0.7)', padding: theme.spacing.xs, borderRadius: theme.radius.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+        mediaBadgeText: { ...theme.typography.labelSmall, color: 'white' },
+        content: { padding: theme.spacing.md, gap: theme.spacing.sm },
+        footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.sm },
+        authorContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, flex: 1, minWidth: 0 },
+        authorName: { flexShrink: 1 },
+        likeButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, padding: theme.spacing.xs, margin: -theme.spacing.xs },
+        likeCount: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant },
+        contextContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+            paddingHorizontal: theme.spacing.md,
+            paddingTop: theme.spacing.md,
+        },
+        contextText: {
+            ...theme.typography.bodySmall,
+            color: theme.colors.onSurfaceVariant,
+            flexShrink: 1
+        },
+        contextLink: {
+            fontWeight: 'bold',
+            color: theme.colors.onSurfaceVariant,
+        },
+    });
 
 export default PostCard;

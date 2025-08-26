@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface SkeletonAvatarProps {
   size?: number;
@@ -11,6 +11,9 @@ const SkeletonAvatar: React.FC<SkeletonAvatarProps> = ({
   size = 32,
   style
 }) => {
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   return (
     <View
       style={[
@@ -22,7 +25,7 @@ const SkeletonAvatar: React.FC<SkeletonAvatarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   avatar: {
     backgroundColor: theme.colors.surfaceContainerHigh,
     flexShrink: 0,

@@ -3,7 +3,7 @@ import { useRouter, usePathname } from 'expo-router';
 import { useAtp } from '@/context/AtpContext';
 import { useUI } from '@/context/UIContext';
 import { View, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface GlobalAuthGuardProps {
   children: React.ReactNode;
@@ -12,6 +12,7 @@ interface GlobalAuthGuardProps {
 const GlobalAuthGuard: React.FC<GlobalAuthGuardProps> = ({ children }) => {
   const { session, isLoadingSession, isProtectedRoute, requireAuth } = useAtp();
   const { openLoginModal } = useUI();
+  const { theme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 

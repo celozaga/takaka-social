@@ -11,11 +11,11 @@ import { HiddenPostsProvider } from '@/context/HiddenPostsContext';
 import { ModerationProvider } from '@/context/ModerationContext';
 import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
 import { BookmarksProvider } from '@/context/BookmarksContext';
-import { Toaster, ToastProvider } from '@/components/ui/Toaster';
+import { Toaster, ToastProvider } from '@/components/shared';
 import { StatusBar } from 'expo-status-bar';
 import BottomNavbar from '@/components/layout/BottomNavbar';
 import LoginPrompt from '@/components/auth/LoginPrompt';
-import { theme } from '@/lib/theme';
+import { ThemeProvider, useTheme } from '@/components/shared';
 import Head from 'expo-router/head';
 import GlobalAuthGuard from '@/components/auth/GlobalAuthGuard';
 
@@ -32,14 +32,119 @@ const MediaActionsModal = lazy(() => import('@/components/shared/MediaActionsMod
 const RepostModal = lazy(() => import('@/components/shared/RepostModal'));
 const RepliesModal = lazy(() => import('@/components/replies/RepliesModal'));
 
-const ModalSuspenseFallback = () => (
-  <View style={styles.modalDialogShell}>
-    <ActivityIndicator size="large" />
-  </View>
-);
+const ModalSuspenseFallback = () => {
+  return (
+    <View style={{ 
+      backgroundColor: '#1E1E1E',
+      borderRadius: 12,
+      padding: 32,
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 120,
+    }}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
+};
 
-function AppLayout() {
+// Internal component that uses theme
+function ThemedAppLayout() {
+  const { theme } = useTheme();
   const { session, isLoadingSession } = useAtp();
+  
+  // Create dynamic styles
+  const createStyles = (theme: any) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    appContainer: {
+      flex: 1,
+      flexDirection: 'column',
+    },
+    appContainerDesktop: {
+      flexDirection: 'row',
+      width: '100%',
+      maxWidth: 720,
+      marginHorizontal: 'auto',
+    },
+    mainContent: {
+      flex: 1,
+      width: '100%',
+      maxWidth: 640,
+    },
+    mainContentMobile: {
+      paddingBottom: 60, // Height of Navigation Bar
+    },
+    fullScreenContent: {
+      paddingTop: 0,
+      paddingLeft: 0,
+      paddingBottom: 0,
+      marginLeft: 0,
+      maxWidth: '100%',
+    },
+    modalBackdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 100,
+    },
+    composerBackdrop: {
+       justifyContent: 'flex-start',
+       paddingTop: Platform.select({ web: 40, default: 40 }),
+       paddingBottom: Platform.select({ web: 10, default: 10 }),
+    },
+    composerWrapper: {
+      width: '100%',
+      maxWidth: 640,
+      flex: 1,
+      maxHeight: 800,
+      backgroundColor: theme.colors.surfaceContainer,
+      borderRadius: theme.radius.lg,
+      overflow: 'hidden',
+    },
+    modalDialogWrapper: {
+      width: '100%',
+      maxWidth: 448,
+      paddingHorizontal: theme.spacing.lg,
+    },
+    modalDialogShell: {
+      backgroundColor: theme.colors.surfaceContainer,
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing['2xl'],
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 120,
+    },
+    bottomSheet: {
+      position: 'absolute',
+      bottom: 0,
+      width: '100%',
+      maxWidth: 640,
+      backgroundColor: theme.colors.surfaceContainer,
+      borderTopLeftRadius: theme.radius.xl,
+      borderTopRightRadius: theme.radius.xl,
+      padding: theme.spacing.sm,
+      paddingBottom: theme.spacing['2xl'], // For home bar
+    },
+    repliesSheet: {
+        height: '85%',
+        maxHeight: 800,
+        padding: 0,
+        paddingBottom: 0,
+    },
+    fullScreenLoader: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+    },
+  });
+  
+  const styles = createStyles(theme);
   const {
     isLoginModalOpen, closeLoginModal,
     isComposerOpen, closeComposer, composerReplyTo, composerInitialText,
@@ -185,15 +290,17 @@ function AppLayout() {
 }
 
 
+
 export default function RootLayout() {
   return (
-    <ToastProvider>
-      <AtpProvider>
-        <ModerationProvider>
-          <UIProvider>
-            <HiddenPostsProvider>
-              <BookmarksProvider>
-                <ProfileCacheProvider>
+    <ThemeProvider defaultColorScheme="dark">
+      <ToastProvider>
+        <AtpProvider>
+          <ModerationProvider>
+            <UIProvider>
+              <HiddenPostsProvider>
+                <BookmarksProvider>
+                  <ProfileCacheProvider>
                     <SafeAreaProvider>
                       <GlobalAuthGuard>
                         <Head>
@@ -203,106 +310,19 @@ export default function RootLayout() {
                           <meta property="og:image" content="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
                         </Head>
                         <StatusBar style="light" />
-                        <AppLayout />
+                        <ThemedAppLayout />
                         <Toaster />
                       </GlobalAuthGuard>
                     </SafeAreaProvider>
-                </ProfileCacheProvider>
-              </BookmarksProvider>
-            </HiddenPostsProvider>
-          </UIProvider>
-        </ModerationProvider>
-      </AtpProvider>
-    </ToastProvider>
+                  </ProfileCacheProvider>
+                </BookmarksProvider>
+              </HiddenPostsProvider>
+            </UIProvider>
+          </ModerationProvider>
+        </AtpProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  appContainer: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  appContainerDesktop: {
-    flexDirection: 'row',
-    width: '100%',
-    maxWidth: 720,
-    marginHorizontal: 'auto',
-  },
-  mainContent: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 640,
-  },
-  mainContentMobile: {
-    paddingBottom: 60, // Height of Navigation Bar
-  },
-  fullScreenContent: {
-    paddingTop: 0,
-    paddingLeft: 0,
-    paddingBottom: 0,
-    marginLeft: 0,
-    maxWidth: '100%',
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  composerBackdrop: {
-     justifyContent: 'flex-start',
-     paddingTop: Platform.select({ web: 40, default: 40 }),
-     paddingBottom: Platform.select({ web: 10, default: 10 }),
-  },
-  composerWrapper: {
-    width: '100%',
-    maxWidth: 640,
-    flex: 1,
-    maxHeight: 800,
-    backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: theme.shape.large,
-    overflow: 'hidden',
-  },
-  modalDialogWrapper: {
-    width: '100%',
-    maxWidth: 448,
-    paddingHorizontal: theme.spacing.l,
-  },
-  modalDialogShell: {
-    backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: theme.shape.large,
-    padding: theme.spacing.xl,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 120,
-  },
-  bottomSheet: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    maxWidth: 640,
-    backgroundColor: theme.colors.surfaceContainer,
-    borderTopLeftRadius: theme.shape.extraLarge,
-    borderTopRightRadius: theme.shape.extraLarge,
-    padding: theme.spacing.s,
-    paddingBottom: theme.spacing.xl, // For home bar
-  },
-  repliesSheet: {
-      height: '85%',
-      maxHeight: 800,
-      padding: 0,
-      paddingBottom: 0,
-  },
-  fullScreenLoader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-  },
-});
+

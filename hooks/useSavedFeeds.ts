@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '@/components/shared';
 import { AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
 
 type SavedFeedsPrefV2 = AppBskyActorDefs.SavedFeedsPrefV2;

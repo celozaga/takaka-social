@@ -94,7 +94,7 @@ const preloadContent = async (posts: AppBskyFeedDefs.FeedViewPost[], startIndex:
                     }
                 }
             } catch (e) {
-                if (isFeatureEnabled('VERBOSE_API_LOGS')) {
+                if (__DEV__) {
                     console.debug('Content preload error (ignored):', e);
                 }
             }

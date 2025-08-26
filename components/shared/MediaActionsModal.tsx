@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from './Toast';
 import { useHiddenPosts } from '../../context/HiddenPostsContext';
 import { useBookmarks } from '../../context/BookmarksContext';
 import { AtUri,AppBskyFeedDefs } from '@atproto/api';

@@ -12,7 +12,7 @@ import FeedAvatar from './FeedAvatar';
 import Head from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const EditableFeedItem: React.FC<{
     feed:AppBskyFeedDefs.GeneratorView;
@@ -26,6 +26,9 @@ const EditableFeedItem: React.FC<{
     onRemove: () => void;
 }> = ({ feed, isPinned, isFirst, isLast, disabled, onMoveUp, onMoveDown, onTogglePin, onRemove }) => {
     const { t } = useTranslation();
+    const { theme } = useTheme();
+    
+    const styles = createStyles(theme);
     const feedLink = `/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
 
     return (
@@ -71,6 +74,9 @@ const FeedsScreen: React.FC = () => {
     const { session } = useAtp();
     const { t } = useTranslation();
     const { setCustomFeedHeaderVisible } = useUI();
+    const { theme } = useTheme();
+    
+    const styles = createStyles(theme);
     const { 
         isLoading: isLoadingSavedFeeds, 
         feedViews, 
@@ -142,7 +148,7 @@ const FeedsScreen: React.FC = () => {
                     <View>
                         <Text style={styles.sectionTitle}>{t('feeds.pinned')}</Text>
                         {pinnedItems.length > 0 ? (
-                            <View style={{ gap: theme.spacing.s }}>
+                            <View style={{ gap: theme.spacing.sm }}>
                                 {pinnedItems.map((item, index) => {
                                     const feed = feedViews.get(item.value);
                                     if (!feed) return null;
@@ -167,7 +173,7 @@ const FeedsScreen: React.FC = () => {
                      <View>
                         <Text style={styles.sectionTitle}>{t('feeds.saved')}</Text>
                         {savedItems.length > 0 ? (
-                            <View style={{ gap: theme.spacing.s }}>
+                            <View style={{ gap: theme.spacing.sm }}>
                                 {savedItems.map((item) => {
                                     const feed = feedViews.get(item.value);
                                     if (!feed) return null;
@@ -196,30 +202,30 @@ const FeedsScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    contentContainer: { padding: theme.spacing.l },
-    description: { color: theme.colors.onSurfaceVariant, ...theme.typography.bodyMedium, marginBottom: theme.spacing.xl },
-    sectionTitle: { ...theme.typography.titleMedium, marginBottom: theme.spacing.m, color: theme.colors.onSurfaceVariant },
-    itemContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.m, padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large },
+const createStyles = (theme: any) => StyleSheet.create({
+    contentContainer: { padding: theme.spacing.lg },
+    description: { color: theme.colors.onSurfaceVariant, fontSize: theme.typography.bodyMedium.fontSize, marginBottom: theme.spacing.xl },
+    sectionTitle: { fontSize: theme.typography.titleMedium.fontSize, marginBottom: theme.spacing.md, color: theme.colors.onSurfaceVariant },
+    itemContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, padding: theme.spacing.md, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg },
     itemDisabled: { opacity: 0.5 },
     avatar: {
         width: 40,
         height: 40,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         flexShrink: 0,
     },
     itemMain: { flex: 1, minWidth: 0 },
-    itemTitle: { ...theme.typography.titleSmall, color: theme.colors.onSurface },
-    itemByline: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
+    itemTitle: { fontSize: theme.typography.titleSmall.fontSize, color: theme.colors.onSurface },
+    itemByline: { fontSize: theme.typography.bodyMedium.fontSize, color: theme.colors.onSurfaceVariant },
     itemActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-    actionButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
+    actionButton: { padding: theme.spacing.sm, borderRadius: theme.radius.full },
     actionButtonDestructive: {},
-    emptyContainer: { alignItems: 'center', paddingVertical: theme.spacing.l, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium },
-    emptyText: { color: theme.colors.onSurfaceVariant, ...theme.typography.bodyMedium },
-    emptyLink: { ...theme.typography.labelLarge, fontWeight: '600', color: theme.colors.primary, textDecorationLine: 'underline', marginTop: theme.spacing.xs },
-    discoverHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.l },
-    searchButton: { padding: theme.spacing.s, marginRight: -theme.spacing.s },
-    skeletonItem: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, height: 84, opacity: 0.5 },
+    emptyContainer: { alignItems: 'center', paddingVertical: theme.spacing.lg, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.md },
+    emptyText: { color: theme.colors.onSurfaceVariant, fontSize: theme.typography.bodyMedium.fontSize },
+    emptyLink: { fontSize: theme.typography.labelLarge.fontSize, fontWeight: '600', color: theme.colors.primary, textDecorationLine: 'underline', marginTop: theme.spacing.xs },
+    discoverHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.lg },
+    searchButton: { padding: theme.spacing.sm, marginRight: -theme.spacing.sm },
+    skeletonItem: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, height: 84, opacity: 0.5 },
 });
 
 export default FeedsScreen;

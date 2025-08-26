@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import BackButton from '../Button/BackButton';
 
 interface BackHeaderProps {
@@ -16,6 +16,9 @@ const BackHeader: React.FC<BackHeaderProps> = ({
   rightAction,
   style
 }) => {
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   return (
     <View style={[styles.container, style]}>
       <View style={styles.innerContainer}>
@@ -31,7 +34,7 @@ const BackHeader: React.FC<BackHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,

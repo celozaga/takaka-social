@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
 import Head from 'expo-router/head';
-import { Pressable } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import { theme } from '@/lib/theme';
-import SettingsDivider from '../ui/SettingsDivider';
+import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const LanguageSettingsScreen: React.FC = () => {

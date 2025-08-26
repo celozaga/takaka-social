@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { Database, Download, Trash2, Power, Shield, Key, Server, AlertTriangle } from 'lucide-react';
 import Head from 'expo-router/head';
 import { Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import SettingsListItem from './SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
+import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const AdvancedSettingsScreen: React.FC = () => {

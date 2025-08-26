@@ -2,52 +2,48 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { theme } from '@/lib/theme';
-import { PrimaryButton } from '@/components/shared';
+import { useTheme, PrimaryButton, Typography } from '@/components/shared';
+import { useUI } from '@/context/UIContext';
 
 interface LoginPromptProps {
-  onPress: () => void;
   style?: any;
 }
 
-const LoginPrompt: React.FC<LoginPromptProps> = ({ onPress, style }) => {
+const LoginPrompt: React.FC<LoginPromptProps> = ({ style }) => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const { openLoginModal } = useUI();
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing.lg,
+      gap: theme.spacing.md,
+    },
+    button: {
+      marginTop: theme.spacing.md,
+    },
+  });
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.title}>{t('nav.signInRequired')}</Text>
-      <Text style={styles.description}>{t('nav.signInDescription')}</Text>
+      <Typography variant="titleLarge" color="onSurface" align="center">
+        {t('nav.signInRequired')}
+      </Typography>
+      
+      <Typography variant="bodyMedium" color="onSurfaceVariant" align="center">
+        {t('nav.signInDescription')}
+      </Typography>
+      
       <PrimaryButton
         title={t('nav.signIn')}
-        onPress={onPress}
+        onPress={openLoginModal}
         style={styles.button}
       />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.l,
-    gap: theme.spacing.m,
-  },
-  title: {
-    ...theme.typography.titleLarge,
-    color: theme.colors.onSurface,
-    textAlign: 'center',
-  },
-  description: {
-    ...theme.typography.bodyMedium,
-    color: theme.colors.onSurfaceVariant,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  button: {
-    marginTop: theme.spacing.m,
-  },
-});
 
 export default LoginPrompt;

@@ -8,7 +8,7 @@ import { useFeedActions } from '../../hooks/useFeedActions';
 import { Heart, Pin, Share2, AlertCircle, X } from 'lucide-react';
 import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { formatCompactNumber } from '@/lib/formatters';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { PrimaryButton, SecondaryButton, LoadingState } from '@/components/shared';
@@ -17,6 +17,9 @@ const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();
     const { t } = useTranslation();
     const { requireAuth } = useAuthGuard();
+    const { theme } = useTheme();
+    
+    const styles = createStyles(theme);
     const {
         feedView,
         isLoading,
@@ -107,10 +110,10 @@ const FeedHeaderModal: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
     },
     loadingContainer: {
         height: 256,
@@ -120,7 +123,7 @@ const styles = StyleSheet.create({
     errorText: {
         textAlign: 'center',
         color: theme.colors.error,
-        padding: theme.spacing.l,
+        padding: theme.spacing.lg,
     },
     header: {
         position: 'absolute',
@@ -129,63 +132,63 @@ const styles = StyleSheet.create({
         right: 0,
         flexDirection: 'row-reverse',
         justifyContent: 'space-between',
-        padding: theme.spacing.m,
+        padding: theme.spacing.md,
         zIndex: 10,
     },
     headerButton: {
         padding: theme.spacing.xs,
     },
     content: {
-        padding: theme.spacing.l,
+        padding: theme.spacing.lg,
         paddingTop: 48,
         alignItems: 'center',
     },
     avatarImage: {
         width: 80,
         height: 80,
-        borderRadius: theme.shape.large,
-        marginBottom: theme.spacing.m,
+        borderRadius: theme.radius.lg,
+        marginBottom: theme.spacing.md,
     },
     title: {
-        ...theme.typography.titleLarge,
+        fontSize: theme.typography.titleLarge.fontSize,
         color: theme.colors.onSurface,
         textAlign: 'center',
     },
     byline: {
-        ...theme.typography.bodyMedium,
+        fontSize: theme.typography.bodyMedium.fontSize,
         color: theme.colors.onSurfaceVariant,
         textAlign: 'center',
     },
     likes: {
-        ...theme.typography.bodyMedium,
+        fontSize: theme.typography.bodyMedium.fontSize,
         color: theme.colors.onSurfaceVariant,
-        marginTop: theme.spacing.s,
+        marginTop: theme.spacing.sm,
         textAlign: 'center',
     },
     description: {
-        marginTop: theme.spacing.m,
+        marginTop: theme.spacing.md,
         color: theme.colors.onSurface,
-        ...theme.typography.bodyLarge,
+        fontSize: theme.typography.bodyLarge.fontSize,
         textAlign: 'center',
     },
     actionsGrid: {
-        padding: theme.spacing.l,
+        padding: theme.spacing.lg,
         flexDirection: 'row',
-        gap: theme.spacing.s,
+        gap: theme.spacing.sm,
     },
     actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: theme.spacing.m,
+        gap: theme.spacing.md,
         flex: 1,
-        paddingVertical: theme.spacing.m,
-        borderRadius: theme.shape.medium,
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.radius.md,
     },
     actionButtonDefault: { backgroundColor: theme.colors.surfaceContainerHigh },
     actionButtonActive: { backgroundColor: theme.colors.primary },
     actionButtonDestructive: { backgroundColor: theme.colors.surfaceContainerHigh },
-    actionButtonText: { ...theme.typography.labelLarge, fontWeight: '600' },
+    actionButtonText: { fontSize: theme.typography.labelLarge.fontSize, fontWeight: '600' },
     actionButtonTextDefault: { color: theme.colors.onSurface },
     actionButtonTextActive: { color: theme.colors.onPrimary },
     actionButtonTextDestructive: { color: theme.colors.error },

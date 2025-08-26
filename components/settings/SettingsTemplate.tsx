@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { Settings, User, Shield } from 'lucide-react';
 import Head from 'expo-router/head';
 import SettingsListItem from './SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { SettingsDivider, Switch } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 /**
@@ -117,7 +116,7 @@ const SettingsTemplate: React.FC = () => {
                         label="Configuração Principal"
                         sublabel="Descrição da configuração principal"
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.setting1}
                                 onChange={(value) => handleSettingToggle('setting1', value)}
                                 disabled={isLoading || isSaving}
@@ -140,7 +139,7 @@ const SettingsTemplate: React.FC = () => {
                         label="Configuração de Segurança"
                         sublabel="Descrição da configuração de segurança"
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.setting2}
                                 onChange={(value) => handleSettingToggle('setting2', value)}
                                 disabled={isLoading || isSaving}
@@ -153,7 +152,7 @@ const SettingsTemplate: React.FC = () => {
                         label="Configuração Personalizada"
                         sublabel="Descrição da configuração personalizada"
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.setting3}
                                 onChange={(value) => handleSettingToggle('setting3', value)}
                                 disabled={isLoading || isSaving}

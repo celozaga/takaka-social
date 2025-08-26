@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   title: {
-    ...theme.typography.headlineMedium,
+    ...theme.typography.titleLarge,
     color: theme.colors.onSurface,
     textAlign: 'center',
     marginBottom: theme.spacing.l,

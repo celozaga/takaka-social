@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface SkeletonLineProps {
   width?: string | number;
@@ -13,21 +13,24 @@ const SkeletonLine: React.FC<SkeletonLineProps> = ({
   height = 12,
   style
 }) => {
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   return (
     <View
       style={[
         styles.line,
-        { width, height },
+        { width: width as any, height },
         style
       ]}
     />
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   line: {
     backgroundColor: theme.colors.surfaceContainerHigh,
-    borderRadius: theme.shape.small,
+    borderRadius: theme.radius.sm,
   },
 });
 

@@ -6,7 +6,7 @@ import {AppBskyFeedDefs } from '@atproto/api';
 import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface FeedSearchResultCardProps {
   feed:AppBskyFeedDefs.GeneratorView;
@@ -17,6 +17,9 @@ interface FeedSearchResultCardProps {
 const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPinned, onTogglePin }) => {
     const { session } = useAtp();
     const { t } = useTranslation();
+    const { theme } = useTheme();
+    
+    const styles = createStyles(theme);
     const feedLink = `/profile/${feed.creator.handle}/feed/${feed.uri.split('/').pop()}`;
 
     const handleTogglePin = (e: any) => {
@@ -59,21 +62,21 @@ const FeedSearchResultCard: React.FC<FeedSearchResultCardProps> = ({ feed, isPin
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
-        padding: theme.spacing.l,
+        padding: theme.spacing.lg,
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
     },
     contentContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: theme.spacing.m,
+        gap: theme.spacing.md,
     },
     avatar: {
         width: 48,
         height: 48,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         flexShrink: 0,
     },
     mainContent: {
@@ -90,17 +93,17 @@ const styles = StyleSheet.create({
         minWidth: 0,
     },
     title: {
-        ...theme.typography.titleSmall,
+        fontSize: theme.typography.titleSmall.fontSize,
         color: theme.colors.onSurface,
     },
     byline: {
-        ...theme.typography.bodyMedium,
+        fontSize: theme.typography.bodyMedium.fontSize,
         color: theme.colors.onSurfaceVariant,
     },
     pinButton: {
-        paddingVertical: theme.spacing.s,
-        paddingHorizontal: theme.spacing.l,
-        borderRadius: theme.shape.full,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.lg,
+        borderRadius: theme.radius.full,
         flexShrink: 0,
     },
     unpinButton: {
@@ -110,7 +113,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary,
     },
     pinButtonText: {
-        ...theme.typography.labelLarge,
+        fontSize: theme.typography.labelLarge.fontSize,
         fontWeight: '600',
     },
     unpinButtonText: {
@@ -120,7 +123,7 @@ const styles = StyleSheet.create({
         color: theme.colors.onPrimary,
     },
     description: {
-        ...theme.typography.bodyMedium,
+        fontSize: theme.typography.bodyMedium.fontSize,
         marginTop: theme.spacing.xs,
         color: theme.colors.onSurface,
         lineHeight: 20

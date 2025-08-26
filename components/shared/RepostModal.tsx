@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '../ui/use-toast';
+import { useToast } from './Toast';
 import { usePostActions } from '../../hooks/usePostActions';
 import { AppBskyFeedDefs, AtUri } from '@atproto/api';
 import { Repeat, Share2, X } from 'lucide-react';

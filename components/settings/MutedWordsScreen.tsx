@@ -3,7 +3,7 @@ import { useModeration } from '../../context/ModerationContext';
 import { Trash2, Tag, Plus } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
-import SettingsDivider from '../ui/SettingsDivider';
+import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const MutedWordsScreen: React.FC = () => {

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '@/components/shared';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { useAuthGuard } from './useAuthGuard';
 

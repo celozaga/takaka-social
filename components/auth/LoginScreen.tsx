@@ -6,7 +6,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AtSign, KeyRound, LogIn, ShieldCheck, Globe, Pencil, Check, X } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Linking, Platform, Modal } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { PDS_URL } from '@/lib/config';
 import i18n from '@/lib/i18n';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
@@ -26,6 +26,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   const { login } = useAtp();
   const { requireAuth } = useAuthGuard();
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   
   // State for hosting provider
   const [serviceUrl, setServiceUrl] = useState<string>(PDS_URL);
@@ -287,7 +290,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     width: '100%',
     maxWidth: 448,
@@ -300,7 +303,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    ...theme.typography.titleLarge,
+    fontSize: theme.typography.titleLarge.fontSize,
     color: theme.colors.primary,
   },
   description: {
@@ -312,7 +315,7 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   label: {
-    ...theme.typography.labelMedium,
+    fontSize: theme.typography.labelMedium.fontSize,
     color: theme.colors.onSurfaceVariant,
     marginBottom: 8,
     paddingLeft: 4
@@ -376,7 +379,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -402,7 +405,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   modalTitle: {
-    ...theme.typography.titleLarge,
+    fontSize: theme.typography.titleLarge.fontSize,
     color: theme.colors.onSurface,
     textAlign: 'center',
     marginBottom: 16,
@@ -422,7 +425,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   modalTabText: {
-    ...theme.typography.bodyMedium,
+    fontSize: theme.typography.bodyMedium.fontSize,
     color: theme.colors.onSurfaceVariant,
     fontWeight: '600',
     textAlign: 'center',
@@ -431,7 +434,7 @@ const styles = StyleSheet.create({
     color: theme.colors.onPrimary,
   },
   modalDescription: {
-    ...theme.typography.bodyMedium,
+    fontSize: theme.typography.bodyMedium.fontSize,
     color: theme.colors.onSurfaceVariant,
     marginTop: 16,
     textAlign: 'center',
@@ -449,7 +452,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 10,
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
   },
   modalButtonSecondary: {
     backgroundColor: theme.colors.surfaceContainerHigh,
@@ -458,7 +461,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   modalButtonText: {
-    ...theme.typography.labelLarge,
+    fontSize: theme.typography.labelLarge.fontSize,
     fontWeight: 'bold',
   },
   modalButtonTextSecondary: {

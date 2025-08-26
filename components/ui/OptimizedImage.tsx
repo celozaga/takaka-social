@@ -4,7 +4,7 @@ import { Image, ImageStyle, ImageSource } from 'expo-image';
 import { theme } from '@/lib/theme';
 
 interface OptimizedImageProps {
-  source: ImageSource;
+  source: ImageSource | string;
   style: StyleProp<ImageStyle>;
   accessibilityLabel?: string;
   contentFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';

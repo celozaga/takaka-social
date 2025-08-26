@@ -9,7 +9,7 @@ import Head from 'expo-router/head';
 import { useFeedActions } from '../../hooks/useFeedActions';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import ErrorState from '../shared/ErrorState';
 import { ListX } from 'lucide-react';
 import ScreenHeader from '../layout/ScreenHeader';
@@ -23,6 +23,9 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     const { agent } = useAtp();
     const { t } = useTranslation();
     const { setCustomFeedHeaderVisible } = useUI();
+    const { theme } = useTheme();
+    
+    const styles = createStyles(theme);
     const [feedUri, setFeedUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -95,6 +98,7 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
                 <FeedViewHeader
                     feedUri={feedUri}
                     onBack={() => router.back()}
+                    openFeedModal={() => {/* TODO: Implement feed modal */}}
                 />
                 <View style={styles.feedContainer}>
                     <Feed key={feedUri} feedUri={feedUri} />
@@ -104,7 +108,7 @@ const FeedViewScreen: React.FC<FeedViewScreenProps> = ({ handle, rkey }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     centered: {
         flex: 1,
         justifyContent: 'center',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'large';
@@ -13,6 +13,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   color,
   style
 }) => {
+  const { theme } = useTheme();
   return (
     <View style={[styles.container, style]}>
       <ActivityIndicator 

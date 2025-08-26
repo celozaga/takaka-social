@@ -8,7 +8,7 @@ import { PostCardSkeleton } from './Skeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, FlatList, ScrollView } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 import ErrorState from './ErrorState';
 import { Ionicons } from '@expo/vector-icons';
@@ -152,6 +152,9 @@ const Feed: React.FC<FeedProps> = ({
     postFilter,
 }) => {
   const { agent, publicAgent, publicApiAgent, session } = useAtp();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   
   console.log('📋 DEBUG Feed Component initialized:', {
     feedUri,
@@ -693,7 +696,7 @@ const Feed: React.FC<FeedProps> = ({
       if (layout === 'grid') {
         // Render skeletons in a 2-column layout to match the grid
         return (
-          <View style={[styles.masonryContainer, { marginTop: theme.spacing.l }]}>
+          <View style={[styles.masonryContainer, { marginTop: theme.spacing.lg }]}>
             <View style={styles.column}><PostCardSkeleton /></View>
             <View style={styles.column}><PostCardSkeleton /></View>
           </View>
@@ -767,7 +770,7 @@ const Feed: React.FC<FeedProps> = ({
       <View>
         {renderHeader()}
         {layout === 'grid' ? (
-          <View style={{ paddingHorizontal: theme.spacing.s }}>
+          <View style={{ paddingHorizontal: theme.spacing.sm }}>
             <View style={styles.masonryContainer}>
                 <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
                 <View style={styles.column}><PostCardSkeleton /><PostCardSkeleton /></View>
@@ -792,15 +795,15 @@ const Feed: React.FC<FeedProps> = ({
       onEndReached: loadMorePosts,
       onEndReachedThreshold: 0.5, // Reduzido de 0.7 para 0.5 para carregar posts mais cedo
       refreshControl: <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />,
-      contentContainerStyle: {paddingTop: theme.spacing.l, paddingBottom: 60}
+      contentContainerStyle: {paddingTop: theme.spacing.lg, paddingBottom: 60}
   };
 
   if (layout === 'list') {
       return (
           <FlatList 
               {...flatListProps}
-              renderItem={({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <View style={{paddingHorizontal: theme.spacing.l}}><FullPostCard feedViewPost={item} /></View>}
-              ItemSeparatorComponent={() => <View style={{height: theme.spacing.s}} />}
+              renderItem={({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <View style={{paddingHorizontal: theme.spacing.lg}}><FullPostCard feedViewPost={item} /></View>}
+              ItemSeparatorComponent={() => <View style={{height: theme.spacing.sm}} />}
           />
       )
   }
@@ -842,11 +845,11 @@ const Feed: React.FC<FeedProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-    contentContainer: { paddingTop: theme.spacing.l, paddingBottom: 60 },
-    listContainer: { gap: theme.spacing.s, paddingHorizontal: theme.spacing.l },
+  const createStyles = (theme: any) => StyleSheet.create({
+    contentContainer: { paddingTop: theme.spacing.lg, paddingBottom: 60 },
+    listContainer: { gap: theme.spacing.sm, paddingHorizontal: theme.spacing.lg },
     scrollViewContentGrid: {
-        paddingHorizontal: theme.spacing.s,
+        paddingHorizontal: theme.spacing.sm,
         paddingBottom: 60,
         flexGrow: 1,
         width: '100%',
@@ -858,8 +861,8 @@ const styles = StyleSheet.create({
     },
     column: {
         flex: 1,
-        gap: theme.spacing.l,
-        marginHorizontal: theme.spacing.s,
+        gap: theme.spacing.lg,
+        marginHorizontal: theme.spacing.sm,
         minHeight: 200,
         alignSelf: 'stretch',
         width: '50%',
@@ -867,10 +870,20 @@ const styles = StyleSheet.create({
         zIndex: 1,
     },
     messageContainerWrapper: {
-        padding: theme.spacing.l,
+        padding: theme.spacing.lg,
     },
-    infoText: { ...theme.typography.bodyLarge, color: theme.colors.onSurfaceVariant, textAlign: 'center', padding: theme.spacing.xl },
-    endOfList: { ...theme.typography.bodyMedium, textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
+    infoText: { 
+        fontSize: theme.typography.bodyLarge.fontSize,
+        color: theme.colors.onSurfaceVariant, 
+        textAlign: 'center', 
+        padding: theme.spacing.xl 
+    },
+    endOfList: { 
+        fontSize: theme.typography.bodyMedium.fontSize,
+        textAlign: 'center', 
+        color: theme.colors.onSurfaceVariant, 
+        padding: theme.spacing['2xl'] 
+    },
 });
 
 export default Feed;

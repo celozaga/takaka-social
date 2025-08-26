@@ -2,20 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useSavedFeeds } from '../../hooks/useSavedFeeds';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { Rss, Pin, Settings, Plus, Trash2, RefreshCw } from 'lucide-react';
 import Head from 'expo-router/head';
 import { View, Pressable, Alert, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { SettingsDivider, Switch } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const FeedSettingsScreen: React.FC = () => {
     const { t } = useTranslation();
     const { session, agent } = useAtp();
-    const { savedFeeds, pinnedFeeds, addFeed, removeFeed, pinFeed, unpinFeed } = useSavedFeeds();
+    const { preferences, feedViews, addFeed, removeFeed, togglePin } = useSavedFeeds();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [settings, setSettings] = useState({
@@ -43,9 +42,9 @@ const FeedSettingsScreen: React.FC = () => {
             if (feedPrefs && 'autoRefresh' in feedPrefs) {
                 // Map ATProto feed preferences to local state
                 setSettings({
-                    autoRefresh: feedPrefs.autoRefresh ?? true,
-                    showReposts: feedPrefs.showReposts ?? true,
-                    showMediaOnly: feedPrefs.showMediaOnly ?? false,
+                                         autoRefresh: (feedPrefs as any).autoRefresh ?? true,
+                     showReposts: (feedPrefs as any).showReposts ?? true,
+                     showMediaOnly: (feedPrefs as any).showMediaOnly ?? false,
                 });
             } else {
                 // Default values if no feed preferences found
@@ -109,11 +108,7 @@ const FeedSettingsScreen: React.FC = () => {
 
     const handlePinFeed = async (feedUri: string) => {
         try {
-            await pinFeed(feedUri);
-            toast({ 
-                title: t('common.success'), 
-                description: t('feedSettings.feedPinned') 
-            });
+            await togglePin(feedUri);
         } catch (error) {
             console.error('Failed to pin feed:', error);
             toast({ 
@@ -126,11 +121,7 @@ const FeedSettingsScreen: React.FC = () => {
 
     const handleUnpinFeed = async (feedUri: string) => {
         try {
-            await unpinFeed(feedUri);
-            toast({ 
-                title: t('common.success'), 
-                description: t('feedSettings.feedUnpinned') 
-            });
+            await togglePin(feedUri);
         } catch (error) {
             console.error('Failed to unpin feed:', error);
             toast({ 
@@ -180,7 +171,7 @@ const FeedSettingsScreen: React.FC = () => {
                         label={t('feedSettings.autoRefresh')}
                         sublabel={t('feedSettings.autoRefreshDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.autoRefresh}
                                 onChange={(value) => handleSettingToggle('autoRefresh', value)}
                                 disabled={isLoading}
@@ -193,7 +184,7 @@ const FeedSettingsScreen: React.FC = () => {
                         label={t('feedSettings.showMediaOnly')}
                         sublabel={t('feedSettings.showMediaOnlyDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.showMediaOnly}
                                 onChange={(value) => handleSettingToggle('showMediaOnly', value)}
                                 disabled={isLoading}
@@ -206,7 +197,7 @@ const FeedSettingsScreen: React.FC = () => {
                         label={t('feedSettings.showReposts')}
                         sublabel={t('feedSettings.showRepostsDesc')}
                         control={
-                            <ToggleSwitch
+                            <Switch
                                 checked={settings.showReposts}
                                 onChange={(value) => handleSettingToggle('showReposts', value)}
                                 disabled={isLoading}
@@ -216,68 +207,74 @@ const FeedSettingsScreen: React.FC = () => {
                 </SettingsSection>
 
                 <SettingsSection title={t('feedSettings.pinnedFeeds')}>
-                    {pinnedFeeds.length === 0 ? (
+                    {preferences?.items.filter(item => item.pinned).length === 0 ? (
                         <SettingsListItem
                             icon={Pin}
                             label={t('feedSettings.noPinnedFeeds')}
                             disabled
                         />
                     ) : (
-                        pinnedFeeds.map((feed, index) => (
-                            <React.Fragment key={feed.uri}>
-                                <SettingsListItem
-                                    icon={Pin}
-                                    label={feed.displayName}
-                                    sublabel={feed.description || feed.uri}
-                                    value={t('feedSettings.pinned')}
-                                    onPress={() => handleUnpinFeed(feed.uri)}
-                                />
-                                {index < pinnedFeeds.length - 1 && <SettingsDivider />}
-                            </React.Fragment>
-                        ))
+                        preferences?.items.filter(item => item.pinned).map((item, index) => {
+                            const feed = feedViews.get(item.value);
+                            return (
+                                <React.Fragment key={item.value}>
+                                    <SettingsListItem
+                                        icon={Pin}
+                                        label={feed?.displayName || item.value}
+                                        sublabel={feed?.description || item.value}
+                                        value={t('feedSettings.pinned')}
+                                        onPress={() => handleUnpinFeed(item.value)}
+                                    />
+                                    {index < preferences.items.filter(item => item.pinned).length - 1 && <SettingsDivider />}
+                                </React.Fragment>
+                            );
+                        })
                     )}
                 </SettingsSection>
 
                 <SettingsSection title={t('feedSettings.savedFeeds')}>
-                    {savedFeeds.length === 0 ? (
+                    {preferences?.items.length === 0 ? (
                         <SettingsListItem
                             icon={Rss}
                             label={t('feedSettings.noSavedFeeds')}
                             disabled
                         />
                     ) : (
-                        savedFeeds.map((feed, index) => (
-                            <React.Fragment key={feed.uri}>
-                                <SettingsListItem
-                                    icon={Rss}
-                                    label={feed.displayName}
-                                    sublabel={feed.description || feed.uri}
-                                    control={
-                                        <View style={{flexDirection: 'row', gap: 8}}>
-                                            <Pressable
-                                                onPress={() => handlePinFeed(feed.uri)}
-                                                style={({pressed}) => [
-                                                    {padding: 8, borderRadius: 4},
-                                                    pressed && {opacity: 0.7}
-                                                ]}
-                                            >
-                                                <Pin color={theme.colors.primary} size={16} />
-                                            </Pressable>
-                                            <Pressable
-                                                onPress={() => handleRemoveFeed(feed.uri, feed.displayName)}
-                                                style={({pressed}) => [
-                                                    {padding: 8, borderRadius: 4},
-                                                    pressed && {opacity: 0.7}
-                                                ]}
-                                            >
-                                                <Trash2 color={theme.colors.error} size={16} />
-                                            </Pressable>
-                                        </View>
-                                    }
-                                />
-                                {index < savedFeeds.length - 1 && <SettingsDivider />}
-                            </React.Fragment>
-                        ))
+                        preferences?.items.map((item, index) => {
+                            const feed = feedViews.get(item.value);
+                            return (
+                                <React.Fragment key={item.value}>
+                                    <SettingsListItem
+                                        icon={Rss}
+                                        label={feed?.displayName || item.value}
+                                        sublabel={feed?.description || item.value}
+                                        control={
+                                            <View style={{flexDirection: 'row', gap: 8}}>
+                                                <Pressable
+                                                    onPress={() => handlePinFeed(item.value)}
+                                                    style={({pressed}) => [
+                                                        {padding: 8, borderRadius: 4},
+                                                        pressed && {opacity: 0.7}
+                                                    ]}
+                                                >
+                                                    <Pin color={theme.colors.primary} size={16} />
+                                                </Pressable>
+                                                <Pressable
+                                                    onPress={() => handleRemoveFeed(item.value, feed?.displayName || item.value)}
+                                                    style={({pressed}) => [
+                                                        {padding: 8, borderRadius: 4},
+                                                        pressed && {opacity: 0.7}
+                                                    ]}
+                                                >
+                                                    <Trash2 color={theme.colors.error} size={16} />
+                                                </Pressable>
+                                            </View>
+                                        }
+                                    />
+                                    {index < preferences.items.length - 1 && <SettingsDivider />}
+                                </React.Fragment>
+                            );
+                        })
                     )}
                 </SettingsSection>
             </SettingsScreenLayout>

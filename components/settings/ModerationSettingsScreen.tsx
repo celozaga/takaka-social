@@ -2,10 +2,10 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModeration } from '../../context/ModerationContext';
 import { Shield, Filter, Users, UserX, MicOff } from 'lucide-react';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { Switch } from '@/components/shared';
 import SettingsListItem from './SettingsListItem';
 import { ActivityIndicator } from 'react-native';
-import SettingsDivider from '@/components/ui/SettingsDivider';
+import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const BLUESKY_OFFICIAL_MOD_SERVICE = 'did:plc:z72i7hdynmk6r22z27h6tvur';
@@ -32,7 +32,7 @@ const ModerationSettingsScreen: React.FC = () => {
                     label={t('settings.moderation.enableAdultContent')}
                     control={
                         isReady ? (
-                            <ToggleSwitch checked={adultContentEnabled} onChange={setAdultContentEnabled} />
+                            <Switch checked={adultContentEnabled} onChange={setAdultContentEnabled} />
                         ) : (
                             <ActivityIndicator />
                         )

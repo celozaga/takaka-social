@@ -9,7 +9,7 @@ import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRi
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoPlayer from '../shared/VideoPlayer';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 // removed direct useVideoPlayback in slideshow; we reuse shared VideoPlayer
 
 interface FullPostCardProps {
@@ -29,6 +29,9 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
   console.log('🎬 FullPostCard: ABOUT TO CALL useUI()');
   const { setPostForNav } = useUI();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   console.log('🎬 FullPostCard: useUI() called successfully');
   
   console.log('🎬 FullPostCard: ABOUT TO CALL useRouter()');
@@ -317,15 +320,15 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     contextContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: theme.spacing.s,
-        marginBottom: theme.spacing.s,
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.sm,
     },
     contextText: {
-        ...theme.typography.bodySmall,
+        fontSize: theme.typography.bodySmall.fontSize,
         color: theme.colors.onSurfaceVariant,
         flexShrink: 1
     },
@@ -333,21 +336,21 @@ const styles = StyleSheet.create({
         textDecorationLine: 'underline'
     },
     timestamp: {
-        ...theme.typography.bodySmall,
+        fontSize: theme.typography.bodySmall.fontSize,
         color: theme.colors.onSurfaceVariant,
-        marginTop: theme.spacing.s,
+        marginTop: theme.spacing.sm,
     },
     postText: {
-        ...theme.typography.bodyMedium,
+        fontSize: theme.typography.bodyMedium.fontSize,
         color: theme.colors.onSurface,
-        marginTop: theme.spacing.m,
+        marginTop: theme.spacing.md,
     },
     slideshowOuterContainer: {
-        marginTop: theme.spacing.s,
+        marginTop: theme.spacing.sm,
     },
     slideshowInnerContainer: {
         position: 'relative',
-        borderRadius: theme.shape.medium,
+        borderRadius: theme.radius.md,
         overflow: 'hidden',
         backgroundColor: '#000',
         width: '100%',
@@ -366,16 +369,16 @@ const styles = StyleSheet.create({
     } as any,
     counterOverlay: {
         position: 'absolute',
-        top: theme.spacing.m,
-        right: theme.spacing.m,
+        top: theme.spacing.md,
+        right: theme.spacing.md,
         backgroundColor: 'rgba(0,0,0,0.6)',
-        borderRadius: theme.shape.medium,
-        paddingHorizontal: theme.spacing.s,
+        borderRadius: theme.radius.md,
+        paddingHorizontal: theme.spacing.sm,
         paddingVertical: theme.spacing.xs,
         zIndex: 1,
     },
     counterText: {
-        ...theme.typography.bodySmall,
+        fontSize: theme.typography.bodySmall.fontSize,
         color: 'white',
         fontWeight: 'bold',
     },
@@ -385,17 +388,17 @@ const styles = StyleSheet.create({
         marginTop: -20,
         width: 40,
         height: 40,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1,
     },
     arrowLeft: {
-        left: theme.spacing.m,
+        left: theme.spacing.md,
     },
     arrowRight: {
-        right: theme.spacing.m,
+        right: theme.spacing.md,
     },
     arrowIcon: {
         color: 'white'
@@ -404,7 +407,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingTop: theme.spacing.s,
+        paddingTop: theme.spacing.sm,
     },
     dot: {
         width: 8,

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { Mail, Edit, Lock, AtSign, Cake, Download, Power, Trash2, ShieldCheck } from 'lucide-react';
 import Head from 'expo-router/head';
 import { View, Text, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
+import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const AccountSettingsScreen: React.FC = () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface IconButtonProps {
   icon: React.ReactNode;
@@ -21,14 +21,17 @@ const IconButton: React.FC<IconButtonProps> = ({
   style,
   accessibilityLabel
 }) => {
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   const getSizeStyles = () => {
     switch (size) {
       case 'small':
         return { padding: theme.spacing.xs };
       case 'large':
-        return { padding: theme.spacing.m };
+        return { padding: theme.spacing.md };
       default:
-        return { padding: theme.spacing.s };
+        return { padding: theme.spacing.sm };
     }
   };
 
@@ -64,12 +67,11 @@ const IconButton: React.FC<IconButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   button: {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
-    borderRadius: theme.shape.full,
   },
   buttonDisabled: {
     opacity: 0.5,

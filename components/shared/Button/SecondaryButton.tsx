@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface SecondaryButtonProps {
   title: string;
@@ -21,6 +21,9 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   textStyle,
   icon
 }) => {
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
   return (
     <Pressable
       onPress={onPress}
@@ -40,7 +43,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   button: {
     width: '100%',
     backgroundColor: theme.colors.surfaceContainerHigh,
@@ -50,7 +53,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
     borderWidth: 1,
     borderColor: theme.colors.outline,
   },

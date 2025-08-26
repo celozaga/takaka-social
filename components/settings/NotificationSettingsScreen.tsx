@@ -2,14 +2,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/shared';
 import { Ionicons } from '@expo/vector-icons';
 import Head from 'expo-router/head';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { Switch } from '@/components/shared';
 import { View, ActivityIndicator, Platform } from 'react-native';
 import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
-import SettingsDivider from '@/components/ui/SettingsDivider';
+import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -192,7 +192,7 @@ const NotificationSettingsScreen: React.FC = () => {
                         icon={(props: any) => <Ionicons name="notifications-outline" {...props} />}
                         label={t('notificationSettings.enablePush')}
                         sublabel={t('notificationSettings.getAlerts')}
-                        control={<ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />}
+                        control={<Switch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />}
                     />
                 </SettingsSection>
 
@@ -203,7 +203,7 @@ const NotificationSettingsScreen: React.FC = () => {
                                 icon={item.icon}
                                 label={item.title}
                                 control={
-                                    <ToggleSwitch
+                                    <Switch
                                         checked={settings[item.key]}
                                         onChange={(checked) => handleSettingToggle(item.key, checked)}
                                         disabled={isSaving || !pushEnabled}
