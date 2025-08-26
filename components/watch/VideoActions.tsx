@@ -4,7 +4,7 @@ import { useUI } from '../../context/UIContext';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, useWindowDimensions, Alert, Platform, Share, Linking, Modal } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { Link } from 'expo-router';
 import { theme } from '@/lib/theme';
 import { formatCompactNumber } from '@/lib/formatters';
@@ -201,7 +201,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                 <View style={styles.avatarContainer}>
                     <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
                         <Pressable style={styles.avatarWrapper}>
-                            <Image 
+                            <OptimizedImage 
                                 source={{ uri: post.author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} 
                                 style={styles.avatar} 
                             />

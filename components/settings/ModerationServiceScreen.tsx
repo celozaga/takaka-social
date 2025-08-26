@@ -5,7 +5,7 @@ import { useProfileCache } from '../../context/ProfileCacheContext';
 import { AppBskyActorDefs } from '@atproto/api';
 import { BadgeCheck } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
@@ -66,7 +66,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
         <SettingsScreenLayout title={serviceProfile.displayName || ''}>
             <SettingsSection>
                 <View style={styles.profileHeader}>
-                    <Image source={{ uri: serviceProfile.avatar }} style={styles.avatar} />
+                    <OptimizedImage source={{ uri: serviceProfile.avatar }} style={styles.avatar} />
                     <View>
                         <View style={styles.nameContainer}>
                             <Text style={styles.displayName}>{serviceProfile.displayName}</Text>

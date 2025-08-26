@@ -40,18 +40,18 @@ const PrivacySettingsScreen: React.FC = () => {
             
             // Parse privacy-related preferences
             const privacyPrefs = data.preferences.find(p => p.$type === 'app.bsky.actor.defs#privacyPref');
-            if (privacyPrefs) {
-                // TODO: Map ATProto privacy preferences to local state
-                // For now, using default values
+            if (privacyPrefs && 'profileViewable' in privacyPrefs) {
+                // Map ATProto privacy preferences to local state
                 setSettings({
-                    profileViewable: true,
-                    followsVisible: true,
-                    followersVisible: true,
-                    postsVisible: true,
-                    repliesVisible: true,
-                    mentionsVisible: true,
+                    profileViewable: privacyPrefs.profileViewable ?? true,
+                    followsVisible: privacyPrefs.followsVisible ?? true,
+                    followersVisible: privacyPrefs.followersVisible ?? true,
+                    postsVisible: privacyPrefs.postsVisible ?? true,
+                    repliesVisible: privacyPrefs.repliesVisible ?? true,
+                    mentionsVisible: privacyPrefs.mentionsVisible ?? true,
                 });
             } else {
+                // Default values if no privacy preferences found
                 setSettings({
                     profileViewable: true,
                     followsVisible: true,
@@ -67,6 +67,15 @@ const PrivacySettingsScreen: React.FC = () => {
                 title: t('common.error'), 
                 description: t('privacySettings.loadError'), 
                 variant: "destructive" 
+            });
+            // Fallback to default values
+            setSettings({
+                profileViewable: true,
+                followsVisible: true,
+                followersVisible: true,
+                postsVisible: true,
+                repliesVisible: true,
+                mentionsVisible: true,
             });
         } finally {
             setIsLoading(false);

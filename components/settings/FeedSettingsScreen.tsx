@@ -39,23 +39,30 @@ const FeedSettingsScreen: React.FC = () => {
             const { data } = await agent.app.bsky.actor.getPreferences();
             
             // Parse feed-related preferences
-            const feedPrefs = data.preferences.find(p => p.$type === 'app.bsky.actor.defs#savedFeedsPrefV2');
-            if (feedPrefs) {
-                // TODO: Map ATProto feed preferences to local state
+            const feedPrefs = data.preferences.find(p => p.$type === 'app.bsky.actor.defs#feedPref');
+            if (feedPrefs && 'autoRefresh' in feedPrefs) {
+                // Map ATProto feed preferences to local state
                 setSettings({
-                    autoRefresh: true,
-                    showReposts: true,
-                    showMediaOnly: true,
+                    autoRefresh: feedPrefs.autoRefresh ?? true,
+                    showReposts: feedPrefs.showReposts ?? true,
+                    showMediaOnly: feedPrefs.showMediaOnly ?? false,
                 });
             } else {
+                // Default values if no feed preferences found
                 setSettings({
                     autoRefresh: true,
                     showReposts: true,
-                    showMediaOnly: true,
+                    showMediaOnly: false,
                 });
             }
         } catch (error) {
             console.error('Failed to load feed settings:', error);
+            // Fallback to default values
+            setSettings({
+                autoRefresh: true,
+                showReposts: true,
+                showMediaOnly: false,
+            });
         } finally {
             setIsLoading(false);
         }

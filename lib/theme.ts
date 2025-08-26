@@ -25,7 +25,7 @@ import { Platform, StyleSheet } from 'react-native';
  */
 const palette = {
   // Brand Colors
-  brandPrimary: '#F3F5F7',
+  brandPrimary: '#ffffff',
 
   // Grayscale
   black: '#101010',

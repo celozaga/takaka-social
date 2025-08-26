@@ -1,21 +1,23 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
+import SkeletonLine from './SkeletonLine';
+import SkeletonAvatar from './SkeletonAvatar';
 
 const NotificationItemSkeleton = () => {
   return (
     <View style={styles.container}>
       <View style={{ flexShrink: 0, width: 32, alignItems: 'center' }}>
-        <View style={styles.avatar} />
+        <SkeletonAvatar size={32} />
       </View>
       <View style={{ flex: 1, gap: theme.spacing.s }}>
-        <View style={[styles.line, { width: '70%', height: 16 }]} />
+        <SkeletonLine width="70%" height={16} />
         <View style={styles.previewContainer}>
             <View style={styles.previewContent}>
                 <View style={styles.previewImage} />
                 <View style={{ flex: 1, gap: theme.spacing.xs }}>
-                    <View style={[styles.line, { width: '90%' }]} />
-                    <View style={[styles.line, { width: '60%' }]} />
+                    <SkeletonLine width="90%" />
+                    <SkeletonLine width="60%" />
                 </View>
             </View>
         </View>
@@ -31,17 +33,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 16,
         backgroundColor: theme.colors.background,
-    },
-    avatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
-    line: {
-        height: 12,
-        backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.small,
     },
     previewContainer: {
         borderRadius: 8,

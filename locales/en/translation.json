@@ -468,6 +468,7 @@
   "accessibilitySettings": {
     "title": "Accessibility",
     "description": "Customize the app experience for your needs.",
+    "loading": "Loading...",
     "visual": "Visual",
     "reduceMotion": "Reduce motion",
     "reduceMotionDesc": "Reduce animations and transitions",
@@ -521,6 +522,11 @@
       "deleteRedirectInfo": "Account deletion must be done on the official Bluesky website",
       "cacheCleared": "Cache cleared",
       "pdsChangeInfo": "PDS change functionality in development",
+      "changePDS": "Change PDS",
+      "enterNewPDS": "Enter the new PDS server address:",
+      "pdsChangedSuccess": "PDS changed successfully",
+      "pdsChangeError": "Error changing PDS",
+      "cacheClearError": "Error clearing cache",
       "debugModeInfo": "Debug mode functionality in development",
       "deactivateConfirm": "Are you sure you want to deactivate your account?",
       "deleteConfirm": "Are you sure you want to delete your account? This action is irreversible."

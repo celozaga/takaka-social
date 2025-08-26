@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
+import SkeletonLine from './SkeletonLine';
+import SkeletonAvatar from './SkeletonAvatar';
 
 const PostCardSkeleton: React.FC = () => {
   return (
@@ -10,13 +12,13 @@ const PostCardSkeleton: React.FC = () => {
       
       {/* Content placeholder */}
       <View style={styles.contentPlaceholder}>
-        <View style={styles.textLineLg} />
+        <SkeletonLine width="83.3333%" height={16} />
         <View style={styles.footer}>
           <View style={styles.authorInfo}>
-            <View style={styles.avatar} />
-            <View style={styles.textLineSm} />
+            <SkeletonAvatar size={28} />
+            <SkeletonLine width={96} height={16} />
           </View>
-          <View style={styles.likeInfo} />
+          <SkeletonLine width={80} height={20} />
         </View>
       </View>
     </View>
@@ -38,13 +40,6 @@ const styles = StyleSheet.create({
   contentPlaceholder: {
     padding: theme.spacing.m,
   },
-  textLineLg: {
-    height: 16,
-    width: '83.3333%', // w-5/6
-    backgroundColor: theme.colors.surfaceContainerHigh,
-    borderRadius: theme.shape.small,
-    marginBottom: theme.spacing.s,
-  },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -56,25 +51,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: theme.spacing.s,
   },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: theme.shape.full,
-    backgroundColor: theme.colors.surfaceContainerHigh,
-  },
-  textLineSm: {
-    height: 16,
-    width: 96, // w-24
-    backgroundColor: theme.colors.surfaceContainerHigh,
-    borderRadius: theme.shape.small,
-  },
-  likeInfo: {
-    height: 20,
-    width: 80, // w-20
-    backgroundColor: theme.colors.surfaceContainerHigh,
-    borderRadius: theme.shape.small,
-  },
 });
-
 
 export default PostCardSkeleton;

@@ -1,12 +1,12 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { RichText, AppBskyActorDefs } from '@atproto/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from '../ui/use-toast';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, ScrollView, Modal, Platform } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { FEATURES, MEDIA_CONFIG, isFeatureEnabled } from '@/lib/config';
@@ -326,7 +326,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         </View>
 
         <ScrollView contentContainerStyle={styles.main}>
-            <Image 
+            <OptimizedImage 
                 source={{ uri: profile?.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') || `https://picsum.photos/seed/${session?.did}/48` }} 
                 style={styles.avatar} 
             />
@@ -345,7 +345,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                     <View style={styles.mediaGrid}>
                         {mediaFiles.map((mf, index) => (
                             <View key={index} style={[styles.mediaItem, { width: mediaFiles.length > 1 ? '48%' : '100%' }]}>
-                                <Image source={{ uri: mf.preview }} style={styles.mediaPreview} />
+                                <OptimizedImage source={{ uri: mf.preview }} style={styles.mediaPreview} />
                                 
                                 {/* Video play icon overlay */}
                                 {mf.type === 'video' && (

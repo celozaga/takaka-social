@@ -63,33 +63,35 @@ const preloadContent = async (posts: AppBskyFeedDefs.FeedViewPost[], startIndex:
                 const embed = post.post.embed as AppBskyEmbedVideo.View;
                 
                 // Always preload thumbnails and avatars (safe GET requests)
-                if (embed?.thumbnail) {
-                    const img = new Image();
+                if (embed?.thumbnail && typeof window !== 'undefined') {
+                    const img = new window.Image();
                     img.src = embed.thumbnail;
                 }
                 
-                if (post.post.author?.avatar) {
-                    const avatarImg = new Image();
+                if (post.post.author?.avatar && typeof window !== 'undefined') {
+                    const avatarImg = new window.Image();
                     avatarImg.src = post.post.author.avatar.replace('/img/avatar/', '/img/avatar_thumbnail/');
                 }
                 
                 // Preload video URLs for better streaming (only if enabled and in video mode)
                 if (mode === 'videos' && isFeatureEnabled('VIDEO_PRELOADING') && embed?.playlist) {
                     // This doesn't download the video, just primes the browser's network stack
-                    const link = document.createElement('link');
-                    link.rel = 'preload';
-                    link.as = 'video';
-                    link.href = embed.playlist;
-                    document.head.appendChild(link);
-                    
-                    // Clean up after a delay to avoid memory issues
-                    setTimeout(() => {
-                        try {
-                            document.head.removeChild(link);
-                        } catch (e) {
-                            // Ignore cleanup errors
-                        }
-                    }, 30000); // 30 seconds
+                    if (typeof document !== 'undefined') {
+                        const link = document.createElement('link');
+                        link.rel = 'preload';
+                        link.as = 'video';
+                        link.href = embed.playlist;
+                        document.head.appendChild(link);
+                        
+                        // Clean up after a delay to avoid memory issues
+                        setTimeout(() => {
+                            try {
+                                document.head.removeChild(link);
+                            } catch (e) {
+                                // Ignore cleanup errors
+                            }
+                        }, 30000); // 30 seconds
+                    }
                 }
             } catch (e) {
                 if (isFeatureEnabled('VERBOSE_API_LOGS')) {

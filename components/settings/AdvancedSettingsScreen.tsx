@@ -32,15 +32,18 @@ const AdvancedSettingsScreen: React.FC = () => {
         if (!session) return;
         
         try {
+            setIsLoading(true);
             setAccountInfo({
-                did: session.did,
-                handle: session.handle,
+                did: session.did || '',
+                handle: session.handle || '',
                 email: session.email || '',
-                createdAt: session.createdAt || '',
-                lastLogin: session.lastLogin || '',
+                createdAt: '',
+                lastLogin: '',
             });
         } catch (error) {
             console.error('Failed to load account info:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 

@@ -183,6 +183,35 @@ export const getUIConfig = () => UI_CONFIG;
 export const getATPConfig = () => ATP_CONFIG;
 
 /**
+ * Get custom PDS from storage
+ * @returns Promise<string> The custom PDS URL or default
+ */
+export const getCustomPDS = async (): Promise<string> => {
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const customPDS = await AsyncStorage.getItem('custom_pds');
+    return customPDS || ATP_CONFIG.DEFAULT_PDS;
+  } catch (error) {
+    console.error('Failed to get custom PDS:', error);
+    return ATP_CONFIG.DEFAULT_PDS;
+  }
+};
+
+/**
+ * Set custom PDS in storage
+ * @param pds The PDS URL to save
+ */
+export const setCustomPDS = async (pds: string): Promise<void> => {
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    await AsyncStorage.setItem('custom_pds', pds);
+  } catch (error) {
+    console.error('Failed to set custom PDS:', error);
+    throw error;
+  }
+};
+
+/**
  * Legacy exports for backwards compatibility
  */
 export const PDS_URL = ATP_CONFIG.DEFAULT_PDS;

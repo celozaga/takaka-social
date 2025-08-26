@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedExternal } from '@atproto/api';
 import PostCard from '../post/PostCard';
 import FullPostCard from '../post/FullPostCard';
-import PostCardSkeleton from '../post/PostCardSkeleton';
+import { PostCardSkeleton } from './Skeleton';
 import { useModeration } from '../../context/ModerationContext';
 import { moderatePost } from '../../lib/moderation';
 import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, FlatList, ScrollView } from 'react-native';
@@ -28,8 +28,10 @@ interface FeedProps {
   postFilter?: 'reposts_only' | 'likes_only' | 'bookmarks_only';
 }
 
-const MIN_BATCH_SIZE = 10;
+const MIN_BATCH_SIZE = 6; // Reduzido de 10 para 6 para carregamento mais rápido
 const MAX_FETCH_ATTEMPTS = 5; // To prevent infinite loops
+const INITIAL_LOAD_SIZE = 8; // Tamanho inicial para carregamento mais rápido
+const PROGRESSIVE_LOAD_SIZE = 12; // Tamanho para carregamentos subsequentes
 
 /**
  * Enhanced media post detection using feature flags
@@ -42,28 +44,36 @@ const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
         return true;
     }
     
-    if (!embed) return false;
+    if (!embed) {
+        if (__DEV__) console.log('🚫 DEBUG: Post sem embed:', post.uri);
+        return false;
+    }
     
     // Check for images
     if (AppBskyEmbedImages.isView(embed) && embed.images.length > 0) {
+        if (__DEV__) console.log('✅ DEBUG: Post com imagens:', post.uri);
         return true;
     }
     
     // Check for videos
     if (AppBskyEmbedVideo.isView(embed)) {
+        if (__DEV__) console.log('✅ DEBUG: Post com vídeo:', post.uri);
         return true;
     }
     
     // Check for external links with preview images (if enabled)
     if (AppBskyEmbedExternal.isView(embed) && embed.external?.thumb) {
+        if (__DEV__) console.log('✅ DEBUG: Post com link externo e thumbnail:', post.uri);
         return true;
     }
     
     // Allow external links even without thumbnails for search results
     if (AppBskyEmbedExternal.isView(embed)) {
+        if (__DEV__) console.log('✅ DEBUG: Post com link externo:', post.uri);
         return true;
     }
     
+    if (__DEV__) console.log('🚫 DEBUG: Post não é mídia válida:', post.uri, 'embed type:', embed.$type);
     return false;
 };
 
@@ -92,7 +102,7 @@ const isPostAllowedInVisualFeed = (post: AppBskyFeedDefs.PostView): boolean => {
     
     // Check if embed type is in allowed list
     const embedType = embed.$type;
-    return FEED_CONFIG.ALLOWED_EMBED_TYPES.includes(embedType);
+    return FEED_CONFIG.ALLOWED_EMBED_TYPES.includes(embedType as any);
 }
 
 /**
@@ -103,7 +113,7 @@ const isQuotePost = (post: AppBskyFeedDefs.PostView): boolean => {
     if (!embed) return false;
     
     // Check for record embeds (quotes) using config
-    return FEED_CONFIG.EXCLUDED_EMBED_TYPES.includes(embed.$type);
+    return FEED_CONFIG.EXCLUDED_EMBED_TYPES.includes(embed.$type as any);
 }
 
 /**
@@ -161,6 +171,10 @@ const Feed: React.FC<FeedProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Refs para controle de carregamento progressivo
+  const isLoadingMoreRef = useRef(false);
+  const lastLoadTriggerRef = useRef(0);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     // A. PRIVATE FEEDS (Bookmarks, Likes)
@@ -223,7 +237,19 @@ const Feed: React.FC<FeedProps> = ({
     if (feedUri) {
         if (feedUri === 'following') {
             if (!session) return { data: { feed: [], cursor: undefined } };
-            return agent.app.bsky.feed.getTimeline({ cursor: currentCursor, limit: 30 });
+            console.log('🔍 DEBUG: Fetching following feed with getTimeline, limit: 30');
+            const result = await agent.app.bsky.feed.getTimeline({ cursor: currentCursor, limit: 30 });
+            console.log('🔍 DEBUG: Following feed raw response:', {
+                postsCount: result?.data?.feed?.length || 0,
+                cursor: result?.data?.cursor,
+                firstPost: result?.data?.feed?.[0] ? {
+                    uri: result.data.feed[0].post.uri,
+                    hasEmbed: !!result.data.feed[0].post.embed,
+                    embedType: result.data.feed[0].post.embed?.$type,
+                    hasReply: !!result.data.feed[0].reply
+                } : 'No posts'
+            });
+            return result;
         }
         if (authorFeedFilter) {
             console.log('🔍 DEBUG: Attempting author feed for:', feedUri, 'Session exists:', !!session);
@@ -237,7 +263,7 @@ const Feed: React.FC<FeedProps> = ({
         console.log('🔍 DEBUG: Attempting to fetch feed:', feedUri, 'Session exists:', !!session);
         const feedAgent = session ? agent : publicApiAgent;
         console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public-api');
-        console.log('🔍 DEBUG: Agent service URL:', feedAgent.service?.baseURL || feedAgent.service);
+        console.log('🔍 DEBUG: Agent service URL:', feedAgent.service);
         console.log('🔍 DEBUG: Feed request parameters:', { feed: feedUri, cursor: currentCursor, limit: 30 });
         
         try {
@@ -333,32 +359,71 @@ const Feed: React.FC<FeedProps> = ({
     // Debug logging (can be removed in production)
     if (__DEV__) {
       console.log('🔍 DEBUG: Raw posts received:', posts.length);
-      console.log('🔍 DEBUG: First post sample:', posts[0] ? {
-        uri: posts[0].post.uri,
-        hasEmbed: !!posts[0].post.embed,
-        embedType: posts[0].post.embed?.$type,
-        hasReply: !!posts[0].reply
-      } : 'No posts');
+      if (feedUri === 'following') {
+        console.log('🔍 DEBUG: Following feed - detailed post analysis:');
+        posts.forEach((post, index) => {
+          if (index < 5) { // Log first 5 posts
+            console.log(`  Post ${index + 1}:`, {
+              uri: post.post.uri,
+              hasEmbed: !!post.post.embed,
+              embedType: post.post.embed?.$type,
+              hasReply: !!post.reply,
+              isMediaPost: isPostAMediaPost(post.post)
+            });
+          }
+        });
+      } else {
+        console.log('🔍 DEBUG: First post sample:', posts[0] ? {
+          uri: posts[0].post.uri,
+          hasEmbed: !!posts[0].post.embed,
+          embedType: posts[0].post.embed?.$type,
+          hasReply: !!posts[0].reply
+        } : 'No posts');
+      }
     }
 
     const isProfileContext = !!authorFeedFilter || !!postFilter;
     
     // Apply content policy filtering (replies, quotes, text-only posts)
     // STRICT: Apply reply/quote filtering to ALL feeds (including profile context)
+    // OPTIMIZED: Combined filtering in single pass for better performance
     let processedPosts = posts.filter(item => {
-        // Always filter replies (except in dedicated reply sections)
+        // 1. Filter replies (except in dedicated reply sections)
         if (item.reply && !postFilter?.includes('replies')) {
             if (__DEV__) console.log('🚫 DEBUG: Removing reply from feed:', item.post.uri);
             return false;
         }
         
-        // Always filter quotes (not supported in this app)
+        // 2. Filter quotes (not supported in this app)
         if (isQuotePost(item.post)) {
             if (__DEV__) console.log('🚫 DEBUG: Removing quote from feed:', item.post.uri);
             return false;
         }
         
-        // Apply other content policies only to non-profile contexts
+        // 3. For grid layout, apply media filtering but be more permissive for following feed
+        if (layout === 'grid') {
+            // Para o feed Following, ser mais permissivo
+            if (feedUri === 'following') {
+                // Permitir posts com texto + links externos, mesmo sem thumbnail
+                if (item.post.embed && AppBskyEmbedExternal.isView(item.post.embed)) {
+                    return true;
+                }
+                // Permitir posts com texto + qualquer embed válido
+                if (item.post.embed) {
+                    return true;
+                }
+                // Permitir posts apenas com texto para o feed Following
+                return true;
+            } else {
+                // Para outros feeds, manter filtro rigoroso
+                if (!isPostAMediaPost(item.post)) {
+                    if (__DEV__) console.log('🚫 DEBUG: Removing non-media post from grid:', item.post.uri);
+                    return false;
+                }
+            }
+        }
+        
+        // 4. Apply other content policies only to non-profile contexts
         if (!isProfileContext && shouldFilterPost(item)) {
             return false;
         }
@@ -366,22 +431,31 @@ const Feed: React.FC<FeedProps> = ({
         return true;
     });
     
-    if (__DEV__) console.log('🔍 DEBUG: After policy filter:', processedPosts.length);
+    if (__DEV__) {
+        console.log('🔍 DEBUG: After combined filter:', processedPosts.length);
+        if (feedUri === 'following') {
+            console.log('🔍 DEBUG: Following feed - posts after combined filter:', processedPosts.length);
+            processedPosts.forEach((post, index) => {
+                if (index < 3) { // Log first 3 posts
+                    console.log(`  Post ${index + 1} after combined filter:`, {
+                        uri: post.post.uri,
+                        hasEmbed: !!post.post.embed,
+                        embedType: post.post.embed?.$type,
+                        isMediaPost: isPostAMediaPost(post.post)
+                    });
+                }
+            });
+        }
+    }
     
     // Apply specific post type filters
     if (postFilter === 'reposts_only') {
         processedPosts = processedPosts.filter(item => !!item.reason && AppBskyFeedDefs.isReasonRepost(item.reason));
     }
     
-    // Apply layout-specific filtering
+    // Apply layout-specific filtering (media filtering now handled in combined filter above)
     if (layout === 'grid') {
-        if (__DEV__) console.log('🔍 DEBUG: Applying grid layout filtering...');
-        // For grid layout, ensure posts have media
-        const beforeMedia = processedPosts.length;
-        processedPosts = processedPosts.filter(item => isPostAMediaPost(item.post));
-        if (__DEV__) console.log('🔍 DEBUG: Grid media filter:', beforeMedia, '→', processedPosts.length);
-        
-        // Apply media type filters
+        // Apply media type filters (photos/videos only)
         if (mediaFilter === 'photos') {
             const beforePhotos = processedPosts.length;
             processedPosts = processedPosts.filter(item => hasPhotos(item.post));
@@ -401,10 +475,9 @@ const Feed: React.FC<FeedProps> = ({
 
     if (__DEV__) console.log('🔍 DEBUG: Final posts:', processedPosts.length);
     return { posts: processedPosts, cursor: nextCursor, originalCount: posts.length };
-  }, [fetchPosts, authorFeedFilter, postFilter, layout, mediaFilter]);
+  }, [fetchPosts, authorFeedFilter, postFilter, layout, mediaFilter, feedUri]);
 
   const loadInitialPosts = useCallback(async () => {
-    console.log('📋 DEBUG: Feed loadInitialPosts called - feedUri:', feedUri, 'session:', !!session, 'searchQuery:', searchQuery);
     setIsLoading(true);
     setError(null);
     setFeed([]);
@@ -417,7 +490,11 @@ const Feed: React.FC<FeedProps> = ({
         let attempts = 0;
         let canFetchMore = true;
 
-        while (accumulatedPosts.length < MIN_BATCH_SIZE && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
+        // Para o feed Following, tentar carregar mais posts
+        const targetLoadSize = feedUri === 'following' ? 20 : INITIAL_LOAD_SIZE;
+        const maxAttempts = feedUri === 'following' ? 5 : 3;
+
+        while (accumulatedPosts.length < targetLoadSize && attempts < maxAttempts && canFetchMore) {
             const batchResult = await fetchAndFilterPage(nextCursor);
             
             const newUniquePosts = batchResult.posts.filter(p => !accumulatedPosts.some(ap => ap.post.uri === p.post.uri));
@@ -426,6 +503,8 @@ const Feed: React.FC<FeedProps> = ({
             nextCursor = batchResult.cursor;
             canFetchMore = !!nextCursor && batchResult.originalCount > 0;
             attempts++;
+            
+            if (accumulatedPosts.length >= targetLoadSize) break;
         }
 
         setFeed(accumulatedPosts);
@@ -452,11 +531,13 @@ const Feed: React.FC<FeedProps> = ({
     } finally {
         setIsLoading(false);
     }
-  }, [fetchAndFilterPage, t, postFilter]);
+  }, [fetchAndFilterPage, t, postFilter, feedUri]);
 
   useEffect(() => {
     loadInitialPosts();
   }, [loadInitialPosts]);
+
+  // Removido forceRender que causava piscamento das imagens
 
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -464,7 +545,10 @@ const Feed: React.FC<FeedProps> = ({
   }, [loadInitialPosts]);
 
   const loadMorePosts = useCallback(async () => {
-    if (isLoadingMore || !cursor || !hasMore) return;
+    // Previne múltiplas chamadas simultâneas
+    if (isLoadingMoreRef.current || !cursor || !hasMore) return;
+    
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
 
     try {
@@ -473,7 +557,8 @@ const Feed: React.FC<FeedProps> = ({
         let attempts = 0;
         let canFetchMore = true;
 
-        while (accumulatedPosts.length < MIN_BATCH_SIZE && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
+        // Carregamento progressivo com mais posts para melhor experiência
+        while (accumulatedPosts.length < PROGRESSIVE_LOAD_SIZE && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
             const batchResult = await fetchAndFilterPage(nextCursor);
             accumulatedPosts.push(...batchResult.posts);
             nextCursor = batchResult.cursor;
@@ -493,13 +578,107 @@ const Feed: React.FC<FeedProps> = ({
 
     } finally {
         setIsLoadingMore(false);
+        isLoadingMoreRef.current = false;
     }
-  }, [cursor, hasMore, isLoadingMore, fetchAndFilterPage]);
+  }, [cursor, hasMore, fetchAndFilterPage]);
+
+  // Função otimizada para carregamento progressivo durante scroll
+  const handleScrollProgress = useCallback((nativeEvent: any) => {
+    const now = Date.now();
+    const scrollPosition = nativeEvent.contentOffset.y;
+    const contentHeight = nativeEvent.contentSize.height;
+    const layoutHeight = nativeEvent.layoutMeasurement.height;
+    
+    // Carrega mais posts quando está a 70% do scroll e não está carregando
+    const shouldLoadMore = scrollPosition + layoutHeight >= contentHeight * 0.7;
+    
+    // Previne múltiplas chamadas em um curto período (debounce de 300ms)
+    if (shouldLoadMore && !isLoadingMoreRef.current && now - lastLoadTriggerRef.current > 300) {
+      lastLoadTriggerRef.current = now;
+      loadMorePosts();
+    }
+  }, [loadMorePosts]);
   
   const moderatedFeed = useMemo(() => {
     if (!moderation.isReady) return [];
-    return feed.filter(item => moderatePost(item.post, moderation).visibility !== 'hide');
+    
+    if (__DEV__) {
+      console.log('🔍 DEBUG: Moderation filter - posts before:', feed.length);
+    }
+    
+    const filtered = feed.filter(item => {
+      const modDecision = moderatePost(item.post, moderation);
+      if (modDecision.visibility === 'hide') {
+        if (__DEV__) {
+          console.log('🚫 DEBUG: Post hidden by moderation:', item.post.uri, 'reason:', modDecision.reason);
+        }
+        return false;
+      }
+      return true;
+    });
+    
+    if (__DEV__) {
+      console.log('🔍 DEBUG: Moderation filter - posts after:', filtered.length);
+      console.log('🔍 DEBUG: Moderation filter - posts removed:', feed.length - filtered.length);
+    }
+    
+    return filtered;
   }, [feed, moderation]);
+
+  // Memoiza a distribuição das colunas para evitar recálculo desnecessário
+  const columns = useMemo(() => {
+    const numColumns = 2;
+    const cols: AppBskyFeedDefs.FeedViewPost[][] = Array.from({ length: numColumns }, () => []);
+    
+    if (moderatedFeed.length > 0) {
+      moderatedFeed.forEach((item, i) => {
+        const targetColumn = i % numColumns;
+        cols[targetColumn].push(item);
+      });
+      
+      // Final validation: ensure both columns have content if we have posts
+      const totalPosts = moderatedFeed.length;
+      if (totalPosts > 0) {
+        if (cols[0].length === 0 && cols[1].length > 0) {
+          const halfLength = Math.ceil(cols[1].length / 2);
+          cols[0] = cols[1].splice(0, halfLength);
+        } else if (cols[1].length === 0 && cols[0].length > 0) {
+          const halfLength = Math.ceil(cols[0].length / 2);
+          cols[1] = cols[0].splice(0, halfLength);
+        }
+      }
+      
+      if (__DEV__) {
+        console.log('📊 DEBUG: Column distribution:', {
+          total: totalPosts,
+          column0: cols[0].length,
+          column1: cols[1].length,
+          balanced: Math.abs(cols[0].length - cols[1].length) <= 1
+        });
+      }
+    }
+    
+    return cols;
+  }, [moderatedFeed]);
+
+  // Memoiza o render das colunas para evitar re-criação desnecessária
+  const renderColumns = useMemo(() => {
+    return columns.map((col, colIndex) => (
+      <View 
+        key={`column-${colIndex}`} 
+        style={styles.column} 
+        removeClippedSubviews={false}
+        collapsable={false}
+        needsOffscreenAlphaCompositing={false}
+        renderToHardwareTextureAndroid={true}
+        shouldRasterizeIOS={true}
+      >
+        {col.map((item) => (
+          <PostCard key={item.post.uri} feedViewPost={item} />
+        ))}
+      </View>
+    ));
+  }, [columns]);
 
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => {
     // Create unique key for each feed item to prevent rendering issues
@@ -611,7 +790,7 @@ const Feed: React.FC<FeedProps> = ({
       ListFooterComponent: renderFooter,
       ListEmptyComponent: renderListEmptyComponent,
       onEndReached: loadMorePosts,
-      onEndReachedThreshold: 0.7,
+      onEndReachedThreshold: 0.5, // Reduzido de 0.7 para 0.5 para carregar posts mais cedo
       refreshControl: <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />,
       contentContainerStyle: {paddingTop: theme.spacing.l, paddingBottom: 60}
   };
@@ -627,40 +806,7 @@ const Feed: React.FC<FeedProps> = ({
   }
 
   // Enhanced masonry layout for grid with better balancing
-  const numColumns = 2;
-  const columns: AppBskyFeedDefs.FeedViewPost[][] = Array.from({ length: numColumns }, () => []);
-  
-  // Distribute posts evenly across columns
-  if (moderatedFeed.length > 0) {
-      moderatedFeed.forEach((item, i) => {
-          // Round-robin distribution
-          const targetColumn = i % numColumns;
-          columns[targetColumn].push(item);
-      });
-      
-      // Final validation: ensure both columns have content if we have posts
-      const totalPosts = moderatedFeed.length;
-      if (totalPosts > 0) {
-          // If one column is empty and we have posts, redistribute
-          if (columns[0].length === 0 && columns[1].length > 0) {
-              const halfLength = Math.ceil(columns[1].length / 2);
-              columns[0] = columns[1].splice(0, halfLength);
-          } else if (columns[1].length === 0 && columns[0].length > 0) {
-              const halfLength = Math.ceil(columns[0].length / 2);
-              columns[1] = columns[0].splice(0, halfLength);
-          }
-      }
-      
-      // Debug: Log column distribution in development
-      if (__DEV__) {
-          console.log('📊 DEBUG: Column distribution:', {
-              total: totalPosts,
-              column0: columns[0].length,
-              column1: columns[1].length,
-              balanced: Math.abs(columns[0].length - columns[1].length) <= 1
-          });
-      }
-  }
+  // (Removido - agora é feito no useMemo acima)
 
   return (
       <ScrollView
@@ -671,29 +817,27 @@ const Feed: React.FC<FeedProps> = ({
                   tintColor={theme.colors.primary}
               />
           }
-          onScroll={({ nativeEvent }) => {
-              if (nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 400) {
-                  loadMorePosts();
-              }
-          }}
+          onScroll={({ nativeEvent }) => handleScrollProgress(nativeEvent)}
           scrollEventThrottle={16}
           contentContainerStyle={styles.scrollViewContentGrid}
+          removeClippedSubviews={false}
+          showsVerticalScrollIndicator={true}
+          bounces={true}
+          alwaysBounceVertical={false}
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
+          keyboardShouldPersistTaps="handled"
       >
           {renderHeader()}
           {moderatedFeed.length === 0 ? (
               renderListEmptyComponent()
           ) : (
               <View style={styles.masonryContainer}>
-                  {columns.map((col, colIndex) => (
-                      <View key={colIndex} style={styles.column}>
-                          {col.map((item) => (
-                              <PostCard key={keyExtractor(item)} feedViewPost={item} />
-                          ))}
-                      </View>
-                  ))}
+                  {renderColumns}
               </View>
           )}
           {renderFooter()}
+
       </ScrollView>
   );
 };
@@ -704,14 +848,23 @@ const styles = StyleSheet.create({
     scrollViewContentGrid: {
         paddingHorizontal: theme.spacing.s,
         paddingBottom: 60,
+        flexGrow: 1,
+        width: '100%',
     },
     masonryContainer: {
         flexDirection: 'row',
+        width: '100%',
+        minHeight: 200,
     },
     column: {
         flex: 1,
         gap: theme.spacing.l,
         marginHorizontal: theme.spacing.s,
+        minHeight: 200,
+        alignSelf: 'stretch',
+        width: '50%',
+        overflow: 'visible',
+        zIndex: 1,
     },
     messageContainerWrapper: {
         padding: theme.spacing.l,

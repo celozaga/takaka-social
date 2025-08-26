@@ -6,10 +6,11 @@ import { useTranslation } from 'react-i18next';
 import { AppBskyActorDefs } from '@atproto/api';
 import { X, Camera } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { PrimaryButton, SecondaryButton } from '@/components/shared';
 
 interface EditProfileModalProps {
   onClose: () => void;
@@ -118,16 +119,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
                 <Pressable onPress={onClose} style={styles.closeButton}><X color={theme.colors.onSurface} /></Pressable>
                 <Text style={styles.headerTitle}>{t('editProfile.title')}</Text>
             </View>
-            <Pressable onPress={handleSave} disabled={isSaving} style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}>
-                {isSaving ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Text style={styles.saveButtonText}>{t('common.save')}</Text>}
-            </Pressable>
         </View>
         
         <ScrollView>
             <View style={styles.content}>
                 <View style={styles.avatarContainer}>
                     <Pressable style={styles.avatarPressable} onPress={pickAvatar}>
-                        {avatarPreview && <Image source={{ uri: avatarPreview }} style={styles.avatarImage} />}
+                        {avatarPreview && <OptimizedImage source={{ uri: avatarPreview }} style={styles.avatarImage} />}
                         <View style={styles.avatarOverlay}>
                             <Camera color="white" size={32} />
                         </View>
@@ -160,6 +158,21 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
                 </View>
             </View>
         </ScrollView>
+
+        <View style={styles.modalActions}>
+            <SecondaryButton
+                title={t('common.cancel')}
+                onPress={onClose}
+                style={styles.modalButton}
+            />
+            <PrimaryButton
+                title={t('common.save')}
+                onPress={handleSave}
+                disabled={!displayName.trim() || isLoading}
+                loading={isLoading}
+                style={styles.modalButton}
+            />
+        </View>
     </View>
   );
 };
@@ -182,6 +195,8 @@ const styles = StyleSheet.create({
     label: { ...theme.typography.labelLarge, color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.xs },
     input: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
     textArea: { height: 100, textAlignVertical: 'top' },
+    modalActions: { flexDirection: 'row', justifyContent: 'space-between', padding: theme.spacing.l, backgroundColor: theme.colors.surfaceContainerHigh, borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainer },
+    modalButton: { flex: 1, marginHorizontal: theme.spacing.xs },
 });
 
 export default EditProfileModal;

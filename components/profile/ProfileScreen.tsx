@@ -6,7 +6,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { useProfileCache } from '../../context/ProfileCacheContext';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Linking, Alert, Platform } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { Link, useRouter } from 'expo-router';
 import { AppBskyActorDefs, RichText, AtUri } from '@atproto/api';
 import Feed from '../shared/Feed';
@@ -16,8 +16,7 @@ import { useUI } from '../../context/UIContext';
 import Head from 'expo-router/head';
 import TopAppBar from '../ui/TopAppBar';
 import { theme } from '@/lib/theme';
-import ProfileHeaderSkeleton from './ProfileHeaderSkeleton';
-import PostCardSkeleton from '../post/PostCardSkeleton';
+import { PostCardSkeleton, ProfileHeaderSkeleton } from '@/components/shared';
 import { formatCompactNumber } from '@/lib/formatters';
 import ErrorState from '../shared/ErrorState';
 
@@ -143,7 +142,7 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const ListHeader = () => (
         <View style={styles.headerContainer}>
             <View style={styles.statsRow}>
-                <Image source={{ uri: profile?.avatar }} style={styles.avatar} />
+                <OptimizedImage source={{ uri: profile?.avatar }} style={styles.avatar} />
                 <View style={styles.stats}>
                     <View style={styles.statItem}>
                         <Text style={styles.statNumber}>{formatCompactNumber(profile?.postsCount ?? 0)}</Text>

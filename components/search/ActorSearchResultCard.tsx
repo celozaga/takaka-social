@@ -5,7 +5,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import { BadgeCheck, Loader2 } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 
 interface ActorSearchResultCardProps {
@@ -79,7 +79,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   const content = (
     <View style={styles.container}>
       <View style={styles.contentContainer}>
-        <Image source={{ uri: actor.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+        <OptimizedImage source={{ uri: actor.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
         <View style={styles.mainContent}>
           <View style={styles.header}>
             <View style={styles.userInfo}>

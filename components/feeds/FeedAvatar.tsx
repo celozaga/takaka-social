@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { List } from 'lucide-react';
 import { View, StyleSheet, StyleProp } from 'react-native';
-import { Image, ImageStyle } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 
 interface FeedAvatarProps {
@@ -24,7 +24,7 @@ const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, style }) => {
   }
 
   return (
-    <Image
+    <OptimizedImage
       source={src}
       accessibilityLabel={alt}
       style={style}

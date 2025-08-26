@@ -5,6 +5,8 @@ import { X, Mail } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { PrimaryButton, SecondaryButton } from '@/components/shared';
+import { useTranslation } from 'react-i18next';
 
 interface UpdateEmailModalProps {
   onClose: () => void;
@@ -15,6 +17,7 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
     const { agent } = useAtp();
     const { toast } = useToast();
     const { requireAuth } = useAuthGuard();
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
@@ -83,13 +86,20 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
                     />
                 </View>
                 {error && <Text style={styles.errorText}>{error}</Text>}
-                <Pressable
-                    onPress={handleSave}
-                    disabled={isSaving || !email.trim()}
-                    style={[styles.button, (isSaving || !email.trim()) && styles.buttonDisabled]}
-                >
-                    {isSaving ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Text style={styles.buttonText}>Send Verification Email</Text>}
-                </Pressable>
+                <View style={styles.modalActions}>
+                    <SecondaryButton
+                        title={t('common.cancel')}
+                        onPress={onClose}
+                        style={styles.modalButton}
+                    />
+                    <PrimaryButton
+                        title={t('common.save')}
+                        onPress={handleSave}
+                        disabled={!email.trim() || isSaving}
+                        loading={isSaving}
+                        style={styles.modalButton}
+                    />
+                </View>
             </View>
         </View>
     );
@@ -159,6 +169,14 @@ const styles = StyleSheet.create({
     buttonText: {
         color: theme.colors.onPrimary,
         fontWeight: 'bold',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: theme.spacing.s,
+    },
+    modalButton: {
+        flex: 1,
     },
 });
 

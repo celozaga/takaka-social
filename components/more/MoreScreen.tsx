@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Head from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 
 // --- Reusable Icon Components for the new SuperApp Layout ---
@@ -87,7 +87,7 @@ const MoreScreen: React.FC = () => {
                         profile && (
                             <Link href={profileLink as any} asChild>
                                 <Pressable style={({ pressed }) => [styles.profileSection, pressed && styles.pressed]}>
-                                    <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+                                    <OptimizedImage source={{ uri: profile.avatar }} style={styles.avatar} />
                                     <View style={styles.profileTextContainer}>
                                         <Text style={styles.displayName}>{profile.displayName || `@${profile.handle}`}</Text>
                                         <Text style={styles.handle}>@{profile.handle}</Text>

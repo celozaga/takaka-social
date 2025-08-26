@@ -9,7 +9,7 @@ import ScreenHeader from '../layout/ScreenHeader';
 import Head from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, FlatListProps } from 'react-native';
 import { theme } from '@/lib/theme';
-import NotificationItemSkeleton from './NotificationItemSkeleton';
+import { NotificationItemSkeleton } from '@/components/shared';
 import { Link } from 'expo-router';
 import { Settings } from 'lucide-react';
 

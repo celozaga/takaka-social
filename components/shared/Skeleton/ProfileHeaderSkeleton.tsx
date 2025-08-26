@@ -1,20 +1,21 @@
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
+import SkeletonLine from './SkeletonLine';
+import SkeletonAvatar from './SkeletonAvatar';
 
 const ProfileHeaderSkeleton: React.FC = () => (
     <View style={styles.container}>
         <View style={styles.statsRow}>
-            <View style={styles.avatar} />
+            <SkeletonAvatar size={80} />
             <View style={styles.stats}>
                 <View style={styles.statItem} />
                 <View style={styles.statItem} />
                 <View style={styles.statItem} />
             </View>
         </View>
-        <View style={styles.lineLg} />
-        <View style={styles.lineSm} />
+        <SkeletonLine width="60%" height={20} />
+        <SkeletonLine width="80%" height={16} />
         <View style={styles.button} />
     </View>
 );
@@ -31,12 +32,6 @@ const styles = StyleSheet.create({
         gap: theme.spacing.xl,
         marginBottom: theme.spacing.s,
     },
-    avatar: {
-        width: 80,
-        height: 80,
-        borderRadius: theme.shape.full,
-        backgroundColor: theme.colors.surfaceContainerHigh,
-    },
     stats: {
         flex: 1,
         flexDirection: 'row',
@@ -45,18 +40,6 @@ const styles = StyleSheet.create({
     statItem: {
         height: 40,
         width: 60,
-        backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.small,
-    },
-    lineLg: {
-        height: 20,
-        width: '60%',
-        backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.small,
-    },
-    lineSm: {
-        height: 16,
-        width: '80%',
         backgroundColor: theme.colors.surfaceContainerHigh,
         borderRadius: theme.shape.small,
     },

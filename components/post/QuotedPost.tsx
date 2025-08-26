@@ -5,7 +5,7 @@ import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs, AppBskyFeedPost, 
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { formatCompactDate } from '@/lib/formatters';
 import { theme } from '@/lib/theme';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 
 interface QuotedPostProps {
   embed: AppBskyEmbedRecord.View;
@@ -46,7 +46,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
         const firstEmbed = recordEmbed.embeds[0];
         if (AppBskyEmbedImages.isView(firstEmbed) && firstEmbed.images.length > 0) {
           const image = firstEmbed.images[0];
-          return <Image source={image.thumb} accessibilityLabel={image.alt || 'Quoted post image'} style={styles.mediaPreview} contentFit="cover" placeholder={theme.colors.surfaceContainerHigh} transition={300} />;
+          return <OptimizedImage source={image.thumb} accessibilityLabel={image.alt || 'Quoted post image'} style={styles.mediaPreview} contentFit="cover" transition={300} />;
         }
       }
       return null;
@@ -55,7 +55,7 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
     const content = (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Image source={{ uri: author.avatar }} style={styles.avatar} />
+          <OptimizedImage source={{ uri: author.avatar }} style={styles.avatar} />
           <Text style={styles.authorName} numberOfLines={1}>{author.displayName || `@${author.handle}`}</Text>
           <Text style={styles.timeAgo}>· {timeAgo}</Text>
         </View>

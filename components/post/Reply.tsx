@@ -12,7 +12,7 @@ import { useModeration } from '../../context/ModerationContext';
 import { moderatePost, ModerationDecision } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Pressable, StyleSheet, useWindowDimensions, Animated } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 import VideoPlayer from '../shared/VideoPlayer';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
@@ -108,7 +108,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
     if (AppBskyEmbedImages.isView(mediaEmbed)) {
         const image = mediaEmbed.images[0]; // Show first image only in replies
         const imageAspectRatio = image.aspectRatio ? image.aspectRatio.width / image.aspectRatio.height : 1.5;
-        return <Image source={image.thumb} accessibilityLabel={image.alt || 'Reply image'} style={[styles.mediaPreview, { aspectRatio: imageAspectRatio }]} contentFit="cover" placeholder={theme.colors.surfaceContainerHigh} transition={300} />;
+        return <OptimizedImage source={image.thumb} accessibilityLabel={image.alt || 'Reply image'} style={[styles.mediaPreview, { aspectRatio: imageAspectRatio }]} contentFit="cover" transition={300} />;
     }
 
     if (AppBskyEmbedVideo.isView(mediaEmbed)) {
@@ -177,7 +177,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
             <View style={styles.avatarThreadContainer}>
                 <Link href={`/profile/${author.handle}` as any} asChild>
                     <Pressable>
-                        <Image source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
+                        <OptimizedImage source={{ uri: author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/') }} style={styles.avatar} />
                     </Pressable>
                 </Link>
                 {showThreadLine && <View style={styles.threadLine} />}

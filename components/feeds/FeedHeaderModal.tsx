@@ -11,6 +11,7 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-nati
 import { theme } from '@/lib/theme';
 import { formatCompactNumber } from '@/lib/formatters';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { PrimaryButton, SecondaryButton, LoadingState } from '@/components/shared';
 
 const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();
@@ -50,7 +51,7 @@ const FeedHeaderModal: React.FC = () => {
 
     const renderContent = () => {
         if (isLoading) {
-            return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>;
+            return <LoadingState message="Carregando feed..." />;
         }
 
         if (error || !feedView) {

@@ -15,7 +15,7 @@ import { Heart, Repeat, MessageCircle, UserPlus, FileText, AtSign, BadgeCheck } 
 import { formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 
 interface NotificationItemProps {
@@ -44,7 +44,7 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
         const imageUrl = new URL('xrpc/com.atproto.sync.getBlob', agent.service.toString());
         imageUrl.searchParams.set('did', authorDid);
         imageUrl.searchParams.set('cid', firstImage.image.ref.toString());
-        return <Image source={{ uri: imageUrl.toString() }} style={styles.previewImage} />;
+        return <OptimizedImage source={{ uri: imageUrl.toString() }} style={styles.previewImage} />;
     };
 
     const imageElement = renderImage();
@@ -168,7 +168,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
         </View>
       )}
       <View style={{ flexShrink: 0, width: 32, height: 40, position: 'relative' }}>
-        <Image source={{ uri: author.avatar }} style={styles.avatar} />
+        <OptimizedImage source={{ uri: author.avatar }} style={styles.avatar} />
         <View style={[styles.iconContainer,
             reason === 'like' && styles.iconBackgroundLike,
             reason === 'repost' && styles.iconBackgroundRepost,

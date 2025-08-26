@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { theme } from '@/lib/theme';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useTranslation } from 'react-i18next';
+import { OptimizedImage } from '../ui';
 
 interface PostHeaderProps {
   post: AppBskyFeedDefs.PostView;
@@ -89,7 +90,7 @@ export default function PostHeader({ post }: PostHeaderProps) {
         </Pressable>
         <Link href={`/profile/${author.handle}` as any} asChild>
           <Pressable style={styles.authorInfo}>
-            <Image source={{ uri: author.avatar }} style={styles.avatar} />
+            <OptimizedImage source={{ uri: author.avatar }} style={styles.avatar} />
             <View style={{ flexShrink: 1 }}>
               <Text style={styles.displayName} numberOfLines={1}>{author.displayName || author.handle}</Text>
             </View>

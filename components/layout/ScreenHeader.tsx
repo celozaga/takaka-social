@@ -1,10 +1,9 @@
 
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
-import { ArrowLeft } from 'lucide-react';
+import { StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
 import TopAppBar from '../ui/TopAppBar';
+import { BackButton } from '@/components/shared';
 import { theme } from '@/lib/theme';
 
 interface ScreenHeaderProps {
@@ -14,16 +13,12 @@ interface ScreenHeaderProps {
 
 const ScreenHeader: React.FC<ScreenHeaderProps> = ({ title, children }) => {
     const { t } = useTranslation();
-    const router = useRouter();
 
     const leadingAction = (
-        <Pressable 
-            onPress={() => router.back()} 
-            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} 
-            accessibilityLabel={t('common.back')}
-        >
-            <ArrowLeft size={24} color={theme.colors.onSurface} />
-        </Pressable>
+        <BackButton 
+            size="medium"
+            style={styles.button}
+        />
     );
 
     return (
@@ -33,12 +28,7 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({ title, children }) => {
 
 const styles = StyleSheet.create({
     button: {
-        padding: theme.spacing.s,
         marginLeft: -theme.spacing.s, // To align with edge
-        borderRadius: theme.shape.full,
-    },
-    buttonPressed: {
-        backgroundColor: theme.colors.surfaceContainerHigh,
     },
 });
 

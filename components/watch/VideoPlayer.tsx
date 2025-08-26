@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { View, StyleSheet, Text, Platform, useWindowDimensions } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
 import VideoProgressBar from './VideoProgressBar';

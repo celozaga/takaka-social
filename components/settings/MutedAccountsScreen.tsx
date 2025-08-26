@@ -8,7 +8,7 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { Link } from 'expo-router';
 import Head from 'expo-router/head';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, FlatListProps } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 import { BadgeCheck } from 'lucide-react';
 import SettingsDivider from '../ui/SettingsDivider';
@@ -25,7 +25,7 @@ const MutedAccountItem: React.FC<{
     const content = (
         <View style={styles.itemContainer}>
             <View style={styles.itemContent}>
-                <Image source={{ uri: actor.avatar }} style={styles.avatar} />
+                <OptimizedImage source={{ uri: actor.avatar }} style={styles.avatar} />
                 <View style={styles.userInfo}>
                     <View style={styles.nameContainer}>
                         <Text style={styles.displayName} numberOfLines={1}>{actor.displayName || `@${actor.handle}`}</Text>

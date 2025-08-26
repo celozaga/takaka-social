@@ -8,7 +8,7 @@ import { formatCompactDate } from '@/lib/formatters';
 import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoPlayer from '../shared/VideoPlayer';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { theme } from '@/lib/theme';
 // removed direct useVideoPlayback in slideshow; we reuse shared VideoPlayer
 
@@ -166,7 +166,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                             onMouseLeave: () => setIsHovered(false),
                         } as any)}
                     >
-                        <Image source={imageItem.thumb} accessibilityLabel={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} contentFit="contain" placeholder={theme.colors.surfaceContainerHigh} transition={300} />
+                        <OptimizedImage source={imageItem.thumb} accessibilityLabel={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} contentFit="contain" transition={300} />
                         <View style={[styles.imageOverlay, { opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0 }]}><ExternalLink color="white" size={24} /></View>
                     </Pressable>
                 );
@@ -214,7 +214,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         <SlideshowVideoItem item={item as { type: 'video', view: AppBskyEmbedVideo.View }} />
                     ) : (
                         <Pressable style={{width: '100%', height: '100%'}} onPress={(e) => { e.stopPropagation(); Linking.openURL((item as AppBskyEmbedImages.ViewImage).fullsize); }}>
-                           <Image source={(item as AppBskyEmbedImages.ViewImage).thumb} accessibilityLabel={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} contentFit="contain" placeholder={theme.colors.surfaceContainerHigh} transition={300} />
+                           <OptimizedImage source={(item as AppBskyEmbedImages.ViewImage).thumb} accessibilityLabel={(item as AppBskyEmbedImages.ViewImage).alt} style={styles.slideshowImage} contentFit="contain" transition={300} />
                         </Pressable>
                     )}
                 </View>

@@ -6,6 +6,8 @@ import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { PrimaryButton, SecondaryButton } from '@/components/shared';
+import { useTranslation } from 'react-i18next';
 
 interface UpdateHandleModalProps {
   onClose: () => void;
@@ -20,6 +22,7 @@ const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSucces
     const [handle, setHandle] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+    const { t } = useTranslation();
 
     // Verificar autenticação ao montar o componente
     React.useEffect(() => {
@@ -68,13 +71,20 @@ const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSucces
                     />
                 </View>
                 {error && <Text style={styles.errorText}>{error}</Text>}
-                <Pressable
-                    onPress={handleSave}
-                    disabled={isSaving || !handle.trim()}
-                    style={[styles.button, (isSaving || !handle.trim()) && styles.buttonDisabled]}
-                >
-                    {isSaving ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Text style={styles.buttonText}>Update Handle</Text>}
-                </Pressable>
+                <View style={styles.modalActions}>
+                    <SecondaryButton
+                        title={t('common.cancel')}
+                        onPress={onClose}
+                        style={styles.modalButton}
+                    />
+                    <PrimaryButton
+                        title={t('common.save')}
+                        onPress={handleSave}
+                        disabled={!handle.trim() || isSaving}
+                        loading={isSaving}
+                        style={styles.modalButton}
+                    />
+                </View>
             </View>
         </View>
     );
@@ -130,20 +140,14 @@ const styles = StyleSheet.create({
         ...theme.typography.bodyMedium,
         textAlign: 'center',
     },
-    button: {
-        width: '100%',
-        backgroundColor: theme.colors.primary,
-        paddingVertical: 10,
-        paddingHorizontal: theme.spacing.xl,
-        borderRadius: theme.shape.full,
-        alignItems: 'center',
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: theme.spacing.l,
     },
-    buttonDisabled: {
-        opacity: 0.5,
-    },
-    buttonText: {
-        color: theme.colors.onPrimary,
-        fontWeight: 'bold',
+    modalButton: {
+        flex: 1,
+        marginHorizontal: theme.spacing.s,
     },
 });
 

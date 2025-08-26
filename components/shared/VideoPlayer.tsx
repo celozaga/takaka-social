@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
-import { Image } from 'expo-image';
+import { OptimizedImage } from '../ui';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import type { ContentType } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
@@ -454,7 +454,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return (
       <View style={[styles.container, style]}>
         {embed.thumbnail && (
-          <Image source={{ uri: embed.thumbnail }} style={StyleSheet.absoluteFill} contentFit="contain" />
+          <OptimizedImage source={{ uri: embed.thumbnail }} style={StyleSheet.absoluteFill} contentFit="contain" />
         )}
         <ActivityIndicator size="large" color="white" />
       </View>
