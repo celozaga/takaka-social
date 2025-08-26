@@ -1,8 +1,35 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const FullPostCardSkeleton = () => {
+  const { theme } = useTheme();
+  
+  const styles = StyleSheet.create({
+    container: {
+      // No specific styles needed for container, it just holds the elements
+    },
+    contextLine: {
+      height: 16,
+      width: '50%',
+      backgroundColor: theme.colors.surfaceContainerHigh,
+      borderRadius: theme.radius.sm,
+      marginBottom: theme.spacing.sm,
+    },
+    mediaPlaceholder: {
+      width: '100%',
+      aspectRatio: 1.5,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surfaceContainerHigh,
+    },
+    line: {
+      height: 16,
+      backgroundColor: theme.colors.surfaceContainerHigh,
+      borderRadius: theme.radius.sm,
+      marginBottom: theme.spacing.xs,
+    },
+  });
+  
   return (
     <View style={styles.container}>
       {/* Context line placeholder */}
@@ -12,38 +39,13 @@ const FullPostCardSkeleton = () => {
       <View style={styles.mediaPlaceholder} />
 
       {/* Text lines placeholder */}
-      <View style={[styles.line, { width: '90%', marginTop: theme.spacing.m }]} />
+      <View style={[styles.line, { width: '90%', marginTop: theme.spacing.md }]} />
       <View style={[styles.line, { width: '60%' }]} />
       
       {/* Timestamp placeholder */}
-      <View style={[styles.line, { width: '20%', marginTop: theme.spacing.s }]} />
+      <View style={[styles.line, { width: '20%', marginTop: theme.spacing.sm }]} />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    // No specific styles needed for container, it just holds the elements
-  },
-  contextLine: {
-    height: 16,
-    width: '50%',
-    backgroundColor: theme.colors.surfaceContainerHigh,
-    borderRadius: theme.shape.small,
-    marginBottom: theme.spacing.s,
-  },
-  mediaPlaceholder: {
-    width: '100%',
-    aspectRatio: 1.5,
-    borderRadius: theme.shape.medium,
-    backgroundColor: theme.colors.surfaceContainerHigh,
-  },
-  line: {
-    height: 16,
-    backgroundColor: theme.colors.surfaceContainerHigh,
-    borderRadius: theme.shape.small,
-    marginBottom: theme.spacing.xs,
-  },
-});
 
 export default FullPostCardSkeleton;

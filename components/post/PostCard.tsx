@@ -124,12 +124,13 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
         if (AppBskyEmbedImages.isView(mediaEmbed)) {
             const firstImage = mediaEmbed.images[0];
             const hasMultipleImages = mediaEmbed.images.length > 1;
+            // Use a more consistent aspect ratio for better masonry layout
             const imageAspectRatio = firstImage.aspectRatio
-                    ? firstImage.aspectRatio.width / firstImage.aspectRatio.height
+                    ? Math.min(Math.max(firstImage.aspectRatio.width / firstImage.aspectRatio.height, 0.5), 2.0)
                     : 1;
             
             return (
-                <View>
+                <View style={styles.mediaContainer}>
                     <OptimizedImage 
                         source={firstImage.thumb}
                         accessibilityLabel={firstImage.alt || 'Post image'} 
@@ -152,11 +153,11 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
         if (AppBskyEmbedVideo.isView(mediaEmbed)) {
             const posterUrl = mediaEmbed.thumbnail;
             const videoAspectRatio = mediaEmbed.aspectRatio
-                    ? mediaEmbed.aspectRatio.width / mediaEmbed.aspectRatio.height
+                    ? Math.min(Math.max(mediaEmbed.aspectRatio.width / mediaEmbed.aspectRatio.height, 0.5), 2.0)
                     : 16 / 9;
             
             return (
-                <View>
+                <View style={styles.mediaContainer}>
                     <OptimizedImage 
                         source={posterUrl || ''} 
                         accessibilityLabel="Video poster" 
@@ -193,7 +194,7 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
     }
 
     return (
-        <Card onPress={handlePress} pressable={true} padding="none">
+        <Card onPress={handlePress} pressable={true} padding="none" style={styles.cardContainer}>
             {renderContext()}
             {mediaElement}
             <View style={styles.content}>
@@ -232,6 +233,14 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
 
 // Create dynamic styles function
 const createStyles = (theme: any) => StyleSheet.create({
+        cardContainer: {
+            width: '100%',
+            marginBottom: 0,
+        },
+        mediaContainer: {
+            width: '100%',
+            position: 'relative',
+        },
         image: { width: '100%' },
         videoPoster: { resizeMode: 'contain' },
 

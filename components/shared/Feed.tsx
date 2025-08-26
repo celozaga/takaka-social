@@ -13,6 +13,7 @@ import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 import ErrorState from './ErrorState';
 import { Ionicons } from '@expo/vector-icons';
 import { FEATURES, FEED_CONFIG, isFeatureEnabled } from '@/lib/config';
+import { FlashList } from '@shopify/flash-list';
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
@@ -458,7 +459,16 @@ const Feed: React.FC<FeedProps> = ({
     
     // Apply layout-specific filtering (media filtering now handled in combined filter above)
     if (layout === 'grid') {
-        // Apply media type filters (photos/videos only)
+        // Grid layout: STRICT media filtering - only photos and videos
+        const beforeGrid = processedPosts.length;
+        processedPosts = processedPosts.filter(item => {
+            const hasPhoto = hasPhotos(item.post);
+            const hasVideo = hasVideos(item.post);
+            return hasPhoto || hasVideo;
+        });
+        if (__DEV__) console.log('🔍 DEBUG: Grid strict media filter:', beforeGrid, '→', processedPosts.length);
+        
+        // Apply specific media type filters if set
         if (mediaFilter === 'photos') {
             const beforePhotos = processedPosts.length;
             processedPosts = processedPosts.filter(item => hasPhotos(item.post));
@@ -493,9 +503,9 @@ const Feed: React.FC<FeedProps> = ({
         let attempts = 0;
         let canFetchMore = true;
 
-        // Para o feed Following, tentar carregar mais posts
-        const targetLoadSize = feedUri === 'following' ? 20 : INITIAL_LOAD_SIZE;
-        const maxAttempts = feedUri === 'following' ? 5 : 3;
+        // Para o layout grid, carregar posts de forma otimizada
+        const targetLoadSize = layout === 'grid' ? 20 : (feedUri === 'following' ? 20 : INITIAL_LOAD_SIZE);
+        const maxAttempts = layout === 'grid' ? 6 : (feedUri === 'following' ? 5 : 3);
 
         while (accumulatedPosts.length < targetLoadSize && attempts < maxAttempts && canFetchMore) {
             const batchResult = await fetchAndFilterPage(nextCursor);
@@ -507,6 +517,8 @@ const Feed: React.FC<FeedProps> = ({
             canFetchMore = !!nextCursor && batchResult.originalCount > 0;
             attempts++;
             
+            // Break early if we have enough posts for grid layout
+            if (layout === 'grid' && accumulatedPosts.length >= 12) break;
             if (accumulatedPosts.length >= targetLoadSize) break;
         }
 
@@ -534,7 +546,7 @@ const Feed: React.FC<FeedProps> = ({
     } finally {
         setIsLoading(false);
     }
-  }, [fetchAndFilterPage, t, postFilter, feedUri]);
+  }, [fetchAndFilterPage, t, postFilter, feedUri, layout]);
 
   useEffect(() => {
     loadInitialPosts();
@@ -560,8 +572,9 @@ const Feed: React.FC<FeedProps> = ({
         let attempts = 0;
         let canFetchMore = true;
 
-        // Carregamento progressivo com mais posts para melhor experiência
-        while (accumulatedPosts.length < PROGRESSIVE_LOAD_SIZE && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
+        // Carregamento progressivo otimizado para layout grid
+        const targetLoadSize = layout === 'grid' ? 15 : PROGRESSIVE_LOAD_SIZE;
+        while (accumulatedPosts.length < targetLoadSize && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
             const batchResult = await fetchAndFilterPage(nextCursor);
             accumulatedPosts.push(...batchResult.posts);
             nextCursor = batchResult.cursor;
@@ -628,67 +641,47 @@ const Feed: React.FC<FeedProps> = ({
     return filtered;
   }, [feed, moderation]);
 
-  // Memoiza a distribuição das colunas para evitar recálculo desnecessário
-  const columns = useMemo(() => {
-    const numColumns = 2;
-    const cols: AppBskyFeedDefs.FeedViewPost[][] = Array.from({ length: numColumns }, () => []);
-    
-    if (moderatedFeed.length > 0) {
-      moderatedFeed.forEach((item, i) => {
-        const targetColumn = i % numColumns;
-        cols[targetColumn].push(item);
-      });
-      
-      // Final validation: ensure both columns have content if we have posts
-      const totalPosts = moderatedFeed.length;
-      if (totalPosts > 0) {
-        if (cols[0].length === 0 && cols[1].length > 0) {
-          const halfLength = Math.ceil(cols[1].length / 2);
-          cols[0] = cols[1].splice(0, halfLength);
-        } else if (cols[1].length === 0 && cols[0].length > 0) {
-          const halfLength = Math.ceil(cols[0].length / 2);
-          cols[1] = cols[0].splice(0, halfLength);
-        }
-      }
-      
-      if (__DEV__) {
-        console.log('📊 DEBUG: Column distribution:', {
-          total: totalPosts,
-          column0: cols[0].length,
-          column1: cols[1].length,
-          balanced: Math.abs(cols[0].length - cols[1].length) <= 1
-        });
-      }
-    }
-    
-    return cols;
-  }, [moderatedFeed]);
-
-  // Memoiza o render das colunas para evitar re-criação desnecessária
-  const renderColumns = useMemo(() => {
-    return columns.map((col, colIndex) => (
-      <View 
-        key={`column-${colIndex}`} 
-        style={styles.column} 
-        removeClippedSubviews={false}
-        collapsable={false}
-        needsOffscreenAlphaCompositing={false}
-        renderToHardwareTextureAndroid={true}
-        shouldRasterizeIOS={true}
-      >
-        {col.map((item) => (
-          <PostCard key={item.post.uri} feedViewPost={item} />
-        ))}
-      </View>
-    ));
-  }, [columns]);
-
   const keyExtractor = (item: AppBskyFeedDefs.FeedViewPost) => {
     // Create unique key for each feed item to prevent rendering issues
     const baseKey = item.post.cid || item.post.uri;
     const reasonKey = AppBskyFeedDefs.isReasonRepost(item.reason) ? item.reason.by.did : '';
     const timestampKey = item.post.indexedAt || '';
     return `${baseKey}-${reasonKey}-${timestampKey}`.replace(/[^a-zA-Z0-9-_]/g, '_');
+  };
+
+
+
+  const renderItem = ({ item }: { item: AppBskyFeedDefs.FeedViewPost }) => {
+    if (layout === 'grid') {
+      return (
+        <View style={{ 
+          paddingHorizontal: theme.spacing.xs,
+          paddingBottom: theme.spacing.md,
+          // Ensure proper grid layout
+          flex: 1, // Take available space in the column
+          marginHorizontal: theme.spacing.xs, // Add spacing between columns
+        }}>
+          <PostCard feedViewPost={item} />
+        </View>
+      );
+    } else {
+      return (
+        <View style={{ paddingHorizontal: theme.spacing.lg }}>
+          <FullPostCard feedViewPost={item} />
+        </View>
+      );
+    }
+  };
+
+  // Function to get item type for better recycling - essential for masonry layout
+  const getItemType = (item: AppBskyFeedDefs.FeedViewPost) => {
+    if (item.post.embed?.$type === 'app.bsky.embed.video#view') {
+      return 'video';
+    }
+    if (item.post.embed?.$type === 'app.bsky.embed.images#view') {
+      return 'image';
+    }
+    return 'text';
   };
 
   const renderFooter = () => {
@@ -767,7 +760,7 @@ const Feed: React.FC<FeedProps> = ({
 
   if (isLoading) {
     return (
-      <View>
+      <View style={{ flex: 1 }}>
         {renderHeader()}
         {layout === 'grid' ? (
           <View style={{ paddingHorizontal: theme.spacing.sm }}>
@@ -786,104 +779,199 @@ const Feed: React.FC<FeedProps> = ({
     );
   }
 
-  const flatListProps = {
-      data: moderatedFeed,
-      keyExtractor,
-      ListHeaderComponent,
-      ListFooterComponent: renderFooter,
-      ListEmptyComponent: renderListEmptyComponent,
-      onEndReached: loadMorePosts,
-      onEndReachedThreshold: 0.5, // Reduzido de 0.7 para 0.5 para carregar posts mais cedo
-      refreshControl: <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />,
-      contentContainerStyle: {paddingTop: theme.spacing.lg, paddingBottom: 60}
+  // Common FlatList props for both layouts
+  const commonFlatListProps = {
+    data: moderatedFeed,
+    keyExtractor,
+    ListHeaderComponent: renderHeader,
+    ListFooterComponent: renderFooter,
+    ListEmptyComponent: renderListEmptyComponent,
+    onEndReached: loadMorePosts,
+    onEndReachedThreshold: 0.5,
+    refreshControl: (
+      <RefreshControl 
+        refreshing={isRefreshing} 
+        onRefresh={onRefresh} 
+        tintColor={theme.colors.primary} 
+      />
+    ),
+    contentContainerStyle: {
+      paddingTop: theme.spacing.lg, 
+      paddingBottom: 60,
+      flexGrow: 1
+    },
+    showsVerticalScrollIndicator: true,
+    removeClippedSubviews: false,
+    bounces: true,
+    alwaysBounceVertical: false,
+    automaticallyAdjustContentInsets: false,
+    contentInsetAdjustmentBehavior: "never" as const,
+    keyboardShouldPersistTaps: "handled" as const,
   };
 
   if (layout === 'list') {
-      return (
-          <FlatList 
-              {...flatListProps}
-              renderItem={({item}: {item: AppBskyFeedDefs.FeedViewPost}) => <View style={{paddingHorizontal: theme.spacing.lg}}><FullPostCard feedViewPost={item} /></View>}
-              ItemSeparatorComponent={() => <View style={{height: theme.spacing.sm}} />}
-          />
-      )
+    return (
+      <FlatList 
+        {...commonFlatListProps}
+        renderItem={renderItem}
+        ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
+        contentContainerStyle={{
+          ...commonFlatListProps.contentContainerStyle,
+          paddingHorizontal: 0
+        }}
+      />
+    );
   }
 
-  // Enhanced masonry layout for grid with better balancing
-  // (Removido - agora é feito no useMemo acima)
-
-  return (
-      <ScrollView
-          refreshControl={
-              <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={onRefresh}
-                  tintColor={theme.colors.primary}
-              />
+  // True masonry layout with dynamic column distribution
+  const renderMasonryLayout = () => {
+    const columns: AppBskyFeedDefs.FeedViewPost[][] = [[], []];
+    let columnHeights = [0, 0]; // Track heights of each column
+    
+    // Distribute posts across columns based on estimated height
+    moderatedFeed.forEach((item, index) => {
+      // Estimate height based on content type
+      let estimatedHeight = 200; // Base height
+      
+      if (item.post.embed?.$type === 'app.bsky.embed.images#view') {
+        const images = (item.post.embed as AppBskyEmbedImages.View).images;
+        if (images.length > 0) {
+          const aspectRatio = images[0].aspectRatio;
+          if (aspectRatio) {
+            // Calculate height based on image aspect ratio
+            const imageHeight = (150 * aspectRatio.height) / aspectRatio.width; // 150px width
+            estimatedHeight = Math.max(200, imageHeight + 100); // Add padding for text
           }
-          onScroll={({ nativeEvent }) => handleScrollProgress(nativeEvent)}
-          scrollEventThrottle={16}
-          contentContainerStyle={styles.scrollViewContentGrid}
-          removeClippedSubviews={false}
-          showsVerticalScrollIndicator={true}
-          bounces={true}
-          alwaysBounceVertical={false}
-          automaticallyAdjustContentInsets={false}
-          contentInsetAdjustmentBehavior="never"
-          keyboardShouldPersistTaps="handled"
-      >
-          {renderHeader()}
-          {moderatedFeed.length === 0 ? (
-              renderListEmptyComponent()
-          ) : (
-              <View style={styles.masonryContainer}>
-                  {renderColumns}
-              </View>
-          )}
-          {renderFooter()}
+        }
+      } else if (item.post.embed?.$type === 'app.bsky.embed.video#view') {
+        const video = item.post.embed as AppBskyEmbedVideo.View;
+        if (video.aspectRatio) {
+          const videoHeight = (150 * video.aspectRatio.height) / video.aspectRatio.width;
+          estimatedHeight = Math.max(200, videoHeight + 100);
+        }
+      }
+      
+      // Add text content height estimation
+      const record = item.post.record as { text?: string };
+      if (record.text) {
+        const textLength = record.text.length;
+        const textLines = Math.ceil(textLength / 50); // Rough estimate: 50 chars per line
+        estimatedHeight += textLines * 20; // 20px per line
+      }
+      
+      // Choose the shorter column
+      const targetColumn = columnHeights[0] <= columnHeights[1] ? 0 : 1;
+      columns[targetColumn].push(item);
+      columnHeights[targetColumn] += estimatedHeight;
+    });
 
-      </ScrollView>
+    return (
+      <View style={{ flexDirection: 'row', paddingHorizontal: theme.spacing.sm }}>
+        {columns.map((column, columnIndex) => (
+          <View key={columnIndex} style={{ flex: 1, marginHorizontal: theme.spacing.xs }}>
+            {column.map((item, itemIndex) => (
+              <View key={item.post.uri} style={{ marginBottom: theme.spacing.md }}>
+                <PostCard feedViewPost={item} />
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  // Use ScrollView for masonry layout with infinite loading
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{
+        paddingTop: theme.spacing.lg,
+        paddingBottom: 60,
+        flexGrow: 1
+      }}
+      refreshControl={
+        <RefreshControl 
+          refreshing={isRefreshing} 
+          onRefresh={onRefresh} 
+          tintColor={theme.colors.primary} 
+        />
+      }
+      showsVerticalScrollIndicator={true}
+      onScroll={({ nativeEvent }) => {
+        // Handle infinite loading
+        const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
+        const paddingToBottom = 20;
+        
+        if (contentOffset.y + layoutMeasurement.height >= contentSize.height - paddingToBottom) {
+          // Near bottom, trigger load more
+          if (!isLoadingMore && hasMore) {
+            loadMorePosts();
+          }
+        }
+        
+        // Handle scroll progress for existing logic
+        handleScrollProgress(nativeEvent);
+      }}
+      scrollEventThrottle={16}
+    >
+      {renderMasonryLayout()}
+      
+      {/* Loading indicator at bottom */}
+      {isLoadingMore && (
+        <View style={{ padding: theme.spacing.lg, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        </View>
+      )}
+      
+      {/* End of list indicator */}
+      {!hasMore && moderatedFeed.length > 0 && (
+        <View style={{ padding: theme.spacing.lg, alignItems: 'center' }}>
+          <Text style={styles.endOfList}>{t('common.endOfList')}</Text>
+        </View>
+      )}
+    </ScrollView>
   );
 };
 
-  const createStyles = (theme: any) => StyleSheet.create({
-    contentContainer: { paddingTop: theme.spacing.lg, paddingBottom: 60 },
-    listContainer: { gap: theme.spacing.sm, paddingHorizontal: theme.spacing.lg },
-    scrollViewContentGrid: {
-        paddingHorizontal: theme.spacing.sm,
-        paddingBottom: 60,
-        flexGrow: 1,
-        width: '100%',
-    },
-    masonryContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        minHeight: 200,
-    },
-    column: {
-        flex: 1,
-        gap: theme.spacing.lg,
-        marginHorizontal: theme.spacing.sm,
-        minHeight: 200,
-        alignSelf: 'stretch',
-        width: '50%',
-        overflow: 'visible',
-        zIndex: 1,
-    },
-    messageContainerWrapper: {
-        padding: theme.spacing.lg,
-    },
-    infoText: { 
-        fontSize: theme.typography.bodyLarge.fontSize,
-        color: theme.colors.onSurfaceVariant, 
-        textAlign: 'center', 
-        padding: theme.spacing.xl 
-    },
-    endOfList: { 
-        fontSize: theme.typography.bodyMedium.fontSize,
-        textAlign: 'center', 
-        color: theme.colors.onSurfaceVariant, 
-        padding: theme.spacing['2xl'] 
-    },
+const createStyles = (theme: any) => StyleSheet.create({
+  contentContainer: { paddingTop: theme.spacing.lg, paddingBottom: 60 },
+  listContainer: { gap: theme.spacing.sm, paddingHorizontal: theme.spacing.lg },
+  scrollViewContentGrid: {
+      paddingHorizontal: theme.spacing.sm,
+      paddingBottom: 60,
+      flexGrow: 1,
+      width: '100%',
+  },
+  masonryContainer: {
+      flexDirection: 'row',
+      width: '100%',
+      minHeight: 200,
+  },
+  column: {
+      flex: 1,
+      gap: theme.spacing.lg,
+      marginHorizontal: theme.spacing.sm,
+      minHeight: 200,
+      alignSelf: 'stretch',
+      width: '50%',
+      overflow: 'visible',
+      zIndex: 1,
+  },
+  messageContainerWrapper: {
+      padding: theme.spacing.lg,
+  },
+  infoText: { 
+      fontSize: theme.typography.bodyLarge.fontSize,
+      color: theme.colors.onSurfaceVariant, 
+      textAlign: 'center', 
+      padding: theme.spacing.xl 
+  },
+  endOfList: { 
+      fontSize: theme.typography.bodyMedium.fontSize,
+      textAlign: 'center', 
+      color: theme.colors.onSurfaceVariant, 
+      padding: theme.spacing['2xl'] 
+  },
 });
 
 export default Feed;

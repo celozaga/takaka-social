@@ -140,8 +140,8 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                     : 1.5;
 
             const mediaStyle = {
-                marginTop: theme.spacing.s,
-                borderRadius: theme.shape.medium,
+                marginTop: theme.spacing.sm,
+                borderRadius: theme.radius.md,
                 overflow: 'hidden',
                 aspectRatio,
                 maxHeight: 700,
