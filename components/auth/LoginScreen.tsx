@@ -9,6 +9,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Linkin
 import { theme } from '@/lib/theme';
 import { PDS_URL } from '@/lib/config';
 import i18n from '@/lib/i18n';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -23,13 +24,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAtp();
+  const { requireAuth } = useAuthGuard();
   const { t } = useTranslation();
   
   // State for hosting provider
-  const [serviceUrl, setServiceUrl] = useState(PDS_URL);
+  const [serviceUrl, setServiceUrl] = useState<string>(PDS_URL);
   const [isProviderModalVisible, setProviderModalVisible] = useState(false);
   const [providerSelection, setProviderSelection] = useState<'bluesky' | 'custom'>('bluesky');
   const [customUrlInput, setCustomUrlInput] = useState('');
+
+  // Verificar se o usuário já está autenticado
+  React.useEffect(() => {
+    // Se já está autenticado, fechar o modal
+    // requireAuth retorna true se autenticado, false se não
+    if (requireAuth('login')) {
+      onSuccess();
+    }
+  }, [requireAuth, onSuccess]);
 
 
   const handleLogin = async () => {

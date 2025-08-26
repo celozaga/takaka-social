@@ -37,7 +37,7 @@ const MAX_FETCH_ATTEMPTS = 5; // To prevent infinite loops
 const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
     const embed = post.embed;
     
-    // TEMPORARY: Allow all posts for debugging
+    // For search results, be more permissive to show more content
     if (!isFeatureEnabled('VISUAL_ONLY_FEEDS')) {
         return true;
     }
@@ -59,7 +59,7 @@ const isPostAMediaPost = (post: AppBskyFeedDefs.PostView): boolean => {
         return true;
     }
     
-    // TEMPORARY: Allow external links even without thumbnails for testing
+    // Allow external links even without thumbnails for search results
     if (AppBskyEmbedExternal.isView(embed)) {
         return true;
     }
@@ -141,7 +141,7 @@ const Feed: React.FC<FeedProps> = ({
     ListHeaderComponent,
     postFilter,
 }) => {
-  const { agent, publicAgent, session } = useAtp();
+  const { agent, publicAgent, publicApiAgent, session } = useAtp();
   
   console.log('📋 DEBUG Feed Component initialized:', {
     feedUri,
@@ -210,8 +210,8 @@ const Feed: React.FC<FeedProps> = ({
     // B. GENERAL SEARCH
     if (searchQuery) {
         console.log('🔍 DEBUG: Attempting search for:', searchQuery, 'Session exists:', !!session);
-        const searchAgent = session ? agent : publicAgent;
-        console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public');
+        const searchAgent = session ? agent : publicApiAgent;
+        console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public-api');
         
         const res = await searchAgent.app.bsky.feed.searchPosts({ q: searchQuery, cursor: currentCursor, sort: searchSort, limit: 40 });
         const feed: AppBskyFeedDefs.FeedViewPost[] = res.data.posts.map(post => ({ post }));
@@ -227,16 +227,16 @@ const Feed: React.FC<FeedProps> = ({
         }
         if (authorFeedFilter) {
             console.log('🔍 DEBUG: Attempting author feed for:', feedUri, 'Session exists:', !!session);
-            const feedAgent = session ? agent : publicAgent;
-            console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public');
+            const feedAgent = session ? agent : publicApiAgent;
+            console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public-api');
             
             return await feedAgent.app.bsky.feed.getAuthorFeed({ actor: feedUri, cursor: currentCursor, limit: 30, filter: authorFeedFilter });
         }
         
         // For public feeds (including Discovery), use appropriate agent
         console.log('🔍 DEBUG: Attempting to fetch feed:', feedUri, 'Session exists:', !!session);
-        const feedAgent = session ? agent : publicAgent;
-        console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public');
+        const feedAgent = session ? agent : publicApiAgent;
+        console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public-api');
         console.log('🔍 DEBUG: Agent service URL:', feedAgent.service?.baseURL || feedAgent.service);
         console.log('🔍 DEBUG: Feed request parameters:', { feed: feedUri, cursor: currentCursor, limit: 30 });
         
@@ -259,10 +259,27 @@ const Feed: React.FC<FeedProps> = ({
                 console.log('🔄 DEBUG: Trying alternative public content approach...');
                 
                 try {
-                    // Alternative 1: Try searchPosts with relevant terms for discovery-like content
+                    // Alternative 1: Try list feed endpoint (public, no auth required)
+                    if (feedUri.includes('whats-hot') || feedUri.includes('discovery')) {
+                        console.log('🔄 DEBUG: Using getListFeed as fallback for Discovery content');
+                        try {
+                            // Use a popular list for discovery content
+                            const listResult = await publicApiAgent.app.bsky.feed.getListFeed({
+                                list: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.graph.list/bsky-team',
+                                cursor: currentCursor,
+                                limit: 30
+                            });
+                            console.log('✅ SUCCESS: List feed approach worked, posts count:', listResult?.data?.feed?.length);
+                            return listResult;
+                        } catch (listError: any) {
+                            console.log('⚠️ WARNING: List feed failed, trying search fallback...');
+                        }
+                    }
+                    
+                    // Alternative 2: Try searchPosts with relevant terms for discovery-like content
                     if (feedUri.includes('whats-hot') || feedUri.includes('discovery')) {
                         console.log('🔄 DEBUG: Using searchPosts as fallback for Discovery content');
-                        const searchResult = await publicAgent.app.bsky.feed.searchPosts({ 
+                        const searchResult = await publicApiAgent.app.bsky.feed.searchPosts({ 
                             q: 'bluesky OR atproto OR social', 
                             cursor: currentCursor,
                             limit: 30,
@@ -273,9 +290,9 @@ const Feed: React.FC<FeedProps> = ({
                         return { data: { feed, cursor: searchResult.data.cursor } };
                     }
                     
-                    // Alternative 2: For other feeds, try getting feed generator info and use search
+                    // Alternative 3: For other feeds, try getting feed generator info and use search
                     console.log('🔄 DEBUG: Trying to fetch feed generator info as fallback');
-                    const feedGenResult = await publicAgent.app.bsky.feed.getFeedGenerators({
+                    const feedGenResult = await publicApiAgent.app.bsky.feed.getFeedGenerators({
                         feeds: [feedUri]
                     });
                     
@@ -285,7 +302,7 @@ const Feed: React.FC<FeedProps> = ({
                         
                         // Extract search terms from feed description
                         const searchTerms = feedGen.description?.split(' ').slice(0, 3).join(' ') || feedGen.displayName;
-                        const searchResult = await publicAgent.app.bsky.feed.searchPosts({ 
+                        const searchResult = await publicApiAgent.app.bsky.feed.searchPosts({ 
                             q: searchTerms, 
                             cursor: currentCursor,
                             limit: 30 
@@ -306,7 +323,7 @@ const Feed: React.FC<FeedProps> = ({
     
     // D. FALLBACK
     return Promise.resolve({ data: { feed: [], cursor: undefined } });
-  }, [agent, publicAgent, feedUri, session, searchQuery, searchSort, authorFeedFilter, postFilter]);
+  }, [agent, publicAgent, publicApiAgent, feedUri, session, searchQuery, searchSort, authorFeedFilter, postFilter]);
 
   const fetchAndFilterPage = useCallback(async (currentCursor?: string) => {
     const response = await fetchPosts(currentCursor);

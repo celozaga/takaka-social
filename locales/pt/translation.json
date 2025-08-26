@@ -381,6 +381,16 @@
       "unmuteSuccess": "Som da conta reativado."
     }
   },
+  "search": {
+    "title": "Busca",
+    "placeholder": "Buscar publicações, usuários e feeds",
+    "empty": "Nenhum resultado encontrado para \"{{query}}\"",
+    "clearHistory": "Limpar histórico",
+    "loginRequired": {
+      "title": "Login necessário para busca",
+      "message": "Faça login para buscar publicações, usuários e feeds específicos."
+    }
+  },
   "errors": {
     "postNotFound": {
       "title": "Publicação não encontrada",

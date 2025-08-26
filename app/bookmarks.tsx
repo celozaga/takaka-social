@@ -10,6 +10,7 @@ import { useAtp } from '@/context/AtpContext';
 import { Search } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useDebounce } from '@/hooks/useDebounce';
+import RouteGuard from '@/components/auth/RouteGuard';
 
 export default function BookmarksScreen() {
     const { t } = useTranslation();
@@ -18,34 +19,36 @@ export default function BookmarksScreen() {
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     return (
-        <>
-            <Head><title>{t('nav.bookmarks')}</title></Head>
-            <View style={{flex: 1}}>
-                <ScreenHeader title={t('nav.bookmarks')} />
-                <View style={styles.searchContainer}>
-                    <View style={styles.inputContainer}>
-                        <Search style={styles.searchIcon} color={theme.colors.onSurfaceVariant} size={20} />
-                        <TextInput
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            placeholder={t('search.placeholderSaved')}
-                            placeholderTextColor={theme.colors.onSurfaceVariant}
-                            style={styles.input}
-                        />
+        <RouteGuard requireAuth={true} redirectTo="/home">
+            <>
+                <Head><title>{t('nav.bookmarks')}</title></Head>
+                <View style={{flex: 1}}>
+                    <ScreenHeader title={t('nav.bookmarks')} />
+                    <View style={styles.searchContainer}>
+                        <View style={styles.inputContainer}>
+                            <Search style={styles.searchIcon} color={theme.colors.onSurfaceVariant} size={20} />
+                            <TextInput
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                placeholder={t('search.placeholderSaved')}
+                                placeholderTextColor={theme.colors.onSurfaceVariant}
+                                style={styles.input}
+                            />
+                        </View>
                     </View>
-                </View>
 
-                {session && (
-                    <Feed
-                        key="bookmarks"
-                        feedUri={session.did} // Pass DID for context
-                        postFilter="bookmarks_only"
-                        layout="grid"
-                        searchQuery={debouncedSearchQuery}
-                    />
-                )}
-            </View>
-        </>
+                    {session && (
+                        <Feed
+                            key="bookmarks"
+                            feedUri={session.did} // Pass DID for context
+                            postFilter="bookmarks_only"
+                            layout="grid"
+                            searchQuery={debouncedSearchQuery}
+                        />
+                    )}
+                </View>
+            </>
+        </RouteGuard>
     );
 }
 

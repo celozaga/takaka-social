@@ -7,15 +7,19 @@ import { useAtp } from '@/context/AtpContext';
 import { useUI } from '@/context/UIContext';
 import { useToast } from '@/components/ui/use-toast';
 import { theme } from '@/lib/theme';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useTranslation } from 'react-i18next';
 
 interface PostHeaderProps {
   post: AppBskyFeedDefs.PostView;
 }
 
-const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
+export default function PostHeader({ post }: PostHeaderProps) {
+  const { t } = useTranslation();
   const router = useRouter();
-  const { agent, session } = useAtp();
   const { openMediaActionsModal } = useUI();
+  const { requireAuth } = useAuthGuard();
+  const { agent, session } = useAtp();
   const { toast } = useToast();
 
   const author = post.author;
@@ -53,6 +57,12 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
 
   const isMe = session?.did === author.did;
 
+  const handleMoreClick = () => {
+    if (requireAuth('media_actions')) {
+      openMediaActionsModal(post);
+    }
+  };
+
   const FollowButton = () => {
     if (isMe) return null;
 
@@ -88,7 +98,7 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
       </View>
       <View style={styles.rightSection}>
         <FollowButton />
-        <Pressable onPress={() => openMediaActionsModal(post)} style={styles.iconButton}>
+        <Pressable onPress={handleMoreClick} style={styles.iconButton}>
           <MoreHorizontal size={24} color={theme.colors.onSurface} />
         </Pressable>
       </View>
@@ -160,5 +170,3 @@ const styles = StyleSheet.create({
     color: theme.colors.onPrimary,
   },
 });
-
-export default PostHeader;

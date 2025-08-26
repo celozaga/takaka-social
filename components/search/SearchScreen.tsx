@@ -29,7 +29,7 @@ interface SearchScreenProps {
 }
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
-    const { agent, publicAgent, session } = useAtp();
+    const { agent, publicAgent, publicApiAgent, session } = useAtp();
     const { t } = useTranslation();
     const [query, setQuery] = useState(initialQuery);
     const debouncedQuery = useDebounce(query, 500);
@@ -71,21 +71,46 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         }
         
         try {
-            const searchAgent = session ? agent : publicAgent;
-            console.log('🔍 DEBUG: Search using agent type:', session ? 'authenticated' : 'public');
+            // Desabilitar busca para usuários não logados
+            if (!session) {
+                console.log('🔒 DEBUG: Search disabled for non-authenticated users');
+                setNonPostResults([]);
+                return;
+            }
+            
+            console.log('🔍 DEBUG: Search using authenticated agent');
             
             if (searchFilter === 'people') {
-                const response = await searchAgent.app.bsky.actor.searchActors({ term: searchQuery, limit: 30, cursor: currentCursor });
+                const response = await agent.app.bsky.actor.searchActors({ term: searchQuery, limit: 30, cursor: currentCursor });
                 setNonPostResults(prev => currentCursor ? [...prev, ...response.data.actors] : response.data.actors);
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
             } else if (searchFilter === 'feeds') {
-                const response = await (searchAgent.api.app.bsky.unspecced as any).getPopularFeedGenerators({
-                    query: searchQuery, limit: 25, cursor: currentCursor
-                });
-                setNonPostResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
-                setCursor(response.data.cursor);
-                setHasMore(!!response.data.cursor);
+                console.log('🔍 DEBUG: Searching for feeds with query:', searchQuery);
+                try {
+                    const response = await (agent.api.app.bsky.unspecced as any).getPopularFeedGenerators({
+                        query: searchQuery, limit: 25, cursor: currentCursor
+                    });
+                    console.log('✅ SUCCESS: Feed generators search completed, feeds found:', response.data.feeds?.length);
+                    setNonPostResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
+                    setCursor(response.data.cursor);
+                    setHasMore(!!response.data.cursor);
+                } catch (feedError: any) {
+                    console.error('❌ ERROR: Feed generators search failed:', feedError);
+                    // Fallback: try to get popular feeds without query
+                    try {
+                        const fallbackResponse = await (agent.api.app.bsky.unspecced as any).getPopularFeedGenerators({
+                            limit: 25, cursor: currentCursor
+                        });
+                        console.log('🔄 FALLBACK: Using popular feeds without query, feeds found:', fallbackResponse.data.feeds?.length);
+                        setNonPostResults(prev => currentCursor ? [...prev, ...fallbackResponse.data.feeds] : fallbackResponse.data.feeds);
+                        setCursor(fallbackResponse.data.cursor);
+                        setHasMore(!!fallbackResponse.data.cursor);
+                    } catch (fallbackError: any) {
+                        console.error('❌ ERROR: Fallback feed generators also failed:', fallbackError);
+                        throw fallbackError;
+                    }
+                }
             }
         } catch (error) {
             console.error("Search failed:", error);
@@ -93,7 +118,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent, publicAgent, session, isPostSearch]);
+    }, [agent, session, isPostSearch]);
 
     useEffect(() => {
         const effectiveQuery = debouncedQuery || initialQuery;
@@ -185,12 +210,14 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                 </View>
 
                 {showDiscoveryContent ? (
+                    // Para usuários logados, mostrar conteúdo de descoberta quando não há busca
                     <ScrollView contentContainerStyle={styles.discoveryContainer}>
                         <TrendingTopics />
                         <SuggestedFollows />
                         <PopularFeeds />
                     </ScrollView>
                 ) : (
+                    // Para usuários logados, mostrar resultados de busca
                     <View style={{ flex: 1 }}>
                         <View>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
@@ -236,6 +263,7 @@ const styles = StyleSheet.create({
     emptyContainer: { padding: theme.spacing.xxl, marginHorizontal: theme.spacing.l, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, marginTop: theme.spacing.l },
     emptyText: { color: theme.colors.onSurfaceVariant, textAlign: 'center' },
     endText: { textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
+
     historyDropdown: {
         position: 'absolute',
         top: 72,

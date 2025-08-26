@@ -17,6 +17,7 @@ import BottomNavbar from '@/components/layout/BottomNavbar';
 import LoginPrompt from '@/components/auth/LoginPrompt';
 import { theme } from '@/lib/theme';
 import Head from 'expo-router/head';
+import GlobalAuthGuard from '@/components/auth/GlobalAuthGuard';
 
 import '@/lib/i18n';
 
@@ -194,15 +195,17 @@ export default function RootLayout() {
               <BookmarksProvider>
                 <ProfileCacheProvider>
                     <SafeAreaProvider>
-                      <Head>
-                        {/* Default meta tags */}
-                        <meta property="og:site_name" content="Takaka" />
-                        <meta property="og:type" content="website" />
-                        <meta property="og:image" content="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-                      </Head>
-                      <StatusBar style="light" />
-                      <AppLayout />
-                      <Toaster />
+                      <GlobalAuthGuard>
+                        <Head>
+                          {/* Default meta tags */}
+                          <meta property="og:site_name" content="Takaka" />
+                          <meta property="og:type" content="website" />
+                          <meta property="og:image" content="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+                        </Head>
+                        <StatusBar style="light" />
+                        <AppLayout />
+                        <Toaster />
+                      </GlobalAuthGuard>
                     </SafeAreaProvider>
                 </ProfileCacheProvider>
               </BookmarksProvider>

@@ -268,7 +268,11 @@
     "trending": "Trending",
     "suggestedFollows": "Suggested Follows",
     "popularFeeds": "Popular Feeds",
-    "clearHistory": "Clear all"
+    "clearHistory": "Clear all",
+    "loginRequired": {
+      "title": "Login required for search",
+      "message": "Please sign in to search for specific posts, users, and feeds."
+    }
   },
   "feed": {
     "loadingError": "Could not load this feed. Please try again later.",

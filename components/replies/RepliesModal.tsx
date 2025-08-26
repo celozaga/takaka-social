@@ -5,6 +5,7 @@ import { AppBskyFeedDefs } from '@atproto/api';
 import { X } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import RepliesList from './RepliesList';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface RepliesModalProps {
   data: {
@@ -17,6 +18,14 @@ interface RepliesModalProps {
 const RepliesModal: React.FC<RepliesModalProps> = ({ data, onClose }) => {
   const { post, thread } = data;
   const { t } = useTranslation();
+  const { requireAuth } = useAuthGuard();
+
+  // Verificar autenticação ao montar o componente
+  React.useEffect(() => {
+    if (!requireAuth('replies')) {
+      onClose();
+    }
+  }, [requireAuth, onClose]);
 
   return (
     <View style={styles.container}>

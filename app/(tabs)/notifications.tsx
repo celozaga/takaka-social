@@ -1,2 +1,10 @@
 import NotificationsScreen from '@/components/notifications/NotificationsScreen';
-export default NotificationsScreen;
+import RouteGuard from '@/components/auth/RouteGuard';
+
+export default function NotificationsPage() {
+  return (
+    <RouteGuard requireAuth={true} redirectTo="/home">
+      <NotificationsScreen />
+    </RouteGuard>
+  );
+}

@@ -10,6 +10,7 @@ import { useAtp } from '@/context/AtpContext';
 import { Search } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import { useDebounce } from '@/hooks/useDebounce';
+import RouteGuard from '@/components/auth/RouteGuard';
 
 export default function LikesScreen() {
     const { t } = useTranslation();

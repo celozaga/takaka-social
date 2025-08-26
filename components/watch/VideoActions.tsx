@@ -8,6 +8,7 @@ import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { theme } from '@/lib/theme';
 import { formatCompactNumber } from '@/lib/formatters';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface VideoActionsProps {
   post: AppBskyFeedDefs.PostView;
@@ -16,6 +17,7 @@ interface VideoActionsProps {
 const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     const { agent, session } = useAtp();
     const { openComposer, openMediaActionsModal, openRepliesModal } = useUI();
+    const { requireAuth } = useAuthGuard();
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
     
@@ -145,7 +147,12 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
         }
     };
     
-    const handleMoreClick = (e: any) => { e.stopPropagation(); openMediaActionsModal(post); };
+      const handleMoreClick = (e: any) => { 
+      e.stopPropagation(); 
+      if (requireAuth('media_actions')) {
+          openMediaActionsModal(post); 
+      }
+  };
 
     const openRepostModal = () => {
         setIsRepostShareModalVisible(true);

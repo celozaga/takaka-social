@@ -6,6 +6,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { theme } from '@/lib/theme';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface FeedSelectorProps {
   feeds: AppBskyFeedDefs.GeneratorView[];
@@ -19,13 +20,12 @@ const DISCOVER_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.g
 const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSelectFeed, isLoading }) => {
   const { session } = useAtp();
   const { openLoginModal } = useUI();
+  const { requireAuth } = useAuthGuard();
   const { t } = useTranslation();
 
   const handleFollowingClick = () => {
-    if (session) {
+    if (requireAuth('feed_customization')) {
       onSelectFeed('following');
-    } else {
-      openLoginModal();
     }
   };
 

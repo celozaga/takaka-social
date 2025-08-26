@@ -10,6 +10,7 @@ import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { FEATURES, MEDIA_CONFIG, isFeatureEnabled } from '@/lib/config';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface ComposerProps {
   onPostSuccess: () => void;
@@ -58,6 +59,7 @@ const CharacterCount: React.FC<{ remainingChars: number }> = ({ remainingChars }
 const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, initialText }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
+  const { requireAuth } = useAuthGuard();
   const { t } = useTranslation();
   const [text, setText] = useState(initialText || '');
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -66,6 +68,13 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [langSearchTerm, setLangSearchTerm] = useState('');
+
+  // Verificar autenticação ao montar o componente
+  useEffect(() => {
+    if (!requireAuth('compose')) {
+      onClose?.();
+    }
+  }, [requireAuth, onClose]);
 
   useEffect(() => {
     if (session?.did) {

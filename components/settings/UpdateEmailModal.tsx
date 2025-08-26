@@ -4,6 +4,7 @@ import { useToast } from '../ui/use-toast';
 import { X, Mail } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface UpdateEmailModalProps {
   onClose: () => void;
@@ -13,10 +14,18 @@ interface UpdateEmailModalProps {
 const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess }) => {
     const { agent } = useAtp();
     const { toast } = useToast();
+    const { requireAuth } = useAuthGuard();
     const [email, setEmail] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+
+    // Verificar autenticação ao montar o componente
+    React.useEffect(() => {
+        if (!requireAuth('edit_profile')) {
+            onClose();
+        }
+    }, [requireAuth, onClose]);
 
     const handleSave = async () => {
         if (!email.trim()) {

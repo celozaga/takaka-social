@@ -5,6 +5,7 @@ import { X, AtSign } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface UpdateHandleModalProps {
   onClose: () => void;
@@ -14,10 +15,18 @@ interface UpdateHandleModalProps {
 const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSuccess }) => {
     const { agent, logout } = useAtp();
     const { toast } = useToast();
+    const { requireAuth } = useAuthGuard();
     const router = useRouter();
     const [handle, setHandle] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+
+    // Verificar autenticação ao montar o componente
+    React.useEffect(() => {
+        if (!requireAuth('edit_profile')) {
+            onClose();
+        }
+    }, [requireAuth, onClose]);
 
     const handleSave = async () => {
         if (!handle.trim()) {

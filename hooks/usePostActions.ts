@@ -7,6 +7,7 @@ import { useAtp } from '../context/AtpContext';
 import { useUI } from '../context/UIContext';
 import { useToast } from '../components/ui/use-toast';
 import { AppBskyFeedDefs } from '@atproto/api';
+import { useAuthGuard } from './useAuthGuard';
 
 interface PostActionable {
   uri: string;
@@ -23,6 +24,7 @@ interface PostActionable {
 export const usePostActions = (post: PostActionable) => {
   const { agent, session } = useAtp();
   const { openLoginModal } = useUI();
+  const { requireAuth } = useAuthGuard();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -40,18 +42,10 @@ export const usePostActions = (post: PostActionable) => {
     setRepostCount(post.repostCount || 0);
   }, [post.viewer?.repost, post.repostCount]);
 
-  const ensureSession = (action: string) => {
-    if (!session) {
-      openLoginModal();
-      return false;
-    }
-    return true;
-  };
-
   const handleLike = async (e?: { stopPropagation: () => void; preventDefault: () => void; }) => {
     e?.stopPropagation();
     e?.preventDefault();
-    if (!ensureSession('like') || isLiking) return;
+    if (!requireAuth('like') || isLiking) return;
     setIsLiking(true);
 
     const originalLikeUri = likeUri;
@@ -86,7 +80,7 @@ export const usePostActions = (post: PostActionable) => {
   const handleRepost = async (e?: { stopPropagation: () => void; preventDefault: () => void; }) => {
     e?.stopPropagation();
     e?.preventDefault();
-    if (!ensureSession('repost') || isReposting) return;
+    if (!requireAuth('repost') || isReposting) return;
 
     if (post.record && typeof post.record === 'object' && 'reply' in post.record) {
         toast({ title: t('hooks.repostReplyError'), variant: "destructive" });

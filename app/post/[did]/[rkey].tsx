@@ -14,7 +14,7 @@ import { FileX2 } from 'lucide-react';
 
 export default function PostPage() {
   const { did, rkey } = useLocalSearchParams<{ did: string; rkey: string }>();
-  const { agent } = useAtp();
+  const { agent, publicApiAgent, session } = useAtp();
   const { t } = useTranslation();
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +32,10 @@ export default function PostPage() {
       setError(null);
       try {
         const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
-        const { data } = await agent.app.bsky.feed.getPostThread({ uri: postUri, depth: 10 }); // Fetch a deep thread
+        const postAgent = session ? agent : publicApiAgent;
+        console.log('🔍 DEBUG: Fetching post with agent type:', session ? 'authenticated' : 'public-api');
+        
+        const { data } = await postAgent.app.bsky.feed.getPostThread({ uri: postUri, depth: 10 }); // Fetch a deep thread
         
         if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
           setThread(data.thread);
@@ -40,6 +43,7 @@ export default function PostPage() {
           setError(t('post.notFound'));
         }
       } catch (e: any) {
+        console.error('❌ ERROR: Failed to fetch post:', e);
         setError(e.message || t('post.loadingError'));
       } finally {
         setIsLoading(false);

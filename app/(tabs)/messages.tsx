@@ -2,17 +2,20 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ScreenHeader from '@/components/layout/ScreenHeader';
 import { MessageSquareText } from 'lucide-react';
+import RouteGuard from '@/components/auth/RouteGuard';
 
 export default function MessagesScreen() {
   return (
-    <View style={styles.container}>
-      <ScreenHeader title="Messages" />
-      <View style={styles.content}>
-        <MessageSquareText size={48} color="#8A9199" />
-        <Text style={styles.title}>Coming Soon</Text>
-        <Text style={styles.subtitle}>Direct messaging is under construction.</Text>
+    <RouteGuard requireAuth={true} redirectTo="/home">
+      <View style={styles.container}>
+        <ScreenHeader title="Messages" />
+        <View style={styles.content}>
+          <MessageSquareText size={48} color="#8A9199" />
+          <Text style={styles.title}>Coming Soon</Text>
+          <Text style={styles.subtitle}>Direct messaging is under construction.</Text>
+        </View>
       </View>
-    </View>
+    </RouteGuard>
   );
 }
 

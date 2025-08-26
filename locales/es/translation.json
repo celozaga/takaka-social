@@ -259,7 +259,11 @@
     "trending": "Tendencias",
     "suggestedFollows": "Sugerencias para seguir",
     "popularFeeds": "Feeds populares",
-    "clearHistory": "Limpiar todo"
+    "clearHistory": "Limpiar todo",
+    "loginRequired": {
+      "title": "Inicio de sesión requerido para búsqueda",
+      "message": "Por favor, inicia sesión para buscar publicaciones, usuarios y feeds específicos."
+    }
   },
   "feed": {
     "loadingError": "No se pudo cargar este feed. Por favor, inténtalo de nuevo más tarde.",

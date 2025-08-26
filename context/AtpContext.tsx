@@ -30,9 +30,10 @@ const credentialsStore = {
     }
 };
 
-interface AtpContextType {
+export interface AtpContextType {
   agent: BskyAgent;
   publicAgent: BskyAgent;
+  publicApiAgent: BskyAgent;
   session: AtpSessionData | null;
   serviceUrl: string;
   isLoadingSession: boolean;
@@ -40,6 +41,10 @@ interface AtpContextType {
   logout: () => Promise<void>;
   unreadCount: number;
   resetUnreadCount: () => void;
+  // Sistema de proteção global
+  requireAuth: (redirectTo?: string) => boolean;
+  isProtectedRoute: (pathname: string) => boolean;
+  getProtectedRoutes: () => string[];
 }
 
 const AtpContext = createContext<AtpContextType | undefined>(undefined);
@@ -78,6 +83,15 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     console.log('🔧 DEBUG: Creating public agent for unauthenticated requests');
     return new BskyAgent({
       service: 'https://bsky.social'
+    });
+  }, []);
+  
+  // Create a public API agent for unauthenticated access
+  const publicApiAgent = useMemo(() => {
+    console.log('🔧 DEBUG: Creating public API agent for unauthenticated content access');
+    // Use the public AppView endpoint that allows unauthenticated access
+    return new BskyAgent({
+      service: 'https://public.api.bsky.app'
     });
   }, []);
   
@@ -121,42 +135,39 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     console.error('🌐 ERROR: Direct API test failed:', error);
                 });
             
-            // Test 1: Try getting profile (public endpoint)
-            publicAgent.getProfile({ actor: 'bsky.app' }).then((response) => {
-                console.log('✅ SUCCESS: Public agent getProfile working:', response?.data?.handle);
+            // Test 1: Try getting profile with public API agent
+            console.log('🔧 DEBUG: Testing public API agent...');
+            publicApiAgent.getProfile({ actor: 'bsky.app' }).then((response) => {
+                console.log('✅ SUCCESS: Public API agent getProfile working:', response?.data?.handle);
             }).catch((error) => {
-                console.error('❌ ERROR: Public agent getProfile failed:', error);
+                console.error('❌ ERROR: Public API agent getProfile failed:', error);
             });
             
-            // Test 2: Try feed generators endpoint (public)
-            publicAgent.app.bsky.feed.getFeedGenerators({
-                feeds: ['at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot']
+            // Test 2: Try list feed endpoint (public, no auth required)
+            publicApiAgent.app.bsky.feed.getListFeed({
+                list: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.graph.list/bsky-team',
+                limit: 1
             }).then((response) => {
-                console.log('✅ SUCCESS: getFeedGenerators working:', response?.data?.feeds?.length);
+                console.log('✅ SUCCESS: Public API agent getListFeed working:', response?.data?.feed?.length);
             }).catch((error) => {
-                console.error('❌ ERROR: getFeedGenerators failed:', error);
+                console.error('❌ ERROR: Public API agent getListFeed failed:', error);
             });
             
-            // Test 3: Try search posts (public)
-            publicAgent.app.bsky.feed.searchPosts({ q: 'bluesky', limit: 1 }).then((response) => {
-                console.log('✅ SUCCESS: searchPosts working:', response?.data?.posts?.length);
-            }).catch((error) => {
-                console.error('❌ ERROR: searchPosts failed:', error);
-            });
-            
-            // Test 4: Original getFeed test
-            publicAgent.app.bsky.feed.getFeed({ 
-                feed: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot', 
-                limit: 1 
+            // Test 3: Try author feed endpoint (public, no auth required)
+            publicApiAgent.app.bsky.feed.getAuthorFeed({
+                actor: 'bsky.app',
+                limit: 1
             }).then((response) => {
-                console.log('✅ SUCCESS: Public agent getFeed working correctly', response?.data?.feed?.length, 'posts received');
+                console.log('✅ SUCCESS: Public API agent getAuthorFeed working:', response?.data?.feed?.length);
             }).catch((error) => {
-                console.error('❌ ERROR: Public agent getFeed failed:', {
-                    message: error.message,
-                    status: error.status,
-                    statusText: error.statusText,
-                    error: error
-                });
+                console.error('❌ ERROR: Public API agent getAuthorFeed failed:', error);
+            });
+            
+            // Test 4: Try search posts with public API agent
+            publicApiAgent.app.bsky.feed.searchPosts({ q: 'bluesky', limit: 1 }).then((response) => {
+                console.log('✅ SUCCESS: Public API agent searchPosts working:', response?.data?.posts?.length);
+            }).catch((error) => {
+                console.error('❌ ERROR: Public API agent searchPosts failed:', error);
             });
             
             setIsLoadingSession(false);
@@ -264,10 +275,52 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await agent.logout(); // This triggers 'expired' in persistSession
   }, [agent]);
 
+  // Sistema de proteção global
+  const protectedRoutes = [
+    '/settings',
+    '/notifications', 
+    '/messages',
+    '/more',
+    '/feeds',
+    '/search',
+    '/watch',
+    '/bookmarks',
+    '/likes',
+    '/compose'
+  ];
+
+  const protectedFeatures = [
+    'bookmark',
+    'mute',
+    'block',
+    'report',
+    'compose',
+    'edit_profile',
+    'feed_customization'
+  ];
+
+  const requireAuth = useCallback((redirectTo: string = '/home') => {
+    if (!session) {
+      console.log('🔒 DEBUG: Authentication required, redirecting to:', redirectTo);
+      // Em uma implementação real, aqui redirecionaríamos
+      return false;
+    }
+    return true;
+  }, [session]);
+
+  const isProtectedRoute = useCallback((pathname: string) => {
+    return protectedRoutes.some(route => pathname.startsWith(route));
+  }, []);
+
+  const getProtectedRoutes = useCallback(() => {
+    return [...protectedRoutes];
+  }, []);
+
   return (
-    <AtpContext.Provider value={{ 
-        agent, publicAgent, session, serviceUrl, isLoadingSession, login, logout, 
-        unreadCount, resetUnreadCount
+    <AtpContext.Provider value={{
+      agent, publicAgent, publicApiAgent, session, serviceUrl, isLoadingSession, login, logout,
+      unreadCount, resetUnreadCount,
+      requireAuth, isProtectedRoute, getProtectedRoutes
     }}>
       {children}
     </AtpContext.Provider>

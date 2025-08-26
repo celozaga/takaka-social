@@ -10,6 +10,7 @@ import { AtUri,AppBskyFeedDefs } from '@atproto/api';
 import { EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, ShieldOff, Bookmark } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 import { theme } from '@/lib/theme';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface MediaActionsModalProps {
   post:AppBskyFeedDefs.PostView;
@@ -38,9 +39,17 @@ const ActionListItem: React.FC<{
 const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) => {
     const { agent, session } = useAtp();
     const { toast } = useToast();
+    const { requireAuth } = useAuthGuard();
     const { hidePost } = useHiddenPosts();
     const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
     const { t } = useTranslation();
+
+    // Verificar autenticação ao montar o componente
+    React.useEffect(() => {
+        if (!requireAuth('media_actions')) {
+            onClose();
+        }
+    }, [requireAuth, onClose]);
 
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [viewerState, setViewerState] = useState(post.author.viewer);

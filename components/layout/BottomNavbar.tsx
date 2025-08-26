@@ -72,14 +72,14 @@ const BottomNavbar = () => {
 
   const navItems = [
     { href: '/home', labelKey: 'nav.home', iconName: 'home-outline', activeCondition: pathname === '/home' || pathname === '/' },
-    { href: '/search', labelKey: 'nav.search', iconName: 'search-outline', activeCondition: pathname.startsWith('/search') },
-    ...(session
-      ? [
-          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', iconName: 'add-outline', activeCondition: false, href: '#' },
-          { href: '/notifications', labelKey: 'nav.notifications', iconName: 'notifications-outline', activeCondition: pathname.startsWith('/notifications') },
-          { href: '/more', labelKey: 'nav.more', iconName: 'grid-outline', activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
-        ]
-      : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', iconName: 'log-in-outline', activeCondition: false, href: '#' }]),
+    ...(session ? [
+      { href: '/search', labelKey: 'nav.search', iconName: 'search-outline', activeCondition: pathname.startsWith('/search') },
+      { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', iconName: 'add-outline', activeCondition: false, href: '#' },
+      { href: '/notifications', labelKey: 'nav.notifications', iconName: 'notifications-outline', activeCondition: pathname.startsWith('/notifications') },
+      { href: '/more', labelKey: 'nav.more', iconName: 'grid-outline', activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
+    ] : [
+      { isAction: true, action: openLoginModal, labelKey: 'nav.signIn', iconName: 'log-in-outline', activeCondition: false, href: '#' }
+    ]),
   ];
 
   // Render Navigation Rail for larger screens

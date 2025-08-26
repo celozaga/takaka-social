@@ -10,10 +10,12 @@ import FeedAvatar from './FeedAvatar';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '@/lib/theme';
 import { formatCompactNumber } from '@/lib/formatters';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();
     const { t } = useTranslation();
+    const { requireAuth } = useAuthGuard();
     const {
         feedView,
         isLoading,
@@ -24,6 +26,13 @@ const FeedHeaderModal: React.FC = () => {
         handlePinToggle,
         handleShare
     } = useFeedActions(feedModalUri);
+
+    // Verificar autenticação ao montar o componente
+    React.useEffect(() => {
+        if (!requireAuth('feed_customization')) {
+            closeFeedModal();
+        }
+    }, [requireAuth, closeFeedModal]);
     
     const ActionButton: React.FC<{ icon: React.FC<any>, text: string, onPress: () => void, isDestructive?: boolean, isActive?: boolean }> =
     ({ icon: Icon, text, onPress, isDestructive = false, isActive = false }) => (

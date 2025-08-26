@@ -9,6 +9,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Platfo
 import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface EditProfileModalProps {
   onClose: () => void;
@@ -18,8 +19,16 @@ interface EditProfileModalProps {
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess }) => {
   const { agent, session } = useAtp();
   const { toast } = useToast();
+  const { requireAuth } = useAuthGuard();
   const { t } = useTranslation();
   const { getProfile, clearProfile } = useProfileCache();
+
+  // Verificar autenticação ao montar o componente
+  useEffect(() => {
+    if (!requireAuth('edit_profile')) {
+      onClose();
+    }
+  }, [requireAuth, onClose]);
 
   const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
   const [isLoading, setIsLoading] = useState(true);

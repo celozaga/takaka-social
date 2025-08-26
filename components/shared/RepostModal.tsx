@@ -7,6 +7,7 @@ import { AppBskyFeedDefs, AtUri } from '@atproto/api';
 import { Repeat, Share2, X } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Share, Platform, Clipboard } from 'react-native';
 import { theme } from '@/lib/theme';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface RepostModalProps {
   post: AppBskyFeedDefs.PostView;
@@ -35,7 +36,15 @@ const ActionListItem: React.FC<{
 const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
     const { toast } = useToast();
     const { t } = useTranslation();
+    const { requireAuth } = useAuthGuard();
     const { repostUri, isReposting, handleRepost } = usePostActions(post);
+
+    // Verificar autenticação ao montar o componente
+    React.useEffect(() => {
+        if (!requireAuth('repost')) {
+            onClose();
+        }
+    }, [requireAuth, onClose]);
 
     const handleRepostAction = async () => {
         const wasReposted = !!repostUri;

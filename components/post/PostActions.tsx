@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '@/lib/theme';
@@ -15,24 +16,34 @@ interface PostActionsProps {
 const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   const { session } = useAtp();
   const { openLoginModal, openComposer } = useUI();
+  const { requireAuth } = useAuthGuard();
   const {
     likeUri, likeCount, isLiking, handleLike,
     repostUri, repostCount, isReposting, handleRepost
   } = usePostActions(post);
   
-  const ensureSession = () => {
-    if (!session) {
-      openLoginModal();
-      return false;
-    }
-    return true;
-  }
-
   const handleReplyClick = (e: any) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!ensureSession()) return;
-    openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
+    if (requireAuth('compose')) {
+      openComposer({ replyTo: { uri: post.uri, cid: post.cid } });
+    }
+  };
+
+  const handleRepostClick = (e: any) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (requireAuth('repost')) {
+      handleRepost(e);
+    }
+  };
+
+  const handleLikeClick = (e: any) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (requireAuth('like')) {
+      handleLike(e);
+    }
   };
 
   return (
@@ -42,7 +53,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
       </Pressable>
       <Pressable 
-        onPress={(e) => { e.stopPropagation(); e.preventDefault(); handleRepost(e); }}
+        onPress={handleRepostClick}
         disabled={isReposting}
         style={styles.actionButton}
       >
@@ -50,7 +61,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCompactNumber(repostCount)}</Text>
       </Pressable>
       <Pressable 
-        onPress={(e) => { e.stopPropagation(); e.preventDefault(); handleLike(e); }}
+        onPress={handleLikeClick}
         disabled={isLiking}
         style={styles.actionButton}
       >

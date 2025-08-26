@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { AppBskyFeedDefs } from '@atproto/api';
+import { useAtp } from '@/context/AtpContext';
 
 interface ReplyToProps {
   uri: string;
@@ -59,6 +60,7 @@ interface UIContextType {
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { session } = useAtp();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [composerReplyTo, setComposerReplyTo] = useState<ReplyToProps | undefined>(undefined);
@@ -113,9 +115,15 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const closeUpdateHandleModal = useCallback(() => setIsUpdateHandleModalOpen(false), []);
   
   const openMediaActionsModal = useCallback((post: AppBskyFeedDefs.PostView) => {
+    // Verificar se o usuário está autenticado antes de abrir o modal
+    if (!session) {
+      console.log('🔒 UIContext: Authentication required for media actions modal');
+      openLoginModal();
+      return;
+    }
     setMediaActionsModalPost(post);
     setIsMediaActionsModalOpen(true);
-  }, []);
+  }, [session, openLoginModal]);
   
   const closeMediaActionsModal = useCallback(() => {
     setIsMediaActionsModalOpen(false);
@@ -123,9 +131,15 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const openRepostModal = useCallback((post:AppBskyFeedDefs.PostView) => {
+    // Verificar se o usuário está autenticado antes de abrir o modal
+    if (!session) {
+      console.log('🔒 UIContext: Authentication required for repost modal');
+      openLoginModal();
+      return;
+    }
     setRepostModalPost(post);
     setIsRepostModalOpen(true);
-  }, []);
+  }, [session, openLoginModal]);
 
   const closeRepostModal = useCallback(() => {
     setIsRepostModalOpen(false);
@@ -133,9 +147,15 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
   
   const openRepliesModal = useCallback((data: RepliesModalData) => {
+    // Verificar se o usuário está autenticado antes de abrir o modal
+    if (!session) {
+      console.log('🔒 UIContext: Authentication required for replies modal');
+      openLoginModal();
+      return;
+    }
     setRepliesModalData(data);
     setIsRepliesModalOpen(true);
-  }, []);
+  }, [session, openLoginModal]);
 
   const closeRepliesModal = useCallback(() => {
     setIsRepliesModalOpen(false);
