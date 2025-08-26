@@ -1,3 +1,6 @@
+// Polyfill for Intl.PluralRules to fix i18next compatibility
+import 'intl-pluralrules';
+
 import React, { Suspense, lazy } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions, KeyboardAvoidingView, StyleProp, ViewStyle } from 'react-native';
@@ -48,6 +51,11 @@ function AppLayout() {
     isRepliesModalOpen, repliesModalData, closeRepliesModal,
   } = useUI();
 
+  // Always call hooks at the top level before any returns
+  const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
+
   if (isLoadingSession) {
     return (
       <View style={styles.fullScreenLoader}>
@@ -55,10 +63,6 @@ function AppLayout() {
       </View>
     );
   }
-  
-  const pathname = usePathname();
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 768;
 
   const isWatchPage = pathname.startsWith('/watch');
   const isPostPage = pathname.startsWith('/post');

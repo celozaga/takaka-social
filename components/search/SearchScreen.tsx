@@ -29,7 +29,7 @@ interface SearchScreenProps {
 }
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
-    const { agent } = useAtp();
+    const { agent, publicAgent, session } = useAtp();
     const { t } = useTranslation();
     const [query, setQuery] = useState(initialQuery);
     const debouncedQuery = useDebounce(query, 500);
@@ -71,13 +71,16 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
         }
         
         try {
+            const searchAgent = session ? agent : publicAgent;
+            console.log('🔍 DEBUG: Search using agent type:', session ? 'authenticated' : 'public');
+            
             if (searchFilter === 'people') {
-                const response = await agent.app.bsky.actor.searchActors({ term: searchQuery, limit: 30, cursor: currentCursor });
+                const response = await searchAgent.app.bsky.actor.searchActors({ term: searchQuery, limit: 30, cursor: currentCursor });
                 setNonPostResults(prev => currentCursor ? [...prev, ...response.data.actors] : response.data.actors);
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
             } else if (searchFilter === 'feeds') {
-                const response = await (agent.api.app.bsky.unspecced as any).getPopularFeedGenerators({
+                const response = await (searchAgent.api.app.bsky.unspecced as any).getPopularFeedGenerators({
                     query: searchQuery, limit: 25, cursor: currentCursor
                 });
                 setNonPostResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
@@ -90,7 +93,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent, isPostSearch]);
+    }, [agent, publicAgent, session, isPostSearch]);
 
     useEffect(() => {
         const effectiveQuery = debouncedQuery || initialQuery;

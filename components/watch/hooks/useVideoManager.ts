@@ -3,13 +3,21 @@ import { useAtp } from '@/context/AtpContext';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import { useModeration } from '@/context/ModerationContext';
 import { moderatePost } from '@/lib/moderation';
+import { FEATURES, UI_CONFIG, isFeatureEnabled } from '@/lib/config';
 
 const VIDEOS_FEED_URI = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids';
-const POSTS_PER_PAGE = 25;
+const POSTS_PER_PAGE = UI_CONFIG.POSTS_PER_PAGE;
 
-// Cache para posts já carregados (melhor performance)
+// Enhanced cache for posts with feature flag support
 const postsCache = new Map<string, AppBskyFeedDefs.FeedViewPost>();
-const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_SIZE = 200; // Increased for better watch experience
+
+// Configuration for video preloading
+const PRELOAD_CONFIG = {
+    THUMBNAIL_COUNT: isFeatureEnabled('VIDEO_PRELOADING') ? 5 : 2,
+    VIDEO_COUNT: isFeatureEnabled('VIDEO_PRELOADING') ? 2 : 1,
+    DELAY_MS: 50,
+};
 
 // Helper to check if a post has a video embed
 const hasVideoEmbed = (post: AppBskyFeedDefs.PostView): boolean => {
@@ -37,9 +45,16 @@ const getFromCache = (uri: string): AppBskyFeedDefs.FeedViewPost | undefined => 
     return postsCache.get(uri);
 };
 
-// Preload seguro de thumbnails e avatars (sem requests de vídeo)
-const preloadThumbnails = async (posts: AppBskyFeedDefs.FeedViewPost[], startIndex: number = 0) => {
-    const preloadCount = 3; // Precarregar próximos 3 vídeos
+/**
+ * Enhanced preloading system for immersive watch experience
+ * Preloads thumbnails, avatars, and optionally video URLs
+ */
+const preloadContent = async (posts: AppBskyFeedDefs.FeedViewPost[], startIndex: number = 0, mode: 'thumbnails' | 'videos' = 'thumbnails') => {
+    if (!isFeatureEnabled('VIDEO_PRELOADING') && mode === 'videos') {
+        return; // Skip video preloading if disabled
+    }
+    
+    const preloadCount = mode === 'videos' ? PRELOAD_CONFIG.VIDEO_COUNT : PRELOAD_CONFIG.THUMBNAIL_COUNT;
     
     for (let i = startIndex; i < Math.min(startIndex + preloadCount, posts.length); i++) {
         const post = posts[i];
@@ -47,21 +62,39 @@ const preloadThumbnails = async (posts: AppBskyFeedDefs.FeedViewPost[], startInd
             try {
                 const embed = post.post.embed as AppBskyEmbedVideo.View;
                 
-                // Preload apenas de thumbnails e avatars (requisições GET seguras)
+                // Always preload thumbnails and avatars (safe GET requests)
                 if (embed?.thumbnail) {
-                    // Preload thumbnail do vídeo
                     const img = new Image();
                     img.src = embed.thumbnail;
+                }
+                
+                if (post.post.author?.avatar) {
+                    const avatarImg = new Image();
+                    avatarImg.src = post.post.author.avatar.replace('/img/avatar/', '/img/avatar_thumbnail/');
+                }
+                
+                // Preload video URLs for better streaming (only if enabled and in video mode)
+                if (mode === 'videos' && isFeatureEnabled('VIDEO_PRELOADING') && embed?.playlist) {
+                    // This doesn't download the video, just primes the browser's network stack
+                    const link = document.createElement('link');
+                    link.rel = 'preload';
+                    link.as = 'video';
+                    link.href = embed.playlist;
+                    document.head.appendChild(link);
                     
-                    // Preload avatar do autor
-                    if (post.post.author?.avatar) {
-                        const avatarImg = new Image();
-                        avatarImg.src = post.post.author.avatar.replace('/img/avatar/', '/img/avatar_thumbnail/');
-                    }
+                    // Clean up after a delay to avoid memory issues
+                    setTimeout(() => {
+                        try {
+                            document.head.removeChild(link);
+                        } catch (e) {
+                            // Ignore cleanup errors
+                        }
+                    }, 30000); // 30 seconds
                 }
             } catch (e) {
-                // Ignorar erros de preload silenciosamente
-                console.debug('Thumbnail preload error (ignored):', e);
+                if (isFeatureEnabled('VERBOSE_API_LOGS')) {
+                    console.debug('Content preload error (ignored):', e);
+                }
             }
         }
     }
@@ -127,16 +160,26 @@ export const useVideoManager = () => {
 
             if (mode === 'initial' || mode === 'refresh') {
                 setPosts(page.posts);
-                // Preload dos primeiros vídeos após carregamento inicial
-                setTimeout(() => preloadThumbnails(page.posts, 0), 100);
+                // Enhanced preloading for immersive experience
+                if (isFeatureEnabled('VIDEO_PRELOADING')) {
+                    setTimeout(() => preloadContent(page.posts, 0, 'thumbnails'), PRELOAD_CONFIG.DELAY_MS);
+                    setTimeout(() => preloadContent(page.posts, 0, 'videos'), PRELOAD_CONFIG.DELAY_MS * 2);
+                } else {
+                    setTimeout(() => preloadContent(page.posts, 0, 'thumbnails'), 100);
+                }
             } else { // mode === 'more'
                 setPosts(prev => {
                     const existingUris = new Set(prev.map(p => p.post.uri));
                     const uniqueNewPosts = page.posts.filter(p => !existingUris.has(p.post.uri));
                     const newPosts = [...prev, ...uniqueNewPosts];
                     
-                    // Preload dos novos vídeos adicionados
-                    setTimeout(() => preloadThumbnails(uniqueNewPosts, 0), 100);
+                    // Preload new content
+                    if (uniqueNewPosts.length > 0) {
+                        setTimeout(() => preloadContent(uniqueNewPosts, 0, 'thumbnails'), PRELOAD_CONFIG.DELAY_MS);
+                        if (isFeatureEnabled('VIDEO_PRELOADING')) {
+                            setTimeout(() => preloadContent(uniqueNewPosts, 0, 'videos'), PRELOAD_CONFIG.DELAY_MS * 2);
+                        }
+                    }
                     
                     return newPosts;
                 });
@@ -157,14 +200,26 @@ export const useVideoManager = () => {
         loadPosts('initial');
     }, [loadPosts]); // This dependency is stable
 
-    // Função para preload baseado no vídeo ativo (para ser chamada quando vídeo muda)
+    // Enhanced preload function based on active video index
     const preloadFromIndex = useCallback((activeIndex: number) => {
         if (posts.length > 0 && activeIndex >= 0) {
-            // Preload vídeos próximos ao ativo
+            // Preload content around the active video for smooth transitions
             const startIndex = Math.max(0, activeIndex);
-            setTimeout(() => preloadThumbnails(posts, startIndex + 1), 50);
+            
+            // Preload thumbnails immediately for next videos
+            setTimeout(() => preloadContent(posts, startIndex + 1, 'thumbnails'), PRELOAD_CONFIG.DELAY_MS);
+            
+            // Preload videos if feature is enabled for seamless playback
+            if (isFeatureEnabled('VIDEO_PRELOADING')) {
+                setTimeout(() => preloadContent(posts, startIndex + 1, 'videos'), PRELOAD_CONFIG.DELAY_MS * 2);
+            }
+            
+            // Load more posts if we're getting close to the end
+            if (activeIndex >= posts.length - 3 && !isLoadingMore && hasMoreRef.current) {
+                loadPosts('more');
+            }
         }
-    }, [posts]);
+    }, [posts, isLoadingMore, loadPosts]);
 
     return {
         posts,

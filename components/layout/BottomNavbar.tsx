@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, usePathname } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
-import { Home, Search, Plus, Bell, LogOut, LogIn, LayoutGrid } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/lib/theme';
@@ -21,11 +21,10 @@ const NavItem: React.FC<{ item: any; isDesktop: boolean; }> = ({ item, isDesktop
   const content = (
     <View style={isDesktop ? styles.navRailItemContent : styles.navBarItemContent}>
       <View style={styles.iconWrapper}>
-        <item.icon
+        <Ionicons
+          name={item.iconName}
           size={24}
           color={item.activeCondition ? theme.colors.onSurface : theme.colors.onSurfaceVariant}
-          fill={item.activeCondition ? theme.colors.onSurface : 'none'}
-          strokeWidth={2}
         />
         {hasNotificationBadge && (
           <View style={styles.badge}>
@@ -72,22 +71,22 @@ const BottomNavbar = () => {
   const isDesktop = width >= 768;
 
   const navItems = [
-    { href: '/home', labelKey: 'nav.home', icon: Home, activeCondition: pathname === '/home' || pathname === '/' },
-    { href: '/search', labelKey: 'nav.search', icon: Search, activeCondition: pathname.startsWith('/search') },
+    { href: '/home', labelKey: 'nav.home', iconName: 'home-outline', activeCondition: pathname === '/home' || pathname === '/' },
+    { href: '/search', labelKey: 'nav.search', iconName: 'search-outline', activeCondition: pathname.startsWith('/search') },
     ...(session
       ? [
-          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false, href: '#' },
-          { href: '/notifications', labelKey: 'nav.notifications', icon: Bell, activeCondition: pathname.startsWith('/notifications') },
-          { href: '/more', labelKey: 'nav.more', icon: LayoutGrid, activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
+          { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', iconName: 'add-outline', activeCondition: false, href: '#' },
+          { href: '/notifications', labelKey: 'nav.notifications', iconName: 'notifications-outline', activeCondition: pathname.startsWith('/notifications') },
+          { href: '/more', labelKey: 'nav.more', iconName: 'grid-outline', activeCondition: pathname.startsWith('/settings') || pathname.startsWith('/more') },
         ]
-      : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', icon: LogIn, activeCondition: false, href: '#' }]),
+      : [{ isAction: true, action: openLoginModal, labelKey: 'nav.signIn', iconName: 'log-in-outline', activeCondition: false, href: '#' }]),
   ];
 
   // Render Navigation Rail for larger screens
   if (isDesktop) {
     const desktopNavItems = navItems.filter(item => !(item.isAction && item.labelKey === 'nav.compose'));
-    const composeItem = { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', icon: Plus, activeCondition: false, href: '#' };
-    const logoutItem = { isAction: true, action: logout, labelKey: 'nav.logout', icon: LogOut, activeCondition: false, href: '#' };
+    const composeItem = { isAction: true, action: () => openComposer(), labelKey: 'nav.compose', iconName: 'add-outline', activeCondition: false, href: '#' };
+    const logoutItem = { isAction: true, action: logout, labelKey: 'nav.logout', iconName: 'log-out-outline', activeCondition: false, href: '#' };
     
     return (
       <View style={[styles.navRail, { paddingTop: top + theme.spacing.l, paddingBottom: bottom + theme.spacing.l }]}>

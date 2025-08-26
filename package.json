@@ -8,6 +8,12 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build": "expo export -p web --clear",
+    "generate-assets": "node scripts/generate-assets.js",
+    "prebuild": "npm run generate-assets",
+    "prebuild:android": "expo prebuild --platform android",
+    "build:android:dev": "eas build --profile development --platform android",
+    "build:android:preview": "eas build --profile preview --platform android",
+    "build:android:prod": "eas build --profile production --platform android",
     "eas-build-dev": "eas build --profile development --platform all",
     "eas-build-preview": "eas build --profile preview --platform all",
     "eas-build-prod": "eas build --profile production --platform all"
@@ -31,6 +37,7 @@
     "hls.js": "^1.6.10",
     "i18next": "^23.11.5",
     "i18next-browser-languagedetector": "^8.0.0",
+    "intl-pluralrules": "^2.0.1",
     "lucide-react": "0.539.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
@@ -40,12 +47,14 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-web": "^0.20.0"
+    "react-native-web": "^0.20.0",
+    "expo-dev-client": "~5.2.4"
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",
     "@types/hls.js": "^0.13.3",
     "@types/react": "~19.0.10",
+    "sharp": "^0.34.3",
     "typescript": "~5.8.3"
   },
   "private": true

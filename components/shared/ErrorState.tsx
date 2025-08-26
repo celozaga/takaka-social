@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/lib/theme';
-import { Home } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 interface ErrorStateProps {
@@ -29,7 +29,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ icon: Icon, title, message, onR
           </Pressable>
         )}
         <Pressable onPress={() => router.replace('/home')} style={[styles.button, styles.homeButton]}>
-          <Home size={16} color={theme.colors.onPrimary} />
+          <Ionicons name="home-outline" size={16} color={theme.colors.onPrimary} />
           <Text style={[styles.buttonText, styles.homeButtonText]}>{t('errors.goToHome')}</Text>
         </Pressable>
       </View>

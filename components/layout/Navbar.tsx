@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'expo-router';
-import { Hash, Feather } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform, Pressable } from 'react-native';
 import { theme } from '@/lib/theme';
 
@@ -12,12 +12,12 @@ const Navbar: React.FC = () => {
         <View style={styles.innerContainer}>
           <Link href="/(tabs)/home" asChild>
             <Pressable style={styles.link}>
-              <Feather size={28} color={theme.colors.primary} />
+              <Ionicons name="home-outline" size={28} color={theme.colors.primary} />
             </Pressable>
           </Link>
           <Link href="/(tabs)/feeds" asChild>
             <Pressable style={styles.link}>
-              <Hash size={24} color={theme.colors.onSurfaceVariant} />
+              <Ionicons name="grid-outline" size={24} color={theme.colors.onSurfaceVariant} />
             </Pressable>
           </Link>
         </View>

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import { useToast } from '../ui/use-toast';
 import ScreenHeader from '../layout/ScreenHeader';
-import { Heart, UserPlus, MessageCircle, AtSign, Repeat, Bell } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import Head from 'expo-router/head';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { View, Text, ScrollView, ActivityIndicator, Platform } from 'react-native';
@@ -12,6 +12,7 @@ import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
 import SettingsDivider from '@/components/ui/SettingsDivider';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
 const APP_ID = 'social.takaka.app';
@@ -41,11 +42,27 @@ const NotificationSettingsScreen: React.FC = () => {
     });
     type SettingsKey = keyof typeof settings;
 
+    // Check if running in Expo Go
+    const isExpoGo = Constants.appOwnership === 'expo';
+
     useEffect(() => {
         const loadSettings = async () => {
             setIsLoading(true);
-            const { status } = await Notifications.getPermissionsAsync();
-            setPushEnabled(status === 'granted');
+            
+            // Skip notifications in Expo Go due to SDK 53 limitations
+            if (isExpoGo) {
+                setPushEnabled(false);
+                setIsLoading(false);
+                return;
+            }
+            
+            try {
+                const { status } = await Notifications.getPermissionsAsync();
+                setPushEnabled(status === 'granted');
+            } catch (error) {
+                console.warn('Notifications not available:', error);
+                setPushEnabled(false);
+            }
             
             try {
                 const { data } = await agent.app.bsky.actor.getPreferences();
@@ -107,18 +124,28 @@ const NotificationSettingsScreen: React.FC = () => {
     };
 
     const handleMasterToggle = async (enabled: boolean) => {
+        // Skip notifications in Expo Go due to SDK 53 limitations
+        if (isExpoGo) {
+            toast({ 
+                title: "Push notifications unavailable", 
+                description: "Push notifications are not available in Expo Go with SDK 53. Please use a development build or production app.", 
+                variant: "destructive"
+            });
+            return;
+        }
+        
         if (enabled) {
-            const { status: existingStatus } = await Notifications.getPermissionsAsync();
-            let finalStatus = existingStatus;
-            if (existingStatus !== 'granted') {
-                const { status } = await Notifications.requestPermissionsAsync();
-                finalStatus = status;
-            }
-            if (finalStatus !== 'granted') {
-                toast({ title: t('notificationSettings.toast.permissionDenied'), description: t('notificationSettings.toast.permissionDeniedDescription'), variant: "destructive"});
-                return;
-            }
             try {
+                const { status: existingStatus } = await Notifications.getPermissionsAsync();
+                let finalStatus = existingStatus;
+                if (existingStatus !== 'granted') {
+                    const { status } = await Notifications.requestPermissionsAsync();
+                    finalStatus = status;
+                }
+                if (finalStatus !== 'granted') {
+                    toast({ title: t('notificationSettings.toast.permissionDenied'), description: t('notificationSettings.toast.permissionDeniedDescription'), variant: "destructive"});
+                    return;
+                }
                 setIsSaving(true);
                 const token = (await Notifications.getExpoPushTokenAsync()).data;
 
@@ -147,11 +174,11 @@ const NotificationSettingsScreen: React.FC = () => {
     };
 
     const settingsItems = [
-        { key: 'like' as SettingsKey, icon: Heart, title: t('notifications.likedYourPost', { author: '' }).trim() },
-        { key: 'repost' as SettingsKey, icon: Repeat, title: t('notifications.reposts') },
-        { key: 'follow' as SettingsKey, icon: UserPlus, title: t('notifications.follows') },
-        { key: 'reply' as SettingsKey, icon: MessageCircle, title: t('common.replies') },
-        { key: 'mention' as SettingsKey, icon: AtSign, title: t('notifications.mentions') },
+        { key: 'like' as SettingsKey, icon: (props: any) => <Ionicons name="heart-outline" {...props} />, title: t('notifications.likedYourPost', { author: '' }).trim() },
+        { key: 'repost' as SettingsKey, icon: (props: any) => <Ionicons name="repeat-outline" {...props} />, title: t('notifications.reposts') },
+        { key: 'follow' as SettingsKey, icon: (props: any) => <Ionicons name="person-add-outline" {...props} />, title: t('notifications.follows') },
+        { key: 'reply' as SettingsKey, icon: (props: any) => <Ionicons name="chatbubble-outline" {...props} />, title: t('common.replies') },
+        { key: 'mention' as SettingsKey, icon: (props: any) => <Ionicons name="at-outline" {...props} />, title: t('notifications.mentions') },
     ];
 
     if (isLoading) {
@@ -173,7 +200,7 @@ const NotificationSettingsScreen: React.FC = () => {
                 <ScrollView contentContainerStyle={theme.settingsStyles.container}>
                      <View style={theme.settingsStyles.section}>
                         <SettingsListItem
-                            icon={Bell}
+                            icon={(props: any) => <Ionicons name="notifications-outline" {...props} />}
                             label={t('notificationSettings.enablePush')}
                             sublabel={t('notificationSettings.getAlerts')}
                             control={<ToggleSwitch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />}

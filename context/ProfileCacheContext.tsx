@@ -20,7 +20,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 export const ProfileCacheProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [cache, setCache] = useState<ProfileCache>(new Map());
-    const { agent } = useAtp();
+    const { agent, publicAgent, session } = useAtp();
 
     const getProfile = useCallback(async (actor: string): Promise<AppBskyActorDefs.ProfileViewDetailed> => {
         const cachedEntry = cache.get(actor);
@@ -29,7 +29,10 @@ export const ProfileCacheProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
 
         // Not in cache or stale, fetch from API
-        const { data } = await agent.getProfile({ actor });
+        const profileAgent = session ? agent : publicAgent;
+        console.log('🔍 DEBUG: Profile fetch using agent type:', session ? 'authenticated' : 'public');
+        
+        const { data } = await profileAgent.getProfile({ actor });
         
         // Update cache
         setCache(prevCache => {
@@ -41,7 +44,7 @@ export const ProfileCacheProvider: React.FC<{ children: ReactNode }> = ({ childr
         });
 
         return data;
-    }, [agent, cache]);
+    }, [agent, publicAgent, session, cache]);
 
     const clearProfile = useCallback((actor: string) => {
         // Actor could be a DID or handle, so we need to clear both if they exist

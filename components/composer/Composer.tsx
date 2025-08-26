@@ -2,13 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
-import { RichText,AppBskyActorDefs } from '@atproto/api';
-import { ImageUp, Send, X, Video } from 'lucide-react';
+import { RichText, AppBskyActorDefs } from '@atproto/api';
+import { Ionicons } from '@expo/vector-icons';
 import { useToast } from '../ui/use-toast';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, ScrollView, Modal, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { theme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
+import { FEATURES, MEDIA_CONFIG, isFeatureEnabled } from '@/lib/config';
 
 interface ComposerProps {
   onPostSuccess: () => void;
@@ -24,10 +25,13 @@ interface MediaFile {
     asset: ImagePicker.ImagePickerAsset;
     preview: string;
     type: 'image' | 'video' | 'gif';
+    thumbnail?: string; // For video thumbnails
+    uploadProgress?: number; // For upload progress tracking
 }
 
 const MAX_CHARS = 300;
-const MAX_IMAGES = 4;
+const MAX_IMAGES = MEDIA_CONFIG.MAX_IMAGES_PER_POST;
+const MAX_VIDEOS = MEDIA_CONFIG.MAX_VIDEOS_PER_POST;
 const MAX_LANGS = 3;
 
 const LANGUAGES = [
@@ -78,30 +82,95 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
 
     if (result.canceled) return;
 
-    const hasVideoOrGif = mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif');
-    if (hasVideoOrGif && result.assets.length > 0) {
-        toast({ title: t('composer.toast.noMoreImagesWithVideoOrGif'), variant: 'destructive' });
-        return;
-    }
+    const hasVideo = mediaFiles.some(mf => mf.type === 'video');
+    const hasImages = mediaFiles.some(mf => mf.type === 'image');
 
     const newMediaFiles: MediaFile[] = [...mediaFiles];
+    
     for (const asset of result.assets) {
-        if (newMediaFiles.length >= MAX_IMAGES) {
-            toast({ title: t('composer.toast.maxImages', { max: MAX_IMAGES }), variant: 'destructive' });
-            break;
-        }
         const type = asset.type === 'video' ? 'video' : (asset.mimeType === 'image/gif' ? 'gif' : 'image');
         
-        if ((type === 'video' || type === 'gif') && (newMediaFiles.length > 0 || result.assets.length > 1)) {
-            toast({ title: t('composer.toast.oneVideoOrGif'), variant: 'destructive' });
-            if (newMediaFiles.length === 0) {
-                newMediaFiles.push({ preview: asset.uri, type, asset });
+        // Validate file size
+        if (type === 'video') {
+            if (!isFeatureEnabled('VIDEO_POSTING')) {
+                toast({ title: t('composer.toast.videoNotSupported'), variant: 'destructive' });
+                continue;
             }
-            break; 
+            
+            const fileSizeMB = (asset.fileSize || 0) / (1024 * 1024);
+            if (fileSizeMB > MEDIA_CONFIG.MAX_VIDEO_SIZE_MB) {
+                toast({ 
+                    title: t('composer.toast.videoTooLarge'), 
+                    description: t('composer.toast.maxVideoSize', { size: MEDIA_CONFIG.MAX_VIDEO_SIZE_MB }),
+                    variant: 'destructive' 
+                });
+                continue;
+            }
+            
+            if (asset.duration && asset.duration > MEDIA_CONFIG.MAX_VIDEO_DURATION_SECONDS) {
+                toast({ 
+                    title: t('composer.toast.videoTooLong'), 
+                    description: t('composer.toast.maxVideoDuration', { duration: MEDIA_CONFIG.MAX_VIDEO_DURATION_SECONDS / 60 }),
+                    variant: 'destructive' 
+                });
+                continue;
+            }
+            
+            // Only allow one video
+            if (hasVideo || newMediaFiles.some(f => f.type === 'video')) {
+                toast({ title: t('composer.toast.oneVideoOnly'), variant: 'destructive' });
+                continue;
+            }
+            
+            // Can't mix videos with images
+            if (hasImages || newMediaFiles.some(f => f.type === 'image')) {
+                toast({ title: t('composer.toast.noImagesWithVideo'), variant: 'destructive' });
+                continue;
+            }
+        } else {
+            // Image validation
+            const fileSizeMB = (asset.fileSize || 0) / (1024 * 1024);
+            if (fileSizeMB > MEDIA_CONFIG.MAX_IMAGE_SIZE_MB) {
+                toast({ 
+                    title: t('composer.toast.imageTooLarge'), 
+                    description: t('composer.toast.maxImageSize', { size: MEDIA_CONFIG.MAX_IMAGE_SIZE_MB }),
+                    variant: 'destructive' 
+                });
+                continue;
+            }
+            
+            if (newMediaFiles.length >= MAX_IMAGES) {
+                toast({ title: t('composer.toast.maxImages', { max: MAX_IMAGES }), variant: 'destructive' });
+                break;
+            }
+            
+            // Can't mix images with videos
+            if (hasVideo || newMediaFiles.some(f => f.type === 'video')) {
+                toast({ title: t('composer.toast.noImagesWithVideo'), variant: 'destructive' });
+                continue;
+            }
         }
 
-        newMediaFiles.push({ preview: asset.uri, type, asset });
+        // Create media file entry
+        const mediaFile: MediaFile = {
+            asset,
+            preview: asset.uri,
+            type,
+        };
+
+        // Generate thumbnail for videos
+        if (type === 'video' && isFeatureEnabled('VIDEO_THUMBNAILS')) {
+            try {
+                // For now, use the first frame as thumbnail - could be enhanced with video processing
+                mediaFile.thumbnail = asset.uri;
+            } catch (error) {
+                console.warn('Failed to generate video thumbnail:', error);
+            }
+        }
+
+        newMediaFiles.push(mediaFile);
     }
+    
     setMediaFiles(newMediaFiles);
   };
   
@@ -135,17 +204,69 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         };
         
         if (mediaFiles.length > 0) {
-            const imageEmbeds = await Promise.all(mediaFiles.map(async mf => {
-                const response = await fetch(mf.asset.uri);
-                const blob = await response.blob();
-                const fileBytes = new Uint8Array(await blob.arrayBuffer());
-                const blobRes = await agent.uploadBlob(fileBytes, { encoding: blob.type });
-                return { image: blobRes.data.blob, alt: '' };
-            }));
-            postRecord.embed = {
-                $type: 'app.bsky.embed.images',
-                images: imageEmbeds,
-            };
+            const hasVideo = mediaFiles.some(mf => mf.type === 'video');
+            
+            if (hasVideo) {
+                // Handle video embed
+                const videoFile = mediaFiles.find(mf => mf.type === 'video');
+                if (videoFile) {
+                    // Update progress for video upload
+                    setMediaFiles(prev => prev.map(mf => 
+                        mf === videoFile ? { ...mf, uploadProgress: 0 } : mf
+                    ));
+                    
+                    const response = await fetch(videoFile.asset.uri);
+                    const blob = await response.blob();
+                    const fileBytes = new Uint8Array(await blob.arrayBuffer());
+                    
+                    // Upload video blob
+                    setMediaFiles(prev => prev.map(mf => 
+                        mf === videoFile ? { ...mf, uploadProgress: 50 } : mf
+                    ));
+                    
+                    const blobRes = await agent.uploadBlob(fileBytes, { 
+                        encoding: videoFile.asset.mimeType || 'video/mp4' 
+                    });
+                    
+                    setMediaFiles(prev => prev.map(mf => 
+                        mf === videoFile ? { ...mf, uploadProgress: 100 } : mf
+                    ));
+                    
+                    postRecord.embed = {
+                        $type: 'app.bsky.embed.video',
+                        video: blobRes.data.blob,
+                        alt: '', // Video alt text
+                    };
+                }
+            } else {
+                // Handle image embeds
+                const imageEmbeds = await Promise.all(mediaFiles.map(async (mf, index) => {
+                    setMediaFiles(prev => prev.map((f, i) => 
+                        i === index ? { ...f, uploadProgress: 0 } : f
+                    ));
+                    
+                    const response = await fetch(mf.asset.uri);
+                    const blob = await response.blob();
+                    const fileBytes = new Uint8Array(await blob.arrayBuffer());
+                    
+                    setMediaFiles(prev => prev.map((f, i) => 
+                        i === index ? { ...f, uploadProgress: 50 } : f
+                    ));
+                    
+                    const blobRes = await agent.uploadBlob(fileBytes, { encoding: blob.type });
+                    
+                    setMediaFiles(prev => prev.map((f, i) => 
+                        i === index ? { ...f, uploadProgress: 100 } : f
+                    ));
+                    
+                    return { image: blobRes.data.blob, alt: '' };
+                }));
+                
+                postRecord.embed = {
+                    $type: 'app.bsky.embed.images',
+                    images: imageEmbeds,
+                };
+            }
         }
         
         await agent.post(postRecord);
@@ -157,6 +278,8 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
         toast({ title: t('composer.toast.postFailed'), description: t('common.tryAgain'), variant: "destructive" });
     } finally {
         setIsPosting(false);
+        // Reset upload progress
+        setMediaFiles(prev => prev.map(mf => ({ ...mf, uploadProgress: undefined })));
     }
   };
 
@@ -186,7 +309,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                 disabled={isPostButtonDisabled}
                 style={[styles.postButton, isPostButtonDisabled && styles.postButtonDisabled]}
             >
-                {isPosting ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Send color={theme.colors.onPrimary} size={16} />}
+                {isPosting ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Ionicons name="send" color={theme.colors.onPrimary} size={16} />}
                 <Text style={styles.postButtonText}>
                     {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
                 </Text>
@@ -214,8 +337,35 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                         {mediaFiles.map((mf, index) => (
                             <View key={index} style={[styles.mediaItem, { width: mediaFiles.length > 1 ? '48%' : '100%' }]}>
                                 <Image source={{ uri: mf.preview }} style={styles.mediaPreview} />
+                                
+                                {/* Video play icon overlay */}
+                                {mf.type === 'video' && (
+                                    <View style={styles.videoOverlay}>
+                                        <View style={styles.playIconContainer}>
+                                            <Ionicons name="play" color="white" size={24} />
+                                        </View>
+                                        {mf.asset.duration && (
+                                            <View style={styles.durationContainer}>
+                                                <Text style={styles.durationText}>
+                                                    {Math.floor(mf.asset.duration / 60)}:{String(Math.floor(mf.asset.duration % 60)).padStart(2, '0')}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
+                                
+                                {/* Upload progress overlay */}
+                                {typeof mf.uploadProgress === 'number' && mf.uploadProgress < 100 && (
+                                    <View style={styles.uploadProgressOverlay}>
+                                        <View style={styles.progressContainer}>
+                                            <ActivityIndicator size="small" color="white" />
+                                            <Text style={styles.progressText}>{mf.uploadProgress}%</Text>
+                                        </View>
+                                    </View>
+                                )}
+                                
                                 <Pressable onPress={() => removeMedia(index)} style={styles.removeMediaButton}>
-                                    <X color="white" size={16} />
+                                    <Ionicons name="close" color="white" size={16} />
                                 </Pressable>
                             </View>
                         ))}
@@ -228,18 +378,20 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
                 <Pressable 
                     onPress={() => pickMedia({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsMultipleSelection: true, selectionLimit: MAX_IMAGES })} 
-                    style={styles.iconButton}
-                    disabled={mediaFiles.length >= MAX_IMAGES || hasVideoOrGif}
+                    style={[styles.iconButton, (!isFeatureEnabled('IMAGE_POSTING') || mediaFiles.length >= MAX_IMAGES || hasVideoOrGif) && styles.iconButtonDisabled]}
+                    disabled={!isFeatureEnabled('IMAGE_POSTING') || mediaFiles.length >= MAX_IMAGES || hasVideoOrGif}
                 >
-                    <ImageUp color={theme.colors.primary} size={24} />
+                    <Ionicons name="image-outline" color={!isFeatureEnabled('IMAGE_POSTING') || mediaFiles.length >= MAX_IMAGES || hasVideoOrGif ? theme.colors.onSurfaceVariant : theme.colors.primary} size={24} />
                 </Pressable>
-                <Pressable 
-                    onPress={() => pickMedia({ mediaTypes: ImagePicker.MediaTypeOptions.Videos })} 
-                    style={styles.iconButton}
-                    disabled={mediaFiles.length > 0}
-                >
-                    <Video color={theme.colors.primary} size={24} />
-                </Pressable>
+                {isFeatureEnabled('VIDEO_POSTING') && (
+                    <Pressable 
+                        onPress={() => pickMedia({ mediaTypes: ImagePicker.MediaTypeOptions.Videos })} 
+                        style={[styles.iconButton, mediaFiles.length > 0 && styles.iconButtonDisabled]}
+                        disabled={mediaFiles.length > 0}
+                    >
+                        <Ionicons name="videocam-outline" color={mediaFiles.length > 0 ? theme.colors.onSurfaceVariant : theme.colors.primary} size={24} />
+                    </Pressable>
+                )}
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s }}>
@@ -306,6 +458,7 @@ const styles = StyleSheet.create({
     removeMediaButton: { position: 'absolute', top: theme.spacing.s, right: theme.spacing.s, backgroundColor: 'rgba(0,0,0,0.6)', padding: theme.spacing.xs, borderRadius: theme.shape.full },
     footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.s, borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainerHigh },
     iconButton: { padding: theme.spacing.s },
+    iconButtonDisabled: { opacity: 0.5 },
     langButton: { paddingHorizontal: theme.spacing.m, paddingVertical: theme.spacing.xs, borderRadius: theme.shape.full },
     langButtonText: { color: theme.colors.primary, ...theme.typography.labelMedium, fontWeight: '500' },
     divider: { width: 1, height: 20, backgroundColor: theme.colors.surfaceContainerHigh },
@@ -315,7 +468,59 @@ const styles = StyleSheet.create({
     langOption: { width: '100%', padding: theme.spacing.m },
     langOptionSelected: { backgroundColor: theme.colors.primary },
     langOptionText: { color: theme.colors.onSurface },
-    langOptionTextSelected: { color: theme.colors.onPrimary }
+    langOptionTextSelected: { color: theme.colors.onPrimary },
+    
+    // Video overlay styles
+    videoOverlay: { 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
+    playIconContainer: { 
+        backgroundColor: 'rgba(0,0,0,0.6)', 
+        borderRadius: theme.shape.full, 
+        padding: theme.spacing.m 
+    },
+    durationContainer: { 
+        position: 'absolute', 
+        bottom: theme.spacing.s, 
+        right: theme.spacing.s, 
+        backgroundColor: 'rgba(0,0,0,0.7)', 
+        paddingHorizontal: theme.spacing.xs, 
+        paddingVertical: 2, 
+        borderRadius: theme.shape.small 
+    },
+    durationText: { 
+        color: 'white', 
+        fontSize: 12, 
+        fontWeight: '500' 
+    },
+    
+    // Upload progress styles
+    uploadProgressOverlay: { 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: 'rgba(0,0,0,0.7)', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        borderRadius: theme.shape.medium
+    },
+    progressContainer: { 
+        alignItems: 'center', 
+        gap: theme.spacing.s 
+    },
+    progressText: { 
+        color: 'white', 
+        fontSize: 14, 
+        fontWeight: '600' 
+    }
 });
 
 export default Composer;

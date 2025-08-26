@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ToastContext, useToast, ToastMessage, ToastProps } from './use-toast';
-import { CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
 import { theme } from '@/lib/theme';
 
@@ -41,19 +41,19 @@ const ToastComponent: React.FC<ToastMessage & { onDismiss: () => void }> = ({ id
   }, [id, onDismiss, fadeAnim]);
 
   const isDestructive = variant === 'destructive';
-  const Icon = isDestructive ? AlertTriangle : CheckCircle;
+  const iconName = isDestructive ? "warning-outline" : "checkmark-circle-outline";
   const iconColor = isDestructive ? theme.colors.onErrorContainer : theme.colors.primary;
   const AnimatedView = Animated.View as any;
 
   return (
     <AnimatedView style={[styles.toast, isDestructive ? styles.toastDestructive : styles.toastDefault, { opacity: fadeAnim }]}>
-        <Icon color={iconColor} size={24} style={styles.icon} />
+        <Ionicons name={iconName} color={iconColor} size={24} style={styles.icon} />
         <View style={styles.textContainer}>
             <Text style={[styles.title, isDestructive && styles.textDestructive]}>{title}</Text>
             {description && <Text style={[styles.description, isDestructive && styles.textDestructive]}>{description}</Text>}
         </View>
         <Pressable onPress={onDismiss} style={styles.closeButton}>
-            <X size={16} color={isDestructive ? theme.colors.onErrorContainer : theme.colors.onSurfaceVariant} />
+            <Ionicons name="close" size={16} color={isDestructive ? theme.colors.onErrorContainer : theme.colors.onSurfaceVariant} />
         </Pressable>
     </AnimatedView>
   );

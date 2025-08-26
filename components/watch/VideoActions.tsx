@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Heart, MessageCircle, Repeat, MoreHorizontal, BadgeCheck, Plus, Check, Share2, X } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import { useUI } from '../../context/UIContext';
 import { useAtp } from '../../context/AtpContext';
 import { AppBskyFeedDefs } from '@atproto/api';
@@ -199,7 +199,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                                 style={styles.avatar} 
                             />
                             {post.author.labels?.some(l => l.val === 'blue-check') && (
-                                <BadgeCheck size={16} color="white" fill={theme.colors.primary} style={styles.verifiedBadge} />
+                                <Ionicons name="checkmark-circle" size={16} color={theme.colors.primary} style={styles.verifiedBadge} />
                             )}
                         </Pressable>
                     </Link>
@@ -214,9 +214,9 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                             {isFollowLoading ? (
                                 <ActivityIndicator color="white" size={18} />
                             ) : followUri ? (
-                                <Check size={18} color="white" />
+                                <Ionicons name="checkmark" size={18} color="white" />
                             ) : (
-                                <Plus size={18} color="white" />
+                                <Ionicons name="add" size={18} color="white" />
                             )}
                         </Pressable>
                     )}
@@ -224,11 +224,11 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
 
                 {/* Botões de ação */}
                 <Pressable onPress={(e) => { e.stopPropagation(); handleLike(e as any); }} disabled={isLiking} style={styles.actionButton}>
-                    <Heart size={isMobile ? 28 : 32} color={likeUri ? theme.colors.pink : 'white'} fill={likeUri ? theme.colors.pink : 'none'} />
+                    <Ionicons name={likeUri ? "heart" : "heart-outline"} size={isMobile ? 28 : 32} color={likeUri ? theme.colors.pink : 'white'} />
                     <Text style={[styles.actionText, isMobile && styles.actionTextMobile]}>{formatCompactNumber(likeCount)}</Text>
                 </Pressable>
                 <Pressable onPress={handleComment} style={styles.actionButton}>
-                    {isFetchingThread ? <ActivityIndicator color="white" size={isMobile ? 28 : 32} /> : <MessageCircle size={isMobile ? 28 : 32} color="white"/>}
+                    {isFetchingThread ? <ActivityIndicator color="white" size={isMobile ? 28 : 32} /> : <Ionicons name="chatbubble-outline" size={isMobile ? 28 : 32} color="white"/>}
                     <Text style={[styles.actionText, isMobile && styles.actionTextMobile]}>{formatCompactNumber(post.replyCount || 0)}</Text>
                 </Pressable>
                 <Pressable 
@@ -240,11 +240,11 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                     style={styles.actionButton}
                     disabled={isReposting}
                 >
-                    <Repeat size={isMobile ? 28 : 32} color={repostUri ? theme.colors.primary : 'white'} />
+                    <Ionicons name="repeat-outline" size={isMobile ? 28 : 32} color={repostUri ? theme.colors.primary : 'white'} />
                     <Text style={[styles.actionText, isMobile && styles.actionTextMobile]}>{formatCompactNumber(repostCount)}</Text>
                 </Pressable>
                 <Pressable onPress={handleMoreClick} style={styles.actionButton}>
-                    <MoreHorizontal size={isMobile ? 28 : 32} color="white" />
+                    <Ionicons name="ellipsis-horizontal" size={isMobile ? 28 : 32} color="white" />
                 </Pressable>
             </View>
 
@@ -263,7 +263,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Repost & Share</Text>
                             <Pressable onPress={() => setIsRepostShareModalVisible(false)} style={styles.closeButton}>
-                                <X size={24} color={theme.colors.onSurface} />
+                                <Ionicons name="close" size={24} color={theme.colors.onSurface} />
                             </Pressable>
                         </View>
                         
@@ -278,7 +278,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                                 ]}
                                 disabled={isReposting}
                             >
-                                <Repeat size={24} color={repostUri ? theme.colors.error : theme.colors.onSurfaceVariant} />
+                                <Ionicons name="repeat-outline" size={24} color={repostUri ? theme.colors.error : theme.colors.onSurfaceVariant} />
                                 <Text style={[
                                     styles.modalActionLabel,
                                     repostUri && styles.modalActionLabelDestructive
@@ -295,7 +295,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
                                     pressed && styles.modalActionItemPressed
                                 ]}
                             >
-                                <Share2 size={24} color={theme.colors.onSurfaceVariant} />
+                                <Ionicons name="share-outline" size={24} color={theme.colors.onSurfaceVariant} />
                                 <Text style={styles.modalActionLabel}>Share</Text>
                             </Pressable>
                         </View>

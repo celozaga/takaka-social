@@ -5,6 +5,7 @@ import { AppBskyFeedDefs } from '@atproto/api';
 import SmartVideoPlayer from './SmartVideoPlayer';
 import { theme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
+import { UI_CONFIG, isFeatureEnabled } from '@/lib/config';
 
 interface Props {
   videoPosts: AppBskyFeedDefs.FeedViewPost[];
@@ -19,7 +20,7 @@ interface Props {
 const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMore, onRefresh, isRefreshing, onActiveIndexChange }) => {
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isFeedMuted, setIsFeedMuted] = useState(true);
+  const [isFeedMuted, setIsFeedMuted] = useState(!isFeatureEnabled('VIDEO_AUTOPLAY')); // Start unmuted if autoplay is enabled
   const { height } = useWindowDimensions();
   const flatListRef = useRef<FlatList>(null);
 
@@ -45,11 +46,11 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
     }
   }).current;
 
-  // Configuração melhorada para detecção de visibilidade
+  // Enhanced view configuration for immersive video experience
   const viewConfigRef = useRef({ 
-    viewAreaCoveragePercentThreshold: 70, // Aumentado para 70% para melhor detecção
-    minimumViewTime: 300, // Mínimo de 300ms para considerar como ativo
-    waitForInteraction: false, // Não esperar interação para mudança
+    viewAreaCoveragePercentThreshold: 75, // Higher threshold for better video focus
+    minimumViewTime: isFeatureEnabled('VIDEO_AUTOPLAY') ? 200 : 500, // Faster detection if autoplay is enabled
+    waitForInteraction: false, // Don't wait for user interaction
   });
 
   // Garantir que o primeiro vídeo seja ativado quando a lista carregar
@@ -145,19 +146,25 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
         return null;
       }}
       
-      // Otimizações de renderização para performance
-      windowSize={5} // Renderizar 5 telas (2 acima + atual + 2 abaixo)
-      initialNumToRender={2} // Renderizar 2 inicialmente para preloading
-      maxToRenderPerBatch={2} // Máximo 2 por batch para não travar
-      updateCellsBatchingPeriod={100} // Atualizar células a cada 100ms
-      removeClippedSubviews={true} // Remove views fora da tela para economizar memória
+      // Enhanced performance optimizations for immersive experience
+      windowSize={isFeatureEnabled('VIDEO_PRELOADING') ? 7 : 5} // More windows if preloading is enabled
+      initialNumToRender={isFeatureEnabled('VIDEO_PRELOADING') ? 3 : 2} // Render more initially if preloading
+      maxToRenderPerBatch={isFeatureEnabled('VIDEO_PRELOADING') ? 3 : 2} // Higher batch size for smoother experience
+      updateCellsBatchingPeriod={isFeatureEnabled('VIDEO_AUTOPLAY') ? 50 : 100} // Faster updates for autoplay
+      removeClippedSubviews={true} // Memory optimization
       
-      // Layout otimizado
+      // Additional performance optimizations
       getItemLayout={(_: any, index: number) => ({
         length: height,
         offset: height * index,
         index,
       })}
+      
+      // Keep active video alive during fast scrolling
+      maintainVisibleContentPosition={{
+        minIndexForVisible: 0,
+        autoscrollToTopThreshold: 2,
+      }}
     />
   );
 };

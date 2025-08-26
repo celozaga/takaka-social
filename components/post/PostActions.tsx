@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Repeat, MessageCircle } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { usePostActions } from '../../hooks/usePostActions';
@@ -38,7 +38,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
   return (
     <View style={styles.container}>
       <Pressable onPress={handleReplyClick} style={styles.actionButton}>
-        <MessageCircle size={18} color={theme.colors.onSurfaceVariant} />
+        <Ionicons name="chatbubble-outline" size={18} color={theme.colors.onSurfaceVariant} />
         <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
       </Pressable>
       <Pressable 
@@ -46,7 +46,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         disabled={isReposting}
         style={styles.actionButton}
       >
-        <Repeat size={18} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
+        <Ionicons name="repeat-outline" size={18} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
         <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCompactNumber(repostCount)}</Text>
       </Pressable>
       <Pressable 
@@ -54,7 +54,7 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
         disabled={isLiking}
         style={styles.actionButton}
       >
-        <Heart size={18} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? theme.colors.pink : 'none'} />
+        <Ionicons name={likeUri ? "heart" : "heart-outline"} size={18} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} />
         <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{formatCompactNumber(likeCount)}</Text>
       </Pressable>
     </View>

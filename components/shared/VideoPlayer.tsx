@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from '
 import { Image } from 'expo-image';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import type { ContentType } from 'expo-video';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/lib/theme';
 import { formatPlayerTime } from '@/lib/time';
 import { AppBskyFeedDefs, AppBskyEmbedVideo } from '@atproto/api';
@@ -504,7 +504,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <Pressable style={styles.controlsOverlay} onPress={showControls}>
           <View style={styles.centerControls}>
             <Pressable onPress={togglePlayPause} style={styles.playPauseButton}>
-              {isPlaying ? <Pause size={48} color="white" fill="white" /> : <Play size={48} color="white" fill="white" />}
+              <Ionicons name={isPlaying ? "pause" : "play"} size={48} color="white" />
             </Pressable>
           </View>
 
@@ -516,10 +516,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </View>
             <Text style={styles.timeText}>{formatPlayerTime(duration || 0)}</Text>
             <Pressable onPress={toggleMute} style={styles.iconButton}>
-              {isMuted ? <VolumeX size={20} color="white" /> : <Volume2 size={20} color="white" />}
+              <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={20} color="white" />
             </Pressable>
             <Pressable onPress={handleFullscreen} style={styles.iconButton}>
-              {isFullscreen ? <Minimize size={20} color="white" /> : <Maximize size={20} color="white" />}
+              <Ionicons name={isFullscreen ? "contract" : "expand"} size={20} color="white" />
             </Pressable>
           </View>
         </Pressable>

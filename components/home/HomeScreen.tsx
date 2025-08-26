@@ -15,10 +15,14 @@ const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
   const [feeds, setFeeds] = useState<AppBskyFeedDefs.GeneratorView[]>([]);
   const [selectedFeed, setSelectedFeed] = useState<string>(session ? 'following' : DISCOVER_FEED_URI);
+  
+  console.log('🏠 DEBUG HomeScreen: session exists:', !!session, 'selectedFeed:', selectedFeed);
   const [isLoadingFeeds, setIsLoadingFeeds] = useState(true);
 
   useEffect(() => {
+    console.log('🏠 DEBUG HomeScreen useEffect: session changed:', !!session);
     if (!session) {
+      console.log('🏠 DEBUG: No session, setting Discovery feed');
       setSelectedFeed(DISCOVER_FEED_URI);
       setIsLoadingFeeds(false);
       setFeeds([]);
@@ -67,11 +71,14 @@ const HomeScreen: React.FC = () => {
   }, [agent, session]);
   
   useEffect(() => {
+    console.log('🏠 DEBUG Second useEffect: session:', !!session, 'currentFeed:', selectedFeed);
     if (session) {
       if (selectedFeed === DISCOVER_FEED_URI) {
+        console.log('🏠 DEBUG: User logged in, switching from Discovery to Following');
         setSelectedFeed('following');
       }
     } else {
+      console.log('🏠 DEBUG: No session, ensuring Discovery feed is selected');
       setSelectedFeed(DISCOVER_FEED_URI);
     }
   }, [session]);

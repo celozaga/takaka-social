@@ -32,6 +32,7 @@ const credentialsStore = {
 
 interface AtpContextType {
   agent: BskyAgent;
+  publicAgent: BskyAgent;
   session: AtpSessionData | null;
   serviceUrl: string;
   isLoadingSession: boolean;
@@ -45,7 +46,7 @@ const AtpContext = createContext<AtpContextType | undefined>(undefined);
 
 export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<AtpSessionData | null>(null);
-  const [serviceUrl, setServiceUrl] = useState(PDS_URL);
+  const [serviceUrl, setServiceUrl] = useState<string>(PDS_URL);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPollingPaused, setIsPollingPaused] = useState(false);
@@ -71,9 +72,18 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     },
   }), [serviceUrl]);
+
+  // Create a dedicated public agent for unauthenticated requests
+  const publicAgent = useMemo(() => {
+    console.log('🔧 DEBUG: Creating public agent for unauthenticated requests');
+    return new BskyAgent({
+      service: 'https://bsky.social'
+    });
+  }, []);
   
   useEffect(() => {
     const initialize = async () => {
+      console.log('🔧 DEBUG: Initializing AtpContext...');
       setIsLoadingSession(true);
       try {
         const storedCreds = await credentialsStore.getItem();
@@ -96,6 +106,59 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
           }, 0);
         } else {
+            console.log('🔧 DEBUG: No stored credentials, testing public agent...');
+            // Test public agent functionality
+            console.log('🔧 DEBUG: Starting public agent test...');
+            console.log('🔧 DEBUG: Public agent service:', publicAgent.service);
+            
+            // First test: simple health check
+            fetch('https://bsky.social/xrpc/com.atproto.server.describeServer')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('🌐 DEBUG: Direct API test successful:', data);
+                })
+                .catch(error => {
+                    console.error('🌐 ERROR: Direct API test failed:', error);
+                });
+            
+            // Test 1: Try getting profile (public endpoint)
+            publicAgent.getProfile({ actor: 'bsky.app' }).then((response) => {
+                console.log('✅ SUCCESS: Public agent getProfile working:', response?.data?.handle);
+            }).catch((error) => {
+                console.error('❌ ERROR: Public agent getProfile failed:', error);
+            });
+            
+            // Test 2: Try feed generators endpoint (public)
+            publicAgent.app.bsky.feed.getFeedGenerators({
+                feeds: ['at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot']
+            }).then((response) => {
+                console.log('✅ SUCCESS: getFeedGenerators working:', response?.data?.feeds?.length);
+            }).catch((error) => {
+                console.error('❌ ERROR: getFeedGenerators failed:', error);
+            });
+            
+            // Test 3: Try search posts (public)
+            publicAgent.app.bsky.feed.searchPosts({ q: 'bluesky', limit: 1 }).then((response) => {
+                console.log('✅ SUCCESS: searchPosts working:', response?.data?.posts?.length);
+            }).catch((error) => {
+                console.error('❌ ERROR: searchPosts failed:', error);
+            });
+            
+            // Test 4: Original getFeed test
+            publicAgent.app.bsky.feed.getFeed({ 
+                feed: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot', 
+                limit: 1 
+            }).then((response) => {
+                console.log('✅ SUCCESS: Public agent getFeed working correctly', response?.data?.feed?.length, 'posts received');
+            }).catch((error) => {
+                console.error('❌ ERROR: Public agent getFeed failed:', {
+                    message: error.message,
+                    status: error.status,
+                    statusText: error.statusText,
+                    error: error
+                });
+            });
+            
             setIsLoadingSession(false);
         }
       } catch (error) {
@@ -178,15 +241,22 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setServiceUrl(params.serviceUrl);
     setSession(newSession);
     
-    // The main agent will be re-created via useMemo due to serviceUrl change.
-    // The new session is set, and the UI will update accordingly.
-    // We can trigger an immediate notification fetch with the new session.
-    // A slight delay allows the new agent to be ready.
-    setTimeout(async () => {
+    // Ensure the main agent gets the session after the serviceUrl change
+    // We need to wait briefly for the useMemo to recreate the agent with the new serviceUrl
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    try {
+        // Apply the session to the main agent to ensure it's synchronized
+        await agent.resumeSession(newSession);
+        
+        // Now fetch unread count with the properly configured agent
         if (agent.hasSession) {
-           await fetchUnreadCount();
+            await fetchUnreadCount();
         }
-    }, 100);
+    } catch (error) {
+        console.error("Failed to sync session with main agent:", error);
+        // The session state is already set, so the UI will still work
+    }
 
   }, [agent, fetchUnreadCount]);
 
@@ -196,7 +266,7 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AtpContext.Provider value={{ 
-        agent, session, serviceUrl, isLoadingSession, login, logout, 
+        agent, publicAgent, session, serviceUrl, isLoadingSession, login, logout, 
         unreadCount, resetUnreadCount
     }}>
       {children}
