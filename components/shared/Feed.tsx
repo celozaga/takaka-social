@@ -13,7 +13,7 @@ import FullPostCardSkeleton from '../post/FullPostCardSkeleton';
 import ErrorState from './ErrorState';
 import { Ionicons } from '@expo/vector-icons';
 import { FEATURES, FEED_CONFIG, isFeatureEnabled } from '@/lib/config';
-import { FlashList } from '@shopify/flash-list';
+
 
 type MediaFilter = 'all' | 'photos' | 'videos';
 type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
