@@ -58,3 +58,6 @@ export { default as ErrorState } from './ErrorState';
 export { default as RichTextRenderer } from './RichTextRenderer';
 export { default as Label } from './Label';
 export { default as ContentWarning } from './ContentWarning';
+
+// Accessibility Components
+export { default as AccessibleText } from './AccessibleText';

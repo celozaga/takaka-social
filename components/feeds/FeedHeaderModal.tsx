@@ -91,7 +91,7 @@ const FeedHeaderModal: React.FC = () => {
                         onPress={handlePinToggle}
                     />
                 </View>
-                 <View style={{ padding: theme.spacing.l, paddingTop: 0 }}>
+                 <View style={{ padding: theme.spacing.lg, paddingTop: 0 }}>
                     <ActionButton
                         icon={AlertCircle}
                         text={t('feedModal.report')}

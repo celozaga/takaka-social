@@ -11,6 +11,7 @@ import { HiddenPostsProvider } from '@/context/HiddenPostsContext';
 import { ModerationProvider } from '@/context/ModerationContext';
 import { ProfileCacheProvider } from '@/context/ProfileCacheContext';
 import { BookmarksProvider } from '@/context/BookmarksContext';
+import { AccessibilityProvider } from '@/context/AccessibilityContext';
 import { Toaster, ToastProvider } from '@/components/shared';
 import { StatusBar } from 'expo-status-bar';
 import BottomNavbar from '@/components/layout/BottomNavbar';
@@ -293,35 +294,37 @@ function ThemedAppLayout() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider defaultColorScheme="dark">
-      <ToastProvider>
-        <AtpProvider>
-          <ModerationProvider>
-            <UIProvider>
-              <HiddenPostsProvider>
-                <BookmarksProvider>
-                  <ProfileCacheProvider>
-                    <SafeAreaProvider>
-                      <GlobalAuthGuard>
-                        <Head>
-                          {/* Default meta tags */}
-                          <meta property="og:site_name" content="Takaka" />
-                          <meta property="og:type" content="website" />
-                          <meta property="og:image" content="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-                        </Head>
-                        <StatusBar style="light" />
-                        <ThemedAppLayout />
-                        <Toaster />
-                      </GlobalAuthGuard>
-                    </SafeAreaProvider>
-                  </ProfileCacheProvider>
-                </BookmarksProvider>
-              </HiddenPostsProvider>
-            </UIProvider>
-          </ModerationProvider>
-        </AtpProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    <AccessibilityProvider>
+      <ThemeProvider defaultColorScheme="dark">
+        <ToastProvider>
+          <AtpProvider>
+            <ModerationProvider>
+              <UIProvider>
+                <HiddenPostsProvider>
+                  <BookmarksProvider>
+                    <ProfileCacheProvider>
+                      <SafeAreaProvider>
+                        <GlobalAuthGuard>
+                          <Head>
+                            {/* Default meta tags */}
+                            <meta property="og:site_name" content="Takaka" />
+                            <meta property="og:type" content="website" />
+                            <meta property="og:image" content="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+                          </Head>
+                          <StatusBar style="light" />
+                          <ThemedAppLayout />
+                          <Toaster />
+                        </GlobalAuthGuard>
+                      </SafeAreaProvider>
+                    </ProfileCacheProvider>
+                  </BookmarksProvider>
+                </HiddenPostsProvider>
+              </UIProvider>
+            </ModerationProvider>
+          </AtpProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </AccessibilityProvider>
   );
 }
 

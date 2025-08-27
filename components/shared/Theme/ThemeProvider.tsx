@@ -17,6 +17,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { Appearance, ColorSchemeName } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightTheme, darkTheme, getTheme, ColorScheme, Theme } from '@/src/design/tokens';
+// Remove accessibility import as it creates circular dependency
 
 // ============================================================================
 // Types
@@ -28,6 +29,10 @@ interface ThemeContextType {
   isDark: boolean;
   setColorScheme: (scheme: ColorScheme | 'system') => void;
   toggleTheme: () => void;
+  // Accessibility-aware theme properties
+  accessibleTypography: typeof lightTheme.typography;
+  textScale: number;
+  fontWeight: 'normal' | 'bold';
 }
 
 // ============================================================================
@@ -57,6 +62,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 }) => {
   const [colorScheme, setColorSchemeState] = useState<ColorScheme>(defaultColorScheme);
   const [isSystemTheme, setIsSystemTheme] = useState(false);
+  
+  // Remove accessibility dependency to avoid circular dependency
 
   // Initialize theme from storage or system preference
   useEffect(() => {
@@ -124,12 +131,18 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const theme = getTheme(colorScheme);
   const isDark = colorScheme === 'dark';
 
+  // Create accessibility-aware typography (simplified for now)
+  const accessibleTypography = theme.typography;
+
   const contextValue: ThemeContextType = {
     theme,
     colorScheme,
     isDark,
     setColorScheme,
     toggleTheme,
+    accessibleTypography,
+    textScale: 1.0, // Default scale
+    fontWeight: 'normal', // Default weight
   };
 
   return (
@@ -197,6 +210,31 @@ export const useThemedStyles = <T extends Record<string, any>>(
 ): T => {
   const { theme } = useTheme();
   return React.useMemo(() => createStyles(theme), [theme, createStyles]);
+};
+
+/**
+ * Hook to create accessibility-aware text styles
+ * 
+ * Usage:
+ * const textStyles = useAccessibleTextStyles();
+ * const styles = {
+ *   title: textStyles.createTextStyle(theme.typography.titleLarge),
+ *   body: textStyles.createTextStyle(theme.typography.bodyMedium),
+ * };
+ */
+export const useAccessibleTextStyles = () => {
+  const { accessibleTypography, textScale, fontWeight } = useTheme();
+  
+  return {
+    accessibleTypography,
+    textScale,
+    fontWeight,
+    createTextStyle: (baseStyle: any) => ({
+      ...baseStyle,
+      fontSize: baseStyle.fontSize ? baseStyle.fontSize * textScale : undefined,
+      fontWeight: fontWeight === 'bold' ? 'bold' : baseStyle.fontWeight,
+    }),
+  };
 };
 
 // ============================================================================

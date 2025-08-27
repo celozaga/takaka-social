@@ -11,6 +11,7 @@ import ContentWarning from '../shared/ContentWarning';
 import { PostCardSkeleton, useTheme, Typography, Avatar } from '@/components/shared';
 import Card from '@/components/shared/Card';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { AccessibleText } from '@/components/shared';
 import { formatCompactNumber } from '@/lib/formatters';
 import { OptimizedImage } from '../ui';
 
@@ -221,22 +222,22 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
             {mediaElement}
             <View style={styles.content}>
                 {record?.text && (
-                    <Typography variant="bodyMedium" color="onSurface" numberOfLines={2}>
+                    <AccessibleText variant="bodyMedium" numberOfLines={2} style={{ color: theme.colors.onSurface }}>
                         <RichTextRenderer record={record} />
-                    </Typography>
+                    </AccessibleText>
                 )}
                 <View style={styles.footer}>
                     <Link href={profileLink as any} onPress={e => e.stopPropagation()} asChild>
                     <Pressable style={styles.authorContainer}>
                         <Avatar 
                             uri={author.avatar?.replace('/img/avatar/', '/img/avatar_thumbnail/')} 
-                            size="sm"
+                            size="xs"
                             fallback={author.displayName?.charAt(0) || author.handle.charAt(0)}
                             accessibilityLabel={`${author.displayName}'s avatar`} 
                         />
-                        <Typography variant="labelMedium" color="onSurfaceVariant" style={styles.authorName} numberOfLines={1}>
+                        <AccessibleText variant="bodySmall" style={[styles.authorName, { color: theme.colors.onSurface }]} numberOfLines={1}>
                             {author.displayName || `@${author.handle}`}
-                        </Typography>
+                        </AccessibleText>
                     </Pressable>
                     </Link>
                     <Pressable 
@@ -244,7 +245,7 @@ const PostCard: React.FC<PostCardProps> = React.memo(({ feedViewPost, isClickabl
                         disabled={isLiking}
                         style={styles.likeButton}
                     >
-                        <Heart size={16} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} fill={likeUri ? theme.colors.pink : 'none'} />
+                        <Heart size={16} color={likeUri ? theme.colors.pink : theme.colors.onSurface} fill={likeUri ? theme.colors.pink : 'none'} />
                         {likeCount > 0 && <Text style={[styles.likeCount, !!likeUri && { color: theme.colors.pink }]}>{formatCompactNumber(likeCount)}</Text>}
                     </Pressable>
                 </View>
@@ -278,7 +279,7 @@ const createStyles = (theme: any) => StyleSheet.create({
         authorContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, flex: 1, minWidth: 0 },
         authorName: { flexShrink: 1 },
         likeButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, padding: theme.spacing.xs, margin: -theme.spacing.xs },
-        likeCount: { ...theme.typography.labelMedium, color: theme.colors.onSurfaceVariant },
+        likeCount: { ...theme.typography.labelMedium, color: theme.colors.onSurface },
         contextContainer: {
             flexDirection: 'row',
             alignItems: 'center',

@@ -73,8 +73,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     height: theme.sizes.appBarHeight || 56,
     paddingHorizontal: theme.spacing.md,
     backgroundColor: theme.colors.surface,
-    borderBottomWidth: Platform.OS === 'web' ? 1 : 0,
-    borderBottomColor: theme.colors.outline,
   },
   sideContainer: {
     minWidth: 48,
