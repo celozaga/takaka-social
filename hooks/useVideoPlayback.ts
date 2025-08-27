@@ -431,5 +431,8 @@ export const useVideoPlayback = (
         }
     }, [agent, embed, authorDid, enabled]);
 
-    return { ...playbackUrls, error };
+    return { 
+        ...playbackUrls, 
+        error
+    };
 };

@@ -27,9 +27,25 @@ interface ReplyProps {
 
 const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> = ({embed, authorDid}) => {
     const aspectRatio = embed.aspectRatio ? embed.aspectRatio.width / embed.aspectRatio.height : 16/9;
+    
+    // Criar um PostView mínimo válido para o VideoPlayer
+    const miniPost: AppBskyFeedDefs.PostView = {
+        uri: `reply-video-${Date.now()}`,
+        cid: embed.cid,
+        author: { did: authorDid } as any,
+        embed: embed,
+        record: { text: '', createdAt: new Date().toISOString() } as any,
+        indexedAt: new Date().toISOString(),
+        labels: [],
+        likeCount: 0,
+        replyCount: 0,
+        repostCount: 0,
+        viewer: {},
+    };
+    
     return (
       <View style={[styles.mediaPreview, { aspectRatio, overflow: 'hidden' }]}>
-        <VideoPlayer post={{...({} as any), embed, author: { did: authorDid } as any } as any} />
+        <VideoPlayer post={miniPost} />
       </View>
     );
 };

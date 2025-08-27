@@ -50,6 +50,7 @@ export * from './Loading';
 
 // Legacy components (existing)
 export { default as VideoPlayer } from './VideoPlayer';
+export { default as PhotoCarousel } from './PhotoCarousel';
 export { default as MediaActionsModal } from './MediaActionsModal';
 export { default as RepostModal } from './RepostModal';
 export { default as Feed } from './Feed';

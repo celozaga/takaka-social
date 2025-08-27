@@ -8,6 +8,7 @@ import { formatCompactDate } from '@/lib/formatters';
 import { BadgeCheck, Repeat, MessageCircle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import VideoPlayer from '../shared/VideoPlayer';
+import PhotoCarousel from '../shared/PhotoCarousel';
 import { OptimizedImage } from '../ui';
 import { useTheme } from '@/components/shared';
 // removed direct useVideoPlayback in slideshow; we reuse shared VideoPlayer
@@ -187,7 +188,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         const isDesktop = width >= 768;
         const mainContentMaxWidth = 640;
         const navRailWidth = 80;
-        const listPadding = theme.spacing.l * 2;
+        const listPadding = theme.spacing.lg * 2;
 
         const effectiveContentWidth = isDesktop
             ? Math.min(width - navRailWidth, mainContentMaxWidth)
@@ -197,6 +198,47 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         
         const calculatedHeight = containerWidth / slideshowAspectRatio;
         const finalHeight = Math.min(calculatedHeight, 700);
+
+        // Separar imagens e vídeos
+        const imageItems = mediaItems.filter(item => !('type' in item && item.type === 'video')) as AppBskyEmbedImages.ViewImage[];
+        const videoItems = mediaItems.filter(item => 'type' in item && item.type === 'video') as { type: 'video', view: AppBskyEmbedVideo.View }[];
+
+        // Se temos apenas imagens, usar PhotoCarousel
+        if (imageItems.length > 0 && videoItems.length === 0) {
+            return (
+                <PhotoCarousel 
+                    images={imageItems}
+                    maxHeight={700}
+                />
+            );
+        }
+
+        // Se temos apenas vídeos, usar VideoPlayer
+        if (videoItems.length > 0 && imageItems.length === 0) {
+            if (videoItems.length === 1) {
+                const videoItem = videoItems[0];
+                const aspectRatio = videoItem.view.aspectRatio ? videoItem.view.aspectRatio.width / videoItem.view.aspectRatio.height : 16 / 9;
+                
+                const mediaStyle = {
+                    marginTop: theme.spacing.sm,
+                    borderRadius: theme.radius.md,
+                    overflow: 'hidden',
+                    aspectRatio,
+                    maxHeight: 700,
+                    width: '100%',
+                    backgroundColor: 'black'
+                } as const;
+
+                return (
+                    <VideoPlayer
+                        post={post}
+                        style={mediaStyle}
+                    />
+                );
+            }
+        }
+
+        // Se temos mistura de imagens e vídeos, usar o slideshow original
 
         const SlideshowVideoItem: React.FC<{item: { type: 'video', view: AppBskyEmbedVideo.View }}> = ({item}) => {
             // Monta um PostView mínimo para reutilizar o VideoPlayer unificado
