@@ -4,10 +4,11 @@ import { OptimizedImage } from '../ui';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import type { ContentType } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 import { formatPlayerTime } from '@/lib/time';
 import { AppBskyFeedDefs, AppBskyEmbedVideo } from '@atproto/api';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
+import { Tooltip } from './Tooltip';
 
 interface VideoPlayerProps {
   post: AppBskyFeedDefs.PostView;
@@ -447,6 +448,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, []);
 
+  const { theme } = useTheme();
+
+  // Dynamic styles depending on theme
+  const themedStyles = React.useMemo(() => StyleSheet.create({
+    timeText: { color: 'white', ...theme.typography.bodySmall, width: 50, textAlign: 'center' }
+  }), [theme]);
+
   const progress = duration ? position / duration : 0;
   const showSpinner = isLoadingUrl || isLoading;
 
@@ -503,24 +511,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {showControlsOverlay && isControlsVisible && (
         <Pressable style={styles.controlsOverlay} onPress={showControls}>
           <View style={styles.centerControls}>
-            <Pressable onPress={togglePlayPause} style={styles.playPauseButton}>
-              <Ionicons name={isPlaying ? "pause" : "play"} size={48} color="white" />
-            </Pressable>
+            <Tooltip contentKey={isPlaying ? "media.pause" : "media.play"} position="top">
+              <Pressable onPress={togglePlayPause} style={styles.playPauseButton}>
+                <Ionicons name={isPlaying ? "pause" : "play"} size={48} color="white" />
+              </Pressable>
+            </Tooltip>
           </View>
 
           <View style={styles.bottomControls}>
-            <Text style={styles.timeText}>{formatPlayerTime(position)}</Text>
+            <Text style={[styles.timeText, themedStyles.timeText]}>{formatPlayerTime(position)}</Text>
             <View style={styles.sliderContainer}>
               <View style={[styles.sliderProgress, { flex: progress }]} />
               <View style={{ flex: 1 - progress }} />
             </View>
-            <Text style={styles.timeText}>{formatPlayerTime(duration || 0)}</Text>
-            <Pressable onPress={toggleMute} style={styles.iconButton}>
-              <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={20} color="white" />
-            </Pressable>
-            <Pressable onPress={handleFullscreen} style={styles.iconButton}>
-              <Ionicons name={isFullscreen ? "contract" : "expand"} size={20} color="white" />
-            </Pressable>
+            <Text style={[styles.timeText, themedStyles.timeText]}>{formatPlayerTime(duration || 0)}</Text>
+            <Tooltip contentKey={isMuted ? "media.unmute" : "media.mute"} position="top">
+              <Pressable onPress={toggleMute} style={styles.iconButton}>
+                <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={20} color="white" />
+              </Pressable>
+            </Tooltip>
+            <Tooltip contentKey={isFullscreen ? "media.exitFullscreen" : "media.fullscreen"} position="top">
+              <Pressable onPress={handleFullscreen} style={styles.iconButton}>
+                <Ionicons name={isFullscreen ? "contract" : "expand"} size={20} color="white" />
+              </Pressable>
+            </Tooltip>
           </View>
         </Pressable>
       )}
@@ -564,7 +578,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  timeText: { color: 'white', ...theme.typography.bodySmall, width: 50, textAlign: 'center' },
+  timeText: { color: 'white', width: 50, textAlign: 'center' },
   sliderContainer: {
     flex: 1,
     height: 4,

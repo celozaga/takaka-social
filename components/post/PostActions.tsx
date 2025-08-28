@@ -7,6 +7,7 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '@/components/shared';
+import { Tooltip } from '@/components/shared/Tooltip';
 import { formatCompactNumber } from '@/lib/formatters';
 
 interface PostActionsProps {
@@ -51,26 +52,34 @@ const PostActions: React.FC<PostActionsProps> = ({ post }) => {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={handleReplyClick} style={styles.actionButton}>
-        <Ionicons name="chatbubble-outline" size={18} color={theme.colors.onSurfaceVariant} />
-        <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
-      </Pressable>
-      <Pressable 
-        onPress={handleRepostClick}
-        disabled={isReposting}
-        style={styles.actionButton}
-      >
-        <Ionicons name="repeat-outline" size={18} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
-        <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCompactNumber(repostCount)}</Text>
-      </Pressable>
-      <Pressable 
-        onPress={handleLikeClick}
-        disabled={isLiking}
-        style={styles.actionButton}
-      >
-        <Ionicons name={likeUri ? "heart" : "heart-outline"} size={18} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} />
-        <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{formatCompactNumber(likeCount)}</Text>
-      </Pressable>
+      <Tooltip contentKey="post.reply" position="top">
+        <Pressable onPress={handleReplyClick} style={styles.actionButton}>
+          <Ionicons name="chatbubble-outline" size={18} color={theme.colors.onSurfaceVariant} />
+          <Text style={styles.actionText}>{formatCompactNumber(post.replyCount || 0)}</Text>
+        </Pressable>
+      </Tooltip>
+      
+      <Tooltip contentKey={repostUri ? "post.unrepost" : "post.repost"} position="top">
+        <Pressable 
+          onPress={handleRepostClick}
+          disabled={isReposting}
+          style={styles.actionButton}
+        >
+          <Ionicons name="repeat-outline" size={18} color={repostUri ? theme.colors.primary : theme.colors.onSurfaceVariant} />
+          <Text style={[styles.actionText, repostUri && styles.repostTextActive]}>{formatCompactNumber(repostCount)}</Text>
+        </Pressable>
+      </Tooltip>
+      
+      <Tooltip contentKey={likeUri ? "post.unlike" : "post.like"} position="top">
+        <Pressable 
+          onPress={handleLikeClick}
+          disabled={isLiking}
+          style={styles.actionButton}
+        >
+          <Ionicons name={likeUri ? "heart" : "heart-outline"} size={18} color={likeUri ? theme.colors.pink : theme.colors.onSurfaceVariant} />
+          <Text style={[styles.actionText, likeUri && styles.likeTextActive]}>{formatCompactNumber(likeCount)}</Text>
+        </Pressable>
+      </Tooltip>
     </View>
   );
 };

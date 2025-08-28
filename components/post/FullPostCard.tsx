@@ -20,28 +20,14 @@ interface FullPostCardProps {
 type MediaItem = AppBskyEmbedImages.ViewImage | { type: 'video', view: AppBskyEmbedVideo.View };
 
 const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
-  console.log('🎬 FullPostCard: COMPONENT CALLED with feedViewPost:', {
-    hasFeedViewPost: !!feedViewPost,
-    hasPost: !!feedViewPost?.post,
-    postUri: feedViewPost?.post?.uri,
-    hasEmbed: !!feedViewPost?.post?.embed,
-    embedType: feedViewPost?.post?.embed?.$type
-  });
-
-  console.log('🎬 FullPostCard: ABOUT TO CALL useUI()');
   const { setPostForNav } = useUI();
   const { theme } = useTheme();
   
   const styles = createStyles(theme);
-  console.log('🎬 FullPostCard: useUI() called successfully');
   
-  console.log('🎬 FullPostCard: ABOUT TO CALL useRouter()');
   const router = useRouter();
-  console.log('🎬 FullPostCard: useRouter() called successfully');
   
-  console.log('🎬 FullPostCard: ABOUT TO DESTRUCTURE feedViewPost');
   const { post, reason } = feedViewPost;
-  console.log('🎬 FullPostCard: Destructuring successful:', { hasPost: !!post, hasReason: !!reason });
     const author = post.author;
     const record = post.record as { text: string; createdAt: string, facets?: RichText['facets'] };
 
@@ -69,54 +55,26 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
 
     const renderMedia = () => {
         if (!post.embed) {
-            console.log('🎬 FullPostCard: No post.embed found');
             return null;
         }
-
-        console.log('🎬 FullPostCard: Post has embed:', {
-            embedType: post.embed.$type,
-            hasEmbed: !!post.embed
-        });
 
         const mediaItems: MediaItem[] = [];
         let videoEmbed: AppBskyEmbedVideo.View | undefined;
 
         const processEmbed = (embed: unknown) => {
-            console.log('🎬 FullPostCard: Processing embed:', {
-                embedType: (embed as any)?.$type,
-                isVideo: AppBskyEmbedVideo.isView(embed),
-                isImage: AppBskyEmbedImages.isView(embed),
-                isRecordWithMedia: AppBskyEmbedRecordWithMedia.isView(embed)
-            });
-
             if (AppBskyEmbedImages.isView(embed)) {
-                console.log('🎬 FullPostCard: Processing image embed');
                 mediaItems.push(...(embed as AppBskyEmbedImages.View).images);
             } else if (AppBskyEmbedVideo.isView(embed)) {
-                console.log('🎬 FullPostCard: Processing video embed');
                 const view = embed as AppBskyEmbedVideo.View;
                 mediaItems.push({ type: 'video', view });
                 videoEmbed = view; // Capture video embed for single video case
-                console.log('🎬 FullPostCard: Video embed captured:', {
-                    cid: view.cid,
-                    hasPlaylist: !!view.playlist,
-                    playlistUrl: view.playlist
-                });
             } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-                console.log('🎬 FullPostCard: Processing record with media embed');
                 processEmbed((embed as AppBskyEmbedRecordWithMedia.View).media);
             }
         };
         processEmbed(post.embed);
 
-        console.log('🎬 FullPostCard: Media processing complete:', {
-            mediaItemsLength: mediaItems.length,
-            hasVideoEmbed: !!videoEmbed,
-            mediaItemTypes: mediaItems.map(item => 'type' in item ? item.type : 'image')
-        });
-
         if (mediaItems.length === 0) {
-            console.log('🎬 FullPostCard: No media items found');
             return null;
         }
         
@@ -125,12 +83,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
         if (mediaItems.length === 1) {
             const item = mediaItems[0];
             const isVideo = 'view' in item;
-
-            console.log('🎬 FullPostCard: Single media item:', {
-                isVideo,
-                itemType: 'type' in item ? item.type : 'image',
-                hasVideoEmbed: !!videoEmbed
-            });
 
             const aspectRatio = isVideo
                 ? (item as { view: AppBskyEmbedVideo.View }).view.aspectRatio
@@ -151,7 +103,6 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             } as const;
 
             if (isVideo && videoEmbed) {
-                console.log('🎬 FullPostCard: Rendering VideoPlayer');
                 return (
                     <VideoPlayer
                         post={post}
@@ -168,6 +119,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
                         {...(Platform.OS === 'web' && {
                             onMouseEnter: () => setIsHovered(true),
                             onMouseLeave: () => setIsHovered(false),
+                            accessibilityRole: undefined, // Prevent nested button on web
                         } as any)}
                     >
                         <OptimizedImage source={imageItem.thumb} accessibilityLabel={imageItem.alt || 'Post image'} style={{ width: '100%', height: '100%' }} contentFit="contain" transition={300} />
@@ -208,6 +160,7 @@ const FullPostCard: React.FC<FullPostCardProps> = ({ feedViewPost }) => {
             return (
                 <PhotoCarousel 
                     images={imageItems}
+                    aspectRatio={slideshowAspectRatio}
                     maxHeight={700}
                 />
             );

@@ -6,7 +6,7 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { BadgeCheck } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 interface ModerationServiceScreenProps {
@@ -25,6 +25,8 @@ type LabelVisibility = 'show' | 'warn' | 'hide';
 
 
 const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ serviceDid }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { getProfile } = useProfileCache();
     const { isReady, adultContentEnabled, labelPreferences, setLabelPreference } = useModeration();
     const [serviceProfile, setServiceProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
@@ -76,7 +78,7 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
                     </View>
                 </View>
                 {serviceProfile.description && (
-                    <Text style={[theme.settingsStyles.description, {marginBottom: 0, marginTop: theme.spacing.l}]}>
+                    <Text style={[theme.settingsStyles.description, {marginBottom: 0, marginTop: theme.spacing.lg}]}>
                         {serviceProfile.description}
                     </Text>
                 )}
@@ -118,20 +120,20 @@ const ModerationServiceScreen: React.FC<ModerationServiceScreenProps> = ({ servi
     );
 };
 
-const styles = StyleSheet.create({
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xxl },
+const createStyles = (theme: any) => StyleSheet.create({
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing['2xl'] },
     errorText: { color: theme.colors.error, textAlign: 'center' },
-    profileHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l },
-    avatar: { width: 64, height: 64, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
-    nameContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s },
+    profileHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
+    avatar: { width: 64, height: 64, borderRadius: theme.radius.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    nameContainer: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
     displayName: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
     handle: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant },
-    labelsContainer: { marginTop: theme.spacing.xl, gap: theme.spacing.l },
-    labelCard: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, padding: theme.spacing.l },
+    labelsContainer: { marginTop: theme.spacing.xl, gap: theme.spacing.lg },
+    labelCard: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, padding: theme.spacing.lg },
     labelTitle: { ...theme.typography.labelLarge, fontWeight: '600', color: theme.colors.onSurface },
     disabledText: { ...theme.typography.bodySmall, color: theme.colors.error, marginTop: theme.spacing.xs },
-    optionsContainer: { marginTop: theme.spacing.m, flexDirection: 'row', gap: theme.spacing.s },
-    optionButton: { flex: 1, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.m, borderRadius: theme.shape.medium, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center' },
+    optionsContainer: { marginTop: theme.spacing.md, flexDirection: 'row', gap: theme.spacing.sm },
+    optionButton: { flex: 1, paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.md, borderRadius: theme.radius.md, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center' },
     optionButtonActive: { backgroundColor: theme.colors.primary },
     optionText: { ...theme.typography.labelLarge, fontWeight: '600', color: theme.colors.onSurface },
     optionTextActive: { color: theme.colors.onPrimary },

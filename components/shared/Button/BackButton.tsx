@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import IconButton from './IconButton';
 import { useTheme } from '@/components/shared';
+import { Tooltip } from '../Tooltip';
 
 interface BackButtonProps {
   onPress?: () => void;
@@ -40,14 +41,16 @@ const BackButton: React.FC<BackButtonProps> = ({
   };
 
   return (
-    <IconButton
-      icon={<ArrowLeft size={getIconSize()} color={theme.colors.onSurface} />}
-      onPress={handlePress}
-      size={size}
-      variant="ghost"
-      style={style}
-      accessibilityLabel={t('common.back')}
-    />
+    <Tooltip contentKey="general.back" position="top">
+      <IconButton
+        icon={<ArrowLeft size={getIconSize()} color={theme.colors.onSurface} />}
+        onPress={handlePress}
+        size={size}
+        variant="ghost"
+        style={style}
+        accessibilityLabel={t('common.back')}
+      />
+    </Tooltip>
   );
 };
 

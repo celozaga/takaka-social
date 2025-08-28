@@ -6,7 +6,7 @@ import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, useWindowDimensions, Alert, Platform, Share, Linking, Modal } from 'react-native';
 import { OptimizedImage } from '../ui';
 import { Link } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 import { formatCompactNumber } from '@/lib/formatters';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 
@@ -20,6 +20,8 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     const { requireAuth } = useAuthGuard();
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     
     // Estados locais para evitar re-renderizações desnecessárias
     const [likeUri, setLikeUri] = useState<string | null>(post.viewer?.like || null);
@@ -50,18 +52,18 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
         }
     }, [post]);
     
-    const handleFollow = useCallback((e: any) => { 
-        e.stopPropagation(); 
-        if (isFollowLoading || isMe || followUri) return; 
-        setIsFollowLoading(true); 
-        agent.follow(post.author.did).then(({ uri }) => setFollowUri(uri)).finally(() => setIsFollowLoading(false)); 
+    const handleFollow = useCallback((e: any) => {
+        e.stopPropagation();
+        if (isFollowLoading || isMe || followUri) return;
+        setIsFollowLoading(true);
+        agent.follow(post.author.did).then(({ uri }) => setFollowUri(uri)).finally(() => setIsFollowLoading(false));
     }, [agent, isFollowLoading, isMe, followUri, post.author.did]);
     
-    const handleUnfollow = useCallback((e: any) => { 
-        e.stopPropagation(); 
-        if (isFollowLoading || isMe || !followUri) return; 
-        setIsFollowLoading(true); 
-        agent.deleteFollow(followUri).then(() => setFollowUri(null)).finally(() => setIsFollowLoading(false)); 
+    const handleUnfollow = useCallback((e: any) => {
+        e.stopPropagation();
+        if (isFollowLoading || isMe || !followUri) return;
+        setIsFollowLoading(true);
+        agent.deleteFollow(followUri).then(() => setFollowUri(null)).finally(() => setIsFollowLoading(false));
     }, [agent, isFollowLoading, isMe, followUri]);
     
     // Função local para like/unlike
@@ -313,27 +315,27 @@ const VideoActions: React.FC<VideoActionsProps> = ({ post }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: { 
         position: 'absolute', 
         bottom: 16,
-        right: theme.spacing.m, 
+        right: theme.spacing.md, 
         alignItems: 'center', 
-        gap: theme.spacing.l,
+        gap: theme.spacing.lg,
         zIndex: 20,
-        paddingVertical: theme.spacing.s,
+        paddingVertical: theme.spacing.sm,
     },
     containerMobile: {
         bottom: 16,
-        right: theme.spacing.s,
-        gap: theme.spacing.m,
+        right: theme.spacing.sm,
+        gap: theme.spacing.md,
     },
     
     // Container do avatar com botão de seguir
     avatarContainer: {
         position: 'relative',
         alignItems: 'center',
-        marginBottom: theme.spacing.m,
+        marginBottom: theme.spacing.md,
     },
     avatarWrapper: {
         position: 'relative',
@@ -341,7 +343,7 @@ const styles = StyleSheet.create({
     avatar: {
         width: 50,
         height: 50,
-        borderRadius: 28,
+        borderRadius: theme.radius.full,
         elevation: 3,
     },
     verifiedBadge: {
@@ -354,8 +356,8 @@ const styles = StyleSheet.create({
     },
     followButton: {
         position: 'absolute',
-        bottom: -4,
-        right: -4,
+        color: theme.colors.SurfaceVariant,
+        bottom: -10,
         backgroundColor: theme.colors.primary,
         borderRadius: 12,
         width: 24,
@@ -363,13 +365,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
     },
     followingButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: theme.colors.surfaceVariant,
     },
     
     // Botões de ação
@@ -396,9 +394,9 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderTopLeftRadius: theme.shape.large,
-        borderTopRightRadius: theme.shape.large,
-        paddingBottom: theme.spacing.l,
+        borderTopLeftRadius: theme.radius.lg,
+        borderTopRightRadius: theme.radius.lg,
+        paddingBottom: theme.spacing.lg,
         maxHeight: '80%',
     },
     dragIndicator: {
@@ -407,34 +405,34 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.onSurfaceVariant,
         borderRadius: 2,
         alignSelf: 'center',
-        marginTop: theme.spacing.s,
-        marginBottom: theme.spacing.s,
+        marginTop: theme.spacing.sm,
+        marginBottom: theme.spacing.sm,
     },
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.l,
-        paddingBottom: theme.spacing.m,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.md,
     },
     modalTitle: {
         ...theme.typography.titleMedium,
         color: theme.colors.onSurface,
     },
     closeButton: {
-        padding: theme.spacing.s,
-        margin: -theme.spacing.s,
+        padding: theme.spacing.sm,
+        margin: -theme.spacing.sm,
     },
     modalActions: {
-        padding: theme.spacing.s,
-        gap: theme.spacing.s,
+        padding: theme.spacing.sm,
+        gap: theme.spacing.sm,
     },
     modalActionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: theme.spacing.m,
-        borderRadius: theme.shape.medium,
-        gap: theme.spacing.m,
+        padding: theme.spacing.md,
+        borderRadius: theme.radius.md,
+        gap: theme.spacing.md,
     },
     modalActionItemPressed: {
         backgroundColor: theme.colors.surfaceContainerHigh,

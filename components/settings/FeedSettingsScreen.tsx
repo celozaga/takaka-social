@@ -6,7 +6,8 @@ import { useToast } from '@/components/shared';
 import { Rss, Pin, Settings, Plus, Trash2, RefreshCw } from 'lucide-react';
 import Head from 'expo-router/head';
 import { View, Pressable, Alert, Platform } from 'react-native';
-import { theme } from '@/lib/theme';
+
+import { useTheme } from '@/hooks/useTheme';
 import SettingsListItem from './SettingsListItem';
 import { SettingsDivider, Switch } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
@@ -16,6 +17,7 @@ const FeedSettingsScreen: React.FC = () => {
     const { session, agent } = useAtp();
     const { preferences, feedViews, addFeed, removeFeed, togglePin } = useSavedFeeds();
     const { toast } = useToast();
+    const { theme } = useTheme();
     const [isLoading, setIsLoading] = useState(false);
     const [settings, setSettings] = useState({
         // These settings are supported by ATProto API

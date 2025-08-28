@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 
 interface VideoProgressBarProps {
   progress: number; // 0 to 1
@@ -15,6 +15,9 @@ const VideoProgressBar: React.FC<VideoProgressBarProps> = ({
   position, 
   onSeek 
 }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+
   return (
     <View style={styles.container}>
       <View style={styles.progressTrack}>
@@ -24,7 +27,7 @@ const VideoProgressBar: React.FC<VideoProgressBarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 0,

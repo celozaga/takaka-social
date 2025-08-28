@@ -13,7 +13,7 @@ import { moderatePost, ModerationDecision } from '../../lib/moderation';
 import ContentWarning from '../shared/ContentWarning';
 import { View, Text, Pressable, StyleSheet, useWindowDimensions, Animated } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import VideoPlayer from '../shared/VideoPlayer';
 import { useVideoPlayback } from '@/hooks/useVideoPlayback';
 
@@ -26,14 +26,16 @@ interface ReplyProps {
 }
 
 const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> = ({embed, authorDid}) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
     const aspectRatio = embed.aspectRatio ? embed.aspectRatio.width / embed.aspectRatio.height : 16/9;
     
     // Criar um PostView mínimo válido para o VideoPlayer
     const miniPost: AppBskyFeedDefs.PostView = {
         uri: `reply-video-${Date.now()}`,
-        cid: embed.cid,
+        cid: `reply-cid-${Date.now()}`,
         author: { did: authorDid } as any,
-        embed: embed,
+        embed: embed as any,
         record: { text: '', createdAt: new Date().toISOString() } as any,
         indexedAt: new Date().toISOString(),
         labels: [],
@@ -51,6 +53,8 @@ const ReplyVideo: React.FC<{embed: AppBskyEmbedVideo.View, authorDid: string}> =
 };
 
 const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
   const moderation = useModeration();
@@ -232,11 +236,11 @@ const Reply: React.FC<ReplyProps> = ({ reply, depth = 0 }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     replyContainer: { 
         flexDirection: 'row', 
-        gap: theme.spacing.m, 
-        marginTop: theme.spacing.l,
+        gap: theme.spacing.md, 
+        marginTop: theme.spacing.lg,
         flex: 1,
     },
     avatarThreadContainer: { 
@@ -247,13 +251,13 @@ const styles = StyleSheet.create({
     avatar: { 
         width: 40, 
         height: 40, 
-        borderRadius: theme.shape.full, 
+        borderRadius: theme.radius.full, 
         backgroundColor: theme.colors.surfaceContainerHigh 
     },
     threadLine: { 
         width: 2, 
         flex: 1, 
-        marginVertical: theme.spacing.s, 
+        marginVertical: theme.spacing.sm, 
         backgroundColor: theme.colors.outline, 
         borderRadius: 1,
         opacity: 0.6,
@@ -289,8 +293,8 @@ const styles = StyleSheet.create({
     footer: { 
         flexDirection: 'row', 
         alignItems: 'center', 
-        gap: theme.spacing.l, 
-        marginTop: theme.spacing.s,
+        gap: theme.spacing.lg, 
+        marginTop: theme.spacing.sm,
         flexWrap: 'wrap',
     },
     footerButton: { 
@@ -304,17 +308,17 @@ const styles = StyleSheet.create({
         color: theme.colors.onSurfaceVariant 
     },
     expandButtonContainer: {
-        marginTop: theme.spacing.s,
+        marginTop: theme.spacing.sm,
         marginBottom: theme.spacing.xs,
     },
     expandButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: theme.spacing.xs,
-        paddingHorizontal: theme.spacing.m,
+        paddingHorizontal: theme.spacing.md,
         paddingVertical: theme.spacing.xs,
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.small,
+        borderRadius: theme.radius.sm,
         alignSelf: 'flex-start',
         borderWidth: 1,
         borderColor: theme.colors.outline,
@@ -325,13 +329,13 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     nestedRepliesContainer: { 
-        marginTop: theme.spacing.s,
-        marginLeft: theme.spacing.m,
+        marginTop: theme.spacing.sm,
+        marginLeft: theme.spacing.md,
     },
     mediaPreview: {
         width: '100%',
-        borderRadius: theme.shape.medium,
-        marginTop: theme.spacing.s,
+        borderRadius: theme.radius.md,
+        marginTop: theme.spacing.sm,
         backgroundColor: theme.colors.surfaceContainerHigh,
     }
 });

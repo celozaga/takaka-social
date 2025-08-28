@@ -1,0 +1,2 @@
+// Compatibility re-export for legacy imports. Prefer importing from '@/components/shared'.
+export { useTheme, useThemeColors, useThemeSpacing, useThemeTypography, useThemedStyles } from '@/components/shared';

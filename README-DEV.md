@@ -97,8 +97,7 @@ SUPPORTED_VIDEO_FORMATS: ['video/mp4', 'video/mov', 'video/avi'],
 ```typescript
 ALLOWED_EMBED_TYPES: [
   'app.bsky.embed.images',
-  'app.bsky.embed.video', 
-  'app.bsky.embed.external',             // External links with previews
+  'app.bsky.embed.video',             // External links with previews
 ],
 ```
 
@@ -168,8 +167,10 @@ import Hls from 'hls.js';
 
 ### Theme System
 ```typescript
-// Using existing theme from @/lib/theme
-import { theme } from '@/lib/theme';
+// Using dynamic theme via useTheme hook
+import { useTheme } from '@/hooks/useTheme';
+
+const { theme } = useTheme();
 
 // Theme values used throughout components
 theme.colors.primary

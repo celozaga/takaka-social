@@ -7,10 +7,11 @@ import { AppBskyActorDefs } from '@atproto/api';
 import { X, Camera } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/hooks/useTheme';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { PrimaryButton, SecondaryButton } from '@/components/shared';
+import { useDebouncedAction } from '@/hooks/useDebounce';
 
 interface EditProfileModalProps {
   onClose: () => void;
@@ -18,6 +19,8 @@ interface EditProfileModalProps {
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { agent, session } = useAtp();
   const { toast } = useToast();
   const { requireAuth } = useAuthGuard();
@@ -39,7 +42,39 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   const [description, setDescription] = useState('');
   const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
-  const [isSaving, setIsSaving] = useState(false);
+
+  const saveProfile = async () => {
+    if (!agent || !session?.did) {
+      toast({ title: t('editProfile.toast.error'), description: t('editProfile.toast.notAuthenticated'), variant: "destructive" });
+      return;
+    }
+
+    try {
+      let avatarRef;
+      if (avatarBlob) {
+        const uploadResponse = await agent.uploadBlob(avatarBlob, { encoding: 'image/jpeg' });
+        avatarRef = uploadResponse.data.blob;
+      }
+
+      await agent.upsertProfile((existing) => {
+        return {
+          ...existing,
+          displayName: displayName.trim(),
+          description: description.trim(),
+          ...(avatarRef && { avatar: avatarRef }),
+        };
+      });
+
+      clearProfile(session.did);
+      toast({ title: t('editProfile.toast.success'), description: t('editProfile.toast.profileUpdated'), variant: "default" });
+      onSuccess();
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({ title: t('editProfile.toast.error'), description: t('editProfile.toast.updateFailed'), variant: "destructive" });
+    }
+  };
+
+  const { execute: executeSave, isLoading: isSavingDebounced } = useDebouncedAction(saveProfile, 1000);
 
   useEffect(() => {
     if (session?.did) {
@@ -79,30 +114,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
     setAvatarBlob(blob);
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      let avatarUploadResult: any;
-      if (avatarBlob) {
-        const res = await agent.uploadBlob(new Uint8Array(await avatarBlob.arrayBuffer()), { encoding: avatarBlob.type });
-        avatarUploadResult = res.data.blob;
-      }
-      await agent.upsertProfile((existing) => ({
-        ...existing,
-        displayName,
-        description,
-        avatar: avatarUploadResult || existing?.avatar,
-      }));
-      if (session?.did) clearProfile(session.did);
-      toast({ title: t('editProfile.toast.success') });
-      onSuccess();
-    } catch (error) {
-      console.error("Failed to save profile:", error);
-      toast({ title: t('editProfile.toast.error'), variant: "destructive" });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+
 
   if (isLoading) {
     return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>
@@ -167,9 +179,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
             />
             <PrimaryButton
                 title={t('common.save')}
-                onPress={handleSave}
-                disabled={!displayName.trim() || isLoading}
-                loading={isLoading}
+                onPress={executeSave}
+                disabled={!displayName.trim() || isLoading || isSavingDebounced}
+                loading={isSavingDebounced}
                 style={styles.modalButton}
             />
         </View>
@@ -177,14 +189,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   );
 };
 
-const styles = StyleSheet.create({
-    centered: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center' },
+const createStyles = (theme: any) => StyleSheet.create({
+    centered: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, alignItems: 'center' },
     errorText: { color: theme.colors.error },
-    container: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, overflow: 'hidden', maxHeight: '90%', display: 'flex' as any, flexDirection: 'column' },
+    container: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, overflow: 'hidden', maxHeight: '90%', display: 'flex' as any, flexDirection: 'column' },
     header: { padding: theme.spacing.l, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
     closeButton: { padding: theme.spacing.s, marginLeft: -theme.spacing.s },
     headerTitle: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
-    saveButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.xl, borderRadius: theme.shape.full },
+    saveButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.xl, borderRadius: theme.radius.full },
     saveButtonDisabled: { opacity: 0.5 },
     saveButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
     content: { padding: theme.spacing.xl },
@@ -193,7 +205,7 @@ const styles = StyleSheet.create({
     avatarImage: { width: '100%', height: '100%', resizeMode: 'cover' },
     avatarOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
     label: { ...theme.typography.labelLarge, color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.xs },
-    input: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
+    input: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: theme.radius.md, color: theme.colors.onSurface, fontSize: 16 },
     textArea: { height: 100, textAlignVertical: 'top' },
     modalActions: { flexDirection: 'row', justifyContent: 'space-between', padding: theme.spacing.l, backgroundColor: theme.colors.surfaceContainerHigh, borderTopWidth: 1, borderTopColor: theme.colors.surfaceContainer },
     modalButton: { flex: 1, marginHorizontal: theme.spacing.xs },

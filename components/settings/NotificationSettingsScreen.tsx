@@ -7,12 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import Head from 'expo-router/head';
 import { Switch } from '@/components/shared';
 import { View, ActivityIndicator, Platform } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import SettingsListItem from './SettingsListItem';
 import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { useDebouncedAction } from '../../hooks/useDebounce';
 
 const PUSH_SERVICE_DID = 'did:web:push.bsky.app';
 const APP_ID = 'social.takaka.app';
@@ -29,9 +30,10 @@ const NotificationSettingsScreen: React.FC = () => {
     const { agent } = useAtp();
     const { toast } = useToast();
     const { t } = useTranslation();
+    const { theme } = useTheme();
 
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+
     const [pushEnabled, setPushEnabled] = useState(false);
     const [settings, setSettings] = useState({
         like: true,
@@ -89,41 +91,38 @@ const NotificationSettingsScreen: React.FC = () => {
         loadSettings();
     }, [agent]);
 
-    const saveSettings = useCallback(async (newSettings: typeof settings) => {
-        setIsSaving(true);
+    const saveNotificationSettings = useCallback(async (newSettings: typeof settings) => {
         const disabledReasons = (Object.keys(newSettings) as SettingsKey[])
             .filter(key => !newSettings[key]);
 
-        try {
-            const { data: currentPrefs } = await agent.app.bsky.actor.getPreferences();
-            const otherPrefs = currentPrefs.preferences.filter(p => p.$type !== 'app.bsky.actor.defs#pushNotificationsPref');
-            
-            const pushPref: PushNotificationsPref = {
-                $type: 'app.bsky.actor.defs#pushNotificationsPref',
-                primary: {
-                    enabled: true,
-                    disabled: disabledReasons,
-                }
-            };
+        const { data: currentPrefs } = await agent.app.bsky.actor.getPreferences();
+        const otherPrefs = currentPrefs.preferences.filter(p => p.$type !== 'app.bsky.actor.defs#pushNotificationsPref');
+        
+        const pushPref: PushNotificationsPref = {
+            $type: 'app.bsky.actor.defs#pushNotificationsPref',
+            primary: {
+                enabled: true,
+                disabled: disabledReasons,
+            }
+        };
 
-            await agent.app.bsky.actor.putPreferences({
-                preferences: [...otherPrefs, pushPref]
-            });
+        await agent.app.bsky.actor.putPreferences({
+            preferences: [...otherPrefs, pushPref]
+        });
 
-            setSettings(newSettings);
-            toast({ title: t('common.success'), description: t('notificationSettings.toast.saved') });
-        } catch (error) {
-            console.error("Failed to save notification preferences:", error);
-            toast({ title: t('common.error'), description: t('notificationSettings.toast.saveError'), variant: "destructive" });
-        } finally {
-            setIsSaving(false);
-        }
+        toast({ title: t('common.success'), description: t('notificationSettings.toast.saved') });
     }, [agent, toast, t]);
 
-    const handleSettingToggle = useCallback(async (key: SettingsKey, checked: boolean) => {
+    const { execute: executeSaveSettings, isLoading: isSavingDebounced } = useDebouncedAction(
+        saveNotificationSettings,
+        1000
+    );
+
+    const handleSettingToggle = useCallback((key: SettingsKey, checked: boolean) => {
         const newSettings = { ...settings, [key]: checked };
-        await saveSettings(newSettings);
-    }, [settings, saveSettings]);
+        setSettings(newSettings);
+        executeSaveSettings(newSettings);
+    }, [settings, executeSaveSettings]);
 
     const handleMasterToggle = async (enabled: boolean) => {
         if (enabled) {
@@ -138,7 +137,7 @@ const NotificationSettingsScreen: React.FC = () => {
                     toast({ title: t('notificationSettings.toast.permissionDenied'), description: t('notificationSettings.toast.permissionDeniedDescription'), variant: "destructive"});
                     return;
                 }
-                setIsSaving(true);
+
                 const token = (await Notifications.getExpoPushTokenAsync()).data;
 
                 await agent.app.bsky.notification.registerPush({
@@ -153,8 +152,6 @@ const NotificationSettingsScreen: React.FC = () => {
                 console.error("Failed to subscribe to push notifications:", error);
                 toast({ title: t('common.error'), description: t('notificationSettings.toast.enableError'), variant: "destructive"});
                 setPushEnabled(false);
-            } finally {
-                setIsSaving(false);
             }
         } else {
             // Note: Unregistering push tokens is not a standard part of the atproto spec.
@@ -192,7 +189,7 @@ const NotificationSettingsScreen: React.FC = () => {
                         icon={(props: any) => <Ionicons name="notifications-outline" {...props} />}
                         label={t('notificationSettings.enablePush')}
                         sublabel={t('notificationSettings.getAlerts')}
-                        control={<Switch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSaving} />}
+                        control={<Switch checked={pushEnabled} onChange={handleMasterToggle} disabled={isSavingDebounced} />}
                     />
                 </SettingsSection>
 
@@ -206,7 +203,7 @@ const NotificationSettingsScreen: React.FC = () => {
                                     <Switch
                                         checked={settings[item.key]}
                                         onChange={(checked) => handleSettingToggle(item.key, checked)}
-                                        disabled={isSaving || !pushEnabled}
+                                        disabled={isSavingDebounced || !pushEnabled}
                                     />
                                 }
                             />

@@ -5,27 +5,33 @@ import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import { Search } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
-const ActorSkeletonCard: React.FC = () => (
-    <View style={styles.skeletonContainer}>
-        <View style={styles.skeletonContent}>
-            <View style={styles.skeletonAvatar} />
-            <View style={styles.skeletonMain}>
-                <View style={styles.skeletonHeader}>
-                    <View style={styles.skeletonHeaderText}>
-                        <View style={[styles.skeletonLine, { width: 128, height: 16 }]} />
-                        <View style={[styles.skeletonLine, { width: 96, height: 12 }]} />
+const ActorSkeletonCard: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
+    return (
+        <View style={styles.skeletonContainer}>
+            <View style={styles.skeletonContent}>
+                <View style={styles.skeletonAvatar} />
+                <View style={styles.skeletonMain}>
+                    <View style={styles.skeletonHeader}>
+                        <View style={styles.skeletonHeaderText}>
+                            <View style={[styles.skeletonLine, { width: 128, height: 16 }]} />
+                            <View style={[styles.skeletonLine, { width: 96, height: 12 }]} />
+                        </View>
+                        <View style={styles.skeletonButton} />
                     </View>
-                    <View style={styles.skeletonButton} />
+                    <View style={[styles.skeletonLine, { marginTop: theme.spacing.m, width: '83.33%' }]} />
                 </View>
-                <View style={[styles.skeletonLine, { marginTop: theme.spacing.m, width: '83.33%' }]} />
             </View>
         </View>
-    </View>
-);
-
+    );
+};
 const SuggestedFollows: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { agent, session } = useAtp();
     const [profiles, setProfiles] = useState<(AppBskyActorDefs.ProfileView | AppBskyActorDefs.ProfileViewDetailed)[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +86,7 @@ const SuggestedFollows: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -101,7 +107,7 @@ const styles = StyleSheet.create({
     skeletonContainer: {
         padding: theme.spacing.l,
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         borderWidth: 0,
     },
     skeletonContent: {
@@ -112,7 +118,7 @@ const styles = StyleSheet.create({
     skeletonAvatar: {
         width: 48,
         height: 48,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         backgroundColor: theme.colors.surfaceContainerHigh,
         flexShrink: 0,
     },
@@ -132,13 +138,13 @@ const styles = StyleSheet.create({
     skeletonLine: {
         height: 12,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.small,
+        borderRadius: theme.radius.sm,
     },
     skeletonButton: {
         height: 32,
         width: 96,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         marginLeft: theme.spacing.s,
     }
 });

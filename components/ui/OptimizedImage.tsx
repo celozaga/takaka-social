@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, StyleProp } from 'react-native';
 import { Image, ImageStyle, ImageSource } from 'expo-image';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
+// Smart image cache functionality removed for now
 
 interface OptimizedImageProps {
   source: ImageSource | string;
@@ -26,6 +27,30 @@ const OptimizedImage: React.FC<OptimizedImageProps> = React.memo(({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const { theme } = useTheme();
+
+  // Cria estilos dependentes do tema
+  const themedStyles = React.useMemo(() => StyleSheet.create({
+    skeleton: {
+      backgroundColor: theme.colors.surfaceContainerHigh,
+      borderRadius: 8,
+    },
+    errorPlaceholder: {
+      backgroundColor: theme.colors.surfaceContainer,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    errorIcon: {
+      width: 24,
+      height: 24,
+      backgroundColor: theme.colors.onSurfaceVariant,
+      borderRadius: 12,
+      opacity: 0.3,
+    },
+  }), [theme]);
+  
+  // Image preloading functionality removed for now
 
   const handleLoadStart = useCallback(() => {
     setIsLoading(true);
@@ -45,22 +70,29 @@ const OptimizedImage: React.FC<OptimizedImageProps> = React.memo(({
   }, [onError]);
 
   // Memoiza o source para evitar re-renders desnecessários
-  const memoizedSource = useMemo(() => source, [source]);
+  const memoizedSource = useMemo(() => {
+    return source;
+  }, [source]);
+
+  // Obtém borderRadius do estilo para aplicar também ao skeleton e garantir recorte correto
+  const flattenedStyle = useMemo(() => StyleSheet.flatten(style) as ImageStyle, [style]);
+  const dynamicBorderRadius = (flattenedStyle && (flattenedStyle.borderRadius as number)) ?? 8;
 
   // Se houve erro, mostrar um placeholder simples
   if (hasError) {
     return (
-      <View style={[styles.errorPlaceholder, style]}>
-        <View style={styles.errorIcon} />
+      <View style={[themedStyles.errorPlaceholder, { borderRadius: dynamicBorderRadius }, style]}>
+        <View style={[themedStyles.errorIcon]} />
       </View>
     );
   }
 
   return (
-    <View style={style}>
+    // garante recorte pelo borderRadius
+    <View style={[style, { overflow: 'hidden' }]}>
       {/* Skeleton/placeholder que fica visível durante o carregamento */}
       {isLoading && (
-        <View style={[styles.skeleton, StyleSheet.absoluteFill]} />
+        <View style={[themedStyles.skeleton, StyleSheet.absoluteFill, { borderRadius: dynamicBorderRadius }]} />
       )}
       
       {/* Imagem real */}
@@ -73,33 +105,18 @@ const OptimizedImage: React.FC<OptimizedImageProps> = React.memo(({
         onLoadStart={handleLoadStart}
         onLoad={handleLoad}
         onError={handleError}
-        // Otimizações para reduzir piscamento
+        // Otimizações para reduzir piscamento e melhor cache
         cachePolicy="memory-disk"
         placeholder={null}
-        recyclingKey={typeof source === 'string' ? source : undefined}
+        recyclingKey={typeof source === 'string' ? source : source?.uri}
+        priority="high"
+        allowDownscaling={true}
+        autoplay={false}
       />
     </View>
   );
 });
 
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: theme.colors.surfaceContainerHigh,
-    borderRadius: 8,
-  },
-  errorPlaceholder: {
-    backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorIcon: {
-    width: 24,
-    height: 24,
-    backgroundColor: theme.colors.onSurfaceVariant,
-    borderRadius: 12,
-    opacity: 0.3,
-  },
-});
+
 
 export default OptimizedImage;

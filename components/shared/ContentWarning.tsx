@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShieldAlert } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 
 interface ContentWarningProps {
   reason: string;
@@ -9,6 +9,8 @@ interface ContentWarningProps {
 }
 
 const ContentWarning: React.FC<ContentWarningProps> = ({ reason, onShow }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   return (
     <View style={styles.container}>
       <ShieldAlert color={theme.colors.onSurfaceVariant} size={40} style={{ marginBottom: theme.spacing.m }} />
@@ -28,10 +30,10 @@ const ContentWarning: React.FC<ContentWarningProps> = ({ reason, onShow }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         padding: theme.spacing.l,
         alignItems: 'center',
     },
@@ -49,7 +51,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surfaceContainerHigh,
         paddingVertical: theme.spacing.s,
         paddingHorizontal: theme.spacing.xl,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
     },
     showButtonText: {
         ...theme.typography.labelLarge,

@@ -86,12 +86,12 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, []);
   
-  // Create a public API agent for unauthenticated access
+  // Create a public API agent for unauthenticated access with fallback
   const publicApiAgent = useMemo(() => {
     console.log('🔧 DEBUG: Creating public API agent for unauthenticated content access');
-    // Use the public AppView endpoint that allows unauthenticated access
+    // Use the main bsky.social endpoint as it's more reliable for public access
     return new BskyAgent({
-      service: 'https://public.api.bsky.app'
+      service: 'https://bsky.social'
     });
   }, []);
   
@@ -120,56 +120,8 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
           }, 0);
         } else {
-            console.log('🔧 DEBUG: No stored credentials, testing public agent...');
-            // Test public agent functionality
-            console.log('🔧 DEBUG: Starting public agent test...');
-            console.log('🔧 DEBUG: Public agent service:', publicAgent.service);
-            
-            // First test: simple health check
-            fetch('https://bsky.social/xrpc/com.atproto.server.describeServer')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('🌐 DEBUG: Direct API test successful:', data);
-                })
-                .catch(error => {
-                    console.error('🌐 ERROR: Direct API test failed:', error);
-                });
-            
-            // Test 1: Try getting profile with public API agent
-            console.log('🔧 DEBUG: Testing public API agent...');
-            publicApiAgent.getProfile({ actor: 'bsky.app' }).then((response) => {
-                console.log('✅ SUCCESS: Public API agent getProfile working:', response?.data?.handle);
-            }).catch((error) => {
-                console.error('❌ ERROR: Public API agent getProfile failed:', error);
-            });
-            
-            // Test 2: Try list feed endpoint (public, no auth required)
-            publicApiAgent.app.bsky.feed.getListFeed({
-                list: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.graph.list/bsky-team',
-                limit: 1
-            }).then((response) => {
-                console.log('✅ SUCCESS: Public API agent getListFeed working:', response?.data?.feed?.length);
-            }).catch((error) => {
-                console.error('❌ ERROR: Public API agent getListFeed failed:', error);
-            });
-            
-            // Test 3: Try author feed endpoint (public, no auth required)
-            publicApiAgent.app.bsky.feed.getAuthorFeed({
-                actor: 'bsky.app',
-                limit: 1
-            }).then((response) => {
-                console.log('✅ SUCCESS: Public API agent getAuthorFeed working:', response?.data?.feed?.length);
-            }).catch((error) => {
-                console.error('❌ ERROR: Public API agent getAuthorFeed failed:', error);
-            });
-            
-            // Test 4: Try search posts with public API agent
-            publicApiAgent.app.bsky.feed.searchPosts({ q: 'bluesky', limit: 1 }).then((response) => {
-                console.log('✅ SUCCESS: Public API agent searchPosts working:', response?.data?.posts?.length);
-            }).catch((error) => {
-                console.error('❌ ERROR: Public API agent searchPosts failed:', error);
-            });
-            
+            console.log('🔧 DEBUG: No stored credentials found, initializing public agents for unauthenticated access');
+            console.log('🔧 DEBUG: Public agents ready for content access without authentication');
             setIsLoadingSession(false);
         }
       } catch (error) {
@@ -279,14 +231,14 @@ export const AtpProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const protectedRoutes = [
     '/settings',
     '/notifications', 
-    '/messages',
     '/more',
-    '/feeds',
+
     '/search',
     '/watch',
     '/bookmarks',
     '/likes',
     '/compose'
+    // Nota: /home, /profile e /post são públicos para SEO e acesso não autenticado
   ];
 
   const protectedFeatures = [

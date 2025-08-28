@@ -3,9 +3,11 @@ import { useAtp } from '../../context/AtpContext';
 import { TrendingUp } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const TrendingTopics: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { agent } = useAtp();
     const [trends, setTrends] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +72,7 @@ const TrendingTopics: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -84,7 +86,7 @@ const styles = StyleSheet.create({
     },
     skeletonContainer: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         padding: theme.spacing.l,
         gap: theme.spacing.l,
     },
@@ -92,11 +94,11 @@ const styles = StyleSheet.create({
         height: 20,
         width: '75%',
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.small,
+        borderRadius: theme.radius.sm,
     },
     listContainer: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         overflow: 'hidden',
     },
     listItem: {

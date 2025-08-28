@@ -9,7 +9,7 @@ import { Link } from 'expo-router';
 import Head from 'expo-router/head';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, FlatListProps } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { BadgeCheck } from 'lucide-react';
 import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
@@ -20,6 +20,8 @@ const MutedAccountItem: React.FC<{
     isUnmuting: boolean;
 }> = React.memo(({ actor, onUnmute, isUnmuting }) => {
     const { t } = useTranslation();
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const profileLink = `/profile/${actor.handle}`;
 
     const content = (
@@ -58,6 +60,8 @@ const MutedAccountItem: React.FC<{
 });
 
 const MutedAccountsScreen: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { t } = useTranslation();
     const { agent } = useAtp();
     const { toast } = useToast();
@@ -162,7 +166,7 @@ const MutedAccountsScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     itemContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -180,7 +184,7 @@ const styles = StyleSheet.create({
     avatar: {
         width: 40,
         height: 40,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         backgroundColor: theme.colors.surfaceContainerHigh,
     },
     userInfo: {
@@ -205,7 +209,7 @@ const styles = StyleSheet.create({
     unmuteButton: {
         paddingVertical: theme.spacing.s,
         paddingHorizontal: theme.spacing.l,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         backgroundColor: theme.colors.surfaceContainerHigh,
         justifyContent: 'center',
         alignItems: 'center',

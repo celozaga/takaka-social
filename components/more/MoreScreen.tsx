@@ -14,11 +14,11 @@ import {
 import Head from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 
 // --- Reusable Icon Components for the new SuperApp Layout ---
 
-const QuickActionItem: React.FC<{ icon: React.ElementType, label: string, href: string }> = ({ icon: Icon, label, href }) => (
+const QuickActionItem: React.FC<{ icon: React.ElementType; label: string; href: string; theme: any; styles: any }> = ({ icon: Icon, label, href, theme, styles }) => (
     <Link href={href as any} asChild>
         <Pressable style={styles.quickActionItem}>
             <View style={styles.quickActionIconContainer}>
@@ -29,7 +29,7 @@ const QuickActionItem: React.FC<{ icon: React.ElementType, label: string, href: 
     </Link>
 );
 
-const AppGridItem: React.FC<{ icon: React.ElementType, label: string, href: string, color: string }> = ({ icon: Icon, label, href, color }) => (
+const AppGridItem: React.FC<{ icon: React.ElementType; label: string; href: string; color: string; styles: any }> = ({ icon: Icon, label, href, color, styles }) => (
     <Link href={href as any} asChild>
         <Pressable style={styles.appGridItem}>
             <View style={[styles.appGridIconContainer, { backgroundColor: color }]}>
@@ -44,6 +44,8 @@ const AppGridItem: React.FC<{ icon: React.ElementType, label: string, href: stri
 // --- Main MoreScreen Component ---
 
 const MoreScreen: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { session } = useAtp();
     const { getProfile } = useProfileCache();
     const { t } = useTranslation();
@@ -103,20 +105,20 @@ const MoreScreen: React.FC = () => {
                     {session && (
                         <>
                             <View style={styles.quickActionsContainer}>
-                                <QuickActionItem icon={Bell} label={t('nav.notifications')} href="/notifications" />
-                                <QuickActionItem icon={List} label={t('more.myFeeds')} href="/feeds" />
-                                <QuickActionItem icon={Settings} label={t('nav.settings')} href="/settings" />
+                                <QuickActionItem icon={Bell} label={t('nav.notifications')} href="/notifications" theme={theme} styles={styles} />
+                                <QuickActionItem icon={List} label={t('more.myFeeds')} href="/feeds" theme={theme} styles={styles} />
+                                <QuickActionItem icon={Settings} label={t('nav.settings')} href="/settings" theme={theme} styles={styles} />
                             </View>
 
                             <View style={styles.allAppsSection}>
                                 <Text style={styles.sectionTitle}>{t('more.allApps')}</Text>
                                 <View style={styles.appsGridContainer}>
-                                    <AppGridItem icon={Search} label={t('nav.search')} href="/search" color="#424242" />
-                                    <AppGridItem icon={Clapperboard} label={t('more.watch')} href="/watch" color="#005B96" />
-                                    <AppGridItem icon={Bookmark} label={t('nav.bookmarks')} href="/bookmarks" color="#AD1457" />
-                                    <AppGridItem icon={Heart} label={t('nav.likes')} href="/likes" color="#C51162" />
-                                    <AppGridItem icon={Users} label={t('common.followers')} href={`/profile/${session.handle}/followers`} color="#6A1B9A" />
-                                    <AppGridItem icon={UserCheck} label={t('common.following')} href={`/profile/${session.handle}/following`} color="#2E7D32" />
+                                    <AppGridItem icon={Search} label={t('nav.search')} href="/search" color="#424242" styles={styles} />
+                                    <AppGridItem icon={Clapperboard} label={t('more.watch')} href="/watch" color="#005B96" styles={styles} />
+                                    <AppGridItem icon={Bookmark} label={t('nav.bookmarks')} href="/bookmarks" color="#AD1457" styles={styles} />
+                                    <AppGridItem icon={Heart} label={t('nav.likes')} href="/likes" color="#C51162" styles={styles} />
+                                    <AppGridItem icon={Users} label={t('common.followers')} href={`/profile/${session.handle}/followers`} color="#6A1B9A" styles={styles} />
+                                    <AppGridItem icon={UserCheck} label={t('common.following')} href={`/profile/${session.handle}/following`} color="#2E7D32" styles={styles} />
                                 </View>
                             </View>
                         </>
@@ -127,7 +129,7 @@ const MoreScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     scrollView: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -147,7 +149,7 @@ const styles = StyleSheet.create({
     avatar: {
         width: 64,
         height: 64,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         backgroundColor: theme.colors.surfaceContainerHigh,
     },
     profileTextContainer: {
@@ -172,20 +174,20 @@ const styles = StyleSheet.create({
     avatarSkeleton: {
         width: 64,
         height: 64,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         backgroundColor: theme.colors.surfaceContainer,
     },
     textSkeletonLg: {
         height: 24,
         width: '60%',
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.small,
+        borderRadius: theme.radius.sm,
     },
     textSkeletonSm: {
         height: 20,
         width: '40%',
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.small,
+        borderRadius: theme.radius.sm,
     },
     // --- Quick Actions ---
     quickActionsContainer: {
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
     quickActionIconContainer: {
         width: 72,
         height: 72,
-        borderRadius: theme.shape.extraLarge,
+        borderRadius: theme.radius.xl,
         backgroundColor: theme.colors.surfaceContainer,
         justifyContent: 'center',
         alignItems: 'center',
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
     appGridIconContainer: {
         width: 64,
         height: 64,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: theme.spacing.s,

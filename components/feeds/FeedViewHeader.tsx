@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme } from '@/components/shared';
-import { BackHeader, IconButton } from '@/components/shared';
+import { BackHeader, IconButton, Tooltip } from '@/components/shared';
 import { MoreHorizontal, Share2 } from 'lucide-react';
 import { useFeedActions } from '@/hooks/useFeedActions';
 
@@ -42,18 +42,22 @@ const FeedViewHeader: React.FC<FeedViewHeaderProps> = ({
 
     const rightActions = (
         <View style={styles.actions}>
-            <IconButton
-                icon={<Share2 size={20} />}
-                onPress={() => {/* TODO: Implement share */}}
-                variant="ghost"
-                accessibilityLabel="Compartilhar"
-            />
-            <IconButton
-                icon={<MoreHorizontal size={20} />}
-                onPress={() => openFeedModal(feedUri)}
-                variant="ghost"
-                accessibilityLabel="Mais opções"
-            />
+            <Tooltip contentKey="common.share" position="bottom">
+                <IconButton
+                    icon={<Share2 size={20} />}
+                    onPress={() => {/* TODO: Implement share */}}
+                    variant="ghost"
+                    accessibilityLabel="Compartilhar"
+                />
+            </Tooltip>
+            <Tooltip contentKey="common.more" position="bottom">
+                <IconButton
+                    icon={<MoreHorizontal size={20} />}
+                    onPress={() => openFeedModal(feedUri)}
+                    variant="ghost"
+                    accessibilityLabel="Mais opções"
+                />
+            </Tooltip>
         </View>
     );
 

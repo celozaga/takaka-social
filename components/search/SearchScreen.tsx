@@ -1,6 +1,6 @@
 
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAtp } from '../../context/AtpContext';
 import {AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
@@ -13,10 +13,10 @@ import { useSavedFeeds } from '../../hooks/useSavedFeeds';
 import FeedSearchResultCard from '../feeds/FeedSearchResultCard';
 import TrendingTopics from './TrendingTopics';
 import Head from 'expo-router/head';
-import { useDebounce } from '../../hooks/useDebounce';
+import { useDebounce, useDebouncedSearch } from '../../hooks/useDebounce';
 import { useSearchHistory } from '../../hooks/useSearchHistory';
 import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, Pressable, Platform } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '../shared/Theme/ThemeProvider';
 
 type SearchResult = AppBskyActorDefs.ProfileView | AppBskyFeedDefs.GeneratorView;
 type FilterType = 'top' | 'latest' | 'images' | 'videos' | 'people' | 'feeds';
@@ -30,11 +30,17 @@ interface SearchScreenProps {
 
 const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialFilter = 'top' }) => {
     const { agent, publicAgent, publicApiAgent, session } = useAtp();
+    const { theme } = useTheme();
     const { t } = useTranslation();
     const [query, setQuery] = useState(initialQuery);
-    const debouncedQuery = useDebounce(query, 500);
     const [nonPostResults, setNonPostResults] = useState<SearchResult[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const styles = useMemo(() => createStyles(theme), [theme]);
+    
+    // Use debounced search for optimized API calls
+    const {
+        query: debouncedQuery,
+        isLoading
+    } = useDebouncedSearch(() => Promise.resolve([]), 500);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [hasMore, setHasMore] = useState(true);
@@ -58,11 +64,10 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     const fetchNonPostResults = useCallback(async (searchQuery: string, searchFilter: FilterType, currentCursor?: string) => {
         if (!searchQuery.trim() || isPostSearch) {
             setNonPostResults([]);
-            return;
+            return { data: [], cursor: undefined, hasMore: false };
         }
 
         if (!currentCursor) {
-            setIsLoading(true);
             setNonPostResults([]);
             setCursor(undefined);
             setHasMore(true);
@@ -75,16 +80,18 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             if (!session) {
                 console.log('🔒 DEBUG: Search disabled for non-authenticated users');
                 setNonPostResults([]);
-                return;
+                return { data: [], cursor: undefined, hasMore: false };
             }
             
             console.log('🔍 DEBUG: Search using authenticated agent');
             
             if (searchFilter === 'people') {
                 const response = await agent.app.bsky.actor.searchActors({ term: searchQuery, limit: 30, cursor: currentCursor });
-                setNonPostResults(prev => currentCursor ? [...prev, ...response.data.actors] : response.data.actors);
+                const newResults = currentCursor ? [...nonPostResults, ...response.data.actors] : response.data.actors;
+                setNonPostResults(newResults);
                 setCursor(response.data.cursor);
                 setHasMore(!!response.data.cursor);
+                return { data: newResults, cursor: response.data.cursor, hasMore: !!response.data.cursor };
             } else if (searchFilter === 'feeds') {
                 console.log('🔍 DEBUG: Searching for feeds with query:', searchQuery);
                 try {
@@ -92,9 +99,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                         query: searchQuery, limit: 25, cursor: currentCursor
                     });
                     console.log('✅ SUCCESS: Feed generators search completed, feeds found:', response.data.feeds?.length);
-                    setNonPostResults(prev => currentCursor ? [...prev, ...response.data.feeds] : response.data.feeds);
+                    const newResults = currentCursor ? [...nonPostResults, ...response.data.feeds] : response.data.feeds;
+                    setNonPostResults(newResults);
                     setCursor(response.data.cursor);
                     setHasMore(!!response.data.cursor);
+                    return { data: newResults, cursor: response.data.cursor, hasMore: !!response.data.cursor };
                 } catch (feedError: any) {
                     console.error('❌ ERROR: Feed generators search failed:', feedError);
                     // Fallback: try to get popular feeds without query
@@ -103,9 +112,11 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
                             limit: 25, cursor: currentCursor
                         });
                         console.log('🔄 FALLBACK: Using popular feeds without query, feeds found:', fallbackResponse.data.feeds?.length);
-                        setNonPostResults(prev => currentCursor ? [...prev, ...fallbackResponse.data.feeds] : fallbackResponse.data.feeds);
+                        const newResults = currentCursor ? [...nonPostResults, ...fallbackResponse.data.feeds] : fallbackResponse.data.feeds;
+                        setNonPostResults(newResults);
                         setCursor(fallbackResponse.data.cursor);
                         setHasMore(!!fallbackResponse.data.cursor);
+                        return { data: newResults, cursor: fallbackResponse.data.cursor, hasMore: !!fallbackResponse.data.cursor };
                     } catch (fallbackError: any) {
                         console.error('❌ ERROR: Fallback feed generators also failed:', fallbackError);
                         throw fallbackError;
@@ -114,22 +125,24 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
             }
         } catch (error) {
             console.error("Search failed:", error);
+            return { data: [], cursor: undefined, hasMore: false };
         } finally {
-            setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [agent, session, isPostSearch]);
+        
+        return { data: [], cursor: undefined, hasMore: false };
+    }, [agent, session, isPostSearch, nonPostResults]);
 
+    // Execute search when query or filter changes
     useEffect(() => {
-        const effectiveQuery = debouncedQuery || initialQuery;
+        const effectiveQuery = query || initialQuery;
         if (effectiveQuery.trim()) {
             addHistoryItem(effectiveQuery);
             fetchNonPostResults(effectiveQuery, activeFilter);
         } else {
             setNonPostResults([]);
-            setIsLoading(false);
         }
-    }, [debouncedQuery, initialQuery, activeFilter, addHistoryItem, fetchNonPostResults]);
+    }, [query, initialQuery, activeFilter, addHistoryItem, fetchNonPostResults]);
     
     const handlePinToggle = useCallback((feed:AppBskyFeedDefs.GeneratorView) => {
         const isPinned = pinnedUris.has(feed.uri);
@@ -246,21 +259,21 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ initialQuery = '', initialF
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: { flex: 1 },
     stickyHeader: { padding: theme.spacing.l, backgroundColor: theme.colors.background, zIndex: 10 },
     inputContainer: { position: 'relative', justifyContent: 'center' },
     searchIcon: { position: 'absolute', left: theme.spacing.l, zIndex: 1 },
-    input: { width: '100%', paddingLeft: 48, paddingRight: theme.spacing.l, paddingVertical: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
+    input: { width: '100%', paddingLeft: 48, paddingRight: theme.spacing.l, paddingVertical: theme.spacing.m, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.md, color: theme.colors.onSurface, fontSize: 16 },
     discoveryContainer: { padding: theme.spacing.l, gap: theme.spacing.xxl },
     filterContainer: { paddingHorizontal: theme.spacing.l, gap: theme.spacing.s, paddingBottom: theme.spacing.l, alignItems: 'center' },
-    filterButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainer },
+    filterButton: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, paddingVertical: theme.spacing.s, borderRadius: theme.radius.full, backgroundColor: theme.colors.surfaceContainer },
     activeFilterButton: { backgroundColor: theme.colors.onSurface },
     filterText: { ...theme.typography.labelLarge, fontWeight: '500', color: theme.colors.onSurface },
     activeFilterText: { color: theme.colors.background, fontWeight: 'bold' },
     contentContainer: { paddingTop: theme.spacing.l, paddingHorizontal: theme.spacing.l },
-    skeletonItemListView: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, height: 88, opacity: 0.5 },
-    emptyContainer: { padding: theme.spacing.xxl, marginHorizontal: theme.spacing.l, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, marginTop: theme.spacing.l },
+    skeletonItemListView: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, height: 88, opacity: 0.5 },
+    emptyContainer: { padding: theme.spacing.xxl, marginHorizontal: theme.spacing.l, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, marginTop: theme.spacing.l },
     emptyText: { color: theme.colors.onSurfaceVariant, textAlign: 'center' },
     endText: { textAlign: 'center', color: theme.colors.onSurfaceVariant, padding: theme.spacing.xxl },
 
@@ -270,7 +283,7 @@ const styles = StyleSheet.create({
         left: theme.spacing.l,
         right: theme.spacing.l,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.medium,
+        borderRadius: theme.radius.md,
         zIndex: 100,
         ...Platform.select({
             web: {

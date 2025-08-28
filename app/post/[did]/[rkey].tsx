@@ -6,7 +6,7 @@ import { AppBskyFeedDefs, AppBskyEmbedImages, AppBskyEmbedVideo, AppBskyEmbedRec
 import PostScreen from '@/components/post/PostScreen';
 import ScreenHeader from '@/components/layout/ScreenHeader';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme/ThemeProvider';
 import Head from 'expo-router/head';
 import FullPostCardSkeleton from '@/components/post/FullPostCardSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
@@ -14,8 +14,10 @@ import { FileX2 } from 'lucide-react';
 
 export default function PostPage() {
   const { did, rkey } = useLocalSearchParams<{ did: string; rkey: string }>();
+  const { theme } = useTheme();
   const { agent, publicApiAgent, session } = useAtp();
   const { t } = useTranslation();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [thread, setThread] = useState<AppBskyFeedDefs.ThreadViewPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,28 +32,57 @@ export default function PostPage() {
     const fetchPost = async () => {
       setIsLoading(true);
       setError(null);
+      
+      const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
+      console.log('🔍 DEBUG: Fetching post thread for:', postUri, 'Session exists:', !!session);
+      
+      // Strategy 1: Try public API agent first (works for both authenticated and non-authenticated)
       try {
-        const postUri = `at://${did}/app.bsky.feed.post/${rkey}`;
-        const postAgent = session ? agent : publicApiAgent;
-        console.log('🔍 DEBUG: Fetching post with agent type:', session ? 'authenticated' : 'public-api');
-        
-        const { data } = await postAgent.app.bsky.feed.getPostThread({ uri: postUri, depth: 10 }); // Fetch a deep thread
+        console.log('🔍 DEBUG: Trying public API agent for post thread');
+        const { data } = await publicApiAgent.app.bsky.feed.getPostThread({ uri: postUri, depth: 10 });
         
         if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
+          console.log('✅ SUCCESS: Post thread fetched via public API');
           setThread(data.thread);
+          return;
         } else {
+          console.log('⚠️ WARNING: Post thread not found via public API');
           setError(t('post.notFound'));
+          return;
         }
-      } catch (e: any) {
-        console.error('❌ ERROR: Failed to fetch post:', e);
-        setError(e.message || t('post.loadingError'));
+      } catch (publicError: any) {
+        console.log('⚠️ WARNING: Public API post fetch failed:', publicError.message);
+        
+        // Strategy 2: Fallback to authenticated agent if available
+        if (session) {
+          try {
+            console.log('🔍 DEBUG: Falling back to authenticated agent for post thread');
+            const { data } = await agent.app.bsky.feed.getPostThread({ uri: postUri, depth: 10 });
+            
+            if (AppBskyFeedDefs.isThreadViewPost(data.thread)) {
+              console.log('✅ SUCCESS: Post thread fetched via authenticated agent');
+              setThread(data.thread);
+              return;
+            } else {
+              console.log('⚠️ WARNING: Post thread not found via authenticated agent');
+              setError(t('post.notFound'));
+              return;
+            }
+          } catch (authError: any) {
+            console.error('❌ ERROR: Both public and authenticated post fetch failed:', authError.message);
+            setError(authError.message || t('post.loadingError'));
+          }
+        } else {
+          console.error('❌ ERROR: Public post fetch failed and no session available:', publicError.message);
+          setError(publicError.message || t('post.loadingError'));
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPost();
-  }, [did, rkey, agent, t]);
+  }, [did, rkey, agent, publicApiAgent, session, t]);
 
   if (isLoading) {
     return (
@@ -124,7 +155,7 @@ export default function PostPage() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   skeletonContainer: {
     padding: theme.spacing.l,
     paddingTop: theme.spacing.l,

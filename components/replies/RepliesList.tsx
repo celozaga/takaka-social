@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppBskyFeedDefs } from '@atproto/api';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import Reply from '@/components/post/Reply';
 import PostScreenActionBar from '@/components/post/PostScreenActionBar';
 
@@ -23,6 +23,8 @@ const RepliesList: React.FC<RepliesListProps> = ({
   onReplyPress,
   ListHeaderComponent
 }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const replies = thread.replies?.filter(reply => AppBskyFeedDefs.isThreadViewPost(reply)) as AppBskyFeedDefs.ThreadViewPost[] || [];
 
@@ -67,7 +69,7 @@ const RepliesList: React.FC<RepliesListProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
   },

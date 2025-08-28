@@ -6,7 +6,7 @@ import { usePostActions } from '../../hooks/usePostActions';
 import { MessageSquare, Heart, Repeat } from 'lucide-react';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { View, Text, Pressable, StyleSheet, Platform, useWindowDimensions } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 import { formatCompactNumber } from '@/lib/formatters';
 
 interface PostScreenActionBarProps {
@@ -15,6 +15,8 @@ interface PostScreenActionBarProps {
 }
 
 const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post, onReplyPress }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { session } = useAtp();
     const { openComposer, openRepostModal } = useUI();
     const {
@@ -69,19 +71,21 @@ const PostScreenActionBar: React.FC<PostScreenActionBarProps> = ({ post, onReply
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     containerMobile: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
         height: 60,
-        backgroundColor: theme.colors.surfaceContainer,
+        backgroundColor: theme.colors.surface,
         paddingHorizontal: theme.spacing.l,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: theme.spacing.l,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.surfaceContainerHigh,
         zIndex: 30,
     },
     containerWeb: {
@@ -97,7 +101,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surfaceContainerHigh,
         paddingHorizontal: theme.spacing.l,
         paddingVertical: theme.spacing.m,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
     },
     replyButtonText: {
         color: theme.colors.onSurfaceVariant,
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
     actionText: {
         fontWeight: '600',
         fontSize: 14,
-        color: theme.colors.onSurfaceVariant,
+        color: theme.colors.onSurface,
     },
     likeTextActive: {
         color: theme.colors.pink,

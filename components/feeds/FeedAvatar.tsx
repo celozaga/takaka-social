@@ -32,7 +32,7 @@ const FeedAvatar: React.FC<FeedAvatarProps> = ({ src, alt, style }) => {
     <OptimizedImage
       source={src}
       accessibilityLabel={alt}
-      style={style}
+      style={[style, styles.circularImage]}
       onError={handleError}
       transition={300}
     />
@@ -43,11 +43,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     fallback: {
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.surfaceContainerHigh
+        backgroundColor: theme.colors.surfaceContainerHigh,
+        borderRadius: 9999
     },
     icon: {
         width: '50%',
         height: '50%'
+    },
+    circularImage: {
+        borderRadius: 9999
     }
 });
 

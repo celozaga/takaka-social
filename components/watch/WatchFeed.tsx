@@ -3,9 +3,9 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { FlatList, View, ActivityIndicator, Text, useWindowDimensions, StyleSheet, RefreshControl } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import SmartVideoPlayer from './SmartVideoPlayer';
-import { theme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
 import { UI_CONFIG, isFeatureEnabled } from '@/lib/config';
+import { useTheme } from '@/hooks/useTheme';
 
 interface Props {
   videoPosts: AppBskyFeedDefs.FeedViewPost[];
@@ -23,6 +23,8 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
   const [isFeedMuted, setIsFeedMuted] = useState(!isFeatureEnabled('VIDEO_AUTOPLAY')); // Start unmuted if autoplay is enabled
   const { height } = useWindowDimensions();
   const flatListRef = useRef<FlatList>(null);
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   // Melhorada detecção de vídeo ativo para comportamento tipo TikTok
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -169,12 +171,12 @@ const WatchFeed: React.FC<Props> = ({ videoPosts, loadMore, isLoadingMore, hasMo
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'black' },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'black', gap: theme.spacing.m },
-    loadingText: { ...theme.typography.bodyMedium, color: 'white', marginTop: theme.spacing.s },
+    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'black', gap: theme.spacing.md },
+    loadingText: { ...theme.typography.bodyMedium, color: 'white', marginTop: theme.spacing.sm },
     endText: { ...theme.typography.titleMedium, color: 'white', textAlign: 'center' },
-    endSubText: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.s, textAlign: 'center', paddingHorizontal: theme.spacing.l },
-})
+    endSubText: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.sm, textAlign: 'center', paddingHorizontal: theme.spacing.lg },
+});
 
 export default WatchFeed;

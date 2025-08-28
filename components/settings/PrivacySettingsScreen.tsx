@@ -7,13 +7,14 @@ import Head from 'expo-router/head';
 import SettingsListItem from './SettingsListItem';
 import { SettingsDivider, Switch } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
+import { useDebouncedAction } from '../../hooks/useDebounce';
 
 const PrivacySettingsScreen: React.FC = () => {
     const { t } = useTranslation();
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+
     const [settings, setSettings] = useState({
         // These settings are supported by ATProto API
         profileViewable: true,
@@ -81,49 +82,43 @@ const PrivacySettingsScreen: React.FC = () => {
         }
     };
 
-    const handleSettingToggle = async (key: keyof typeof settings, value: boolean) => {
+    const savePrivacySettings = async (newSettings: typeof settings) => {
         if (!session) return;
         
-        try {
-            setIsSaving(true);
-            const newSettings = { ...settings, [key]: value };
-            setSettings(newSettings);
-            
-            // Save privacy preferences to ATProto API
-            const { data: currentPrefs } = await agent.app.bsky.actor.getPreferences();
-            const otherPrefs = currentPrefs.preferences.filter(p => p.$type !== 'app.bsky.actor.defs#privacyPref');
-            
-            // Create privacy preferences object
-            const privacyPrefs = {
-                $type: 'app.bsky.actor.defs#privacyPref',
-                profileViewable: newSettings.profileViewable,
-                followsVisible: newSettings.followsVisible,
-                followersVisible: newSettings.followersVisible,
-                postsVisible: newSettings.postsVisible,
-                repliesVisible: newSettings.repliesVisible,
-                mentionsVisible: newSettings.mentionsVisible,
-            };
-            
-            await agent.app.bsky.actor.putPreferences({ 
-                preferences: [...otherPrefs, privacyPrefs] 
-            });
-            
-            toast({ 
-                title: t('common.success'), 
-                description: t('privacySettings.saveSuccess') 
-            });
-        } catch (error) {
-            console.error('Failed to save privacy setting:', error);
-            toast({ 
-                title: t('common.error'), 
-                description: t('privacySettings.saveError'), 
-                variant: "destructive" 
-            });
-            // Revert on failure
-            setSettings(settings);
-        } finally {
-            setIsSaving(false);
-        }
+        // Save privacy preferences to ATProto API
+        const { data: currentPrefs } = await agent.app.bsky.actor.getPreferences();
+        const otherPrefs = currentPrefs.preferences.filter(p => p.$type !== 'app.bsky.actor.defs#privacyPref');
+        
+        // Create privacy preferences object
+        const privacyPrefs = {
+            $type: 'app.bsky.actor.defs#privacyPref',
+            profileViewable: newSettings.profileViewable,
+            followsVisible: newSettings.followsVisible,
+            followersVisible: newSettings.followersVisible,
+            postsVisible: newSettings.postsVisible,
+            repliesVisible: newSettings.repliesVisible,
+            mentionsVisible: newSettings.mentionsVisible,
+        };
+        
+        await agent.app.bsky.actor.putPreferences({ 
+            preferences: [...otherPrefs, privacyPrefs] 
+        });
+        
+        toast({ 
+            title: t('common.success'), 
+            description: t('privacySettings.saveSuccess') 
+        });
+    };
+
+    const { execute: executeSaveSettings, isLoading: isSavingDebounced } = useDebouncedAction(
+        savePrivacySettings,
+        1000
+    );
+
+    const handleSettingToggle = (key: keyof typeof settings, value: boolean) => {
+        const newSettings = { ...settings, [key]: value };
+        setSettings(newSettings);
+        executeSaveSettings(newSettings);
     };
 
     return (
@@ -142,7 +137,7 @@ const PrivacySettingsScreen: React.FC = () => {
                             <Switch
                                 checked={settings.profileViewable}
                                 onChange={(value) => handleSettingToggle('profileViewable', value)}
-                                disabled={isLoading || isSaving}
+                                disabled={isLoading || isSavingDebounced}
                             />
                         }
                     />
@@ -155,7 +150,7 @@ const PrivacySettingsScreen: React.FC = () => {
                             <Switch
                                 checked={settings.followsVisible}
                                 onChange={(value) => handleSettingToggle('followsVisible', value)}
-                                disabled={isLoading || isSaving}
+                                disabled={isLoading || isSavingDebounced}
                             />
                         }
                     />
@@ -168,7 +163,7 @@ const PrivacySettingsScreen: React.FC = () => {
                             <Switch
                                 checked={settings.followersVisible}
                                 onChange={(value) => handleSettingToggle('followersVisible', value)}
-                                disabled={isLoading || isSaving}
+                                disabled={isLoading || isSavingDebounced}
                             />
                         }
                     />
@@ -183,7 +178,7 @@ const PrivacySettingsScreen: React.FC = () => {
                             <Switch
                                 checked={settings.postsVisible}
                                 onChange={(value) => handleSettingToggle('postsVisible', value)}
-                                disabled={isLoading || isSaving}
+                                disabled={isLoading || isSavingDebounced}
                             />
                         }
                     />
@@ -196,7 +191,7 @@ const PrivacySettingsScreen: React.FC = () => {
                             <Switch
                                 checked={settings.repliesVisible}
                                 onChange={(value) => handleSettingToggle('repliesVisible', value)}
-                                disabled={isLoading || isSaving}
+                                disabled={isLoading || isSavingDebounced}
                             />
                         }
                     />
@@ -209,7 +204,7 @@ const PrivacySettingsScreen: React.FC = () => {
                             <Switch
                                 checked={settings.mentionsVisible}
                                 onChange={(value) => handleSettingToggle('mentionsVisible', value)}
-                                disabled={isLoading || isSaving}
+                                disabled={isLoading || isSavingDebounced}
                             />
                         }
                     />

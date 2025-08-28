@@ -8,7 +8,7 @@ import NotificationItem from './NotificationItem';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from 'expo-router/head';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, FlatList, FlatListProps } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { NotificationItemSkeleton } from '@/components/shared';
 import { Link } from 'expo-router';
 import { Settings } from 'lucide-react';
@@ -24,6 +24,8 @@ const filters: { id: NotificationFilter; label: string }[] = [
 ];
 
 const NotificationsScreen: React.FC = () => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { agent, resetUnreadCount } = useAtp();
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState<AppBskyNotificationListNotifications.Notification[]>([]);
@@ -35,6 +37,22 @@ const NotificationsScreen: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState<NotificationFilter>('all');
 
+  // Helper que avalia se a notificação corresponde ao filtro selecionado
+  const matchesFilter = useCallback((n: AppBskyNotificationListNotifications.Notification, tab: NotificationFilter) => {
+    switch (tab) {
+      case 'likes':
+        return n.reason === 'like';
+      case 'mentions':
+        return n.reason === 'mention' || n.reason === 'reply';
+      case 'reposts':
+        return n.reason === 'repost';
+      case 'follows':
+        return n.reason === 'follow';
+      default:
+        return true;
+    }
+  }, []);
+
   const fetchNotifications = useCallback(async () => {
     setError(null);
     try {
@@ -42,12 +60,14 @@ const NotificationsScreen: React.FC = () => {
       resetUnreadCount();
       const response = await agent.app.bsky.notification.listNotifications({ limit: 40 });
       setNotifications(response.data.notifications);
+      // Atualiza hasMore considerando o filtro ativo
+      const moreAvailableForFilter = response.data.notifications.some(n => matchesFilter(n, activeTab));
       setCursor(response.data.cursor);
-      setHasMore(!!response.data.cursor && response.data.notifications.length > 0);
+      setHasMore(!!response.data.cursor && moreAvailableForFilter);
     } catch (err) {
       setError(t('notifications.loadingError'));
     }
-  }, [agent, resetUnreadCount, t]);
+  }, [agent, resetUnreadCount, t, activeTab, matchesFilter]);
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -72,14 +92,16 @@ const NotificationsScreen: React.FC = () => {
       if (response.data.notifications.length > 0) {
         setNotifications(prev => [...prev, ...response.data.notifications]);
         setCursor(response.data.cursor);
-        setHasMore(!!response.data.cursor);
+        // Se nenhuma nova notificação corresponde ao filtro, interrompe paginação
+        const moreForFilter = response.data.notifications.some(n => matchesFilter(n, activeTab));
+        setHasMore(!!response.data.cursor && (activeTab === 'all' ? true : moreForFilter));
       } else {
         setHasMore(false);
       }
     } finally {
       setIsLoadingMore(false);
     }
-  }, [agent, cursor, hasMore, isLoadingMore]);
+  }, [agent, cursor, hasMore, isLoadingMore, activeTab, matchesFilter]);
   
   const filteredNotifications = useMemo(() => {
     switch (activeTab) {
@@ -181,12 +203,12 @@ const NotificationsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     listContentContainer: { paddingBottom: 16 },
     separator: { height: 1, backgroundColor: theme.colors.outline, marginHorizontal: 16 },
     filterScrollContainer: { paddingHorizontal: 16, paddingTop: 16 },
     filterContainer: { gap: 8, paddingBottom: 16 },
-    filterButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainer },
+    filterButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: theme.radius.full, backgroundColor: theme.colors.surfaceContainer },
     activeFilter: { backgroundColor: theme.colors.onSurface },
     filterText: { fontSize: 14, fontWeight: '500', color: theme.colors.onSurface },
     activeFilterText: { color: theme.colors.background, fontWeight: 'bold' },

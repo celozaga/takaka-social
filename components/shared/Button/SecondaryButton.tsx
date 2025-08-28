@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { useTheme } from '@/components/shared';
+import { useTheme } from '@/components/shared/Theme';
 
 interface SecondaryButtonProps {
   title: string;

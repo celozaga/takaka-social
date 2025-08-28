@@ -6,7 +6,7 @@ import { usePostActions } from '../../hooks/usePostActions';
 import { AppBskyFeedDefs, AtUri } from '@atproto/api';
 import { Repeat, Share2, X } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Share, Platform, Clipboard } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface RepostModalProps {
@@ -20,7 +20,9 @@ const ActionListItem: React.FC<{
     onPress: () => void;
     disabled?: boolean;
     isDestructive?: boolean;
-}> = ({ icon: Icon, label, onPress, disabled = false, isDestructive = false }) => {
+    theme: any;
+    styles: any;
+}> = ({ icon: Icon, label, onPress, disabled = false, isDestructive = false, theme, styles }) => {
     return (
         <Pressable 
             onPress={onPress}
@@ -35,6 +37,8 @@ const ActionListItem: React.FC<{
 
 const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
     const { toast } = useToast();
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { t } = useTranslation();
     const { requireAuth } = useAuthGuard();
     const { repostUri, isReposting, handleRepost } = usePostActions(post);
@@ -105,6 +109,8 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
                 {isReposting && <View style={styles.loadingOverlay}><ActivityIndicator size="large" color={theme.colors.onSurface} /></View>}
                 <ActionListItem 
                     icon={Repeat} 
+                    theme={theme}
+                    styles={styles} 
                     label={repostUri ? t('repostModal.undoRepost') : t('repostModal.repost')} 
                     onPress={handleRepostAction}
                     disabled={isReposting}
@@ -112,6 +118,8 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
                 />
                 <ActionListItem 
                     icon={Share2} 
+                    theme={theme}
+                    styles={styles} 
                     label={t('repostModal.share')} 
                     onPress={handleShare} 
                 />
@@ -120,13 +128,13 @@ const RepostModal: React.FC<RepostModalProps> = ({ post, onClose }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.l },
     headerTitle: { ...theme.typography.titleMedium, color: theme.colors.onSurface },
     closeButton: { padding: theme.spacing.s, margin: -theme.spacing.s },
     content: { padding: theme.spacing.s, gap: theme.spacing.xs },
-    loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30, 32, 33, 0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: theme.shape.large },
-    actionItem: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.shape.medium },
+    loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30, 32, 33, 0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: theme.radius.lg },
+    actionItem: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.radius.md },
     actionItemPressed: { backgroundColor: theme.colors.surfaceContainerHigh },
     actionItemDestructivePressed: { backgroundColor: theme.colors.errorContainer },
     actionItemDisabled: { opacity: 0.5 },

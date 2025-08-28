@@ -1,10 +1,14 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 import SkeletonLine from './SkeletonLine';
 import SkeletonAvatar from './SkeletonAvatar';
 
-const ProfileHeaderSkeleton: React.FC = () => (
+const ProfileHeaderSkeleton: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
+    return (
     <View style={styles.container}>
         <View style={styles.statsRow}>
             <SkeletonAvatar size={80} />
@@ -18,9 +22,10 @@ const ProfileHeaderSkeleton: React.FC = () => (
         <SkeletonLine width="80%" height={16} />
         <View style={styles.button} />
     </View>
-);
+    );
+};
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         padding: theme.spacing.l,
         gap: theme.spacing.m,
@@ -41,13 +46,13 @@ const styles = StyleSheet.create({
         height: 40,
         width: 60,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.small,
+        borderRadius: theme.radius.sm,
     },
     button: {
         height: 44,
         width: '100%',
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.medium,
+        borderRadius: theme.radius.md,
         marginTop: theme.spacing.s,
     },
 });

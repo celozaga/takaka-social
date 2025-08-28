@@ -17,7 +17,7 @@ import FeedItem from './FeedItem';
 type MediaFilter = 'all' | 'photos' | 'videos';
 type AuthorFeedFilter = 'posts_no_replies' | 'posts_with_replies' | 'posts_with_media';
 
-interface FeedContainerProps {
+export interface FeedContainerProps {
   feedUri?: string;
   authorFeedFilter?: AuthorFeedFilter;
   searchQuery?: string;
@@ -178,6 +178,9 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
   // Refs para controle de carregamento progressivo
   const isLoadingMoreRef = useRef(false);
   const lastLoadTriggerRef = useRef(0);
+  const lastApiCallRef = useRef(0);
+  const consecutiveFailuresRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchPosts = useCallback(async (currentCursor?: string) => {
     // A. PRIVATE FEEDS (Bookmarks, Likes)
@@ -230,10 +233,17 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
         const searchAgent = session ? agent : publicApiAgent;
         console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public-api');
         
-        const res = await searchAgent.app.bsky.feed.searchPosts({ q: searchQuery, cursor: currentCursor, sort: searchSort, limit: 40 });
-        const feed: AppBskyFeedDefs.FeedViewPost[] = res.data.posts.map(post => ({ post }));
-        console.log('✅ SUCCESS: Search completed');
-        return { data: { feed, cursor: res.data.cursor } };
+        try {
+            const res = await searchAgent.app.bsky.feed.searchPosts({ q: searchQuery, cursor: currentCursor, sort: searchSort, limit: 40 });
+            const feed: AppBskyFeedDefs.FeedViewPost[] = res.data.posts.map(post => ({ post }));
+            console.log('✅ SUCCESS: Search completed');
+            return { data: { feed, cursor: res.data.cursor } };
+        } catch (searchError: any) {
+            console.error('❌ ERROR: Search failed:', searchError);
+            // Return empty results instead of throwing error
+            console.log('🔄 DEBUG: Returning empty search results due to API failure');
+            return { data: { feed: [], cursor: undefined } };
+        }
     }
 
     // C. FEED-BASED FETCHING
@@ -264,89 +274,79 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
         
         // For public feeds (including Discovery), use appropriate agent
         console.log('🔍 DEBUG: Attempting to fetch feed:', feedUri, 'Session exists:', !!session);
-        const feedAgent = session ? agent : publicApiAgent;
-        console.log('🔍 DEBUG: Using agent type:', session ? 'authenticated' : 'public-api');
-        console.log('🔍 DEBUG: Agent service URL:', feedAgent.service);
-        console.log('🔍 DEBUG: Feed request parameters:', { feed: feedUri, cursor: currentCursor, limit: 30 });
         
-        try {
-            console.log('🔍 DEBUG: Starting getFeed request...');
-            const result = await feedAgent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
-            console.log('✅ SUCCESS: Feed fetched successfully, posts count:', result?.data?.feed?.length);
-            return result;
-        } catch (error: any) {
-            console.error('❌ ERROR: Feed fetch failed:', {
-                message: error.message,
-                status: error.status,
-                statusText: error.statusText,
-                name: error.name,
-                error: error
-            });
+        // For discovery feeds, try multiple strategies for public access
+        if (feedUri.includes('whats-hot') || feedUri.includes('discovery')) {
+            console.log('🔍 DEBUG: Attempting Discovery feed access, Session exists:', !!session);
             
-            // If it's a public feed and we got a 401, try alternative approach for public content
-            if (!session && (error.status === 401 || error.status === 403)) {
-                console.log('🔄 DEBUG: Trying alternative public content approach...');
-                
+            // Strategy 1: Try authenticated getFeed if session exists
+            if (session) {
                 try {
-                    // Alternative 1: Try list feed endpoint (public, no auth required)
-                    if (feedUri.includes('whats-hot') || feedUri.includes('discovery')) {
-                        console.log('🔄 DEBUG: Using getListFeed as fallback for Discovery content');
-                        try {
-                            // Use a popular list for discovery content
-                            const listResult = await publicApiAgent.app.bsky.feed.getListFeed({
-                                list: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.graph.list/bsky-team',
-                                cursor: currentCursor,
-                                limit: 30
-                            });
-                            console.log('✅ SUCCESS: List feed approach worked, posts count:', listResult?.data?.feed?.length);
-                            return listResult;
-                        } catch (listError: any) {
-                            console.log('⚠️ WARNING: List feed failed, trying search fallback...');
-                        }
-                    }
-                    
-                    // Alternative 2: Try searchPosts with relevant terms for discovery-like content
-                    if (feedUri.includes('whats-hot') || feedUri.includes('discovery')) {
-                        console.log('🔄 DEBUG: Using searchPosts as fallback for Discovery content');
-                        const searchResult = await publicApiAgent.app.bsky.feed.searchPosts({ 
-                            q: 'bluesky OR atproto OR social', 
-                            cursor: currentCursor,
-                            limit: 30,
-                            sort: 'top'
-                        });
-                        const feed: AppBskyFeedDefs.FeedViewPost[] = searchResult.data.posts.map(post => ({ post }));
-                        console.log('✅ SUCCESS: Alternative search approach worked, posts count:', feed.length);
-                        return { data: { feed, cursor: searchResult.data.cursor } };
-                    }
-                    
-                    // Alternative 3: For other feeds, try getting feed generator info and use search
-                    console.log('🔄 DEBUG: Trying to fetch feed generator info as fallback');
-                    const feedGenResult = await publicApiAgent.app.bsky.feed.getFeedGenerators({
-                        feeds: [feedUri]
-                    });
-                    
-                    if (feedGenResult.data.feeds.length > 0) {
-                        const feedGen = feedGenResult.data.feeds[0];
-                        console.log('🔄 DEBUG: Found feed generator, trying search with description terms');
-                        
-                        // Extract search terms from feed description
-                        const searchTerms = feedGen.description?.split(' ').slice(0, 3).join(' ') || feedGen.displayName;
-                        const searchResult = await publicApiAgent.app.bsky.feed.searchPosts({ 
-                            q: searchTerms, 
-                            cursor: currentCursor,
-                            limit: 30 
-                        });
-                        const feed: AppBskyFeedDefs.FeedViewPost[] = searchResult.data.posts.map(post => ({ post }));
-                        console.log('✅ SUCCESS: Feed generator info approach worked, posts count:', feed.length);
-                        return { data: { feed, cursor: searchResult.data.cursor } };
-                    }
-                    
-                } catch (fallbackError: any) {
-                    console.error('❌ ERROR: All fallback approaches failed:', fallbackError);
+                    const result = await agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+                    console.log('✅ SUCCESS: Authenticated Discovery feed fetched, posts count:', result?.data?.feed?.length);
+                    return result;
+                } catch (error: any) {
+                    console.log('⚠️ WARNING: Authenticated Discovery feed failed, trying public access:', error.message);
                 }
             }
             
-            throw error;
+            // Strategy 2: Try public API agent for discovery
+            try {
+                console.log('🔍 DEBUG: Trying public API agent for Discovery feed');
+                const result = await publicApiAgent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+                console.log('✅ SUCCESS: Public Discovery feed fetched, posts count:', result?.data?.feed?.length);
+                return result;
+            } catch (publicError: any) {
+                console.log('⚠️ WARNING: Public Discovery feed failed, trying search fallback:', publicError.message);
+            }
+            
+            // Strategy 3: Fallback to search for discovery content
+            try {
+                console.log('🔍 DEBUG: Using search fallback for Discovery feed');
+                const searchResult = await publicApiAgent.app.bsky.feed.searchPosts({ 
+                    q: 'bluesky OR social OR atproto OR bsky', 
+                    cursor: currentCursor,
+                    limit: 30,
+                    sort: 'top'
+                });
+                const feed: AppBskyFeedDefs.FeedViewPost[] = searchResult.data.posts.map(post => ({ post }));
+                console.log('✅ SUCCESS: Discovery search fallback worked, posts count:', feed.length);
+                return { data: { feed, cursor: searchResult.data.cursor } };
+            } catch (searchError: any) {
+                console.warn('⚠️ WARNING: Discovery search fallback failed:', searchError.message);
+                
+                // Strategy 4: Return empty feed instead of throwing error
+                console.log('🔄 DEBUG: Returning empty Discovery feed to prevent app crash');
+                return { data: { feed: [], cursor: undefined } };
+            }
+        }
+        
+        // For other public feeds, try public access first, then authenticated
+        console.log('🔍 DEBUG: Attempting public feed access for:', feedUri, 'Session exists:', !!session);
+        
+        // Try public API agent first for all feeds
+        try {
+            console.log('🔍 DEBUG: Using public API agent for feed:', feedUri);
+            const result = await publicApiAgent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+            console.log('✅ SUCCESS: Public feed fetched successfully, posts count:', result?.data?.feed?.length);
+            return result;
+        } catch (publicError: any) {
+            console.log('⚠️ WARNING: Public feed access failed:', publicError.message);
+            
+            // Fallback to authenticated agent if available
+            if (session) {
+                try {
+                    console.log('🔍 DEBUG: Falling back to authenticated agent for feed:', feedUri);
+                    const result = await agent.app.bsky.feed.getFeed({ feed: feedUri, cursor: currentCursor, limit: 30 });
+                    console.log('✅ SUCCESS: Authenticated feed fallback worked, posts count:', result?.data?.feed?.length);
+                    return result;
+                } catch (authError: any) {
+                    console.error('❌ ERROR: Both public and authenticated feed access failed:', authError.message);
+                }
+            }
+            
+            console.log('🔄 DEBUG: No feed access available for:', feedUri);
+            return { data: { feed: [], cursor: undefined } };
         }
     }
     
@@ -355,35 +355,60 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
   }, [agent, publicAgent, publicApiAgent, feedUri, session, searchQuery, searchSort, authorFeedFilter, postFilter]);
 
   const fetchAndFilterPage = useCallback(async (currentCursor?: string) => {
-    const response = await fetchPosts(currentCursor);
-    const posts = response.data.feed || [];
-    const nextCursor = response.data.cursor;
-
-    // Debug logging (can be removed in production)
-    if (__DEV__) {
-      console.log('🔍 DEBUG: Raw posts received:', posts.length);
-      if (feedUri === 'following') {
-        console.log('🔍 DEBUG: Following feed - detailed post analysis:');
-        posts.forEach((post, index) => {
-          if (index < 5) { // Log first 5 posts
-            console.log(`  Post ${index + 1}:`, {
-              uri: post.post.uri,
-              hasEmbed: !!post.post.embed,
-              embedType: post.post.embed?.$type,
-              hasReply: !!post.reply,
-              isMediaPost: isPostAMediaPost(post.post)
-            });
-          }
-        });
-      } else {
-        console.log('🔍 DEBUG: First post sample:', posts[0] ? {
-          uri: posts[0].post.uri,
-          hasEmbed: !!posts[0].post.embed,
-          embedType: posts[0].post.embed?.$type,
-          hasReply: !!posts[0].reply
-        } : 'No posts');
-      }
+    const now = Date.now();
+    const timeSinceLastCall = now - lastApiCallRef.current;
+    const MIN_API_INTERVAL = 500; // Minimum 500ms between API calls
+    
+    // Prevent rapid successive API calls
+    if (timeSinceLastCall < MIN_API_INTERVAL) {
+      console.log('🚫 DEBUG: API call blocked - too frequent:', timeSinceLastCall, 'ms since last call');
+      await new Promise(resolve => setTimeout(resolve, MIN_API_INTERVAL - timeSinceLastCall));
     }
+    
+    // Abort previous request if still pending
+    if (abortControllerRef.current) {
+      console.log('🚫 DEBUG: Aborting previous API request');
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    lastApiCallRef.current = Date.now();
+    
+    try {
+      console.log('🌐 DEBUG: Making API call with cursor:', currentCursor);
+      const response = await fetchPosts(currentCursor);
+      const posts = response.data.feed || [];
+      const nextCursor = response.data.cursor;
+      
+      // Reset failure count on success
+      consecutiveFailuresRef.current = 0;
+
+      // Debug logging (can be removed in production)
+      if (__DEV__) {
+        console.log('🔍 DEBUG: Raw posts received:', posts.length);
+        if (feedUri === 'following') {
+          console.log('🔍 DEBUG: Following feed - detailed post analysis:');
+          posts.forEach((post, index) => {
+            if (index < 5) { // Log first 5 posts
+              console.log(`  Post ${index + 1}:`, {
+                uri: post.post.uri,
+                hasEmbed: !!post.post.embed,
+                embedType: post.post.embed?.$type,
+                hasReply: !!post.reply,
+                isMediaPost: isPostAMediaPost(post.post)
+              });
+            }
+          });
+        } else {
+          console.log('🔍 DEBUG: First post sample:', posts[0] ? {
+            uri: posts[0].post.uri,
+            hasEmbed: !!posts[0].post.embed,
+            embedType: posts[0].post.embed?.$type,
+            hasReply: !!posts[0].reply
+          } : 'No posts');
+        }
+      }
 
     const isProfileContext = !!authorFeedFilter || !!postFilter;
     
@@ -485,16 +510,36 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
         if (__DEV__) console.log('🔍 DEBUG: List visual filter:', beforeList, '→', processedPosts.length);
     }
 
-    if (__DEV__) console.log('🔍 DEBUG: Final posts:', processedPosts.length);
-    return { posts: processedPosts, cursor: nextCursor, originalCount: posts.length };
+      if (__DEV__) console.log('🔍 DEBUG: Final posts:', processedPosts.length);
+      return { posts: processedPosts, cursor: nextCursor, originalCount: posts.length };
+    } catch (error: any) {
+      consecutiveFailuresRef.current++;
+      console.error('❌ ERROR: fetchAndFilterPage failed:', error, 'Consecutive failures:', consecutiveFailuresRef.current);
+      
+      // If too many consecutive failures, stop trying
+      if (consecutiveFailuresRef.current >= MAX_FETCH_ATTEMPTS) {
+        console.error('🛑 ERROR: Too many consecutive failures, stopping pagination');
+        throw error;
+      }
+      
+      // Return empty result for recoverable errors
+      return { posts: [], cursor: undefined, originalCount: 0 };
+    } finally {
+      abortControllerRef.current = null;
+    }
   }, [fetchPosts, authorFeedFilter, postFilter, layout, mediaFilter, feedUri]);
 
   const loadInitialPosts = useCallback(async () => {
+    console.log('🔄 DEBUG: loadInitialPosts called for:', { feedUri, postFilter, layout });
     setIsLoading(true);
     setError(null);
     setFeed([]);
     setCursor(undefined);
     setHasMore(true);
+    
+    // Reset loading refs
+    isLoadingMoreRef.current = false;
+    lastLoadTriggerRef.current = 0;
 
     try {
         let accumulatedPosts: AppBskyFeedDefs.FeedViewPost[] = [];
@@ -506,20 +551,36 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
         const targetLoadSize = layout === 'grid' ? 20 : (feedUri === 'following' ? 20 : INITIAL_LOAD_SIZE);
         const maxAttempts = layout === 'grid' ? 6 : (feedUri === 'following' ? 5 : 3);
 
+        console.log('🎯 DEBUG: Initial load target:', { targetLoadSize, maxAttempts });
+
         while (accumulatedPosts.length < targetLoadSize && attempts < maxAttempts && canFetchMore) {
+            console.log(`🔄 DEBUG: Initial load attempt ${attempts + 1}`);
             const batchResult = await fetchAndFilterPage(nextCursor);
             
+            console.log('📦 DEBUG: Initial batch result:', {
+              posts: batchResult.posts.length,
+              originalCount: batchResult.originalCount,
+              cursor: batchResult.cursor
+            });
+            
             const newUniquePosts = batchResult.posts.filter(p => !accumulatedPosts.some(ap => ap.post.uri === p.post.uri));
+            console.log('✨ DEBUG: New unique posts in initial batch:', newUniquePosts.length);
             accumulatedPosts.push(...newUniquePosts);
             
             nextCursor = batchResult.cursor;
-            canFetchMore = !!nextCursor && batchResult.originalCount > 0;
+            canFetchMore = !!nextCursor; // Allow continuation as long as we have a cursor
             attempts++;
             
             // Break early if we have enough posts for grid layout
             if (layout === 'grid' && accumulatedPosts.length >= 12) break;
             if (accumulatedPosts.length >= targetLoadSize) break;
         }
+
+        console.log('📊 DEBUG: Initial load completed:', {
+          totalPosts: accumulatedPosts.length,
+          hasMore: canFetchMore,
+          cursor: nextCursor
+        });
 
         setFeed(accumulatedPosts);
         setCursor(nextCursor);
@@ -547,9 +608,22 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
     }
   }, [fetchAndFilterPage, t, postFilter, feedUri, layout]);
 
+  // Stable effect that only runs when core feed parameters change
   useEffect(() => {
+    console.log('🔄 DEBUG: useEffect triggered for feed reload:', { feedUri, postFilter, searchQuery, authorFeedFilter, mediaFilter });
     loadInitialPosts();
-  }, [loadInitialPosts]);
+  }, [feedUri, postFilter, searchQuery, authorFeedFilter, mediaFilter, layout]); // Removed loadInitialPosts dependency to prevent loops
+
+  // Cleanup effect to abort pending requests on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        console.log('🧹 DEBUG: Cleaning up - aborting pending API request');
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
 
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -557,9 +631,18 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
   }, [loadInitialPosts]);
 
   const loadMorePosts = useCallback(async () => {
-    // Previne múltiplas chamadas simultâneas
-    if (isLoadingMoreRef.current || !cursor || !hasMore) return;
+    // More robust blocking conditions
+    if (isLoadingMoreRef.current || !cursor || !hasMore || feed.length === 0) {
+      console.log('🚫 DEBUG: loadMorePosts blocked:', { 
+        isLoading: isLoadingMoreRef.current, 
+        hasCursor: !!cursor, 
+        hasMore,
+        feedLength: feed.length
+      });
+      return;
+    }
     
+    console.log('🚀 DEBUG: Starting loadMorePosts with cursor:', cursor);
     isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
 
@@ -568,50 +651,111 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
         let nextCursor: string | undefined = cursor;
         let attempts = 0;
         let canFetchMore = true;
+        let totalOriginalCount = 0;
+
+        // Get current feed URIs to check for duplicates
+        const currentFeedUris = new Set(feed.map(p => p.post.uri));
+        console.log('🔍 DEBUG: Current feed has', currentFeedUris.size, 'posts');
 
         // Carregamento progressivo otimizado para layout grid
         const targetLoadSize = layout === 'grid' ? 15 : PROGRESSIVE_LOAD_SIZE;
         while (accumulatedPosts.length < targetLoadSize && attempts < MAX_FETCH_ATTEMPTS && canFetchMore) {
+            console.log(`🔄 DEBUG: Fetch attempt ${attempts + 1}, cursor:`, nextCursor);
             const batchResult = await fetchAndFilterPage(nextCursor);
-            accumulatedPosts.push(...batchResult.posts);
+            
+            console.log('📦 DEBUG: Batch result:', {
+              posts: batchResult.posts.length,
+              originalCount: batchResult.originalCount,
+              cursor: batchResult.cursor
+            });
+            
+            // Filter out posts that already exist in current feed
+            const newUniquePosts = batchResult.posts.filter(p => !currentFeedUris.has(p.post.uri));
+            console.log('✨ DEBUG: New unique posts in this batch:', newUniquePosts.length);
+            
+            accumulatedPosts.push(...newUniquePosts);
+            // Update the set with new posts to prevent duplicates in subsequent batches
+            newUniquePosts.forEach(p => currentFeedUris.add(p.post.uri));
+            
             nextCursor = batchResult.cursor;
-            canFetchMore = !!nextCursor && batchResult.originalCount > 0;
+            totalOriginalCount += batchResult.originalCount;
+            canFetchMore = !!nextCursor; // Allow continuation as long as we have a cursor
             attempts++;
+            
+            // Break if no new posts were found in this batch
+            if (newUniquePosts.length === 0 && batchResult.posts.length > 0) {
+              console.log('⚠️ DEBUG: No new unique posts found, stopping pagination');
+              canFetchMore = false;
+              break;
+            }
         }
 
+        console.log('📊 DEBUG: Final accumulated posts:', accumulatedPosts.length);
+        
+        let actuallyAddedCount = 0;
         if (accumulatedPosts.length > 0) {
             setFeed(prevFeed => {
                 const existingUris = new Set(prevFeed.map(p => p.post.uri));
                 const uniqueNewPosts = accumulatedPosts.filter(p => !existingUris.has(p.post.uri));
+                actuallyAddedCount = uniqueNewPosts.length;
+                console.log('➕ DEBUG: Actually adding', actuallyAddedCount, 'new posts to feed');
                 return [...prevFeed, ...uniqueNewPosts];
             });
         }
+        
+        // More robust hasMore logic: continue if we have a cursor AND can fetch more
+        // Allow continuation even if no posts were added this round (due to filtering)
+        const newHasMore = canFetchMore && !!nextCursor && (actuallyAddedCount > 0 || totalOriginalCount > 0);
+        console.log('🎯 DEBUG: Setting hasMore to:', newHasMore, {
+          canFetchMore,
+          actuallyAddedCount,
+          hasNextCursor: !!nextCursor,
+          totalOriginalCount
+        });
+        
         setCursor(nextCursor);
-        setHasMore(canFetchMore);
+        setHasMore(newHasMore);
 
+    } catch (error) {
+        console.error('❌ ERROR: loadMorePosts failed:', error);
+        setHasMore(false); // Stop pagination on error
     } finally {
         setIsLoadingMore(false);
         isLoadingMoreRef.current = false;
+        console.log('✅ DEBUG: loadMorePosts completed');
     }
-  }, [cursor, hasMore, fetchAndFilterPage]);
+  }, [cursor, hasMore, fetchAndFilterPage, layout, feed]);
 
-  // Função otimizada para carregamento progressivo durante scroll
-  const handleScrollProgress = useCallback((nativeEvent: any) => {
+  const onEndReached = useCallback(() => {
     const now = Date.now();
-    const scrollPosition = nativeEvent.contentOffset.y;
-    const contentHeight = nativeEvent.contentSize.height;
-    const layoutHeight = nativeEvent.layoutMeasurement.height;
+    const timeSinceLastTrigger = now - (lastLoadTriggerRef.current || 0);
+    const MIN_TRIGGER_INTERVAL = 500; // Reduced to 500ms for better responsiveness
     
-    // Carrega mais posts quando está a 70% do scroll e não está carregando
-    const shouldLoadMore = scrollPosition + layoutHeight >= contentHeight * 0.7;
+    console.log('🎯 DEBUG: onEndReached triggered', {
+      hasMore,
+      isLoading: isLoadingMoreRef.current,
+      timeSinceLastTrigger,
+      minInterval: MIN_TRIGGER_INTERVAL,
+      feedLength: feed.length,
+      cursor: !!cursor
+    });
     
-    // Previne múltiplas chamadas em um curto período (debounce de 300ms)
-    if (shouldLoadMore && !isLoadingMoreRef.current && now - lastLoadTriggerRef.current > 300) {
+    // More robust conditions check
+    if (hasMore && !isLoadingMoreRef.current && timeSinceLastTrigger >= MIN_TRIGGER_INTERVAL && cursor && feed.length > 0) {
       lastLoadTriggerRef.current = now;
+      console.log('✅ DEBUG: Triggering loadMorePosts');
       loadMorePosts();
+    } else {
+      console.log('🚫 DEBUG: onEndReached blocked - conditions not met', {
+        hasMore,
+        isLoading: isLoadingMoreRef.current,
+        timeSinceLastTrigger,
+        hasCursor: !!cursor,
+        feedLength: feed.length
+      });
     }
-  }, [loadMorePosts]);
-  
+  }, [hasMore, loadMorePosts, cursor, feed.length]);
+
   const moderatedFeed = useMemo(() => {
     if (!moderation.isReady) return [];
     
@@ -744,7 +888,7 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
       <View style={{ flex: 1 }}>
         {renderHeader()}
         {layout === 'grid' ? (
-                     <View style={{ paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.lg }}>
+                     <View style={{ paddingHorizontal: theme.spacing.sm, paddingTop: theme.spacing.lg }}>
             <View style={{ flexDirection: 'row' }}>
               <View style={{ flex: 1, marginHorizontal: theme.spacing.xs }}>
                 <PostCardSkeleton />
@@ -774,8 +918,7 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
       hasMore={hasMore}
       isRefreshing={isRefreshing}
       onRefresh={onRefresh}
-      onLoadMore={loadMorePosts}
-      onScrollProgress={handleScrollProgress}
+      onEndReached={onEndReached} // Pass the new onEndReached prop
       keyExtractor={keyExtractor}
       renderItem={renderItem}
       renderFooter={renderFooter}
@@ -787,8 +930,8 @@ const FeedContainer: React.FC<FeedContainerProps> = ({
 };
 
 const createStyles = (theme: any) => StyleSheet.create({
-  contentContainer: { paddingTop: theme.spacing.lg, paddingBottom: 60 },
-          listContainer: { gap: theme.spacing.xs, paddingHorizontal: theme.spacing.lg },
+  contentContainer: { paddingTop: theme.spacing.sm, paddingBottom: 60 },
+          listContainer: { gap: theme.spacing.xs, paddingHorizontal: theme.spacing.sm },
   scrollViewContentGrid: {
       paddingHorizontal: theme.spacing.sm,
       paddingBottom: 60,
@@ -811,7 +954,7 @@ const createStyles = (theme: any) => StyleSheet.create({
       zIndex: 1,
   },
   messageContainerWrapper: {
-      padding: theme.spacing.lg,
+      padding: theme.spacing.sm,
   },
   infoText: { 
       fontSize: theme.typography.bodyLarge.fontSize,

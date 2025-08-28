@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useModeration } from '../../context/ModerationContext';
 import { Trash2, Tag, Plus } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const MutedWordsScreen: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { isReady, mutedWords, addMutedWord, removeMutedWord } = useModeration();
     const [newWord, setNewWord] = useState('');
     const [isAdding, setIsAdding] = useState(false);
@@ -74,17 +76,17 @@ const MutedWordsScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     formContainer: { flexDirection: 'row', gap: theme.spacing.s },
     inputContainer: { position: 'relative', flex: 1, justifyContent: 'center' },
     inputIcon: { position: 'absolute', left: theme.spacing.m },
-    input: { width: '100%', paddingLeft: 40, paddingRight: theme.spacing.m, paddingVertical: 10, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.medium, color: theme.colors.onSurface },
-    addButton: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, borderRadius: theme.shape.medium },
+    input: { width: '100%', paddingLeft: 40, paddingRight: theme.spacing.m, paddingVertical: 10, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.md, color: theme.colors.onSurface },
+    addButton: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.s, paddingHorizontal: theme.spacing.l, borderRadius: theme.radius.md },
     disabledButton: { opacity: 0.5 },
     addButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
     centered: { padding: theme.spacing.xxl, alignItems: 'center' },
     infoText: { color: theme.colors.onSurfaceVariant },
-    removeButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
+    removeButton: { padding: theme.spacing.s, borderRadius: theme.radius.full },
 });
 
 export default MutedWordsScreen;

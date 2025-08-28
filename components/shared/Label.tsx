@@ -2,9 +2,11 @@ import React from 'react';
 import { ComAtprotoLabelDefs } from '@atproto/api';
 import { ShieldAlert } from 'lucide-react';
 import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const Label: React.FC<{ label: ComAtprotoLabelDefs.Label }> = ({ label }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   return (
     <View style={styles.container}>
       <ShieldAlert size={14} color={theme.colors.onSurfaceVariant} />
@@ -13,7 +15,7 @@ const Label: React.FC<{ label: ComAtprotoLabelDefs.Label }> = ({ label }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -21,7 +23,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surfaceContainerHigh,
         paddingHorizontal: theme.spacing.s,
         paddingVertical: theme.spacing.xs,
-        borderRadius: theme.shape.small,
+        borderRadius: theme.radius.sm,
     },
     text: {
         ...theme.typography.labelMedium,

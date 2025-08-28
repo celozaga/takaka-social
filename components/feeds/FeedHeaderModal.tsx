@@ -11,7 +11,7 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-nati
 import { useTheme } from '@/components/shared';
 import { formatCompactNumber } from '@/lib/formatters';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
-import { PrimaryButton, SecondaryButton, LoadingState } from '@/components/shared';
+import { PrimaryButton, SecondaryButton, LoadingState, Tooltip } from '@/components/shared';
 
 const FeedHeaderModal: React.FC = () => {
     const { feedModalUri, closeFeedModal } = useUI();
@@ -38,19 +38,31 @@ const FeedHeaderModal: React.FC = () => {
         }
     }, [requireAuth, closeFeedModal]);
     
-    const ActionButton: React.FC<{ icon: React.FC<any>, text: string, onPress: () => void, isDestructive?: boolean, isActive?: boolean }> =
-    ({ icon: Icon, text, onPress, isDestructive = false, isActive = false }) => (
-        <Pressable
-            onPress={onPress}
-            style={[
-                styles.actionButton,
-                isDestructive ? styles.actionButtonDestructive : (isActive ? styles.actionButtonActive : styles.actionButtonDefault)
-            ]}
-        >
-            <Icon size={20} color={isDestructive ? theme.colors.error : (isActive ? theme.colors.onPrimary : theme.colors.onSurface)} fill={isActive && !isDestructive ? theme.colors.onPrimary : 'none'}/>
-            <Text style={[styles.actionButtonText, isDestructive ? styles.actionButtonTextDestructive : (isActive ? styles.actionButtonTextActive : styles.actionButtonTextDefault)]}>{text}</Text>
-        </Pressable>
-    );
+    const ActionButton: React.FC<{ icon: React.FC<any>, text: string, onPress: () => void, isDestructive?: boolean, isActive?: boolean, tooltipKey?: string }> =
+    ({ icon: Icon, text, onPress, isDestructive = false, isActive = false, tooltipKey }) => {
+        const button = (
+            <Pressable
+                onPress={onPress}
+                style={[
+                    styles.actionButton,
+                    isDestructive ? styles.actionButtonDestructive : (isActive ? styles.actionButtonActive : styles.actionButtonDefault)
+                ]}
+            >
+                <Icon size={20} color={isDestructive ? theme.colors.error : (isActive ? theme.colors.onPrimary : theme.colors.onSurface)} fill={isActive && !isDestructive ? theme.colors.onPrimary : 'none'}/>
+                <Text style={[styles.actionButtonText, isDestructive ? styles.actionButtonTextDestructive : (isActive ? styles.actionButtonTextActive : styles.actionButtonTextDefault)]}>{text}</Text>
+            </Pressable>
+        );
+        
+        if (tooltipKey) {
+            return (
+                <Tooltip contentKey={tooltipKey as any} position="top">
+                    {button}
+                </Tooltip>
+            );
+        }
+        
+        return button;
+    };
 
     const renderContent = () => {
         if (isLoading) {
@@ -64,12 +76,16 @@ const FeedHeaderModal: React.FC = () => {
         return (
             <>
                 <View style={styles.header}>
-                    <Pressable onPress={closeFeedModal} style={styles.headerButton} accessibilityLabel={t('common.close')}>
-                        <X size={20} color={theme.colors.onSurfaceVariant} />
-                    </Pressable>
-                     <Pressable onPress={handleShare} style={styles.headerButton} accessibilityLabel={t('common.share')}>
-                        <Share2 size={20} color={theme.colors.onSurfaceVariant} />
-                    </Pressable>
+                    <Tooltip contentKey="common.close" position="bottom">
+                        <Pressable onPress={closeFeedModal} style={styles.headerButton} accessibilityLabel={t('common.close')}>
+                            <X size={20} color={theme.colors.onSurfaceVariant} />
+                        </Pressable>
+                    </Tooltip>
+                    <Tooltip contentKey="common.share" position="bottom">
+                        <Pressable onPress={handleShare} style={styles.headerButton} accessibilityLabel={t('common.share')}>
+                            <Share2 size={20} color={theme.colors.onSurfaceVariant} />
+                        </Pressable>
+                    </Tooltip>
                 </View>
                 <View style={styles.content}>
                     <FeedAvatar src={feedView.avatar} alt={feedView.displayName} style={styles.avatarImage} />
@@ -84,11 +100,13 @@ const FeedHeaderModal: React.FC = () => {
                         text={likeUri ? t('feedModal.unlike') : t('feedModal.like')}
                         onPress={handleLike}
                         isActive={!!likeUri}
+                        tooltipKey={likeUri ? "post.unlike" : "post.like"}
                     />
                      <ActionButton
                         icon={Pin}
                         text={isPinned ? t('feedModal.unpin') : t('feedModal.pin')}
                         onPress={handlePinToggle}
+                        tooltipKey={isPinned ? "feeds.unpin" : "feeds.pin"}
                     />
                 </View>
                  <View style={{ padding: theme.spacing.lg, paddingTop: 0 }}>
@@ -97,6 +115,7 @@ const FeedHeaderModal: React.FC = () => {
                         text={t('feedModal.report')}
                         onPress={() => alert(t('feedModal.reportNotImplemented'))}
                         isDestructive
+                        tooltipKey="post.report"
                     />
                 </View>
             </>

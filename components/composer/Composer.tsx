@@ -10,6 +10,7 @@ import { OptimizedImage } from '../ui';
 import * as ImagePicker from 'expo-image-picker';
 import { FEATURES, MEDIA_CONFIG, isFeatureEnabled } from '@/lib/config';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useDebounce, useDebouncedAction } from '@/hooks/useDebounce';
 
 interface ComposerProps {
   onPostSuccess: () => void;
@@ -71,6 +72,7 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
   const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [langSearchTerm, setLangSearchTerm] = useState('');
+  const debouncedLangSearch = useDebounce(langSearchTerm, 300);
 
   // Verificar autenticação ao montar o componente
   useEffect(() => {
@@ -190,7 +192,15 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handlePost = async () => {
+  // Debounced post action to prevent double posting
+  const { execute: executePost, isLoading: isPostingDebounced } = useDebouncedAction(
+    async () => {
+      return await performPost();
+    },
+    1000
+  );
+
+  const performPost = async () => {
     if (mediaFiles.length === 0 && !replyTo) {
         toast({ title: t('composer.toast.mediaRequired'), variant: "destructive" });
         return;
@@ -303,10 +313,10 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
     });
   }
 
-  const filteredLangs = LANGUAGES.filter(lang => lang.name.toLowerCase().includes(langSearchTerm.toLowerCase()));
+  const filteredLangs = LANGUAGES.filter(lang => lang.name.toLowerCase().includes(debouncedLangSearch.toLowerCase()));
   const remainingChars = MAX_CHARS - text.length;
   const hasVideoOrGif = mediaFiles.some(mf => mf.type === 'video' || mf.type === 'gif');
-  const isPostButtonDisabled = isPosting ||
+  const isPostButtonDisabled = isPosting || isPostingDebounced ||
     (replyTo ? (!text.trim() && mediaFiles.length === 0) : mediaFiles.length === 0) ||
     text.length > MAX_CHARS;
 
@@ -317,13 +327,13 @@ const Composer: React.FC<ComposerProps> = ({ onPostSuccess, onClose, replyTo, in
                 <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
             <Pressable
-                onPress={handlePost}
+                onPress={executePost}
                 disabled={isPostButtonDisabled}
                 style={[styles.postButton, isPostButtonDisabled && styles.postButtonDisabled]}
             >
-                {isPosting ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Ionicons name="send" color={theme.colors.onPrimary} size={16} />}
+                {(isPosting || isPostingDebounced) ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Ionicons name="send" color={theme.colors.onPrimary} size={16} />}
                 <Text style={styles.postButtonText}>
-                    {isPosting ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
+                    {(isPosting || isPostingDebounced) ? t('composer.posting') : (replyTo ? t('common.reply') : t('common.post'))}
                 </Text>
             </Pressable>
         </View>

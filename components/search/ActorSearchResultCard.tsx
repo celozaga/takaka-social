@@ -6,13 +6,15 @@ import { useToast } from '@/components/shared';
 import { BadgeCheck, Loader2 } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface ActorSearchResultCardProps {
   actor: AppBskyActorDefs.ProfileView | AppBskyActorDefs.ProfileViewDetailed;
 }
 
 const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { agent, session } = useAtp();
   const { toast } = useToast();
   const [viewerState, setViewerState] = useState(actor.viewer);
@@ -112,7 +114,7 @@ const ActorSearchResultCard: React.FC<ActorSearchResultCardProps> = ({ actor }) 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         paddingVertical: 12,
         backgroundColor: theme.colors.background,
@@ -125,7 +127,7 @@ const styles = StyleSheet.create({
     avatar: {
         width: 48,
         height: 48,
-        borderRadius: 24,
+        borderRadius: theme.radius.full,
         backgroundColor: theme.colors.surfaceContainerHigh,
         flexShrink: 0,
     },
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
     followButton: {
         paddingVertical: 8,
         paddingHorizontal: 16,
-        borderRadius: theme.shape.medium,
+        borderRadius: theme.radius.md,
         flexShrink: 0,
         justifyContent: 'center',
         alignItems: 'center',

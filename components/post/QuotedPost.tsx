@@ -4,7 +4,7 @@ import { Link } from 'expo-router';
 import { AppBskyEmbedRecord, AtUri, RichText, AppBskyFeedDefs, AppBskyFeedPost, AppBskyEmbedImages } from '@atproto/api';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { formatCompactDate } from '@/lib/formatters';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { OptimizedImage } from '../ui';
 
 interface QuotedPostProps {
@@ -12,6 +12,8 @@ interface QuotedPostProps {
 }
 
 const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   if (AppBskyEmbedRecord.isViewNotFound(embed)) {
     return (
       <View style={[styles.container, styles.containerNotFound]}>
@@ -78,13 +80,13 @@ const QuotedPost: React.FC<QuotedPostProps> = ({ embed }) => {
   return null;
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     borderWidth: 1,
     borderColor: theme.colors.outline,
-    borderRadius: theme.shape.medium,
-    padding: theme.spacing.m,
-    marginTop: theme.spacing.s,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    marginTop: theme.spacing.sm,
   },
   containerNotFound: {
     backgroundColor: theme.colors.surfaceContainer,
@@ -101,13 +103,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.s,
+    gap: theme.spacing.sm,
     marginBottom: theme.spacing.xs,
   },
   avatar: {
     width: 16,
     height: 16,
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
   },
   authorName: {
     ...theme.typography.labelMedium,
@@ -125,8 +127,8 @@ const styles = StyleSheet.create({
   mediaPreview: {
     width: '100%',
     aspectRatio: 1.5,
-    borderRadius: theme.shape.medium,
-    marginTop: theme.spacing.s,
+    borderRadius: theme.radius.md,
+    marginTop: theme.spacing.sm,
     backgroundColor: theme.colors.surfaceContainerHigh,
   }
 });

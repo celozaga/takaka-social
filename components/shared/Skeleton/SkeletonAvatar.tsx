@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { useTheme } from '@/components/shared';
+import { useTheme } from '@/components/shared/Theme';
 
 interface SkeletonAvatarProps {
   size?: number;

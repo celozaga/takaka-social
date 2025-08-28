@@ -7,13 +7,15 @@ import PostScreenActionBar from './PostScreenActionBar';
 import PostPageWebActionBar from './PostPageWebActionBar';
 import RepliesList from '@/components/replies/RepliesList';
 import { useTranslation } from 'react-i18next';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 
 interface PostScreenProps {
   thread: AppBskyFeedDefs.ThreadViewPost;
 }
 
 const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
@@ -33,10 +35,10 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
     </View>
   );
 
-  const contentContainerStyle = [
+  const contentContainerStyle = React.useMemo(() => [
     // Add padding for the absolute action bar on mobile, but not desktop
     { paddingBottom: (isWeb && isDesktop) ? theme.spacing.l : 80 }
-  ];
+  ], [isWeb, isDesktop, theme]);
 
   return (
     <View style={styles.container}>
@@ -54,7 +56,7 @@ const PostScreen: React.FC<PostScreenProps> = ({ thread }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

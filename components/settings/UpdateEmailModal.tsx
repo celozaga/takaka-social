@@ -3,7 +3,7 @@ import { useAtp } from '../../context/AtpContext';
 import { useToast } from '@/components/shared';
 import { X, Mail } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { PrimaryButton, SecondaryButton } from '@/components/shared';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,8 @@ interface UpdateEmailModalProps {
 }
 
 const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { agent } = useAtp();
     const { toast } = useToast();
     const { requireAuth } = useAuthGuard();
@@ -105,10 +107,10 @@ const UpdateEmailModal: React.FC<UpdateEmailModalProps> = ({ onClose, onSuccess 
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         padding: theme.spacing.xl,
         gap: theme.spacing.l,
         width: '100%',
@@ -147,7 +149,7 @@ const styles = StyleSheet.create({
         paddingRight: theme.spacing.m,
         paddingVertical: 10,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.medium,
+        borderRadius: theme.radius.md,
         color: theme.colors.onSurface,
     },
     errorText: {
@@ -160,7 +162,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary,
         paddingVertical: 10,
         paddingHorizontal: theme.spacing.xl,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
         alignItems: 'center',
     },
     buttonDisabled: {

@@ -111,7 +111,7 @@ const Card: React.FC<CardProps> = ({
     ? {
         onPress: disabled ? undefined : onPress,
         disabled,
-        accessibilityRole: 'button' as const,
+        accessibilityRole: (Platform.OS === 'web' && style && (style as any).accessibilityRole === undefined) ? undefined : 'button' as const,
       }
     : {};
 

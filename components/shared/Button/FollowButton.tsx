@@ -12,6 +12,7 @@ import React from 'react';
 import { Pressable, Text, StyleSheet, Platform, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../Theme';
+import { Tooltip } from '../Tooltip';
 
 // ============================================================================
 // Types
@@ -141,22 +142,37 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return baseStyles;
   };
 
+  const getTooltipContentKey = () => {
+    switch (state) {
+      case 'follow':
+        return 'profile.follow';
+      case 'following':
+        return 'profile.unfollow';
+      case 'pending':
+        return 'profile.pending';
+      default:
+        return 'profile.follow';
+    }
+  };
+
   return (
-    <Pressable
-      onPress={handlePress}
-      disabled={disabled || loading}
-      style={({ pressed }) => [
-        ...getButtonStyles(pressed),
-        style,
-      ]}
-      accessibilityLabel={accessibilityLabel || getButtonText()}
-      accessibilityRole="button"
-      testID={testID}
-    >
-      <Text style={[...getTextStyles(), textStyle]}>
-        {getButtonText()}
-      </Text>
-    </Pressable>
+    <Tooltip contentKey={getTooltipContentKey()} position="top">
+      <Pressable
+        onPress={handlePress}
+        disabled={disabled || loading}
+        style={({ pressed }) => [
+          ...getButtonStyles(pressed),
+          style,
+        ]}
+        accessibilityLabel={accessibilityLabel || getButtonText()}
+        accessibilityRole="button"
+        testID={testID}
+      >
+        <Text style={[...getTextStyles(), textStyle]}>
+          {getButtonText()}
+        </Text>
+      </Pressable>
+    </Tooltip>
   );
 };
 

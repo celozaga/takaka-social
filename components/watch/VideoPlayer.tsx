@@ -5,7 +5,7 @@ import { OptimizedImage } from '../ui';
 import { AppBskyFeedDefs, AppBskyEmbedVideo, AppBskyEmbedRecordWithMedia } from '@atproto/api';
 import VideoPostOverlay from './VideoPostOverlay';
 import VideoProgressBar from './VideoProgressBar';
-import { theme } from '@/lib/theme';
+
 import { useModeration } from '@/context/ModerationContext';
 import { moderatePost, ModerationDecision } from '@/lib/moderation';
 import ContentWarning from '@/components/shared/ContentWarning';

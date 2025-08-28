@@ -11,6 +11,7 @@
 import React from 'react';
 import { Switch, Platform } from 'react-native';
 import { useTheme } from '../Theme';
+import { Tooltip, TooltipContentKey } from '../Tooltip';
 
 // ============================================================================
 // Types
@@ -27,6 +28,10 @@ interface SwitchProps {
   accessibilityLabel?: string;
   /** Test ID for testing */
   testID?: string;
+  /** Tooltip content key for help text */
+  tooltipKey?: TooltipContentKey;
+  /** Custom tooltip content (overrides tooltipKey) */
+  tooltipContent?: string;
 }
 
 // ============================================================================
@@ -39,10 +44,12 @@ const SwitchComponent: React.FC<SwitchProps> = ({
   disabled = false,
   accessibilityLabel,
   testID,
+  tooltipKey,
+  tooltipContent,
 }) => {
   const { theme } = useTheme();
 
-  return (
+  const switchElement = (
     <Switch
       trackColor={{ 
         false: theme.colors.surfaceContainerHigh, 
@@ -64,6 +71,21 @@ const SwitchComponent: React.FC<SwitchProps> = ({
       } as any : {}}
     />
   );
+
+  // Wrap with tooltip if tooltip content is provided
+  if (tooltipKey || tooltipContent) {
+    return (
+      <Tooltip 
+        contentKey={tooltipKey} 
+        content={tooltipContent}
+        position="left"
+      >
+        {switchElement}
+      </Tooltip>
+    );
+  }
+
+  return switchElement;
 };
 
 export default SwitchComponent;

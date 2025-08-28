@@ -21,14 +21,14 @@ import { Platform } from 'react-native';
 
 export const palette = {
   // Brand Colors
-  brandPrimary: '#ffffff',
+  brandPrimary: '#FFFFFF',
   brandSecondary: '#ec4899',
   
   // Grayscale
-  black: '#101010',
-  darkGray: '#1E1E1E',
-  midGray: '#616161',
-  lightGray: '#9E9E9E',
+  black: '#0F0F0F',
+  darkGray: '#272727',
+  midGray: '#6B6B6B',
+  lightGray: '#999999',
   offWhite: '#F3F5F7',
   white: '#ffffff',
   

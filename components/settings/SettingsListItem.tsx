@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
 import { ChevronRight, Loader2 } from 'lucide-react';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
+import { Tooltip, TooltipContentKey } from '@/components/shared/Tooltip';
 
 interface SettingsListItemProps {
     icon: React.ElementType;
@@ -15,6 +16,10 @@ interface SettingsListItemProps {
     disabled?: boolean;
     value?: React.ReactNode;
     control?: React.ReactNode;
+    /** Tooltip content key for help text */
+    tooltipKey?: TooltipContentKey;
+    /** Custom tooltip content (overrides tooltipKey) */
+    tooltipContent?: string;
 }
 
 export const SettingsListItem: React.FC<SettingsListItemProps> = ({
@@ -27,23 +32,27 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
     isLoading = false,
     disabled = false,
     value,
-    control
+    control,
+    tooltipKey,
+    tooltipContent
 }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const content = (
-        <View style={[theme.settingsStyles.item, disabled && theme.settingsStyles.disabled]}>
-            <View style={theme.settingsStyles.itemLeft}>
+        <View style={[styles.item, disabled && styles.disabled]}>
+            <View style={styles.itemLeft}>
                 <Icon
-                    style={theme.settingsStyles.icon}
+                    style={styles.icon}
                     color={isDestructive ? theme.colors.error : theme.colors.onSurfaceVariant}
                     size={24}
                 />
-                <View style={theme.settingsStyles.itemTextContainer}>
-                    <Text style={[theme.settingsStyles.label, isDestructive && theme.settingsStyles.destructiveLabel]}>{label}</Text>
-                    {sublabel && <Text style={theme.settingsStyles.sublabel}>{sublabel}</Text>}
+                <View style={styles.itemTextContainer}>
+                    <Text style={[styles.label, isDestructive && styles.destructiveLabel]}>{label}</Text>
+                    {sublabel && <Text style={styles.sublabel}>{sublabel}</Text>}
                 </View>
             </View>
-            <View style={theme.settingsStyles.itemRight}>
-                {value && <Text style={theme.settingsStyles.value}>{value}</Text>}
+            <View style={styles.itemRight}>
+                {value && <Text style={styles.value}>{value}</Text>}
                 {control}
                 {isLoading ? (
                     <Loader2 color={theme.colors.onSurfaceVariant} size={20} style={{ animation: 'spin 1s linear infinite' } as any} />
@@ -55,22 +64,90 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
     );
 
     const pressableStyle = ({ pressed }: { pressed: boolean }) => [
-        pressed && !disabled && theme.settingsStyles.pressed,
+        pressed && !disabled && styles.pressed,
     ];
 
-    if (href) {
+    const renderContent = () => {
+        if (href) {
+            return (
+                <Link href={href as any} asChild disabled={disabled}>
+                    <Pressable style={pressableStyle}>{content}</Pressable>
+                </Link>
+            );
+        }
+
         return (
-            <Link href={href as any} asChild disabled={disabled}>
-                <Pressable style={pressableStyle}>{content}</Pressable>
-            </Link>
+            <Pressable onPress={onPress} disabled={disabled} style={pressableStyle}>
+                {content}
+            </Pressable>
+        );
+    };
+
+    // Wrap with tooltip if tooltip content is provided
+    if (tooltipKey || tooltipContent) {
+        return (
+            <Tooltip 
+                contentKey={tooltipKey} 
+                content={tooltipContent}
+                position="right"
+            >
+                {renderContent()}
+            </Tooltip>
         );
     }
 
-    return (
-        <Pressable onPress={onPress} disabled={disabled} style={pressableStyle}>
-            {content}
-        </Pressable>
-    );
+    return renderContent();
 };
+
+const createStyles = (theme: any) => StyleSheet.create({
+    item: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: theme.spacing.lg,
+        backgroundColor: 'transparent',
+    },
+    itemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.lg,
+        flex: 1,
+    },
+    itemRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+    itemTextContainer: {
+        flex: 1,
+    },
+    icon: {
+        width: 24,
+        height: 24,
+    },
+    label: {
+        ...theme.typography.bodyLarge,
+        fontWeight: '600',
+        color: theme.colors.onSurface,
+    },
+    sublabel: {
+        ...theme.typography.bodyMedium,
+        color: theme.colors.onSurfaceVariant,
+        marginTop: 2,
+    },
+    value: {
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 14,
+    },
+    destructiveLabel: {
+        color: theme.colors.error,
+    },
+    disabled: {
+        opacity: 0.5,
+    },
+    pressed: {
+        backgroundColor: theme.colors.surfaceContainerHigh,
+    },
+});
 
 export default SettingsListItem;

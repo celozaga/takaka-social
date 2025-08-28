@@ -12,7 +12,7 @@ import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import Avatar from './Avatar';
 import FollowButton from '../Button/FollowButton';
-import { useTheme } from '../Theme';
+import { useTheme } from '@/hooks/useTheme';
 
 // ============================================================================
 // Types
@@ -61,6 +61,7 @@ const AvatarOverlayFollow: React.FC<AvatarOverlayFollowProps> = ({
   testID,
 }) => {
   const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   return (
     <View 
@@ -99,7 +100,7 @@ const AvatarOverlayFollow: React.FC<AvatarOverlayFollowProps> = ({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: 'relative',
     alignItems: 'center',

@@ -4,7 +4,7 @@ import { useToast } from '@/components/shared';
 import { X, AtSign } from 'lucide-react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { PrimaryButton, SecondaryButton } from '@/components/shared';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,8 @@ interface UpdateHandleModalProps {
 }
 
 const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSuccess }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { agent, logout } = useAtp();
     const { toast } = useToast();
     const { requireAuth } = useAuthGuard();
@@ -90,10 +92,10 @@ const UpdateHandleModal: React.FC<UpdateHandleModalProps> = ({ onClose, onSucces
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         padding: theme.spacing.xl,
         gap: theme.spacing.l,
         width: '100%',
@@ -132,7 +134,7 @@ const styles = StyleSheet.create({
         paddingRight: theme.spacing.m,
         paddingVertical: 10,
         backgroundColor: theme.colors.surfaceContainerHigh,
-        borderRadius: theme.shape.medium,
+        borderRadius: theme.radius.md,
         color: theme.colors.onSurface,
     },
     errorText: {

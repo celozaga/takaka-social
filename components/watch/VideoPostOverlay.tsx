@@ -4,7 +4,7 @@ import { AppBskyFeedDefs } from '@atproto/api';
 import VideoActions from './VideoActions';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { Play } from 'lucide-react';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
 }
 
 const VideoPostOverlay: React.FC<Props> = ({ post, onNext, onPrevious, isPlaying, onTogglePlayPause }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { width, height } = useWindowDimensions();
   const isMobile = width < 768;
   const record = post.record as any;
@@ -124,7 +126,7 @@ const VideoPostOverlay: React.FC<Props> = ({ post, onNext, onPrevious, isPlaying
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   // Layout principal estilo TikTok
   bottomInfoContainer: {
     position: 'absolute',

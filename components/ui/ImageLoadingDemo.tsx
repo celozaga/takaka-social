@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { OptimizedImage } from './index';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 const ImageLoadingDemo: React.FC = () => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const testImageUrl = 'https://picsum.photos/300/200?random=1';
   
   return (
@@ -45,7 +47,7 @@ const ImageLoadingDemo: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     padding: theme.spacing.l,
     backgroundColor: theme.colors.background,

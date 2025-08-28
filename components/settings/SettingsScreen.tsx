@@ -7,7 +7,6 @@ import { useUI } from '../../context/UIContext';
 import { supportedLanguages } from '../../lib/i18n';
 import Head from 'expo-router/head';
 import { Alert, Platform } from 'react-native';
-import { theme } from '@/lib/theme';
 import SettingsListItem from './SettingsListItem';
 import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';

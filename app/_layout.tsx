@@ -1,7 +1,7 @@
 // Polyfill for Intl.PluralRules to fix i18next compatibility
 import 'intl-pluralrules';
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { View, StyleSheet, Platform, ActivityIndicator, Pressable, useWindowDimensions, KeyboardAvoidingView, StyleProp, ViewStyle } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -22,37 +22,112 @@ import GlobalAuthGuard from '@/components/auth/GlobalAuthGuard';
 
 import '@/lib/i18n';
 
-// Lazy load modals for better initial performance
-const LoginScreen = lazy(() => import('@/components/auth/LoginScreen'));
-const Composer = lazy(() => import('@/components/composer/Composer'));
-const FeedHeaderModal = lazy(() => import('@/components/feeds/FeedHeaderModal'));
-const EditProfileModal = lazy(() => import('@/components/profile/EditProfileModal'));
-const UpdateEmailModal = lazy(() => import('@/components/settings/UpdateEmailModal'));
-const UpdateHandleModal = lazy(() => import('@/components/settings/UpdateHandleModal'));
-const MediaActionsModal = lazy(() => import('@/components/shared/MediaActionsModal'));
-const RepostModal = lazy(() => import('@/components/shared/RepostModal'));
-const RepliesModal = lazy(() => import('@/components/replies/RepliesModal'));
+import { lazyComponents, useRouteBasedPreload, usePreloadComponents } from '@/hooks/useLazyComponent';
+import { useRouteSplitting, useIntelligentPreload } from '@/hooks/useRouteSplitting';
+import { useAutoContextOptimization } from '@/hooks/useOptimizedContexts';
+import { usePerformanceMonitor, initializePerformanceMonitoring } from '@/lib/performanceMonitoring';
+import { initializeServiceWorker } from '@/lib/serviceWorker';
 
-const ModalSuspenseFallback = () => {
+// Use optimized lazy components
+const {
+  LoginScreen,
+  Composer,
+  FeedHeaderModal,
+  EditProfileModal,
+  UpdateEmailModal,
+  UpdateHandleModal,
+  MediaActionsModal,
+  RepostModal,
+  RepliesModal,
+} = lazyComponents;
+
+const ModalSuspenseFallback = React.memo(() => {
+  const { theme } = useTheme();
   return (
     <View style={{ 
-      backgroundColor: '#1E1E1E',
-      borderRadius: 12,
-      padding: 32,
+      backgroundColor: theme.colors.surfaceContainer,
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing['2xl'],
       width: '100%',
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 120,
     }}>
-      <ActivityIndicator size="large" />
+      <ActivityIndicator size="large" color={theme.colors.primary} />
     </View>
   );
-};
+});
+
+// Error boundary for lazy loaded components
+class LazyLoadErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Lazy load error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <ModalSuspenseFallback />;
+    }
+    return this.props.children;
+  }
+}
 
 // Internal component that uses theme
 function ThemedAppLayout() {
   const { theme } = useTheme();
   const { session, isLoadingSession } = useAtp();
+  const pathname = usePathname();
+  
+  // Performance monitoring for this component
+  const { measureRender, addMetric } = usePerformanceMonitor('ThemedAppLayout');
+  
+  // Strategic preloading based on current route
+  useRouteBasedPreload(pathname);
+  
+  // Advanced route splitting and intelligent preload
+  const { getLazyComponent, preloadChunk, stats } = useRouteSplitting(pathname);
+  useIntelligentPreload(pathname);
+  
+  // Auto context optimization
+  useAutoContextOptimization(pathname);
+  
+  // Preload critical components after initial render
+  usePreloadComponents([
+    () => import('@/components/auth/LoginScreen'),
+    () => import('@/components/composer/Composer'),
+  ], 1000);
+  
+  // Initialize performance monitoring and service worker
+  useEffect(() => {
+    // Initialize performance monitoring
+    initializePerformanceMonitoring({
+      enabled: true,
+      maxMetrics: 1000,
+      reportInterval: 30000,
+    });
+    
+    // Initialize service worker for web
+    if (Platform.OS === 'web') {
+      initializeServiceWorker().catch(error => {
+        console.warn('Service Worker initialization failed:', error);
+      });
+    }
+    
+    // Track app initialization time
+    addMetric('app-initialization', Date.now() - performance.now());
+  }, [addMetric]);
   
   // Create dynamic styles
   const createStyles = (theme: any) => StyleSheet.create({
@@ -159,7 +234,6 @@ function ThemedAppLayout() {
   } = useUI();
 
   // Always call hooks at the top level before any returns
-  const pathname = usePathname();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
@@ -188,7 +262,7 @@ function ThemedAppLayout() {
     showNav && !isDesktop && styles.mainContentMobile
   ];
 
-  return (
+  return measureRender(() => (
       <SafeAreaView style={styles.container}>
         <View style={appContainerStyle}>
           {showNav && <BottomNavbar />}
@@ -204,9 +278,11 @@ function ThemedAppLayout() {
           {isLoginModalOpen && (
             <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeLoginModal}>
               <Pressable style={styles.modalDialogWrapper as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                <Suspense fallback={<ModalSuspenseFallback />}>
-                    <LoginScreen onSuccess={closeLoginModal} />
-                </Suspense>
+                <LazyLoadErrorBoundary>
+                  <Suspense fallback={<ModalSuspenseFallback />}>
+                      <LoginScreen onSuccess={closeLoginModal} />
+                  </Suspense>
+                </LazyLoadErrorBoundary>
               </Pressable>
             </Pressable>
           )}
@@ -216,78 +292,94 @@ function ThemedAppLayout() {
               style={[styles.modalBackdrop, styles.composerBackdrop] as StyleProp<ViewStyle>}
             >
               <Pressable style={styles.composerWrapper as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                <Suspense fallback={<ModalSuspenseFallback />}>
-                    <Composer onClose={closeComposer} onPostSuccess={closeComposer} replyTo={composerReplyTo} initialText={composerInitialText} />
-                </Suspense>
+                <LazyLoadErrorBoundary>
+                  <Suspense fallback={<ModalSuspenseFallback />}>
+                      <Composer onClose={closeComposer} onPostSuccess={closeComposer} replyTo={composerReplyTo} initialText={composerInitialText} />
+                  </Suspense>
+                </LazyLoadErrorBoundary>
               </Pressable>
             </KeyboardAvoidingView>
           )}
           {isFeedModalOpen && (
             <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeFeedModal}>
               <Pressable style={styles.modalDialogWrapper as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                <Suspense fallback={<ModalSuspenseFallback />}>
-                    <FeedHeaderModal />
-                </Suspense>
+                <LazyLoadErrorBoundary>
+                  <Suspense fallback={<ModalSuspenseFallback />}>
+                      <FeedHeaderModal />
+                  </Suspense>
+                </LazyLoadErrorBoundary>
               </Pressable>
             </Pressable>
           )}
           {isEditProfileModalOpen && (
              <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeEditProfileModal}>
               <Pressable style={styles.modalDialogWrapper as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                <Suspense fallback={<ModalSuspenseFallback />}>
-                    <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
-                </Suspense>
+                <LazyLoadErrorBoundary>
+                  <Suspense fallback={<ModalSuspenseFallback />}>
+                      <EditProfileModal onClose={closeEditProfileModal} onSuccess={() => { closeEditProfileModal(); /* Could add a refetch here */ }} />
+                  </Suspense>
+                </LazyLoadErrorBoundary>
               </Pressable>
              </Pressable>
           )}
           {isUpdateEmailModalOpen && (
              <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeUpdateEmailModal}>
               <Pressable style={styles.modalDialogWrapper as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                <Suspense fallback={<ModalSuspenseFallback />}>
-                    <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
-                </Suspense>
+                <LazyLoadErrorBoundary>
+                  <Suspense fallback={<ModalSuspenseFallback />}>
+                      <UpdateEmailModal onClose={closeUpdateEmailModal} onSuccess={closeUpdateEmailModal} />
+                  </Suspense>
+                </LazyLoadErrorBoundary>
               </Pressable>
              </Pressable>
           )}
            {isUpdateHandleModalOpen && (
              <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeUpdateHandleModal}>
               <Pressable style={styles.modalDialogWrapper as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                <Suspense fallback={<ModalSuspenseFallback />}>
-                    <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
-                </Suspense>
+                <LazyLoadErrorBoundary>
+                  <Suspense fallback={<ModalSuspenseFallback />}>
+                      <UpdateHandleModal onClose={closeUpdateHandleModal} onSuccess={closeUpdateHandleModal} />
+                  </Suspense>
+                </LazyLoadErrorBoundary>
               </Pressable>
              </Pressable>
           )}
           {isMediaActionsModalOpen && mediaActionsModalPost && (
              <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeMediaActionsModal}>
                 <Pressable style={styles.bottomSheet as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                    <Suspense fallback={<ModalSuspenseFallback />}>
-                        <MediaActionsModal post={mediaActionsModalPost} onClose={closeMediaActionsModal} />
-                    </Suspense>
+                    <LazyLoadErrorBoundary>
+                      <Suspense fallback={<ModalSuspenseFallback />}>
+                          <MediaActionsModal post={mediaActionsModalPost} onClose={closeMediaActionsModal} />
+                      </Suspense>
+                    </LazyLoadErrorBoundary>
                 </Pressable>
              </Pressable>
           )}
           {isRepostModalOpen && repostModalPost && (
              <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeRepostModal}>
                 <Pressable style={styles.bottomSheet as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                    <Suspense fallback={<ModalSuspenseFallback />}>
-                        <RepostModal post={repostModalPost} onClose={closeRepostModal} />
-                    </Suspense>
+                    <LazyLoadErrorBoundary>
+                      <Suspense fallback={<ModalSuspenseFallback />}>
+                          <RepostModal post={repostModalPost} onClose={closeRepostModal} />
+                      </Suspense>
+                    </LazyLoadErrorBoundary>
                 </Pressable>
              </Pressable>
           )}
           {isRepliesModalOpen && repliesModalData && (
              <Pressable style={styles.modalBackdrop as StyleProp<ViewStyle>} onPress={closeRepliesModal}>
                 <Pressable style={[styles.bottomSheet, styles.repliesSheet] as StyleProp<ViewStyle>} onPress={(e) => e.stopPropagation()}>
-                    <Suspense fallback={<ModalSuspenseFallback />}>
-                        <RepliesModal data={repliesModalData} onClose={closeRepliesModal} />
-                    </Suspense>
+                    <LazyLoadErrorBoundary>
+                      <Suspense fallback={<ModalSuspenseFallback />}>
+                          <RepliesModal data={repliesModalData} onClose={closeRepliesModal} />
+                      </Suspense>
+                    </LazyLoadErrorBoundary>
                 </Pressable>
              </Pressable>
           )}
         </Suspense>
       </SafeAreaView>
-  );
+  ));
 }
 
 

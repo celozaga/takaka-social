@@ -91,11 +91,31 @@ O app utiliza um sistema de layout padronizado para todas as telas de configura�
 
 ## 🎨 Design System
 
-### Tema
-- **Cores**: Paleta escura com acentos primários
-- **Tipografia**: Sistema hierárquico de fontes
-- **Espaçamento**: Sistema de espaçamento consistente (xs, s, m, l, xl, xxl)
-- **Formas**: Bordas arredondadas e sombras sutis
+### Sistema de Tema
+O app utiliza um sistema de tema dinâmico baseado em React Context:
+
+```tsx
+import { useTheme } from '@/components/shared';
+
+function MyComponent() {
+  const { theme, isDark, toggleTheme } = useTheme();
+  
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: theme.colors.background,
+      padding: theme.spacing.lg,
+      borderRadius: theme.radius.md,
+    }
+  });
+}
+```
+
+### Tokens de Design
+- **Cores**: Paleta Material Design 3 com suporte a tema claro/escuro
+- **Tipografia**: Sistema hierárquico (displayLarge, headlineMedium, titleLarge, bodyMedium, etc.)
+- **Espaçamento**: Sistema consistente (xs, sm, md, lg, xl, 2xl, 3xl)
+- **Bordas**: Raios padronizados (sm, md, lg, xl, full)
+- **Sombras**: Elevações Material Design (sm, md, lg)
 
 ### Componentes
 - **`SettingsListItem`**: Item de configuração com ícone, label e controles
@@ -118,9 +138,11 @@ O app suporta múltiplos idiomas através do sistema de traduções:
 
 ## 📚 Documentação
 
+- **Guia do Desenvolvedor**: [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 - **Layout de Configurações**: [components/settings/README.md](components/settings/README.md)
-- **Tema e Estilos**: [lib/theme.ts](lib/theme.ts)
+- **Sistema de Tema**: [components/shared/Theme/](components/shared/Theme/)
 - **Componentes UI**: [components/ui/](components/ui/)
+- **Componentes Compartilhados**: [components/shared/](components/shared/)
 
 ## 🤝 Contribuindo
 

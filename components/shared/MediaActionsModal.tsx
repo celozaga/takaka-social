@@ -9,7 +9,7 @@ import { useBookmarks } from '../../context/BookmarksContext';
 import { AtUri,AppBskyFeedDefs } from '@atproto/api';
 import { EyeOff, MicOff, Shield, AlertTriangle, Trash2, X, ShieldOff, Bookmark } from 'lucide-react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 interface MediaActionsModalProps {
@@ -24,6 +24,8 @@ const ActionListItem: React.FC<{
     isDestructive?: boolean;
     disabled?: boolean;
 }> = ({ icon: Icon, label, onPress, isDestructive = false, disabled = false }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     return (
         <Pressable 
             onPress={onPress}
@@ -37,6 +39,8 @@ const ActionListItem: React.FC<{
 };
 
 const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { agent, session } = useAtp();
     const { toast } = useToast();
     const { requireAuth } = useAuthGuard();
@@ -117,13 +121,13 @@ const MediaActionsModal: React.FC<MediaActionsModalProps> = ({ post, onClose }) 
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: theme.spacing.l },
     headerTitle: { ...theme.typography.titleMedium, color: theme.colors.onSurface },
     closeButton: { padding: theme.spacing.s, margin: -theme.spacing.s },
     content: { padding: theme.spacing.s, gap: theme.spacing.xs },
-    loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30, 32, 33, 0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: theme.shape.large },
-    actionItem: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.shape.medium },
+    loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30, 32, 33, 0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: theme.radius.lg },
+    actionItem: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.radius.md },
     actionItemPressed: { backgroundColor: theme.colors.surfaceContainerHigh },
     actionItemDestructivePressed: { backgroundColor: theme.colors.errorContainer },
     actionItemDisabled: { opacity: 0.5 },

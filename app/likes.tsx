@@ -8,11 +8,13 @@ import ScreenHeader from '@/components/layout/ScreenHeader';
 import Feed from '@/components/shared/Feed';
 import { useAtp } from '@/context/AtpContext';
 import { Search } from 'lucide-react';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { useDebounce } from '@/hooks/useDebounce';
 import RouteGuard from '@/components/auth/RouteGuard';
 
 export default function LikesScreen() {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { t } = useTranslation();
     const { session } = useAtp();
     const [searchQuery, setSearchQuery] = useState('');
@@ -50,7 +52,7 @@ export default function LikesScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     searchContainer: {
         paddingHorizontal: theme.spacing.l,
         paddingBottom: theme.spacing.l,
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
         paddingRight: theme.spacing.l,
         paddingVertical: theme.spacing.m,
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.medium,
+        borderRadius: theme.radius.md,
         color: theme.colors.onSurface,
         fontSize: 16,
     },

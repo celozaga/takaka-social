@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { AppBskyActorDefs } from '@atproto/api';
 import { X, Camera } from 'lucide-react';
 import { View, Text, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/hooks/useTheme';
 import * as ImagePicker from 'expo-image-picker';
 
 interface EditProfileModalProps {
@@ -17,6 +17,8 @@ interface EditProfileModalProps {
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess }) => {
   const { agent, session } = useAtp();
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { toast } = useToast();
   const { t } = useTranslation();
   const { getProfile, clearProfile } = useProfileCache();
@@ -155,14 +157,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, onSuccess 
   );
 };
 
-const styles = StyleSheet.create({
-    centered: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, alignItems: 'center' },
+const createStyles = (theme: any) => StyleSheet.create({
+    centered: { padding: theme.spacing.xxl, backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, alignItems: 'center' },
     errorText: { color: theme.colors.error },
-    container: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.shape.large, overflow: 'hidden', maxHeight: '90%', display: 'flex' as any, flexDirection: 'column' },
+    container: { backgroundColor: theme.colors.surfaceContainer, borderRadius: theme.radius.lg, overflow: 'hidden', maxHeight: '90%', display: 'flex' as any, flexDirection: 'column' },
     header: { padding: theme.spacing.l, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
     closeButton: { padding: theme.spacing.s, marginLeft: -theme.spacing.s },
     headerTitle: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
-    saveButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.xl, borderRadius: theme.shape.full },
+    saveButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.s, paddingHorizontal: theme.spacing.xl, borderRadius: theme.radius.full },
     saveButtonDisabled: { opacity: 0.5 },
     saveButtonText: { color: theme.colors.onPrimary, fontWeight: 'bold' },
     content: { padding: theme.spacing.xl },
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
     avatarImage: { width: '100%', height: '100%', resizeMode: 'cover' },
     avatarOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
     label: { ...theme.typography.labelLarge, color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.xs },
-    input: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: theme.shape.medium, color: theme.colors.onSurface, fontSize: 16 },
+    input: { width: '100%', padding: theme.spacing.m, backgroundColor: theme.colors.surfaceContainerHigh, borderRadius: theme.radius.md, color: theme.colors.onSurface, fontSize: 16 },
     textArea: { height: 100, textAlignVertical: 'top' },
 });
 

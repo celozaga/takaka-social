@@ -15,5 +15,8 @@ export { default as FeedList } from './FeedList';
 // Feed Item Component (renders individual feed items)
 export { default as FeedItem } from './FeedItem';
 
-// Legacy export for backwards compatibility
-export { default } from './FeedContainer';
+// Public Feed Wrapper (handles public access and authentication fallbacks)
+export { PublicFeedWrapper } from './PublicFeedWrapper';
+
+// Main Feed Component (with public access support)
+export { default } from './Feed';

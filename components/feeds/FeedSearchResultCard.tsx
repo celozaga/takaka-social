@@ -76,7 +76,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     avatar: {
         width: 48,
         height: 48,
-        borderRadius: theme.radius.lg,
+        borderRadius: theme.radius.full,
         flexShrink: 0,
     },
     mainContent: {

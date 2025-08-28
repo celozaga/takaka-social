@@ -9,17 +9,41 @@ import ActorSearchResultCard from '../search/ActorSearchResultCard';
 import ScreenHeader from '../layout/ScreenHeader';
 import Head from 'expo-router/head';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
+import { SkeletonAvatar, SkeletonLine } from '@/components/shared';
 
 interface FollowsScreenProps {
     actor: string;
     type: 'followers' | 'following';
 }
 
+// Skeleton card placeholder
+const FollowsSkeletonCard: React.FC = () => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
+    return (
+        <View style={styles.skeletonCardContainer}>
+            <View style={styles.skeletonCardContent}>
+                <SkeletonAvatar size={48} />
+                <View style={styles.skeletonCardMain}>
+                    <View style={styles.skeletonCardHeader}>
+                        <SkeletonLine width={128} height={16} />
+                        <SkeletonLine width={96} height={12} />
+                    </View>
+                    <SkeletonLine width="83.33%" height={12} style={{ marginTop: theme.spacing.md }} />
+                </View>
+            </View>
+        </View>
+    );
+};
+
 const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     const { agent } = useAtp();
     const { t } = useTranslation();
     const { setCustomFeedHeaderVisible } = useUI();
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const [list, setList] = useState<AppBskyActorDefs.ProfileView[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -94,7 +118,7 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
                 }}
                 scrollEventThrottle={16}
             >
-                {isLoading && [...Array(8)].map((_, i) => <View key={i} style={styles.skeletonItem} />)}
+                {isLoading && [...Array(8)].map((_, i) => <FollowsSkeletonCard key={i} />)}
                 {!isLoading && error && <View style={styles.messageContainer}><Text style={styles.errorText}>{error}</Text></View>}
                 {!isLoading && !error && list.length === 0 && <View style={styles.messageContainer}><Text style={styles.infoText}>{t('follows.empty')}</Text></View>}
                 {list.map(user => <ActorSearchResultCard key={user.did} actor={user} />)}
@@ -104,21 +128,40 @@ const FollowsScreen: React.FC<FollowsScreenProps> = ({ actor, type }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
-        padding: theme.spacing.l,
-        gap: theme.spacing.m,
+        padding: theme.spacing.lg,
+        gap: theme.spacing.md,
     },
     skeletonItem: {
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         height: 88,
         opacity: 0.5,
+    },
+    // novos estilos
+    skeletonCardContainer: {
+        padding: theme.spacing.lg,
+        backgroundColor: theme.colors.surfaceContainer,
+        borderRadius: theme.radius.lg,
+    },
+    skeletonCardContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: theme.spacing.lg,
+    },
+    skeletonCardMain: {
+        flex: 1,
+        minWidth: 0,
+        gap: theme.spacing.sm,
+    },
+    skeletonCardHeader: {
+        gap: theme.spacing.sm,
     },
     messageContainer: {
         padding: theme.spacing.xxl,
         backgroundColor: theme.colors.surfaceContainer,
-        borderRadius: theme.shape.large,
+        borderRadius: theme.radius.lg,
         alignItems: 'center',
     },
     errorText: {

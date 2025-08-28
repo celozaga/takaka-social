@@ -16,13 +16,15 @@ import { formatCompactDate } from '@/lib/formatters';
 import RichTextRenderer from '../shared/RichTextRenderer';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { OptimizedImage } from '../ui';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 
 interface NotificationItemProps {
   notification:AppBskyNotificationListNotifications.Notification;
 }
 
 const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: string }> = ({ record, postUri }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { agent } = useAtp();
     
     const embed = record.embed;
@@ -70,6 +72,8 @@ const PostPreview: React.FC<{ record: Partial<AppBskyFeedPost.Record>, postUri: 
 };
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { reason, author, record, uri, isRead, indexedAt } = notification;
   const { agent } = useAtp();
   const { setPostForNav } = useUI();
@@ -195,7 +199,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         paddingHorizontal: 16,
         paddingVertical: 12,
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
     avatar: {
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: theme.radius.full,
         position: 'absolute',
         top: 0,
         left: 0,

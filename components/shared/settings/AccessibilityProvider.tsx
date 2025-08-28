@@ -36,13 +36,13 @@ const AccessibilityContext = createContext<AccessibilityContextType | undefined>
 export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ children }) => {
   const { theme } = useTheme();
 
-  // Text accessibility - using theme's accessibility properties
+  // Text accessibility - using default accessibility properties
   const getTextScale = (): number => {
-    return theme.textScale || 1.0;
+    return 1.0; // Default text scale
   };
 
   const getFontWeight = (): 'normal' | 'bold' => {
-    return theme.fontWeight || 'normal';
+    return 'normal'; // Default font weight
   };
 
   // Contrast accessibility
@@ -63,10 +63,10 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
       return {
         ...theme.colors,
         // Increase contrast for better accessibility
-        onSurface: theme.isDark ? '#FFFFFF' : '#000000',
-        onSurfaceVariant: theme.isDark ? '#E0E0E0' : '#1A1A1A',
-        outline: theme.isDark ? '#FFFFFF' : '#000000',
-        surfaceContainer: theme.isDark ? '#0A0A0A' : '#FFFFFF',
+        onSurface: theme.colors.surface === '#0F0F0F' ? '#FFFFFF' : '#000000',
+        onSurfaceVariant: theme.colors.surface === '#0F0F0F' ? '#E0E0E0' : '#1A1A1A',
+        outline: theme.colors.surface === '#0F0F0F' ? '#FFFFFF' : '#000000',
+        surfaceContainer: theme.colors.surface === '#0F0F0F' ? '#0A0A0A' : '#FFFFFF',
       };
     }
     

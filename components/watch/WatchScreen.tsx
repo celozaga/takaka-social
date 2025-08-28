@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import Head from 'expo-router/head';
 import WatchFeed from './WatchFeed';
 import { useVideoManager } from './hooks/useVideoManager';
@@ -13,6 +13,8 @@ import { VideoOff } from 'lucide-react';
 const WatchScreen: React.FC = () => {
     const { t } = useTranslation();
     const router = useRouter();
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const {
         posts,
         isLoading,
@@ -74,7 +76,7 @@ const WatchScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     fullScreenCentered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background },
-    backButton: { position: 'absolute', top: theme.spacing.l, left: theme.spacing.l, zIndex: 30, padding: theme.spacing.s, borderRadius: theme.shape.full, backgroundColor: 'rgba(0,0,0,0.4)' },
+    backButton: { position: 'absolute', top: theme.spacing.lg, left: theme.spacing.lg, zIndex: 30, padding: theme.spacing.sm, borderRadius: theme.radius.full, backgroundColor: 'rgba(0,0,0,0.4)' },
 });
 
 export default WatchScreen;

@@ -1,73 +1,134 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Pressable, 
-  FlatList, 
-  FlatListProps, 
-  useWindowDimensions,
+import {
+  View,
+  FlatList,
+  Pressable,
+  Text,
+  StyleSheet,
   Dimensions,
   Platform,
-  Alert
+  Alert,
+  Linking,
+  FlatListProps,
 } from 'react-native';
-import { Linking } from 'react-native';
 import { AppBskyEmbedImages } from '@atproto/api';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { OptimizedImage } from '../ui';
+import { Tooltip } from './Tooltip';
 import { useTheme } from '@/components/shared';
+import { spacing, typography, radius, sizes, shadows } from '@/src/design/tokens';
 
 interface PhotoCarouselProps {
   images: AppBskyEmbedImages.ViewImage[];
   style?: any;
-  aspectRatio?: number;
+  customAspectRatio?: number;
   maxHeight?: number;
 }
 
-const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ 
-  images, 
-  style, 
-  aspectRatio: customAspectRatio,
-  maxHeight = 700 
+const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
+  images,
+  style,
+  customAspectRatio,
+  maxHeight = 400,
 }) => {
-  const { theme } = useTheme();
-  const { width: screenWidth } = useWindowDimensions();
-  
+    const { theme } = useTheme();
+
+  useEffect(() => {
+    console.log('PhotoCarousel - theme object changed:', theme);
+    console.log('PhotoCarousel - theme.colors:', theme?.colors);
+  }, [theme]);
+
+  const createStyles = useMemo(() => {
+    return StyleSheet.create({
+      container: {
+        borderRadius: radius.md,
+        overflow: 'hidden',
+        backgroundColor: theme.colors.surfaceContainer,
+        ...shadows.sm,
+      },
+      innerContainer: {
+        position: 'relative',
+      },
+      imageContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+      },
+      imagePressable: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      carouselImage: {
+        width: '100%',
+        height: '100%',
+      },
+      imageOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        opacity: 0,
+        transitionDuration: '200ms',
+        transitionProperty: 'opacity',
+        transitionTimingFunction: 'ease-in-out',
+      },
+      arrow: {
+        position: 'absolute',
+        top: '50%',
+        transform: [{ translateY: -sizes.iconMd / 2 }],
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        borderRadius: radius.full,
+        padding: spacing.sm,
+        zIndex: 1,
+      },
+      arrowLeft: {
+        left: spacing.sm,
+      },
+      arrowRight: {
+        right: spacing.sm,
+      },
+      counterOverlay: {
+        position: 'absolute',
+        bottom: spacing.sm,
+        right: spacing.sm,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        borderRadius: radius.full,
+        paddingVertical: spacing.xs,
+        paddingHorizontal: spacing.sm,
+      },
+      counterText: {
+        ...typography.textXs,
+        color: theme.colors.white,
+      },
+    });
+  }, [theme]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  const styles = createStyles(theme);
-
-  // Calcular dimensões responsivas com fallbacks para diferentes plataformas
-  const isDesktop = screenWidth >= 768;
-  const isTablet = screenWidth >= 600 && screenWidth < 768;
+  // Get screen dimensions
+  const screenWidth = Dimensions.get('window').width;
+  const isDesktop = Platform.OS === 'web' && screenWidth >= 1024;
   const isMobile = screenWidth < 600;
-  
-  // Ajustar larguras baseado na plataforma
-  const mainContentMaxWidth = isDesktop ? 640 : screenWidth;
-  const navRailWidth = isDesktop ? 80 : 0;
-  const listPadding = isMobile ? theme.spacing.md : theme.spacing.lg * 2;
 
-  const effectiveContentWidth = isDesktop
-    ? Math.min(screenWidth - navRailWidth, mainContentMaxWidth)
-    : screenWidth;
+  // Calculate container dimensions
+  const padding = isMobile ? spacing.md : spacing.lg;
+  const containerWidth = screenWidth;
   
-  const containerWidth = Math.max(effectiveContentWidth - listPadding, 200); // Mínimo de 200px
+  // Calculate aspect ratio
+  const aspectRatio = customAspectRatio || 
+    (images[0]?.aspectRatio ? images[0].aspectRatio.width / images[0].aspectRatio.height : 16/9);
   
-  // Usar aspect ratio customizado ou calcular baseado na primeira imagem
-  const calculatedAspectRatio = customAspectRatio || 
-    (images[0]?.aspectRatio ? images[0].aspectRatio.width / images[0].aspectRatio.height : 1.5);
-  
-  const calculatedHeight = containerWidth / calculatedAspectRatio;
-  const finalHeight = Math.min(calculatedHeight, maxHeight);
-
-  // Configuração de visibilidade otimizada para cada plataforma
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: Platform.OS === 'web' ? 50 : 80,
-    minimumViewTime: Platform.OS === 'web' ? 0 : 100,
-  }).current;
+  // Calculate height based on aspect ratio
+  const calculatedHeight = containerWidth / aspectRatio;
+  const finalHeight = Math.min(calculatedHeight, 500);
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
@@ -76,13 +137,17 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
     }
   }, []);
 
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+    minimumViewTime: 100,
+  }).current;
+
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       const newIndex = currentIndex - 1;
       flatListRef.current?.scrollToIndex({ 
         index: newIndex, 
-        animated: true,
-        viewPosition: 0
+        animated: true
       });
       setCurrentIndex(newIndex);
     }
@@ -93,8 +158,7 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
       const newIndex = currentIndex + 1;
       flatListRef.current?.scrollToIndex({ 
         index: newIndex, 
-        animated: true,
-        viewPosition: 0
+        animated: true
       });
       setCurrentIndex(newIndex);
     }
@@ -105,7 +169,6 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
       setIsLoading(true);
       await Linking.openURL(imageUrl);
     } catch (error) {
-      // Fallback para diferentes plataformas
       if (Platform.OS === 'web') {
         window.open(imageUrl, '_blank');
       } else {
@@ -118,64 +181,34 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
 
   const renderImageItem = useCallback(({ item }: { item: AppBskyEmbedImages.ViewImage }) => {
     return (
-      <View style={{ 
-        width: containerWidth, 
-        height: finalHeight, 
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <Pressable 
-          style={{ 
-            width: '100%', 
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-          onPress={() => handleImagePress(item.fullsize)}
-          onLongPress={() => {
-            // Suporte a long press para mobile
-            if (Platform.OS !== 'web') {
-              Alert.alert(
-                'Opções da Imagem',
-                'O que você gostaria de fazer?',
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  { text: 'Abrir Imagem', onPress: () => handleImagePress(item.fullsize) },
-                  { text: 'Copiar URL', onPress: () => {
-                    // Implementar copiar URL se necessário
-                  }}
-                ]
-              );
-            }
-          }}
-          {...(Platform.OS === 'web' && {
-            onMouseEnter: () => setIsHovered(true),
-            onMouseLeave: () => setIsHovered(false),
-          } as any)}
-        >
-          <OptimizedImage 
-            source={item.thumb} 
-            accessibilityLabel={item.alt || 'Gallery image'} 
-            style={styles.carouselImage} 
-            contentFit="contain" 
-            transition={300}
-            onError={() => {
-              console.warn('Failed to load image:', item.thumb);
-            }}
-          />
-          <View style={[
-            styles.imageOverlay, 
-            { 
-              opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0,
-              // Melhorar visibilidade em mobile
-              backgroundColor: Platform.OS === 'web' 
-                ? 'rgba(0,0,0,0.3)' 
-                : 'rgba(0,0,0,0.1)'
-            }
-          ]}>
-            <ExternalLink color="white" size={Platform.OS === 'web' ? 24 : 20} />
-          </View>
-        </Pressable>
+      <View style={[styles.imageContainer, { width: containerWidth, height: finalHeight }]}>
+        <Tooltip contentKey="media.viewImage" position="top">
+          <Pressable 
+            style={styles.imagePressable}
+            onPress={() => handleImagePress(item.fullsize)}
+            {...(Platform.OS === 'web' && {
+              onMouseEnter: () => setIsHovered(true),
+              onMouseLeave: () => setIsHovered(false),
+            } as any)}
+          >
+            <OptimizedImage 
+              source={item.thumb} 
+              accessibilityLabel={item.alt || 'Gallery image'} 
+              style={styles.carouselImage} 
+              contentFit="contain" 
+              transition={300}
+              onError={() => {
+                console.warn('Failed to load image:', item.thumb);
+              }}
+            />
+            <View style={[
+              styles.imageOverlay, 
+              { opacity: (Platform.OS === 'web' && isHovered) ? 1 : 0 }
+            ]}>
+              <ExternalLink color="white" size={24} />
+            </View>
+          </Pressable>
+        </Tooltip>
       </View>
     );
   }, [containerWidth, finalHeight, handleImagePress, isHovered, styles]);
@@ -190,93 +223,80 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
       `${item.thumb}-${index}`,
     onViewableItemsChanged,
     viewabilityConfig,
-    style: StyleSheet.absoluteFillObject,
     getItemLayout: (_: any, index: number) => ({
       length: containerWidth,
       offset: containerWidth * index,
       index,
     }),
-    // Otimizações para performance
     removeClippedSubviews: Platform.OS !== 'web',
     maxToRenderPerBatch: 3,
     windowSize: 5,
     initialNumToRender: 1,
-    // Melhorar scroll em mobile
     decelerationRate: Platform.OS === 'ios' ? 'fast' : 0.9,
     snapToInterval: containerWidth,
     snapToAlignment: 'start',
   };
 
-  const showArrows = images.length > 1;
-  const showCounter = images.length > 1;
-  const showDots = images.length > 1;
-
-  // Ajustar tamanho das setas baseado na plataforma
-  const arrowSize = Platform.OS === 'web' ? 40 : 44; // Touch target mínimo para mobile
-  const arrowIconSize = Platform.OS === 'web' ? 24 : 20;
+  const showControls = images.length > 1;
 
   return (
     <View style={[styles.container, style]}>
-      <View style={[styles.innerContainer, { height: finalHeight }]}>
+      <View style={[styles.innerContainer, { width: containerWidth, height: finalHeight }]}>
         <FlatList ref={flatListRef} {...flatListProps} />
         
-        {/* Contador de imagens */}
-        {showCounter && (
+        {/* Image counter */}
+        {showControls && (
           <View style={styles.counterOverlay}>
-            <Text style={styles.counterText}>{currentIndex + 1} / {images.length}</Text>
+            <Text style={styles.counterText}>
+              {currentIndex + 1} / {images.length}
+            </Text>
           </View>
         )}
         
-        {/* Setas de navegação */}
-        {showArrows && currentIndex > 0 && (
-          <Pressable 
-            style={[
-              styles.arrow, 
-              styles.arrowLeft, 
-              { width: arrowSize, height: arrowSize, marginTop: -arrowSize / 2 }
-            ]} 
-            onPress={handlePrev}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <ChevronLeft style={styles.arrowIcon} color="white" size={arrowIconSize} />
-          </Pressable>
+        {/* Navigation arrows */}
+        {showControls && currentIndex > 0 && (
+          <Tooltip contentKey="media.previousImage" position="top">
+            <Pressable 
+              style={[styles.arrow, styles.arrowLeft]} 
+              onPress={handlePrev}
+              hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
+            >
+              <ChevronLeft color="white" size={sizes.iconMd} />
+            </Pressable>
+          </Tooltip>
         )}
         
-        {showArrows && currentIndex < images.length - 1 && (
-          <Pressable 
-            style={[
-              styles.arrow, 
-              styles.arrowRight, 
-              { width: arrowSize, height: arrowSize, marginTop: -arrowSize / 2 }
-            ]} 
-            onPress={handleNext}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <ChevronRight style={styles.arrowIcon} color="white" size={arrowIconSize} />
-          </Pressable>
+        {showControls && currentIndex < images.length - 1 && (
+          <Tooltip contentKey="media.nextImage" position="top">
+            <Pressable 
+              style={[styles.arrow, styles.arrowRight]} 
+              onPress={handleNext}
+              hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
+            >
+              <ChevronRight color="white" size={sizes.iconMd} />
+            </Pressable>
+          </Tooltip>
         )}
       </View>
       
-      {/* Indicadores de pontos */}
-      {showDots && (
+      {/* Dot indicators */}
+      {showControls && (
         <View style={styles.dotsContainer}>
           {images.map((_, index) => (
             <Pressable
               key={index}
               style={[
                 styles.dot, 
-                index === currentIndex && styles.dotActive,
-                { marginHorizontal: Platform.OS === 'web' ? theme.spacing.xs : theme.spacing.sm }
+                index === currentIndex && styles.dotActive
               ]}
               onPress={() => {
                 flatListRef.current?.scrollToIndex({ 
                   index, 
-                  animated: true,
-                  viewPosition: 0
+                  animated: true
                 });
                 setCurrentIndex(index);
               }}
-              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
             />
           ))}
         </View>
@@ -287,99 +307,90 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
-    marginTop: theme.spacing.sm,
+    marginTop: spacing.sm,
+    alignItems: 'center',
   },
   innerContainer: {
     position: 'relative',
-    borderRadius: theme.radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: '#000',
+    backgroundColor: theme.colors.surfaceContainer,
+  },
+  imageContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePressable: {
     width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   carouselImage: {
     width: '100%',
     height: '100%',
+    borderRadius: radius.lg,
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    opacity: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: radius.lg,
     ...(Platform.OS === 'web' && {
       transition: 'opacity 0.2s',
     }),
   },
   counterOverlay: {
     position: 'absolute',
-    top: theme.spacing.md,
-    right: theme.spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    zIndex: 1,
-    // Melhorar visibilidade em mobile
-    ...(Platform.OS !== 'web' && {
-      backgroundColor: 'rgba(0,0,0,0.8)',
-    }),
+    top: spacing.md,
+    right: spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    zIndex: 2,
   },
   counterText: {
-    fontSize: theme.typography.bodySmall.fontSize,
+    ...typography.bodySmall,
     color: 'white',
-    fontWeight: 'bold',
   },
   arrow: {
     position: 'absolute',
     top: '50%',
-    borderRadius: theme.radius.full,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: sizes.buttonLg,
+    height: sizes.buttonLg,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
-    // Melhorar touch target em mobile
-    ...(Platform.OS !== 'web' && {
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      elevation: 3, // Android shadow
-      shadowColor: '#000', // iOS shadow
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-    }),
+    zIndex: 2,
+    marginTop: -(sizes.buttonLg / 2),
+    ...shadows.md,
   },
   arrowLeft: {
-    left: theme.spacing.md,
+    left: spacing.md,
   },
   arrowRight: {
-    right: theme.spacing.md,
-  },
-  arrowIcon: {
-    color: 'white'
+    right: spacing.md,
   },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: theme.spacing.sm,
-    paddingBottom: Platform.OS !== 'web' ? theme.spacing.xs : 0,
+    paddingTop: spacing.sm,
+    gap: spacing.xs,
   },
   dot: {
-    width: Platform.OS === 'web' ? 8 : 10,
-    height: Platform.OS === 'web' ? 8 : 10,
-    borderRadius: Platform.OS === 'web' ? 4 : 5,
+    width: sizes.iconXs,
+    height: sizes.iconXs,
+    borderRadius: radius.full,
     backgroundColor: theme.colors.surfaceContainerHighest,
-    // Melhorar touch target em mobile
-    ...(Platform.OS !== 'web' && {
-      backgroundColor: 'rgba(255,255,255,0.4)',
-    }),
   },
   dotActive: {
     backgroundColor: theme.colors.primary,
-    // Melhorar visibilidade em mobile
-    ...(Platform.OS !== 'web' && {
-      backgroundColor: theme.colors.primary,
-      transform: [{ scale: 1.2 }],
-    }),
-  }
+    transform: [{ scale: 1.2 }],
+  },
 });
 
 export default PhotoCarousel;

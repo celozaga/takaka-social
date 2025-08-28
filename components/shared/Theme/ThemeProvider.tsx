@@ -14,7 +14,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Appearance, ColorSchemeName } from 'react-native';
+import { Appearance, ColorSchemeName, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightTheme, darkTheme, getTheme, ColorScheme, Theme } from '@/src/design/tokens';
 // Remove accessibility import as it creates circular dependency
@@ -24,7 +24,16 @@ import { lightTheme, darkTheme, getTheme, ColorScheme, Theme } from '@/src/desig
 // ============================================================================
 
 interface ThemeContextType {
-  theme: Theme;
+  theme: Theme & { 
+    settingsStyles: any;
+    spacing: Theme['spacing'] & {
+      s: number;
+      m: number;
+      l: number;
+      xl: number;
+      xxl: number;
+    };
+  };
   colorScheme: ColorScheme;
   isDark: boolean;
   setColorScheme: (scheme: ColorScheme | 'system') => void;
@@ -127,8 +136,55 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     setColorScheme(newScheme);
   };
 
-  // Get current theme object
-  const theme = getTheme(colorScheme);
+  // Get current theme object and extend with legacy settingsStyles for backward compatibility
+  const baseTheme = getTheme(colorScheme);
+  
+  // Create settingsStyles directly using current theme
+  const settingsStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: baseTheme.colors.background,
+    },
+    section: {
+       backgroundColor: baseTheme.colors.surfaceContainer,
+       marginVertical: baseTheme.spacing.xs,
+       borderRadius: baseTheme.radius.md,
+     },
+    sectionHeader: {
+      padding: baseTheme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: baseTheme.colors.outline,
+    },
+    sectionHeaderText: {
+      ...baseTheme.typography.titleMedium,
+      color: baseTheme.colors.onSurface,
+    },
+    item: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: baseTheme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: baseTheme.colors.outline,
+    },
+    itemText: {
+      ...baseTheme.typography.bodyLarge,
+      color: baseTheme.colors.onSurface,
+      flex: 1,
+    },
+    itemDescription: {
+      ...baseTheme.typography.bodyMedium,
+      color: baseTheme.colors.onSurfaceVariant,
+      marginTop: baseTheme.spacing.xs,
+    },
+  });
+  
+  // Aliases de espaçamento para compatibilidade (ex.: theme.spacing.l)
+  const spacingWithAliases = { ...baseTheme.spacing, s: baseTheme.spacing.sm, m: baseTheme.spacing.md, l: baseTheme.spacing.lg, xl: baseTheme.spacing.xl, xxl: baseTheme.spacing['2xl'] };
+  const theme: any = {
+    ...baseTheme,
+    spacing: spacingWithAliases,
+    settingsStyles,
+  };
   const isDark = colorScheme === 'dark';
 
   // Create accessibility-aware typography (simplified for now)

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -16,6 +16,8 @@ interface ErrorStateProps {
 const ErrorState: React.FC<ErrorStateProps> = ({ icon: Icon, title, message, onRetry, retryText }) => {
   const router = useRouter();
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   return (
     <View style={styles.container}>
@@ -37,7 +39,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ icon: Icon, title, message, onR
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -70,7 +72,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: theme.spacing.m,
     paddingHorizontal: theme.spacing.xl,
-    borderRadius: theme.shape.full,
+    borderRadius: theme.radius.full,
     gap: theme.spacing.s,
   },
   buttonText: {

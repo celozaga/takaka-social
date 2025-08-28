@@ -262,5 +262,4 @@ export const useAccessibleTextStyles = () => {
   };
 };
 
-export { AccessibilityProvider };
 export default AccessibilityProvider;

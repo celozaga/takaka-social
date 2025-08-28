@@ -3,13 +3,15 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { AppBskyFeedDefs } from '@atproto/api';
 import { useUI } from '@/context/UIContext';
 import PostActions from './PostActions';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared/Theme';
 
 interface PostPageWebActionBarProps {
   post: AppBskyFeedDefs.PostView;
 }
 
 const PostPageWebActionBar: React.FC<PostPageWebActionBarProps> = ({ post }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { openComposer } = useUI();
   
   return (
@@ -25,7 +27,7 @@ const PostPageWebActionBar: React.FC<PostPageWebActionBarProps> = ({ post }) => 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         paddingVertical: theme.spacing.m,
         marginVertical: theme.spacing.l,
@@ -39,7 +41,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surfaceContainer,
         paddingHorizontal: theme.spacing.l,
         paddingVertical: theme.spacing.m,
-        borderRadius: theme.shape.full,
+        borderRadius: theme.radius.full,
     },
     replyButtonText: {
         color: theme.colors.onSurfaceVariant,

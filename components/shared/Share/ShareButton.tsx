@@ -13,6 +13,7 @@ import { Pressable, StyleSheet, StyleProp, ViewStyle, Platform, Alert } from 're
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../Theme';
+import { Tooltip } from '../Tooltip';
 
 // ============================================================================
 // Types
@@ -178,25 +179,27 @@ const ShareButton: React.FC<ShareButtonProps> = ({
   };
 
   return (
-    <Pressable
-      onPress={handleShare}
-      disabled={disabled}
-      style={({ pressed }) => [
-        styles.button,
-        {
-          backgroundColor: pressed && !disabled 
-            ? theme.colors.surfaceContainerHigh 
-            : 'transparent',
-        },
-        disabled && styles.disabled,
-        style,
-      ]}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      testID={testID}
-    >
-      {children}
-    </Pressable>
+    <Tooltip contentKey="post.share" position="top">
+      <Pressable
+        onPress={handleShare}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.button,
+          {
+            backgroundColor: pressed && !disabled 
+              ? theme.colors.surfaceContainerHigh 
+              : 'transparent',
+          },
+          disabled && styles.disabled,
+          style,
+        ]}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="button"
+        testID={testID}
+      >
+        {children}
+      </Pressable>
+    </Tooltip>
   );
 };
 

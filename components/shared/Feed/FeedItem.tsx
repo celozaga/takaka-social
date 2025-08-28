@@ -24,7 +24,7 @@ const FeedItem: React.FC<FeedItemProps> = ({ item, layout }) => {
     );
   } else {
     return (
-      <View style={{ paddingHorizontal: theme.spacing.lg }}>
+      <View style={{ paddingHorizontal: theme.spacing.sm }}>
         <FullPostCard feedViewPost={item} />
       </View>
     );

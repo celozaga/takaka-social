@@ -4,11 +4,12 @@ import { supportedLanguages } from '../../lib/i18n';
 import { Check } from 'lucide-react';
 import Head from 'expo-router/head';
 import { Pressable, Text } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/components/shared';
 import { SettingsDivider } from '@/components/shared';
 import SettingsScreenLayout, { SettingsSection } from './SettingsScreenLayout';
 
 const LanguageSettingsScreen: React.FC = () => {
+    const { theme } = useTheme();
     const { t, i18n } = useTranslation();
 
     const changeLanguage = (langCode: string) => {

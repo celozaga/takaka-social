@@ -3,24 +3,36 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, usePathname } from 'expo-router';
+import { Link, usePathname, useRouter } from 'expo-router';
 import { useAtp } from '../../context/AtpContext';
 import { useUI } from '../../context/UIContext';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/components/shared';
+import { Tooltip } from '../shared/Tooltip';
 
 const NavItem: React.FC<{ item: any; isDesktop: boolean; }> = ({ item, isDesktop }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const { unreadCount } = useAtp();
+  const router = useRouter();
   
   // Create dynamic styles for this component
   const styles = createStyles(theme);
   
   const isNotifications = item.labelKey === 'nav.notifications';
   const hasNotificationBadge = isNotifications && unreadCount > 0;
+
+  const handlePress = (e: any) => {
+    if (item.isAction) {
+      e.preventDefault();
+      item.action();
+    } else if (item.href && item.href !== '#') {
+      e.preventDefault();
+      router.push(item.href);
+    }
+  };
 
   const content = (
     <View style={isDesktop ? styles.navRailItemContent : styles.navBarItemContent}>
@@ -50,19 +62,14 @@ const NavItem: React.FC<{ item: any; isDesktop: boolean; }> = ({ item, isDesktop
   ];
 
   return (
-    <Link href={item.href as any} asChild>
+    <Tooltip contentKey={item.labelKey} position="top">
       <Pressable
         style={style}
-        onPress={(e) => {
-          if (item.isAction) {
-            e.preventDefault();
-            item.action();
-          }
-        }}
+        onPress={handlePress}
       >
         {content}
       </Pressable>
-    </Link>
+    </Tooltip>
   );
 };
 

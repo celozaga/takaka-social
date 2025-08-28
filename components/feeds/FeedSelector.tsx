@@ -27,9 +27,11 @@ const FeedSelector: React.FC<FeedSelectorProps> = ({ feeds, selectedFeed, onSele
   const styles = createStyles(theme);
 
   const handleFollowingClick = () => {
-    if (requireAuth('feed_customization')) {
-      onSelectFeed('following');
+    if (!session) {
+      openLoginModal();
+      return;
     }
+    onSelectFeed('following');
   };
 
   const Tab: React.FC<{ label: string; feedUri: string; isActive: boolean }> = ({ label, feedUri, isActive }) => (

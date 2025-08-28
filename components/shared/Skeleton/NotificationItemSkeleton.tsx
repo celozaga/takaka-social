@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/hooks/useTheme';
 import SkeletonLine from './SkeletonLine';
 import SkeletonAvatar from './SkeletonAvatar';
 
 const NotificationItemSkeleton = () => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   return (
     <View style={styles.container}>
       <View style={{ flexShrink: 0, width: 32, alignItems: 'center' }}>
@@ -26,7 +28,7 @@ const NotificationItemSkeleton = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         paddingHorizontal: 16,
         paddingVertical: 12,

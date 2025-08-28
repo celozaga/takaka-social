@@ -15,18 +15,27 @@ import RichTextRenderer from '../shared/RichTextRenderer';
 import { useUI } from '../../context/UIContext';
 import Head from 'expo-router/head';
 import { TopAppBar } from '@/components/shared';
-import { theme } from '@/lib/theme';
+
+
+
 import { PostCardSkeleton, ProfileHeaderSkeleton } from '@/components/shared';
 import { formatCompactNumber } from '@/lib/formatters';
 import ErrorState from '../shared/ErrorState';
+import { usePublicAccess } from '../../hooks/usePublicAccess';
+import { useTheme } from '@/components/shared';
 
 const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const { agent, session } = useAtp();
+    const { safeGetProfile } = usePublicAccess();
     const { t } = useTranslation();
     const router = useRouter();
     const { toast } = useToast();
     const { getProfile, clearProfile } = useProfileCache();
     const { openEditProfileModal } = useUI();
+
+    // Novo sistema de tema dinâmico
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     const [profile, setProfile] = useState<AppBskyActorDefs.ProfileViewDetailed | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -37,23 +46,47 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
     const [activeFilter, setActiveFilter] = useState<'posts' | 'reposts'>('posts');
 
-
     const isMe = session?.did === profile?.did;
     
     const fetchProfile = useCallback(async () => {
         setIsLoading(true);
         setError(null);
+        
+        console.log('🔍 DEBUG: Fetching profile for actor:', actor, 'Session exists:', !!session);
+        
         try {
-            const profileData = await getProfile(actor);
+            let profileData;
+            
+            if (session) {
+                // Strategy 1: Use cached profile for authenticated users
+                console.log('🔍 DEBUG: Using cached profile for authenticated user');
+                profileData = await getProfile(actor);
+                console.log('✅ SUCCESS: Profile fetched via cache for authenticated user');
+            } else {
+                // Strategy 2: Use public access for non-authenticated users
+                console.log('🔍 DEBUG: Using public access for non-authenticated user');
+                profileData = await safeGetProfile(actor);
+                console.log('✅ SUCCESS: Profile fetched via public access');
+            }
+            
             setProfile(profileData);
         } catch (err: any) {
-            if (err.error === 'BlockedByActor') setError(t('profile.blockedBy'));
-            else if (err.error === 'NotFound') setError(t('profile.notFound'));
-            else setError(err.message || t('profile.loadingError'));
+            console.error('❌ ERROR: Profile fetch failed:', err.message, err);
+            
+            if (err.error === 'BlockedByActor') {
+                console.log('⚠️ WARNING: Profile blocked by actor');
+                setError(t('profile.blockedBy'));
+            } else if (err.error === 'NotFound') {
+                console.log('⚠️ WARNING: Profile not found');
+                setError(t('profile.notFound'));
+            } else {
+                console.error('❌ ERROR: Generic profile error:', err.message);
+                setError(err.message || t('profile.loadingError'));
+            }
         } finally {
             setIsLoading(false);
         }
-    }, [getProfile, actor, t]);
+    }, [getProfile, actor, t, session, safeGetProfile]);
 
     useEffect(() => {
         fetchProfile();
@@ -201,9 +234,9 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
           <>
             <TopAppBar title={t('profile.title')} />
             <ProfileHeaderSkeleton />
-            <View style={{ flexDirection: 'row', gap: theme.spacing.l, padding: theme.spacing.l, backgroundColor: theme.colors.background }}>
-              <View style={{ flex: 1, gap: theme.spacing.l }}><PostCardSkeleton /><PostCardSkeleton /></View>
-              <View style={{ flex: 1, gap: theme.spacing.l }}><PostCardSkeleton /><PostCardSkeleton /></View>
+            <View style={{ flexDirection: 'row', gap: theme.spacing.lg, padding: theme.spacing.lg, backgroundColor: theme.colors.background }}>
+              <View style={{ flex: 1, gap: theme.spacing.lg }}><PostCardSkeleton /><PostCardSkeleton /></View>
+              <View style={{ flex: 1, gap: theme.spacing.lg }}><PostCardSkeleton /><PostCardSkeleton /></View>
             </View>
           </>
         );
@@ -313,14 +346,14 @@ const ProfileScreen: React.FC<{ actor: string }> = ({ actor }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, padding: 16 },
     errorText: { color: theme.colors.error, ...theme.typography.bodyLarge },
     container: { flex: 1, backgroundColor: theme.colors.background },
-    headerButton: { padding: theme.spacing.s, borderRadius: theme.shape.full },
-    headerContainer: { backgroundColor: theme.colors.background, padding: theme.spacing.l, gap: theme.spacing.m },
-    statsRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l },
-    avatar: { width: 80, height: 80, borderRadius: theme.shape.full, backgroundColor: theme.colors.surfaceContainerHigh },
+    headerButton: { padding: theme.spacing.sm, borderRadius: theme.radius.full },
+    headerContainer: { backgroundColor: theme.colors.background, padding: theme.spacing.lg, gap: theme.spacing.md },
+    statsRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
+    avatar: { width: 80, height: 80, borderRadius: theme.radius.full, backgroundColor: theme.colors.surfaceContainerHigh },
     stats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
     statItem: { alignItems: 'center', gap: theme.spacing.xs },
     statNumber: { ...theme.typography.titleMedium, color: theme.colors.onSurface },
@@ -330,7 +363,7 @@ const styles = StyleSheet.create({
     displayName: { ...theme.typography.titleLarge, color: theme.colors.onSurface },
     description: { ...theme.typography.bodyMedium, color: theme.colors.onSurface, lineHeight: 20 },
     actionButtonContainer: { marginTop: theme.spacing.m },
-    actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.s, paddingVertical: theme.spacing.m, borderRadius: theme.shape.medium, width: '100%' },
+    actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.s, paddingVertical: theme.spacing.m, borderRadius: theme.radius.md, width: '100%' },
     editButton: { backgroundColor: theme.colors.surfaceContainerHigh },
     followingButton: { backgroundColor: theme.colors.surfaceContainerHigh },
     followButton: { backgroundColor: theme.colors.primary },
@@ -340,11 +373,11 @@ const styles = StyleSheet.create({
     blockedTitle: { ...theme.typography.titleLarge, marginTop: theme.spacing.l, color: theme.colors.onSurface, textAlign: 'center' },
     blockedDescription: { ...theme.typography.bodyMedium, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.s, textAlign: 'center' },
     modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-    bottomSheet: { backgroundColor: theme.colors.surfaceContainer, borderTopLeftRadius: theme.shape.extraLarge, borderTopRightRadius: theme.shape.extraLarge, padding: theme.spacing.l, paddingTop: theme.spacing.s, gap: theme.spacing.s },
+    bottomSheet: { backgroundColor: theme.colors.surfaceContainer, borderTopLeftRadius: theme.radius.xl, borderTopRightRadius: theme.radius.xl, padding: theme.spacing.l, paddingTop: theme.spacing.s, gap: theme.spacing.s },
     bottomSheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.m },
     bottomSheetTitle: { ...theme.typography.titleMedium, color: theme.colors.onSurface },
     closeButton: { padding: theme.spacing.s, margin: -theme.spacing.s },
-    actionItem: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.shape.medium },
+    actionItem: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.l, padding: theme.spacing.m, borderRadius: theme.radius.md },
     actionItemText: { ...theme.typography.bodyLarge, color: theme.colors.onSurface },
     destructiveText: { color: theme.colors.error },
     filterContainer: {

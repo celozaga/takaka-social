@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { theme } from '@/lib/theme';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useTheme } from '@/components/shared';
 import ScreenHeader from '../layout/ScreenHeader';
 
 interface SettingsSection {
@@ -21,12 +21,14 @@ const SettingsScreenLayout: React.FC<SettingsScreenLayoutProps> = ({
   children,
   showHeader = true,
 }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   return (
     <View style={{ flex: 1 }}>
       {showHeader && <ScreenHeader title={title} />}
-      <ScrollView contentContainerStyle={theme.settingsStyles.container}>
+      <ScrollView contentContainerStyle={styles.container}>
         {description && (
-          <Text style={theme.settingsStyles.description}>
+          <Text style={styles.description}>
             {description}
           </Text>
         )}
@@ -37,18 +39,44 @@ const SettingsScreenLayout: React.FC<SettingsScreenLayoutProps> = ({
 };
 
 export const SettingsSection: React.FC<SettingsSection> = ({ title, children }) => {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   return (
     <View>
       {title && (
-        <Text style={theme.settingsStyles.sectionHeader}>
+        <Text style={styles.sectionHeader}>
           {title}
         </Text>
       )}
-      <View style={theme.settingsStyles.section}>
+      <View style={styles.section}>
         {children}
       </View>
     </View>
   );
 };
+
+const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.xl,
+  },
+  description: {
+    color: theme.colors.onSurfaceVariant,
+    ...theme.typography.bodyMedium,
+    marginBottom: theme.spacing.lg,
+  },
+  section: {
+    backgroundColor: theme.colors.surfaceContainer,
+    borderRadius: theme.radius.lg,
+    overflow: 'hidden',
+  },
+  sectionHeader: {
+    ...theme.typography.labelLarge,
+    fontWeight: 'bold',
+    color: theme.colors.onSurfaceVariant,
+    paddingHorizontal: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+});
 
 export default SettingsScreenLayout;

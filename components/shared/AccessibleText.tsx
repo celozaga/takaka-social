@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TextProps } from 'react-native';
-import { useTheme } from './Theme/ThemeProvider';
+import { useTheme } from '@/components/shared/Theme';
 import { useAccessibility } from '@/context/AccessibilityContext';
 
 interface AccessibleTextProps extends TextProps {
@@ -40,7 +40,7 @@ export const AccessibleText: React.FC<AccessibleTextProps> = ({
   const accessibleStyle = {
     ...baseStyle,
     fontSize: baseStyle.fontSize ? baseStyle.fontSize * textScale : undefined,
-    fontWeight: fontWeight === 'bold' ? 'bold' : (baseStyle.fontWeight || 'normal'),
+    fontWeight: (fontWeight === 'bold' ? 'bold' : (baseStyle.fontWeight || 'normal')) as any,
   };
   
   return (
